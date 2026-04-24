@@ -227,6 +227,24 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 			}
 			break;
 
+		case 'MIXED_ATTENTION':
+			$bbai_strip_tone = 'alert';
+			if ( $bbai_strip_missing !== '' ) {
+				$bbai_strip_items[] = sprintf(
+					/* translators: %s: count */
+					_n( '%s image needs ALT text', '%s images need ALT text', (int) str_replace( ',', '', $bbai_strip_missing ), 'beepbeep-ai-alt-text-generator' ),
+					$bbai_strip_missing
+				);
+			}
+			if ( $bbai_strip_review !== '' && (int) str_replace( ',', '', $bbai_strip_review ) > 0 ) {
+				$bbai_strip_items[] = sprintf(
+					/* translators: %s: count */
+					_n( '%s ready for review', '%s ready for review', (int) str_replace( ',', '', $bbai_strip_review ), 'beepbeep-ai-alt-text-generator' ),
+					$bbai_strip_review
+				);
+			}
+			break;
+
 		case 'MISSING_ALT':
 			$bbai_strip_tone = 'alert';
 			if ( $bbai_strip_missing !== '' ) {
@@ -315,7 +333,7 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	<div class="bbai-li-activity-strip bbai-li-activity-strip--<?php echo esc_attr( $bbai_strip_tone ); ?>" data-bbai-li-activity-strip="1">
 		<span class="bbai-li-activity-strip__dot" aria-hidden="true"></span>
 		<?php foreach ( $bbai_strip_items as $bbai_strip_i => $bbai_strip_text ) : ?>
-			<?php if ( $bbai_strip_i > 0 ) : ?><span class="bbai-li-activity-strip__sep" aria-hidden="true"></span><?php endif; ?>
+			<?php if ( $bbai_strip_i > 0 ) : ?><span class="bbai-li-activity-strip__sep" aria-hidden="true"> · </span><?php endif; ?>
 			<span class="bbai-li-activity-strip__item"<?php echo $bbai_strip_i === $bbai_strip_signal_index ? ' data-bbai-li-queued-signal="1"' : ''; ?>><?php echo esc_html( $bbai_strip_text ); ?></span>
 		<?php endforeach; ?>
 	</div>

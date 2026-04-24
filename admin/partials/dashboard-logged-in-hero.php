@@ -148,8 +148,10 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		<?php
 		// Donut card is clickable for actionable states and follows that state's next step.
 		$bbai_li_has_primary_cta = ! empty( $bbai_li_primary_cta['label'] );
-		$bbai_li_donut_clickable = ( 'MISSING_ALT' === $bbai_li_state_id && $bbai_li_has_primary_cta )
-			|| 'NEEDS_REVIEW' === $bbai_li_state_id
+		$bbai_li_donut_clickable = (
+			in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true )
+			&& $bbai_li_has_primary_cta
+		) || 'NEEDS_REVIEW' === $bbai_li_state_id
 			|| ( 'PROCESSING' === $bbai_li_state_id && $bbai_li_has_primary_cta );
 		$bbai_li_donut_action_label = $bbai_li_primary_cta['label'] ?? __( 'Take action', 'beepbeep-ai-alt-text-generator' );
 		if ( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['label'] ) ) {
@@ -321,27 +323,37 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			$bbai_li_progress_step = 0; // hide
 		}
 		if ( $bbai_li_progress_step > 0 ) :
-			$bbai_s1 = 1 === $bbai_li_progress_step ? 'active' : ( $bbai_li_progress_step > 1 ? 'done' : '' );
-			$bbai_s2 = 2 === $bbai_li_progress_step ? 'active' : ( $bbai_li_progress_step > 2 ? 'done' : '' );
-			$bbai_s3 = 3 === $bbai_li_progress_step ? 'active done' : '';
+			$bbai_li_step_classes = [
+				1 => [ 'bbai-li-progress-steps__step--idle' ],
+				2 => [ 'bbai-li-progress-steps__step--idle' ],
+				3 => [ 'bbai-li-progress-steps__step--idle' ],
+			];
+			if ( 'MIXED_ATTENTION' === $bbai_li_state_id ) {
+				$bbai_li_step_classes[1] = [ 'bbai-li-progress-steps__step--active' ];
+				$bbai_li_step_classes[2] = [ 'bbai-li-progress-steps__step--active', 'bbai-li-progress-steps__step--available' ];
+			} else {
+				$bbai_li_step_classes[1] = 1 === $bbai_li_progress_step ? [ 'bbai-li-progress-steps__step--active' ] : ( $bbai_li_progress_step > 1 ? [ 'bbai-li-progress-steps__step--done' ] : [ 'bbai-li-progress-steps__step--idle' ] );
+				$bbai_li_step_classes[2] = 2 === $bbai_li_progress_step ? [ 'bbai-li-progress-steps__step--active' ] : ( $bbai_li_progress_step > 2 ? [ 'bbai-li-progress-steps__step--done' ] : [ 'bbai-li-progress-steps__step--idle' ] );
+				$bbai_li_step_classes[3] = 3 === $bbai_li_progress_step ? [ 'bbai-li-progress-steps__step--active', 'bbai-li-progress-steps__step--done' ] : [ 'bbai-li-progress-steps__step--idle' ];
+			}
 		?>
 		<div class="bbai-li-progress-steps" role="list" aria-label="<?php esc_attr_e( 'Workflow steps', 'beepbeep-ai-alt-text-generator' ); ?>">
 
-			<span class="bbai-li-progress-steps__step bbai-li-progress-steps__step--<?php echo esc_attr( $bbai_s1 ?: 'idle' ); ?>" role="listitem">
+			<span class="bbai-li-progress-steps__step <?php echo esc_attr( implode( ' ', $bbai_li_step_classes[1] ) ); ?>" role="listitem">
 				<span class="bbai-li-progress-steps__dot" aria-hidden="true"></span>
 				<?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?>
 			</span>
 
 			<span class="bbai-li-progress-steps__sep" aria-hidden="true"></span>
 
-			<span class="bbai-li-progress-steps__step bbai-li-progress-steps__step--<?php echo esc_attr( $bbai_s2 ?: 'idle' ); ?>" role="listitem">
+			<span class="bbai-li-progress-steps__step <?php echo esc_attr( implode( ' ', $bbai_li_step_classes[2] ) ); ?>" role="listitem">
 				<span class="bbai-li-progress-steps__dot" aria-hidden="true"></span>
 				<?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?>
 			</span>
 
 			<span class="bbai-li-progress-steps__sep" aria-hidden="true"></span>
 
-			<span class="bbai-li-progress-steps__step bbai-li-progress-steps__step--<?php echo esc_attr( $bbai_s3 ?: 'idle' ); ?>" role="listitem">
+			<span class="bbai-li-progress-steps__step <?php echo esc_attr( implode( ' ', $bbai_li_step_classes[3] ) ); ?>" role="listitem">
 				<span class="bbai-li-progress-steps__dot" aria-hidden="true"></span>
 				<?php esc_html_e( 'Done', 'beepbeep-ai-alt-text-generator' ); ?>
 			</span>
@@ -476,6 +488,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		missingAltPlural: '<?php echo esc_js( _n( '%s image needs ALT text', '%s images need ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingHeadlineSingular: '<?php echo esc_js( _n( '%s image is missing ALT text', '%s images are missing ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingHeadlinePlural: '<?php echo esc_js( _n( '%s image is missing ALT text', '%s images are missing ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		mixedSupport: '<?php echo esc_js( __( 'Generate missing ALT text first, then review the suggested descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingSupport: '<?php echo esc_js( __( 'Generate the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingSupportProgress: '<?php echo esc_js( __( '%1$s images already optimised — generate the remaining %2$s to complete your library.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		readyReviewSingular: '<?php echo esc_js( _n( '%s ready for review', '%s ready for review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -534,6 +547,15 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 		if ( window.console && typeof window.console.debug === 'function' ) {
 			window.console.debug( '[dashboard-ui] ' + eventName, context || {} );
+		}
+	}
+
+	function logRender( eventName, context ) {
+		if ( window.BBAI_LOG && typeof window.BBAI_LOG.log === 'function' ) {
+			window.BBAI_LOG.log( '[bbai-render] ' + eventName, context || {} );
+		}
+		if ( window.console && typeof window.console.debug === 'function' ) {
+			window.console.debug( '[bbai-render] ' + eventName, context || {} );
 		}
 	}
 
@@ -739,8 +761,57 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return payload && typeof payload === 'object' ? payload : null;
 	}
 
+	function applyStatePriority( rawState, payload ) {
+		var state = String( rawState || '' ).toUpperCase();
+		var counts = getTruthCounts( payload );
+		var credits = getTruthCredits( payload );
+		var job = getTruthJob( payload );
+
+		if ( credits.remaining <= 0 && counts.missing > 0 ) {
+			return 'QUOTA_EXHAUSTED';
+		}
+
+		if ( job && job.active && 'queued' === job.status ) {
+			return 'QUEUED';
+		}
+
+		if ( job && job.active && 'processing' === job.status ) {
+			return 'PROCESSING';
+		}
+
+		if ( counts.missing > 0 && counts.review > 0 ) {
+			return 'MIXED_ATTENTION';
+		}
+
+		if ( counts.missing > 0 ) {
+			return 'MISSING_ALT';
+		}
+
+		if ( counts.review > 0 ) {
+			return 'NEEDS_REVIEW';
+		}
+
+		if ( state ) {
+			return state;
+		}
+
+		return 'ALL_CLEAR';
+	}
+
 	function getStateTruthState( payload ) {
-		return payload && payload.state ? String( payload.state ).toUpperCase() : '';
+		var raw = payload && payload.state ? String( payload.state ).toUpperCase() : '';
+		var selected = applyStatePriority( raw, payload );
+
+		if ( window.console && typeof window.console.debug === 'function' ) {
+			window.console.debug( '[bbai-state-priority]', {
+				raw_state: raw,
+				selected_state: selected,
+				counts: getTruthCounts( payload ),
+				credits: getTruthCredits( payload )
+			} );
+		}
+
+		return selected;
 	}
 
 	function getTruthSite( payload ) {
@@ -1454,6 +1525,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			case 'PROCESSING':
 				return 2500;
 			case 'NEEDS_REVIEW':
+			case 'MIXED_ATTENTION':
 				return 12000;
 			default:
 				return 0;
@@ -2015,6 +2087,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		};
 
 		switch ( state ) {
+			case 'MIXED_ATTENTION':
 			case 'MISSING_ALT':
 				return {
 					pct: pct,
@@ -2085,6 +2158,43 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var totalOptimised = Math.max( counts.total, counts.complete );
 
 		switch ( state ) {
+			case 'MIXED_ATTENTION':
+				headline =
+					formatSingularPlural(
+						counts.missing,
+						TEXT.missingAltSingular,
+						TEXT.missingAltPlural
+					) +
+					', ' +
+					formatSingularPlural(
+						counts.review,
+						TEXT.readyReviewSingular,
+						TEXT.readyReviewPlural
+					);
+
+				support = 'Generate missing ALT text first, then review the suggested descriptions before they go live.';
+
+				badge = badge || { text: TEXT.actionNeededBadge, mod: 'amber' };
+
+				primaryCta = {
+					label: TEXT.generateMissingAlt,
+					busy_label: ACTION_STATUS[ 'generate-missing' ] || TEXT.working,
+					action: 'generate-missing',
+					href: '#',
+				};
+
+				secondaryCta = {
+					label: 'Review ' + formatCount( counts.review ) + ( counts.review === 1 ? ' image' : ' images' ),
+					action: 'navigate',
+					href: getReviewLibraryHref(),
+				};
+
+				console.log( '[bbai-render] fallback_state=MIXED_ATTENTION', {
+					missing: counts.missing,
+					review: counts.review,
+				} );
+
+				break;
 			case 'MISSING_ALT':
 				headline = formatSingularPlural( counts.missing, TEXT.missingHeadlineSingular, TEXT.missingHeadlinePlural );
 				support = reuseCurrentState && current.support
@@ -2177,6 +2287,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		return {
 			state: state,
+			id: state,
 			hero: {
 				badge: badge,
 				headline: headline,
@@ -2268,17 +2379,17 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function getReviewLibraryHref() {
-		var secondaryCta = getSecondaryCta();
-		var secondaryHref = secondaryCta ? secondaryCta.getAttribute( 'href' ) : '';
-		if ( secondaryHref && secondaryHref !== '#' ) {
-			return secondaryHref;
-		}
-
 		var dashboardRoot = document.querySelector( '[data-bbai-needs-review-library-url]' );
 		if ( dashboardRoot ) {
 			return dashboardRoot.getAttribute( 'data-bbai-needs-review-library-url' ) ||
 				dashboardRoot.getAttribute( 'data-bbai-library-url' ) ||
 				'';
+		}
+
+		var secondaryCta = getSecondaryCta();
+		var secondaryHref = secondaryCta ? secondaryCta.getAttribute( 'href' ) : '';
+		if ( secondaryHref && secondaryHref !== '#' ) {
+			return secondaryHref;
 		}
 
 		return '';
@@ -2334,6 +2445,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				var sep = document.createElement( 'span' );
 				sep.className = 'bbai-li-activity-strip__sep';
 				sep.setAttribute( 'aria-hidden', 'true' );
+				sep.textContent = ' · ';
 				strip.appendChild( sep );
 			}
 			item = document.createElement( 'span' );
@@ -2347,7 +2459,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function renderActivityStripFromTruth( truth, meta ) {
-		var strip = document.querySelector( '[data-bbai-li-activity-strip="1"]' );
+		var strips = document.querySelectorAll( '[data-bbai-li-activity-strip="1"]' );
 		var state = getStateTruthState( truth );
 		var counts = getTruthCounts( truth );
 		var credits = getTruthCredits( truth );
@@ -2358,7 +2470,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var signalIndex = -1;
 		var checkedAge;
 
-		if ( ! strip ) {
+		if ( ! strips.length ) {
 			return;
 		}
 
@@ -2382,6 +2494,18 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				if ( job && job.total > job.done ) {
 					items.push( formatSingularPlural( Math.max( 0, job.total - job.done ), TEXT.remainingCountSingular, TEXT.remainingCountPlural ) );
 				}
+				break;
+			case 'MIXED_ATTENTION':
+				tone = 'alert';
+
+				if ( counts.missing > 0 ) {
+					items.push( formatSingularPlural( counts.missing, TEXT.missingAltSingular, TEXT.missingAltPlural ) );
+				}
+
+				if ( counts.review > 0 ) {
+					items.push( formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural ) );
+				}
+
 				break;
 			case 'MISSING_ALT':
 				tone = 'alert';
@@ -2430,7 +2554,9 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		items = items.slice( 0, 3 );
-		renderActivityStripItems( strip, tone, items, signalIndex );
+		Array.prototype.forEach.call( strips, function ( strip ) {
+			renderActivityStripItems( strip, tone, items, signalIndex );
+		} );
 		logStatusStrip( 'activity_strip_write', buildStatusStripLogContext( truth, meta || buildStatusStripMeta( 'truth_activity_strip', 'renderActivityStripFromTruth' ), items.join( ' | ' ), 'activity_strip', 'write' ) );
 	}
 
@@ -2448,6 +2574,14 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				nextText = complete > 0
 					? formatSingularPlural( complete, TEXT.impactAllClearSingle, TEXT.impactAllClearPlural )
 					: TEXT.impactAllClearFallback;
+				break;
+			case 'MIXED_ATTENTION':
+				if ( counts.missing > 0 && counts.review > 0 ) {
+					nextText =
+						formatSingularPlural( counts.missing, TEXT.missingAltSingular, TEXT.missingAltPlural ) +
+						' · ' +
+						formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural );
+				}
 				break;
 			case 'MISSING_ALT':
 				if ( complete > 0 ) {
@@ -2872,6 +3006,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		if ( ! stateData || 'function' !== typeof window.bbaiApplyLoggedInDashboardStatePayload ) {
 			return false;
 		}
+		logRender( 'fallback_state', {
+			context: context || '',
+			state: stateData.state || getStateTruthState( truth ),
+			counts: getTruthCounts( truth ),
+		} );
 		cancelProcessingAnimation();
 		clearOptimisticAction();
 		window.bbaiApplyLoggedInDashboardStatePayload( stateData );
@@ -2882,9 +3021,18 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	function applyResolvedDashboardTruth( truth, context ) {
 		return fetchDashboardState( context )
 			.then( function ( stateData ) {
+				var truthState = getStateTruthState( truth );
 				if ( 'function' !== typeof window.bbaiApplyLoggedInDashboardStatePayload ) {
 					throw new Error( 'dashboard_state_applier_missing' );
 				}
+				if ( String( stateData.state || '' ).toUpperCase() !== truthState ) {
+					throw new Error( 'dashboard_state_mismatch' );
+				}
+				logRender( 'resolved_dashboard_success', {
+					context: context || '',
+					state: stateData.state || '',
+					truth_state: truthState,
+				} );
 				cancelProcessingAnimation();
 				clearOptimisticAction();
 				window.bbaiApplyLoggedInDashboardStatePayload( stateData );
@@ -2892,6 +3040,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				return truth;
 			} )
 			.catch( function ( error ) {
+				logRender( 'resolved_dashboard_failed', {
+					context: context || '',
+					state: getStateTruthState( truth ),
+					message: error && error.message ? error.message : String( error || '' ),
+				} );
 				if ( applyLocalActiveTruthState( truth, context ) ) {
 					return truth;
 				}
@@ -2987,7 +3140,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					return;
 				}
 
-				if ( dashboardPolling.currentSignature && dashboardPolling.currentSignature === nextSignature && ! dashboardPolling.requiresResolvedSync ) {
+				if ( dashboardPolling.currentSignature && dashboardPolling.currentSignature === nextSignature && ! dashboardPolling.requiresResolvedSync && ! domTruthMismatch( truth ) ) {
 					var signatureMeta = buildStatusStripMeta( pollContext, 'runPollingTick_signature_match' );
 					dashboardPolling.currentTruth = truth;
 					dashboardPolling.latestState = nextState;
@@ -3307,9 +3460,28 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		updateSummaryValueByLabel( TEXT.reviewLabel, formatCount( nextReview ), nextReview > 0 ? 'primary' : 'ok' );
 	} );
 
-	document.addEventListener( 'bbai:dashboard-approve-all-failed', function () {
-		syncStatusLineForTruth( dashboardPolling.currentTruth, buildStatusStripMeta( 'approve_all_failed', 'dashboard_approve_all' ) );
+	document.addEventListener( 'bbai:dashboard-approve-all-failed', function ( event ) {
+		var detail = event && event.detail ? event.detail : {};
+		var message = detail.message || '<?php echo esc_js( __( 'Unable to approve these images right now.', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+		showStatusLine( message, '', {
+			meta: buildStatusStripMeta( 'approve_all_failed', 'dashboard_approve_all' ),
+		} );
 	} );
+
+	window.bbaiRefreshLoggedInDashboardTruth = function ( context ) {
+		var refreshContext = context || 'approve_all';
+		return fetchStateTruth( refreshContext, {
+			logLoaded: true,
+			logFailure: true,
+		} )
+		.then( function ( truth ) {
+			var forceResolved = shouldUseResolvedDashboard( truth, dashboardPolling.currentTruth );
+			return commitTruthPayload( truth, refreshContext, forceResolved )
+				.then( function () {
+					return truth;
+				} );
+		} );
+	};
 
 	document.addEventListener( 'visibilitychange', function () {
 		var primaryCta = getPrimaryCta();

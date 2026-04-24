@@ -64,6 +64,7 @@ $bbai_surf_build_rows = static function ( array $ids, string $scope ) : array {
 switch ( $bbai_surf_state ) {
 
 	case 'MISSING_ALT':
+	case 'MIXED_ATTENTION':
 		$bbai_surf_ids = ( isset( $this ) && is_object( $this ) && method_exists( $this, 'get_missing_attachment_ids' ) )
 			? $this->get_missing_attachment_ids( 20, 0 )
 			: [];

@@ -74,6 +74,20 @@ class Auth_State {
         }
 
         $has_connected_account = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
+
+        $dashboard_truth_fixture = get_option('bbai_e2e_dashboard_state_truth_fixture', null);
+        if (is_string($dashboard_truth_fixture) && '' !== trim($dashboard_truth_fixture)) {
+            $dashboard_truth_fixture = json_decode($dashboard_truth_fixture, true);
+        }
+        if (
+            is_array($dashboard_truth_fixture)
+            && !empty($dashboard_truth_fixture['site'])
+            && is_array($dashboard_truth_fixture['site'])
+            && !empty($dashboard_truth_fixture['site']['has_connected_account'])
+        ) {
+            $has_connected_account = true;
+        }
+
         $is_anonymous_trial = !$has_connected_account;
 
         // Keep the historical meaning of "registered user" for wp-admin rendering.

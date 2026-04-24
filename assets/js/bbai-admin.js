@@ -10326,6 +10326,36 @@
         return root.replace(/\/?$/, '/') + 'bbai/v1/approve-all-alt-text';
     }
 
+    function getDashboardStateTruthEndpoint() {
+        var rootNode = document.querySelector('[data-bbai-li-state-truth-url]');
+        var url = rootNode ? String(rootNode.getAttribute('data-bbai-li-state-truth-url') || '') : '';
+        var root;
+
+        if (url) {
+            return url;
+        }
+
+        root = (
+            config.restRoot ||
+            (window.BBAI && window.BBAI.restRoot) ||
+            (window.wpApiSettings && window.wpApiSettings.root) ||
+            ''
+        );
+        root = String(root || '');
+        return root ? root.replace(/\/?$/, '/') + 'bbai/v1/dashboard/state-truth' : '';
+    }
+
+    function getDashboardResolvedStateEndpoint() {
+        var root = (
+            config.restRoot ||
+            (window.BBAI && window.BBAI.restRoot) ||
+            (window.wpApiSettings && window.wpApiSettings.root) ||
+            ''
+        );
+        root = String(root || '');
+        return root ? root.replace(/\/?$/, '/') + 'bbai/v1/dashboard' : '';
+    }
+
     function getLibraryAltClearBatchEndpoint() {
         return (config.restRoot || '') + 'bbai/v1/alt/clear';
     }
@@ -13737,6 +13767,114 @@
         return message;
     }
 
+    function logApproveAll(eventName, context) {
+        if (!window.console || typeof window.console.log !== 'function') {
+            return;
+        }
+        window.console.log('[bbai-approve-all] ' + eventName, context || {});
+    }
+
+    function ajaxApproveAllRequest(endpoint, nonce) {
+        return new Promise(function(resolve, reject) {
+            $.ajax({
+                url: endpoint,
+                method: 'POST',
+                contentType: 'application/json',
+                headers: {
+                    'X-WP-Nonce': nonce
+                },
+                data: JSON.stringify({}),
+                processData: false
+            })
+                .done(function(response) {
+                    resolve(response);
+                })
+                .fail(function(xhr) {
+                    reject(xhr);
+                });
+        });
+    }
+
+    function refreshDashboardTruthAfterApproveAll(nonce) {
+        var endpoint = getDashboardStateTruthEndpoint();
+        var resolvedEndpoint = getDashboardResolvedStateEndpoint();
+
+        if (typeof window.bbaiRefreshLoggedInDashboardTruth === 'function') {
+            return window.bbaiRefreshLoggedInDashboardTruth('approve_all_success')
+                .then(function(truth) {
+                    logApproveAll('truth_refresh', {
+                        endpoint: endpoint,
+                        state: truth && truth.state ? String(truth.state) : ''
+                    });
+                    return truth;
+                })
+                .catch(function(error) {
+                    logApproveAll('truth_refresh', {
+                        endpoint: endpoint,
+                        error: error && error.message ? error.message : String(error || '')
+                    });
+                    throw error;
+                });
+        }
+
+        if (!endpoint) {
+            return Promise.reject(new Error('state_truth_endpoint_missing'));
+        }
+
+        return fetch(endpoint, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-WP-Nonce': nonce
+            }
+        })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('state_truth ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(truthResponse) {
+                var truth = getNormalizedResponsePayload(truthResponse);
+                logApproveAll('truth_refresh', {
+                    endpoint: endpoint,
+                    state: truth && truth.state ? String(truth.state) : ''
+                });
+
+                if (!resolvedEndpoint || typeof window.bbaiApplyLoggedInDashboardStatePayload !== 'function') {
+                    return truth;
+                }
+
+                return fetch(resolvedEndpoint, {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-WP-Nonce': nonce
+                    }
+                })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('dashboard_state ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(function(stateResponse) {
+                        var statePayload = getNormalizedResponsePayload(stateResponse);
+                        if (statePayload && statePayload.state) {
+                            window.bbaiApplyLoggedInDashboardStatePayload(statePayload);
+                        }
+                        return truth;
+                    });
+            })
+            .catch(function(error) {
+                logApproveAll('truth_refresh', {
+                    endpoint: endpoint,
+                    error: error && error.message ? error.message : String(error || '')
+                });
+                throw error;
+            });
+    }
+
     function getLoggedInHeroTone(color) {
         var map = {
             blue: 'scanning',
@@ -13823,7 +13961,7 @@
         if (stateId === 'ALL_CLEAR') {
             return __('Library fully optimised', 'beepbeep-ai-alt-text-generator');
         }
-        if (stateId === 'NEEDS_REVIEW') {
+        if (stateId === 'NEEDS_REVIEW' || stateId === 'MIXED_ATTENTION') {
             return __('Open review queue', 'beepbeep-ai-alt-text-generator');
         }
         if (stateId === 'MISSING_ALT') {
@@ -13918,7 +14056,9 @@
             return;
         }
 
-        if (stateId === 'NEEDS_REVIEW') {
+        if (stateId === 'MIXED_ATTENTION') {
+            activeStep = 'mixed';
+        } else if (stateId === 'NEEDS_REVIEW') {
             activeStep = 2;
         } else if (stateId === 'ALL_CLEAR') {
             activeStep = 3;
@@ -13931,7 +14071,16 @@
         Array.prototype.forEach.call(steps, function(step, index) {
             var stepNumber = index + 1;
             removeClassesWithPrefix(step, 'bbai-li-progress-steps__step--');
-            if (activeStep <= 0) {
+            if (activeStep === 'mixed') {
+                if (stepNumber === 1) {
+                    step.classList.add('bbai-li-progress-steps__step--active');
+                } else if (stepNumber === 2) {
+                    step.classList.add('bbai-li-progress-steps__step--active');
+                    step.classList.add('bbai-li-progress-steps__step--available');
+                } else {
+                    step.classList.add('bbai-li-progress-steps__step--idle');
+                }
+            } else if (activeStep <= 0) {
                 step.classList.add('bbai-li-progress-steps__step--idle');
             } else if (stepNumber < activeStep) {
                 step.classList.add('bbai-li-progress-steps__step--done');
@@ -14070,7 +14219,7 @@
         var primary = heroData.primary_cta || null;
         var secondary = heroData.secondary_cta || null;
         var clickable = (
-            (stateId === 'MISSING_ALT' && primary && primary.label) ||
+            ((stateId === 'MISSING_ALT' || stateId === 'MIXED_ATTENTION') && primary && primary.label) ||
             stateId === 'NEEDS_REVIEW' ||
             (stateId === 'PROCESSING' && primary && primary.label)
         );
@@ -14123,7 +14272,7 @@
     }
 
     function clearLoggedInReviewSurface(stateId) {
-        if (stateId === 'NEEDS_REVIEW') {
+        if (stateId === 'NEEDS_REVIEW' || stateId === 'MIXED_ATTENTION') {
             return;
         }
 
@@ -14292,18 +14441,13 @@
             __('Approving...', 'beepbeep-ai-alt-text-generator')
         );
         dispatchLoggedInDashboardEvent('bbai:dashboard-approve-all-pending', {});
+        logApproveAll('request_start', {
+            endpoint: endpoint,
+            payload: {}
+        });
 
-        $.ajax({
-            url: endpoint,
-            method: 'POST',
-            contentType: 'application/json',
-            headers: {
-                'X-WP-Nonce': nonce
-            },
-            data: JSON.stringify({}),
-            processData: false
-        })
-            .done(function(response) {
+        ajaxApproveAllRequest(endpoint, nonce)
+            .then(function(response) {
                 var payload = getNormalizedResponsePayload(response);
                 var approvedIds = Array.isArray(payload && payload.approved_ids) ? payload.approved_ids : [];
                 var approvedCount = Math.max(0, parseInt(payload && payload.approved_count, 10) || approvedIds.length || 0);
@@ -14312,14 +14456,17 @@
                     ? payload.dashboard_state
                     : null;
 
-                if (typeof restoreBusyState === 'function') {
-                    restoreBusyState();
-                    restoreBusyState = null;
-                }
-
                 if (statsPayload) {
                     applyDashboardCoveragePayload(statsPayload);
                 }
+
+                logApproveAll('response_success', {
+                    endpoint: endpoint,
+                    approved_count: approvedCount,
+                    approved_ids: approvedIds,
+                    has_dashboard_state: !!dashboardState,
+                    response_shape: payload ? Object.keys(payload) : []
+                });
 
                 dispatchLoggedInDashboardEvent('bbai:dashboard-approve-all-success', {
                     approvedCount: approvedCount,
@@ -14346,18 +14493,35 @@
                         )
                         : __('No images needed approval.', 'beepbeep-ai-alt-text-generator')
                 );
+
+                return refreshDashboardTruthAfterApproveAll(nonce);
             })
-            .fail(function(xhr) {
-                dispatchLoggedInDashboardEvent('bbai:dashboard-approve-all-failed', {
-                    message: getApproveAllErrorMessage(xhr)
+            .catch(function(xhr) {
+                var message = xhr && xhr.message && !xhr.responseJSON
+                    ? xhr.message
+                    : getApproveAllErrorMessage(xhr);
+                logApproveAll('response_error', {
+                    endpoint: endpoint,
+                    message: message,
+                    status: xhr && xhr.status ? xhr.status : 0,
+                    response: xhr && xhr.responseJSON ? xhr.responseJSON : null
                 });
-                notifyApproveAllFeedback('error', getApproveAllErrorMessage(xhr));
+                dispatchLoggedInDashboardEvent('bbai:dashboard-approve-all-failed', {
+                    message: message
+                });
+                notifyApproveAllFeedback('error', message);
             })
-            .always(function() {
+            .then(function() {
                 bbaiDashboardApproveAllInFlight = false;
                 if (typeof restoreBusyState === 'function') {
                     restoreBusyState();
                 }
+            }, function(error) {
+                bbaiDashboardApproveAllInFlight = false;
+                if (typeof restoreBusyState === 'function') {
+                    restoreBusyState();
+                }
+                throw error;
             });
 
         return false;

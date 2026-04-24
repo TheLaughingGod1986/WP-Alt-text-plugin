@@ -30,6 +30,7 @@ class Logged_In_Dashboard_Resolver {
 	const STATE_PROCESSING      = 'PROCESSING';
 	const STATE_ERROR           = 'ERROR';
 	const STATE_QUOTA_EXHAUSTED = 'QUOTA_EXHAUSTED';
+	const STATE_MIXED_ATTENTION = 'MIXED_ATTENTION';
 	const STATE_NEEDS_REVIEW    = 'NEEDS_REVIEW';
 	const STATE_MISSING_ALT     = 'MISSING_ALT';
 	const STATE_ALL_CLEAR       = 'ALL_CLEAR';
@@ -78,8 +79,8 @@ class Logged_In_Dashboard_Resolver {
 	/**
 	 * Resolve the dashboard UI from a normalized backend state-truth payload.
 	 *
-	 * Unlike resolve(), this path does not recompute the state from local
-	 * counts/job heuristics. The backend `state` field remains authoritative.
+	 * Like resolve(), this path recomputes the canonical state from normalized
+	 * counts/job/credits so stale backend labels cannot hide higher-priority work.
 	 *
 	 * @param array<string,mixed> $truth Raw backend truth payload.
 	 * @param array<string,mixed> $plan  Plan context: is_pro (bool), plan_slug (string), user_type (string).
@@ -114,10 +115,16 @@ class Logged_In_Dashboard_Resolver {
 			$truth['last_run_at'],
 			$plan
 		);
-		$state = self::normalize_state_truth_state( (string) ( $truth['state'] ?? '' ) );
-		if ( '' === $state ) {
-			$state = self::compute_state_id( $ctx );
-		}
+		$backend_state = self::normalize_state_truth_state( (string) ( $truth['state'] ?? '' ) );
+		$state         = self::compute_state_id( $ctx );
+
+		error_log(
+			'[bbai-state-priority] raw_counts=' . wp_json_encode( $truth['counts'] ?? [] ) .
+			' normalized_counts=' . wp_json_encode( $ctx['counts'] ) .
+			' backend_state=' . $backend_state .
+			' selected_state=' . $state .
+			' primary_cta=' . ( self::STATE_MIXED_ATTENTION === $state ? 'Generate missing ALT text' : ( self::STATE_NEEDS_REVIEW === $state ? 'Approve all' : 'varies' ) )
+		);
 
 		return [
 			'state'         => $state,
@@ -231,6 +238,7 @@ class Logged_In_Dashboard_Resolver {
 			self::STATE_PROCESSING,
 			self::STATE_ERROR,
 			self::STATE_QUOTA_EXHAUSTED,
+			self::STATE_MIXED_ATTENTION,
 			self::STATE_NEEDS_REVIEW,
 			self::STATE_MISSING_ALT,
 			self::STATE_ALL_CLEAR,
@@ -381,9 +389,9 @@ class Logged_In_Dashboard_Resolver {
 			return self::STATE_QUOTA_EXHAUSTED;
 		}
 
-		// 5. All generated but review items outstanding.
-		if ( $counts['missing'] === 0 && $counts['review'] > 0 ) {
-			return self::STATE_NEEDS_REVIEW;
+		// 5. Mixed attention: missing ALT must not be hidden by review work.
+		if ( $counts['missing'] > 0 && $counts['review'] > 0 ) {
+			return self::STATE_MIXED_ATTENTION;
 		}
 
 		// 6. Work to generate.
@@ -391,12 +399,17 @@ class Logged_In_Dashboard_Resolver {
 			return self::STATE_MISSING_ALT;
 		}
 
-		// 7. Failed items with nothing else to do — recovery state.
+		// 7. All generated but review items outstanding.
+		if ( $counts['review'] > 0 ) {
+			return self::STATE_NEEDS_REVIEW;
+		}
+
+		// 8. Failed items with nothing else to do — recovery state.
 		if ( $counts['failed'] > 0 ) {
 			return self::STATE_ERROR;
 		}
 
-		// 8. Everything done.
+		// 9. Everything done.
 		return self::STATE_ALL_CLEAR;
 	}
 
@@ -683,6 +696,45 @@ class Logged_In_Dashboard_Resolver {
 						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'admin.php?page=bbai-library' ),
+					],
+					'summary'       => $summary,
+				];
+
+			case self::STATE_MIXED_ATTENTION:
+				$mixed_review_href = function_exists( 'bbai_alt_library_needs_review_url' )
+					? \bbai_alt_library_needs_review_url()
+					: add_query_arg(
+						[
+							'page'   => 'bbai-library',
+							'status' => 'needs_review',
+							'filter' => 'needs_review',
+						],
+						admin_url( 'admin.php' )
+					) . '#bbai-review-filter-tabs';
+
+				return [
+					'badge'         => [ 'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'amber' ],
+					'headline'      => sprintf(
+						/* translators: 1: missing ALT count, 2: review count */
+						__( '%1$s images need ALT text, %2$s ready for review', 'beepbeep-ai-alt-text-generator' ),
+						number_format_i18n( $missing ),
+						number_format_i18n( $review )
+					),
+					'support'       => __( 'Generate missing ALT text first, then review the suggested descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ),
+					'variant'       => 'default',
+					'primary_cta'   => [
+						'label'       => __( 'Generate missing ALT text', 'beepbeep-ai-alt-text-generator' ),
+						'busy_label'  => __( 'Starting…', 'beepbeep-ai-alt-text-generator' ),
+						'action'      => 'generate-missing',
+					],
+					'secondary_cta' => [
+						'label'  => sprintf(
+							/* translators: %s: review count */
+							_n( 'Review %s image', 'Review %s images', $review, 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $review )
+						),
+						'action' => 'navigate',
+						'href'   => $mixed_review_href,
 					],
 					'summary'       => $summary,
 				];
@@ -1048,6 +1100,27 @@ class Logged_In_Dashboard_Resolver {
 					'semantic_state' => 'quota_exhausted',
 				] );
 
+			// ── MIXED_ATTENTION ──────────────────────────────────────────────
+			case self::STATE_MIXED_ATTENTION:
+				if ( self::CTX_DASHBOARD === $page_context ) {
+					return [];
+				}
+
+				$mixed_body = sprintf(
+					/* translators: 1: missing ALT count, 2: review count */
+					__( '%1$s images need ALT text and %2$s are ready for review. Generate missing ALT text first, then review the prepared suggestions.', 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $missing ),
+					number_format_i18n( $review )
+				);
+
+				return array_merge( $base, [
+					'title'          => __( 'Your library needs attention', 'beepbeep-ai-alt-text-generator' ),
+					'body'           => $mixed_body,
+					'tone'           => 'attention',
+					'banner_variant' => 'warning',
+					'semantic_state' => 'mixed_attention',
+				] );
+
 			// ── NEEDS_REVIEW ─────────────────────────────────────────────────
 			case self::STATE_NEEDS_REVIEW:
 				// Dashboard: hero owns the full action surface — suppress the banner
@@ -1386,6 +1459,22 @@ class Logged_In_Dashboard_Resolver {
 					'segments'         => $segments,
 				];
 
+			case self::STATE_MIXED_ATTENTION:
+				return [
+					'pct'              => $pct,
+					'color'            => 'amber',
+					'animated'         => false,
+					'center_label'     => number_format_i18n( $missing ),
+					'center_sub_label' => _n( 'missing ALT', 'missing ALT', $missing, 'beepbeep-ai-alt-text-generator' ),
+					'aria_label'       => sprintf(
+						/* translators: 1: missing ALT count, 2: review count */
+						__( '%1$s images need ALT text; %2$s are ready for review', 'beepbeep-ai-alt-text-generator' ),
+						number_format_i18n( $missing ),
+						number_format_i18n( $review )
+					),
+					'segments'         => $segments,
+				];
+
 			case self::STATE_NEEDS_REVIEW:
 				return [
 					'pct'              => $pct,
@@ -1671,6 +1760,17 @@ class Logged_In_Dashboard_Resolver {
 						'plans'           => [],  // populated by client from /plans
 						'billing_url'     => '',  // populated by client
 						'queued_count'    => (int) ( $ctx['counts']['missing'] ?? 0 ),
+					],
+				];
+
+			case self::STATE_MIXED_ATTENTION:
+				return [
+					'component' => 'MissingAltTable',
+					'props'     => [
+						'items'        => [],     // populated by client from /list?scope=missing
+						'pagination'   => [ 'page' => 1, 'per_page' => 20 ],
+						'filters'      => [ 'missing', 'needs_review' ],
+						'bulk_actions' => [ 'generate_selected', 'generate_all' ],
 					],
 				];
 
