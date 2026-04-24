@@ -1118,4 +1118,72 @@ test.describe('Dashboard truth-driven UI', () => {
     );
     await expect(hero).toHaveAttribute('data-bbai-li-state', 'MISSING_ALT');
   });
+
+  test('mixed: missing=4 and to_review=19 renders MIXED_ATTENTION with correct headline and CTAs', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'NEEDS_REVIEW', // backend sends wrong state — missing > 0 must win
+      counts: { missing: 4, to_review: 19, complete: 38, failed: 0, total: 61 } as any,
+      credits: { used: 30, total: 100, remaining: 70, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+    await openDashboard(page);
+
+    const hero = page.locator('[data-bbai-li-hero]');
+
+    // 1. State is MIXED_ATTENTION
+    await expectHeroState(page, 'MIXED_ATTENTION');
+
+    // 2. Headline contains both counts
+    await expect(hero.locator('[data-bbai-li-hero-headline]')).toContainText('4');
+    await expect(hero.locator('[data-bbai-li-hero-headline]')).toContainText('19');
+
+    // 3. Primary CTA is "Generate missing ALT text"
+    await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Generate missing ALT text');
+
+    // 4. Secondary CTA contains "Review 19"
+    await expect(page.locator('[data-bbai-li-secondary-cta]')).toContainText('Review 19');
+
+    // 5. Approve all is NOT the primary CTA
+    await expect(page.locator('[data-bbai-li-primary-cta]')).not.toContainText('Approve all');
+
+    // 6. Activity strip shows both counts
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('4');
+    await expect(page.locator('.bbai-li-activity-strip')).toContainText('19');
+    await expect(page.locator('.bbai-li-activity-strip')).not.toContainText('ready for review\n');
+  });
+
+  test('mixed: polling keeps MIXED_ATTENTION and does not flip to NEEDS_REVIEW', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'NEEDS_REVIEW', // backend sends wrong state
+      counts: { missing: 4, to_review: 19, complete: 38, failed: 0, total: 61 } as any,
+      credits: { used: 30, total: 100, remaining: 70, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+    await openDashboard(page);
+
+    await expectHeroState(page, 'MIXED_ATTENTION');
+
+    // Wait for at least one polling cycle
+    await page.waitForTimeout(3000);
+
+    // State must remain MIXED_ATTENTION — not flipped to NEEDS_REVIEW
+    await expectHeroState(page, 'MIXED_ATTENTION');
+    await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Generate missing ALT text');
+    await expect(page.locator('[data-bbai-li-primary-cta]')).not.toContainText('Approve all');
+
+    // Reload must also stay MIXED_ATTENTION
+    await page.reload({ waitUntil: 'networkidle' });
+    await expectHeroState(page, 'MIXED_ATTENTION');
+    await expect(page.locator('[data-bbai-li-primary-cta]')).toContainText('Generate missing ALT text');
+  });
 });
