@@ -10,9 +10,24 @@ import { forceLoggedOut } from './utils/auth';
  * can deterministically place the UI in each of the three hero states.
  *
  * States under test:
- *   trial_available  — no trial usage, free CTA visible
- *   trial_complete   — any usage recorded, conversion panel visible, free CTA absent
- *   logged_in        — authenticated user, logged-out panel never rendered
+ *   trial_available  — no trial usage, dashboard hero in not-scanned state
+ *   trial_exhausted  — used >= limit, approved dashboard hero in exhausted state
+ *   logged_in        — authenticated user, full dashboard (not trial-exhausted hero)
+ *
+ * Approved UI contract (exhausted state):
+ *   - .bbai-funnel-hero visible with class bbai-funnel-hero--trial-exhausted
+ *   - headline: "You've used all N free generations"
+ *   - context: "You're N images away from full optimisation"
+ *   - CTA: "Fix your N remaining images"
+ *   - secondary: "Already have an account? Sign in"
+ *   - support: "No credit card required"
+ *   - .bbai-dashboard-locked-preview-stack visible
+ *   - overlay headline: "Unlock your full ALT library"
+ *   - overlay body: "Create a free account to keep fixing…unlock 50 generations per month"
+ *   - benefits: "Review and edit ALT text", "Bulk optimise your media library", "50 generations per month"
+ *   - NO "Your free trial is almost used"
+ *   - NO "See the difference"
+ *   - NO "Golden retriever running through green field"
  */
 
 // WP redirects back to its own siteurl (localhost:8888), so always normalise
@@ -158,163 +173,55 @@ test.describe('Hero / onboarding state machine', () => {
     });
 
     // -----------------------------------------------------------------------
-    // STATE: trial_available
+    // STATE: trial_available — no trial usage, dashboard hero in not-scanned state
     // -----------------------------------------------------------------------
     test.describe('trial_available — no trial usage', () => {
       test.beforeEach(async () => {
         setTrialUsed(0);
       });
 
-      test('data-hero-state is trial_available', async ({ page }) => {
+      test('dashboard hero section is visible', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        const root = page.locator('.bbai-logged-out');
-        await expect(root).toBeVisible();
-        await expect(root).toHaveAttribute('data-hero-state', 'trial_available');
+        const hero = page.locator('.bbai-funnel-hero');
+        await expect(hero).toBeVisible();
       });
 
-      test('trial panel is visible', async ({ page }) => {
+      test('hero is NOT in trial-exhausted mode', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        const trialPanel = page.locator('#bbai-ftue-panel-trial');
-        await expect(trialPanel).toBeVisible();
+        const exhaustedHero = page.locator('.bbai-funnel-hero--trial-exhausted');
+        await expect(exhaustedHero).toHaveCount(0);
       });
 
-      test('conversion panel is hidden', async ({ page }) => {
+      test('does NOT show "Your free trial is almost used"', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        const conversionPanel = page.locator('#bbai-ftue-panel-conversion');
-        await expect(conversionPanel).toBeHidden();
+        await expect(page.locator('body')).not.toContainText('Your free trial is almost used');
       });
 
-      test('"Generate alt text for N images (free)" button is rendered and visible', async ({ page }) => {
-        const limit = getTrialLimit();
+      test('does NOT show "See the difference"', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        const btn = page.locator('#bbai-trial-generate-btn');
-        await expect(btn).toBeVisible();
-        await expect(btn).toContainText(`Generate alt text for ${limit} image`);
+        await expect(page.locator('body')).not.toContainText('See the difference');
       });
 
-      test('conversion CTAs are not in the DOM', async ({ page }) => {
+      test('does NOT show "Golden retriever running through green field"', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        // Conversion panel hidden — its children should not be interactable.
-        const registerBtn = page.locator('#bbai-conversion-register-btn');
-        await expect(registerBtn).toBeHidden();
-        const loginBtn = page.locator('#bbai-conversion-login-btn');
-        await expect(loginBtn).toBeHidden();
-      });
-
-      test('preview / before-after section is visible', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const preview = page.locator('.bbai-ftue-preview');
-        await expect(preview).toBeVisible();
+        await expect(page.locator('body')).not.toContainText('Golden retriever running through green field');
       });
     });
 
     // -----------------------------------------------------------------------
-    // STATE: trial_complete (via used count > 0)
+    // STATE: trial_exhausted — used >= limit, approved dashboard hero
     // -----------------------------------------------------------------------
-    test.describe('trial_complete — trial usage recorded', () => {
-      test.beforeEach(async () => {
-        setTrialUsed(3);
-      });
-
-      test.afterEach(async () => {
-        setTrialUsed(0);
-      });
-
-      test('data-hero-state is trial_complete', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const root = page.locator('.bbai-logged-out');
-        await expect(root).toBeVisible();
-        await expect(root).toHaveAttribute('data-hero-state', 'trial_complete');
-      });
-
-      test('trial panel is hidden', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const trialPanel = page.locator('#bbai-ftue-panel-trial');
-        await expect(trialPanel).toBeHidden();
-      });
-
-      test('conversion panel is visible', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const conversionPanel = page.locator('#bbai-ftue-panel-conversion');
-        await expect(conversionPanel).toBeVisible();
-      });
-
-      test('"Generate alt text for 3 images (free)" button is NOT in the DOM', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        // PHP gates this button — it must not exist in the DOM at all.
-        const btn = page.locator('#bbai-trial-generate-btn');
-        await expect(btn).toHaveCount(0);
-      });
-
-      test('"Create free account" CTA is visible', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const registerBtn = page.locator('#bbai-conversion-register-btn');
-        await expect(registerBtn).toBeVisible();
-        await expect(registerBtn).toContainText('Create free account');
-      });
-
-      test('"Already have an account? Log in" link is visible', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const loginBtn = page.locator('#bbai-conversion-login-btn');
-        await expect(loginBtn).toBeVisible();
-        await expect(loginBtn).toContainText('Already have an account');
-      });
-
-      test('conversion panel headline mentions first alt text', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const headline = page.locator('#bbai-logged-out-title-conversion');
-        await expect(headline).toBeVisible();
-        await expect(headline).toContainText('generated your first alt text');
-      });
-
-      test('preview / before-after section remains visible', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const preview = page.locator('.bbai-ftue-preview');
-        await expect(preview).toBeVisible();
-      });
-
-      test('"Generate 7 more (free trial)" button is NOT in the DOM', async ({ page }) => {
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        // PHP gates this button — must not exist in trial_complete state.
-        const moreBtn = page.locator('#bbai-demo-generate-more-btn');
-        await expect(moreBtn).toHaveCount(0);
-      });
-    });
-
-    // -----------------------------------------------------------------------
-    // STATE: trial_complete (via exhausted — used >= limit)
-    // -----------------------------------------------------------------------
-    test.describe('trial_complete — quota exhausted (used = limit)', () => {
+    test.describe('trial_exhausted — quota exhausted (used >= limit)', () => {
       test.beforeEach(async () => {
         setTrialUsed(getTrialLimit() + 5); // exceed limit regardless of configured value
       });
@@ -323,74 +230,140 @@ test.describe('Hero / onboarding state machine', () => {
         setTrialUsed(0);
       });
 
-      test('data-hero-state is trial_complete when quota exhausted', async ({ page }) => {
+      test('dashboard hero is visible in exhausted mode', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        const root = page.locator('.bbai-logged-out');
-        await expect(root).toBeVisible();
-        await expect(root).toHaveAttribute('data-hero-state', 'trial_complete');
+        const exhaustedHero = page.locator('.bbai-funnel-hero--trial-exhausted');
+        await expect(exhaustedHero).toBeVisible();
       });
 
-      test('"Generate alt text for 3 images (free)" button absent when exhausted', async ({ page }) => {
+      test('headline contains "You\'ve used all" and "free generations"', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        const btn = page.locator('#bbai-trial-generate-btn');
-        await expect(btn).toHaveCount(0);
-      });
-    });
-
-    // -----------------------------------------------------------------------
-    // Mutual exclusivity — only one hero panel renders at a time
-    // -----------------------------------------------------------------------
-    test.describe('mutual exclusivity', () => {
-      test('trial_available: exactly one panel is visible', async ({ page }) => {
-        setTrialUsed(0);
-        await loginAsAdmin(page);
-        await page.goto(`${BASE}${DASHBOARD_PATH}`);
-
-        const visiblePanels = await page.locator(
-          '#bbai-ftue-panel-trial:visible, #bbai-ftue-panel-conversion:visible'
-        ).count();
-        expect(visiblePanels).toBe(1);
+        const title = page.locator('[data-bbai-funnel-hero-title]');
+        await expect(title).toBeVisible();
+        await expect(title).toContainText("You've used all");
+        await expect(title).toContainText('free generations');
       });
 
-      test('trial_complete: exactly one panel is visible', async ({ page }) => {
-        setTrialUsed(3);
+      test('primary CTA says "Fix your N remaining images"', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-        const visiblePanels = await page.locator(
-          '#bbai-ftue-panel-trial:visible, #bbai-ftue-panel-conversion:visible'
-        ).count();
-        expect(visiblePanels).toBe(1);
+        const primaryCta = page.locator('.bbai-dashboard-hero-action__cta--primary');
+        await expect(primaryCta).toBeVisible();
+        await expect(primaryCta).toContainText('Fix your');
+        await expect(primaryCta).toContainText('remaining images');
+      });
 
-        setTrialUsed(0);
+      test('secondary CTA says "Already have an account? Sign in"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const secondaryCta = page.locator('.bbai-dashboard-hero-action__cta--secondary');
+        await expect(secondaryCta).toBeVisible();
+        await expect(secondaryCta).toContainText('Already have an account');
+        await expect(secondaryCta).toContainText('Sign in');
+      });
+
+      test('support line shows "No credit card required"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const support = page.locator('[data-bbai-funnel-hero-support]');
+        await expect(support).toBeVisible();
+        await expect(support).toContainText('No credit card required');
+      });
+
+      test('locked library section is visible', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const lockedPreview = page.locator('.bbai-dashboard-locked-preview-stack');
+        await expect(lockedPreview).toBeVisible();
+      });
+
+      test('locked overlay headline shows "Unlock your full ALT library"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const overlayTitle = page.locator('.bbai-dashboard-locked-preview__overlay-title');
+        await expect(overlayTitle).toBeVisible();
+        await expect(overlayTitle).toContainText('Unlock your full ALT library');
+      });
+
+      test('overlay body mentions "50 generations per month"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const overlayBody = page.locator('.bbai-dashboard-locked-preview__overlay-copy');
+        await expect(overlayBody).toBeVisible();
+        await expect(overlayBody).toContainText('50 generations per month');
+      });
+
+      test('benefits list shows all three items', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const benefits = page.locator('.bbai-dashboard-locked-preview__benefits');
+        await expect(benefits).toBeVisible();
+        await expect(benefits).toContainText('Review and edit ALT text');
+        await expect(benefits).toContainText('Bulk optimise your media library');
+        await expect(benefits).toContainText('50 generations per month');
+      });
+
+      test('does NOT show "Your free trial is almost used"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        await expect(page.locator('body')).not.toContainText('Your free trial is almost used');
+      });
+
+      test('does NOT show "See the difference"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        await expect(page.locator('body')).not.toContainText('See the difference');
+      });
+
+      test('does NOT show "Golden retriever running through green field"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        await expect(page.locator('body')).not.toContainText('Golden retriever running through green field');
       });
     });
   });
 
   // -----------------------------------------------------------------------
-  // STATE: logged_in — authenticated user sees the dashboard, not logged-out view
+  // STATE: logged_in — authenticated user sees the full dashboard
   // -----------------------------------------------------------------------
   test.describe('logged_in — authenticated user', () => {
-    test('bbai-logged-out panel is absent when user has active auth token', async ({ page }) => {
-      // Auth tokens are present (default env state), so dashboard routes to
-      // the authenticated view — the logged-out root element must not exist.
+    test('hero is NOT in trial-exhausted mode for authenticated users', async ({ page }) => {
+      // Auth tokens are present (default env state) so the user is connected.
       await loginAsAdmin(page);
       await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-      const loggedOutRoot = page.locator('.bbai-logged-out');
-      await expect(loggedOutRoot).toHaveCount(0);
+      const exhaustedHero = page.locator('.bbai-funnel-hero--trial-exhausted');
+      await expect(exhaustedHero).toHaveCount(0);
     });
 
-    test('"Generate alt text for 3 images (free)" button is absent for authenticated users', async ({ page }) => {
+    test('locked library preview is absent for authenticated users', async ({ page }) => {
       await loginAsAdmin(page);
       await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
-      const btn = page.locator('#bbai-trial-generate-btn');
-      await expect(btn).toHaveCount(0);
+      // dashboard-trial-locked-preview.php guards itself: returns if has_connected_account.
+      const lockedPreview = page.locator('.bbai-dashboard-locked-preview-stack');
+      await expect(lockedPreview).toHaveCount(0);
+    });
+
+    test('does NOT show "Your free trial is almost used" banner', async ({ page }) => {
+      await loginAsAdmin(page);
+      await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+      await expect(page.locator('body')).not.toContainText('Your free trial is almost used');
     });
   });
 });

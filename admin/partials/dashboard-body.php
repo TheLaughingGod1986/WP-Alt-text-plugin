@@ -194,6 +194,13 @@ $bbai_has_license = (bool) ($bbai_has_license ?? false);
 $bbai_has_registered_user = (bool) ($bbai_has_registered_user ?? false);
 $bbai_has_connected_account = (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user);
 $bbai_has_no_saas_account     = ! $bbai_has_connected_account;
+
+// Constant override: forces the clean FTUE view regardless of all other flags.
+if ( defined( 'BBAI_FORCE_CLEAN_LOGGED_OUT' ) && BBAI_FORCE_CLEAN_LOGGED_OUT ) {
+    require plugin_dir_path( __FILE__ ) . 'dashboard-logged-out.php';
+    return;
+}
+
 // Guest shell: no connected SaaS account. Do not trust is_anonymous_trial alone — if it is false while
 // has_connected_account is false (stale flags), skipping the block below renders an empty dashboard.
 $bbai_is_guest_trial = ! empty( $bbai_is_anonymous_trial ) || $bbai_has_no_saas_account;
@@ -1067,7 +1074,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         }
 
         $bbai_before_after_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/before-after-showcase.php';
-        if ( $bbai_show_before_after && is_readable( $bbai_before_after_partial ) ) {
+        if ( apply_filters( 'bbai_show_logged_out_marketing_showcase', false ) && $bbai_show_before_after && is_readable( $bbai_before_after_partial ) ) {
             include $bbai_before_after_partial;
         }
 
