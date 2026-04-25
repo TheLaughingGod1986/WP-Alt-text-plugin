@@ -211,12 +211,13 @@ test.describe('Hero / onboarding state machine', () => {
         await expect(loginBtn).toBeHidden();
       });
 
-      test('preview / before-after section is visible', async ({ page }) => {
+      test('marketing showcase is hidden by default (filter-gated)', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
+        // bbai_show_logged_out_marketing_showcase defaults to false — element absent from DOM.
         const preview = page.locator('.bbai-ftue-preview');
-        await expect(preview).toBeVisible();
+        await expect(preview).toHaveCount(0);
       });
     });
 
@@ -293,12 +294,13 @@ test.describe('Hero / onboarding state machine', () => {
         await expect(headline).toContainText('generated your first alt text');
       });
 
-      test('preview / before-after section remains visible', async ({ page }) => {
+      test('marketing showcase is hidden by default (filter-gated)', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
+        // bbai_show_logged_out_marketing_showcase defaults to false — element absent from DOM.
         const preview = page.locator('.bbai-ftue-preview');
-        await expect(preview).toBeVisible();
+        await expect(preview).toHaveCount(0);
       });
 
       test('"Generate 7 more (free trial)" button is NOT in the DOM', async ({ page }) => {
@@ -338,6 +340,140 @@ test.describe('Hero / onboarding state machine', () => {
 
         const btn = page.locator('#bbai-trial-generate-btn');
         await expect(btn).toHaveCount(0);
+      });
+    });
+
+    // -----------------------------------------------------------------------
+    // STATE: trial_exhausted — approved dashboard hero design
+    // -----------------------------------------------------------------------
+    test.describe('trial_exhausted — all generations used', () => {
+      test.beforeEach(async () => {
+        setTrialUsed(getTrialLimit() + 5);
+      });
+
+      test.afterEach(async () => {
+        setTrialUsed(0);
+      });
+
+      test('data-hero-state is trial_complete', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const root = page.locator('.bbai-logged-out');
+        await expect(root).toBeVisible();
+        await expect(root).toHaveAttribute('data-hero-state', 'trial_complete');
+      });
+
+      test('exhausted panel is visible', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const exhaustedPanel = page.locator('#bbai-ftue-panel-exhausted');
+        await expect(exhaustedPanel).toBeVisible();
+      });
+
+      test('trial panel is hidden', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const trialPanel = page.locator('#bbai-ftue-panel-trial');
+        await expect(trialPanel).toBeHidden();
+      });
+
+      test('conversion panel is hidden', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const conversionPanel = page.locator('#bbai-ftue-panel-conversion');
+        await expect(conversionPanel).toBeHidden();
+      });
+
+      test('approved headline: "You\'ve used all N free generations"', async ({ page }) => {
+        const limit = getTrialLimit();
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const title = page.locator('#bbai-lo-exhausted-title');
+        await expect(title).toBeVisible();
+        await expect(title).toContainText(`You've used all ${limit} free generations`);
+      });
+
+      test('support text: "Continue fixing your remaining images and unlock full access."', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const panel = page.locator('#bbai-ftue-panel-exhausted');
+        await expect(panel).toContainText('Continue fixing your remaining images and unlock full access.');
+      });
+
+      test('"No credit card required" microcopy is visible', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const panel = page.locator('#bbai-ftue-panel-exhausted');
+        await expect(panel).toContainText('No credit card required');
+      });
+
+      test('"Already have an account?" sign-in link is visible', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const panel = page.locator('#bbai-ftue-panel-exhausted');
+        await expect(panel).toContainText('Already have an account?');
+      });
+
+      test('locked library upsell is present: "Unlock your full ALT library"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const lockedPreview = page.locator('[data-bbai-trial-locked-preview]');
+        await expect(lockedPreview).toBeVisible();
+        await expect(lockedPreview).toContainText('Unlock your full ALT library');
+      });
+
+      test('locked library lists benefit: "50 generations per month"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const lockedPreview = page.locator('[data-bbai-trial-locked-preview]');
+        await expect(lockedPreview).toContainText('50 generations per month');
+      });
+
+      test('locked library lists benefit: "Review and edit ALT text"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const lockedPreview = page.locator('[data-bbai-trial-locked-preview]');
+        await expect(lockedPreview).toContainText('Review and edit ALT text');
+      });
+
+      test('locked library lists benefit: "Bulk optimise your media library"', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        const lockedPreview = page.locator('[data-bbai-trial-locked-preview]');
+        await expect(lockedPreview).toContainText('Bulk optimise your media library');
+      });
+
+      test('old copy "Your free trial is almost used" is absent', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        await expect(page.locator('body')).not.toContainText('Your free trial is almost used');
+      });
+
+      test('"See the difference" marketing section is absent', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        await expect(page.locator('body')).not.toContainText('See the difference');
+      });
+
+      test('"Golden retriever" placeholder copy is absent', async ({ page }) => {
+        await loginAsAdmin(page);
+        await page.goto(`${BASE}${DASHBOARD_PATH}`);
+
+        await expect(page.locator('body')).not.toContainText('Golden retriever');
       });
     });
 
