@@ -127,20 +127,5 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
             </p>
         </section>
 
-        <?php /* --- Before/after preview (always visible) ----------------- */ ?>
-        <section class="bbai-ftue-preview" aria-labelledby="bbai-preview-title">
-            <h2 id="bbai-preview-title" class="bbai-ftue-preview__title">
-                <?php esc_html_e( 'See the difference', 'beepbeep-ai-alt-text-generator' ); ?>
-            </h2>
-            <div class="bbai-ftue-preview__cols">
-                <p class="bbai-ftue-preview__line bbai-ftue-preview__line--before">
-                    <?php esc_html_e( 'Before: image without alt text (invisible to screen readers and search engines)', 'beepbeep-ai-alt-text-generator' ); ?>
-                </p>
-                <p class="bbai-ftue-preview__line bbai-ftue-preview__line--after">
-                    <?php esc_html_e( 'After: descriptive alt text generated automatically', 'beepbeep-ai-alt-text-generator' ); ?>
-                </p>
-            </div>
-        </section>
-
     </div><!-- .bbai-logged-out__container -->
 </div><!-- .bbai-logged-out -->

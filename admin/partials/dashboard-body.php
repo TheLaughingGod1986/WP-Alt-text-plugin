@@ -194,6 +194,20 @@ $bbai_has_license = (bool) ($bbai_has_license ?? false);
 $bbai_has_registered_user = (bool) ($bbai_has_registered_user ?? false);
 $bbai_has_connected_account = (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user);
 $bbai_has_no_saas_account     = ! $bbai_has_connected_account;
+
+// Constant override: forces the clean logged-out view regardless of all other flags.
+if ( defined( 'BBAI_FORCE_CLEAN_LOGGED_OUT' ) && BBAI_FORCE_CLEAN_LOGGED_OUT ) {
+    require plugin_dir_path( __FILE__ ) . 'dashboard-logged-out.php';
+    return;
+}
+
+// No connected account: hand off to the clean logged-out dashboard instead of
+// rendering the funnel hero / marketing sections inside dashboard-body.
+if ( ! $bbai_has_connected_account ) {
+    require plugin_dir_path( __FILE__ ) . 'dashboard-logged-out.php';
+    return;
+}
+
 // Guest shell: no connected SaaS account. Do not trust is_anonymous_trial alone — if it is false while
 // has_connected_account is false (stale flags), skipping the block below renders an empty dashboard.
 $bbai_is_guest_trial = ! empty( $bbai_is_anonymous_trial ) || $bbai_has_no_saas_account;
