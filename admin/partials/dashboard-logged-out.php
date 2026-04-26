@@ -299,7 +299,7 @@ if ( $bbai_lo_total_images > 0 ) {
                                 <span class="bbai-filter-group__label"><?php esc_html_e( 'Missing', 'beepbeep-ai-alt-text-generator' ); ?></span>
                                 <span class="bbai-filter-group__count"><?php echo esc_html( number_format_i18n( $bbai_lo_missing_count ) ); ?></span>
                             </span>
-                            <span class="bbai-filter-group__item bbai-filter-group__item--readonly bbai-filter-group__item--status-review">
+                            <span class="bbai-filter-group__item bbai-filter-group__item--readonly bbai-filter-group__item--status-weak">
                                 <span class="bbai-filter-group__status-dot" aria-hidden="true"></span>
                                 <span class="bbai-filter-group__label"><?php esc_html_e( 'Needs review', 'beepbeep-ai-alt-text-generator' ); ?></span>
                                 <span class="bbai-filter-group__count"><?php echo esc_html( number_format_i18n( $bbai_lo_needs_review_count ) ); ?></span>
