@@ -33,8 +33,12 @@ $bbai_lo_is_complete  = 'trial_complete'  === $bbai_lo_hero_state;
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
 $bbai_lo_page           = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'bbai';
 $bbai_lo_fallback_url   = admin_url( 'admin.php?page=' . $bbai_lo_page );
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only GET param for post-logout UX state.
-$bbai_lo_just_logged_out = isset( $_GET['bbai_just_logged_out'] ) && '1' === $_GET['bbai_just_logged_out'];
+// One-shot transient set by handle_logout(); consumed and deleted here.
+$bbai_lo_just_logged_out_key = 'bbai_just_logged_out_' . get_current_user_id();
+$bbai_lo_just_logged_out     = '1' === get_transient( $bbai_lo_just_logged_out_key );
+if ( $bbai_lo_just_logged_out ) {
+    delete_transient( $bbai_lo_just_logged_out_key );
+}
 
 // When the user explicitly signed out of a connected account, show the exhausted panel
 // so they see their library context and a clear "sign back in" CTA.
