@@ -19,26 +19,9 @@ if ( empty( $bbai_is_anonymous_trial ) || ! empty( $bbai_has_connected_account )
     return;
 }
 
-$bbai_is_exhausted_trial_checkpoint = max( 0, (int) ( $bbai_state_credits_remaining ?? 0 ) ) <= 0;
-$bbai_locked_preview_remaining_count = max( 0, (int) ( $bbai_state_missing_count ?? 0 ) );
-$bbai_locked_preview_overlay_copy = $bbai_locked_preview_remaining_count > 0
-    ? sprintf(
-        /* translators: %s: number of remaining images. */
-        _n(
-            'Create a free account to keep fixing your %s remaining image, review every ALT result, and unlock 50 generations per month.',
-            'Create a free account to keep fixing your %s remaining images, review every ALT result, and unlock 50 generations per month.',
-            $bbai_locked_preview_remaining_count,
-            'beepbeep-ai-alt-text-generator'
-        ),
-        number_format_i18n( $bbai_locked_preview_remaining_count )
-    )
-    : __( 'Create a free account to review every ALT result and unlock 50 generations per month.', 'beepbeep-ai-alt-text-generator' );
+$bbai_locked_preview_overlay_copy = __( 'Create a free account to review every ALT result, edit generated descriptions, and unlock 50 generations per month.', 'beepbeep-ai-alt-text-generator' );
 $bbai_locked_preview_trust_line = __( 'No credit card required', 'beepbeep-ai-alt-text-generator' );
-$bbai_locked_preview_cta_label = sprintf(
-    /* translators: %s: remaining image count. */
-    __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
-    number_format_i18n( $bbai_locked_preview_remaining_count )
-);
+$bbai_locked_preview_cta_label = __( 'Create free account', 'beepbeep-ai-alt-text-generator' );
 $bbai_locked_preview_rows = [
     [
         'status' => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
@@ -57,7 +40,6 @@ $bbai_locked_preview_rows = [
 <div
     class="bbai-dashboard-locked-preview-stack"
     data-bbai-trial-locked-preview="1"
-    <?php echo $bbai_is_exhausted_trial_checkpoint ? '' : 'hidden'; ?>
 >
     <section
         class="bbai-dashboard-locked-preview"

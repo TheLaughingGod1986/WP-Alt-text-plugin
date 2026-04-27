@@ -27,6 +27,7 @@
 .bbai-header-actions {
     display: flex;
     align-items: center;
+    gap: 8px;
     flex-shrink: 0;
 }
 
@@ -259,26 +260,36 @@
     transform: translateY(-1px);
 }
 
+.bbai-header-logout-form {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
 .bbai-header-disconnect-btn,
 .bbai-header-logout-btn {
-    padding: 6px 14px;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 6px;
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     white-space: nowrap;
+    line-height: 1.4;
 }
 
 .bbai-header-disconnect-btn:hover,
 .bbai-header-logout-btn:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 .bbai-header-disconnect-btn:active,
@@ -292,6 +303,47 @@
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+}
+
+/* Guest funnel nav CTAs */
+.bbai-header-guest-cta {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    line-height: 1.4;
+    border: none;
+}
+
+.bbai-header-guest-cta--register {
+    padding: 6px 14px;
+    background: #10b981;
+    color: #ffffff;
+    border: 1px solid #10b981;
+    font-weight: 600;
+}
+
+.bbai-header-guest-cta--register:hover {
+    background: #059669;
+    border-color: #059669;
+    color: #ffffff;
+}
+
+.bbai-header-guest-cta--login {
+    padding: 5px 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.bbai-header-guest-cta--login:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 /* Responsive */

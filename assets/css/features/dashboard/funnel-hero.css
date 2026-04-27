@@ -1972,3 +1972,14 @@ body:not(.bbai-dashboard--connected) .bbai-dashboard-shell #bbai-dashboard-main 
         animation: none;
     }
 }
+
+/* Guest preview filter chips: display only, no interaction */
+.bbai-filter-group--guest-preview .bbai-filter-group__item {
+    opacity: 0.75;
+    cursor: default;
+    pointer-events: none;
+}
+
+.bbai-filter-group--guest-preview .bbai-filter-group__item--active {
+    opacity: 1;
+}

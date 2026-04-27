@@ -1619,11 +1619,6 @@ body.toplevel_page_bbai:not(.bbai-dashboard--connected) .bbai-header--trial-funn
     box-sizing: border-box;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-header-logout-btn,
-body.toplevel_page_bbai.bbai-dashboard .bbai-header-manage-btn {
-    display: none;
-}
-
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
     position: relative;
     gap: 28px;
