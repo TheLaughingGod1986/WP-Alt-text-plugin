@@ -809,3 +809,13 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
         </div>
     </div>
 </section>
+<?php if ( ! empty( $bbai_has_connected_account ) && ( ! empty( $bbai_is_authenticated ) || ! empty( $bbai_has_license ) ) ) : ?>
+<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bbai-dashboard-signout-form">
+    <?php wp_nonce_field( 'bbai_logout_action', 'bbai_logout_nonce' ); ?>
+    <input type="hidden" name="action" value="bbai_logout">
+    <button type="submit" class="bbai-dashboard-signout-btn">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M5 2H2v8h3M8 8.5l2.5-2.5L8 3.5M4.5 6h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <?php esc_html_e( 'Sign out', 'beepbeep-ai-alt-text-generator' ); ?>
+    </button>
+</form>
+<?php endif; ?>
