@@ -260,7 +260,10 @@
 }
 
 .bbai-header-logout-form {
-    display: contents;
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
 }
 
 .bbai-header-disconnect-btn,
