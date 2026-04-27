@@ -8297,8 +8297,15 @@ class Core {
 		            ]
 		        );
 
-	        // Store one-shot flag so the logged-out dashboard shows the exhausted hero.
-        set_transient( 'bbai_just_logged_out_' . get_current_user_id(), '1', 60 );
+	        // Exhaust the anonymous trial so the logged-out dashboard shows the
+        // full exhausted-hero panel (donut, image counts, locked library)
+        // rather than the bare "start free trial" or conversion panel.
+        if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) ) {
+            $remaining = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
+            if ( $remaining > 0 ) {
+                \BeepBeepAI\AltTextGenerator\Trial_Quota::claim( $remaining );
+            }
+        }
 
         // Redirect to dashboard with cache buster.
 		        \bbai_debug_log( 'handle_logout redirecting to dashboard' );
