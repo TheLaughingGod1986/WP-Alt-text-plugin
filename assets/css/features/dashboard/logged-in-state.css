@@ -1622,7 +1622,7 @@ body.toplevel_page_bbai:not(.bbai-dashboard--connected) .bbai-header--trial-funn
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
     position: relative;
     gap: 28px;
-    --bbai-li-card-radius: 14px;
+    --bbai-li-card-radius: 20px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard .bbai-command-hero-host {
@@ -1770,9 +1770,8 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard .bbai-command-a
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
-    grid-template-columns: 300px minmax(0, 1fr);
-    gap: 20px;
-    min-height: 360px;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 28px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
@@ -1786,9 +1785,8 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 360px;
     min-height: 360px;
-    padding: 32px 24px;
+    padding: 36px 28px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
@@ -1802,13 +1800,13 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
-    width: 156px;
-    height: 156px;
-    margin-bottom: 16px;
+    width: 210px;
+    height: 210px;
+    margin-bottom: 18px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner {
-    inset: 18px;
+    inset: 24px;
     overflow: hidden;
     color: transparent;
     font-size: 0;
@@ -1823,7 +1821,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__value {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__sub-label {
     max-width: 220px;
     margin: 0;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 500;
     line-height: 1.35;
     letter-spacing: 0;
@@ -1832,14 +1830,13 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__sub-label {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
-    height: 360px;
     min-height: 360px;
-    padding: 30px 36px 26px;
+    padding: 36px 40px 32px;
     gap: 0;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-state-badge {
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     padding: 4px 10px;
     border-radius: 14px;
     font-size: 11px;
@@ -1849,7 +1846,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-state-badge {
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-headline {
     max-width: none;
-    font-size: 29px !important;
+    font-size: 36px !important;
     line-height: 1.18 !important;
     letter-spacing: 0 !important;
     color: #111827 !important;
@@ -1858,7 +1855,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-headline {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-support {
     margin-top: 13px;
     max-width: 760px;
-    font-size: 16px;
+    font-size: 18px;
     line-height: 1.55;
     letter-spacing: 0;
     color: #4b5563;
@@ -1871,14 +1868,14 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-cta-row {
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-primary,
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary {
-    height: 54px !important;
+    height: 58px !important;
     border-radius: 8px !important;
     font-size: 17px !important;
     letter-spacing: 0 !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-primary {
-    min-width: 272px !important;
+    min-width: 240px !important;
     background: #10a37f !important;
     border-color: #10a37f !important;
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
@@ -1894,8 +1891,8 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary {
-    margin-top: 24px;
-    padding-top: 20px;
+    margin-top: 32px;
+    padding-top: 24px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__item {
@@ -1908,12 +1905,14 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__item + .bbai-li-summary
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__label {
-    font-size: 13px;
-    letter-spacing: 0;
+    font-size: 11px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    font-weight: 600;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__value {
-    font-size: 23px;
+    font-size: 30px;
     line-height: 1.2;
     letter-spacing: 0;
 }
@@ -1921,7 +1920,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__value {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__item--primary .bbai-li-summary__value {
     color: #1d4ed8;
     font-weight: 700;
-    font-size: 26px;
+    font-size: 30px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__item--muted {
@@ -1934,7 +1933,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__item--muted .bbai-li-su
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-summary__item--muted .bbai-li-summary__value {
     color: #94a3b8;
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 500;
 }
 
@@ -2123,20 +2122,20 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-impact-line {
 
 @media (max-width: 1280px) {
     body.toplevel_page_bbai.bbai-dashboard .bbai-nav {
-        gap: 10px;
+        gap: 6px;
     }
     body.toplevel_page_bbai.bbai-dashboard .bbai-nav__primary {
         gap: 2px;
     }
 
     body.toplevel_page_bbai.bbai-dashboard .bbai-nav-link {
-        padding-left: 12px;
-        padding-right: 12px;
+        padding-left: 9px;
+        padding-right: 9px;
         font-size: 13px;
     }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
     body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
         grid-template-columns: 1fr;
     }
@@ -2200,6 +2199,10 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-impact-line {
     body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary {
         width: 100% !important;
         min-width: 0 !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-headline {
+        font-size: 30px !important;
     }
 }
 

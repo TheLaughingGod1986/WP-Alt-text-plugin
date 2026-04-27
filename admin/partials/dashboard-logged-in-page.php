@@ -364,13 +364,7 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 			}
 			break;
 		case 'NEEDS_REVIEW':
-			if ( '' !== $bbai_strip_review && (int) str_replace( ',', '', $bbai_strip_review ) > 0 ) {
-				$bbai_impact_line = sprintf(
-					/* translators: %s: count of images ready for review */
-					_n( '%s ready for review', '%s ready for review', (int) str_replace( ',', '', $bbai_strip_review ), 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_review
-				);
-			} elseif ( $bbai_impact_complete > 0 ) {
+			if ( $bbai_impact_complete > 0 ) {
 				$bbai_impact_line = sprintf(
 					/* translators: %s: count of optimised images */
 					_n( 'You\'ve improved accessibility on %s image so far.', 'You\'ve improved accessibility on %s images so far.', $bbai_impact_complete, 'beepbeep-ai-alt-text-generator' ),
