@@ -43,6 +43,12 @@ $bbai_locked_cta_mode  = isset( $bbai_product_state_model['cta']['locked_mode'] 
 $bbai_has_scan_payload = ( $bbai_state_total_images > 0 ) || ( $bbai_state_missing_count > 0 ) || ( $bbai_state_weak_count > 0 ) || ( $bbai_state_optimized_count > 0 );
 $bbai_is_guest_trial_user = ! empty( $bbai_is_anonymous_trial ) && empty( $bbai_has_connected_account );
 $bbai_is_exhausted_trial_checkpoint = $bbai_is_guest_trial_user && $bbai_state_credits_remaining <= 0;
+// Low-credit trial checkpoint: guest trial user with credits remaining <= soft limit (2).
+// Renders the same clean hero card as the exhausted checkpoint (no progress bar, no
+// yellow conversion prompt, no microcopy bullet list) so the running-low UI matches
+// the approved trial-exhausted design pattern.
+$bbai_is_low_credit_trial_checkpoint = false; // computed after $bbai_is_low_credit_state below
+$bbai_is_trial_checkpoint = $bbai_is_exhausted_trial_checkpoint;
 $bbai_actionable_state_model = isset( $bbai_product_state_model['actionable'] ) && is_array( $bbai_product_state_model['actionable'] )
     ? $bbai_product_state_model['actionable']
     : Dashboard_State::resolve_actionable_state(
@@ -183,6 +189,8 @@ $bbai_hero_credits_state = 'default';
 $bbai_credit_soft_limit = 2;
 $bbai_is_low_credit_state = ! $bbai_state_is_pro_plan && $bbai_state_credits_remaining > 0 && $bbai_state_credits_remaining <= $bbai_credit_soft_limit;
 $bbai_is_exhausted_credit_state = ! $bbai_state_is_pro_plan && $bbai_state_credits_remaining <= 0;
+$bbai_is_low_credit_trial_checkpoint = $bbai_is_guest_trial_user && $bbai_is_low_credit_state;
+$bbai_is_trial_checkpoint = $bbai_is_exhausted_trial_checkpoint || $bbai_is_low_credit_trial_checkpoint;
 
 if ( $bbai_is_exhausted_credit_state ) {
     $bbai_hero_credits_state = 'exhausted';
@@ -584,6 +592,28 @@ if ( 'scanning' === $bbai_hero_state ) {
     $bbai_primary_action     = $bbai_build_complete_action();
 }
 
+if ( $bbai_is_low_credit_trial_checkpoint && ! $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
+    $bbai_donut_value        = number_format_i18n( max( 0, $bbai_locked_trial_remaining_count ) );
+    $bbai_donut_center_label = '';
+    $bbai_donut_tone         = $bbai_locked_trial_remaining_count > 0 ? 'problem' : 'neutral';
+    $bbai_title              = sprintf(
+        /* translators: %s: number of free trial generations remaining. */
+        _n(
+            'You’re running low — %s free generation left',
+            'You’re running low — %s free generations left',
+            $bbai_state_credits_remaining,
+            'beepbeep-ai-alt-text-generator'
+        ),
+        number_format_i18n( $bbai_state_credits_remaining )
+    );
+    $bbai_description        = __( 'Continue fixing your remaining images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
+    $bbai_primary_action     = $bbai_build_unlock_action();
+    $bbai_secondary_action   = $bbai_build_login_action();
+    $bbai_cta_context        = $bbai_locked_trial_cta_context;
+    $bbai_status_label       = '';
+    $bbai_support_line       = __( 'No credit card required', 'beepbeep-ai-alt-text-generator' );
+}
+
 if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
     $bbai_donut_value        = number_format_i18n( max( 0, $bbai_state_missing_count ) );
     $bbai_donut_center_label = '';
@@ -602,13 +632,13 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
 }
 ?>
 <section
-    class="bbai-funnel-hero bbai-funnel-hero--hero-card<?php echo $bbai_is_exhausted_trial_checkpoint ? ' bbai-funnel-hero--trial-exhausted' : ''; ?>"
+    class="bbai-funnel-hero bbai-funnel-hero--hero-card<?php echo $bbai_is_trial_checkpoint ? ' bbai-funnel-hero--trial-exhausted' : ''; ?><?php echo $bbai_is_low_credit_trial_checkpoint && ! $bbai_is_exhausted_trial_checkpoint ? ' bbai-funnel-hero--trial-low-credit' : ''; ?>"
     data-bbai-funnel-hero
     data-bbai-funnel-hero-state="<?php echo esc_attr( $bbai_logged_in_hero_state ); ?>"
     data-bbai-hero-ui-state="<?php echo esc_attr( $bbai_logged_in_hero_state ); ?>"
     aria-labelledby="bbai-funnel-hero-title"
 >
-    <div class="bbai-dashboard-hero-action<?php echo $bbai_is_exhausted_trial_checkpoint ? ' bbai-dashboard-hero-action--exhausted-trial' : ''; ?>" data-bbai-dashboard-hero-action>
+    <div class="bbai-dashboard-hero-action<?php echo $bbai_is_trial_checkpoint ? ' bbai-dashboard-hero-action--exhausted-trial' : ''; ?>" data-bbai-dashboard-hero-action>
         <div class="bbai-dashboard-hero-action__main">
             <div class="bbai-dashboard-hero-action__status">
                 <div class="bbai-dashboard-hero-action__donut-wrap">
@@ -704,7 +734,7 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
             </div>
         </div>
 
-        <?php if ( ! $bbai_is_exhausted_trial_checkpoint ) : ?>
+        <?php if ( ! $bbai_is_trial_checkpoint ) : ?>
             <div class="bbai-dashboard-hero-action__extras">
                 <?php
                 $bbai_hero_credits_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-credits-block.php';
@@ -779,3 +809,13 @@ if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
         </div>
     </div>
 </section>
+<?php if ( ! empty( $bbai_has_connected_account ) && ( ! empty( $bbai_is_authenticated ) || ! empty( $bbai_has_license ) ) ) : ?>
+<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bbai-dashboard-signout-form">
+    <?php wp_nonce_field( 'bbai_logout_action', 'bbai_logout_nonce' ); ?>
+    <input type="hidden" name="action" value="bbai_logout">
+    <button type="submit" class="bbai-dashboard-signout-btn">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M5 2H2v8h3M8 8.5l2.5-2.5L8 3.5M4.5 6h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <?php esc_html_e( 'Sign out', 'beepbeep-ai-alt-text-generator' ); ?>
+    </button>
+</form>
+<?php endif; ?>

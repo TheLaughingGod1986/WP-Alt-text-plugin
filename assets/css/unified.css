@@ -12758,15 +12758,22 @@ h4.bbai-heading {
 }
 
 /* Logout/Disconnect Button */
+.bbai-header-logout-form {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
 .bbai-header-logout-btn,
 .bbai-header-disconnect-btn {
     display: inline-flex;
     align-items: center;
-    gap: var(--bbai-space-2);
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    gap: 5px;
+    padding: 5px 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: var(--bbai-radius);
     font-size: var(--bbai-text-xs);
     font-weight: var(--bbai-font-medium);
@@ -12774,13 +12781,14 @@ h4.bbai-heading {
     transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
     white-space: nowrap;
     text-decoration: none;
+    line-height: 1.4;
 }
 
 .bbai-header-logout-btn:hover,
 .bbai-header-disconnect-btn:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 .bbai-header-logout-btn:focus-visible,
