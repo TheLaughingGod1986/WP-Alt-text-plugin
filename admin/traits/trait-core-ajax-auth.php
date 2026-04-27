@@ -266,7 +266,7 @@ trait Core_Ajax_Auth {
         delete_transient('bbai_usage_cache');
         delete_transient('opptibbai_usage_cache');
 
-        wp_safe_redirect(add_query_arg('nocache', time(), admin_url('admin.php?page=bbai')));
+        wp_safe_redirect( add_query_arg( [ 'nocache' => time(), 'bbai_just_logged_out' => '1' ], admin_url( 'admin.php?page=bbai' ) ) );
         exit;
     }
 

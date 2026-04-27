@@ -31,8 +31,19 @@ $bbai_lo_is_available = 'trial_available' === $bbai_lo_hero_state;
 $bbai_lo_is_complete  = 'trial_complete'  === $bbai_lo_hero_state;
 
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
-$bbai_lo_page         = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'bbai';
-$bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
+$bbai_lo_page           = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'bbai';
+$bbai_lo_fallback_url   = admin_url( 'admin.php?page=' . $bbai_lo_page );
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only GET param for post-logout UX state.
+$bbai_lo_just_logged_out = isset( $_GET['bbai_just_logged_out'] ) && '1' === $_GET['bbai_just_logged_out'];
+
+// When the user explicitly signed out of a connected account, show the exhausted panel
+// so they see their library context and a clear "sign back in" CTA.
+if ( $bbai_lo_just_logged_out && ! $bbai_lo_trial_exhausted ) {
+    $bbai_lo_trial_exhausted = true;
+    $bbai_lo_hero_state      = 'trial_complete';
+    $bbai_lo_is_available    = false;
+    $bbai_lo_is_complete     = true;
+}
 
 // Image counts — needed only for the exhausted hero and locked preview.
 $bbai_lo_missing_count      = 0;
@@ -61,12 +72,17 @@ $bbai_lo_remaining_for_cta = $bbai_lo_missing_count > 0
     : $bbai_lo_missing_count + $bbai_lo_needs_review_count;
 
 // Exhausted hero copy.
-$bbai_lo_exhausted_headline = sprintf(
-    /* translators: %d: number of free trial generations (e.g. 5). */
-    __( "You've used all %d free generations", 'beepbeep-ai-alt-text-generator' ),
-    $bbai_lo_trial_limit
-);
-$bbai_lo_exhausted_support  = __( 'Continue fixing your remaining images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
+if ( $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ) {
+    $bbai_lo_exhausted_headline = __( "You've signed out of BeepBeep AI", 'beepbeep-ai-alt-text-generator' );
+    $bbai_lo_exhausted_support  = __( 'Sign back in to continue fixing your images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
+} else {
+    $bbai_lo_exhausted_headline = sprintf(
+        /* translators: %d: number of free trial generations (e.g. 5). */
+        __( "You've used all %d free generations", 'beepbeep-ai-alt-text-generator' ),
+        $bbai_lo_trial_limit
+    );
+    $bbai_lo_exhausted_support  = __( 'Continue fixing your remaining images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
+}
 $bbai_lo_exhausted_subline  = $bbai_lo_remaining_for_cta > 0
     ? sprintf(
         /* translators: %s: number of remaining images. */
@@ -79,13 +95,17 @@ $bbai_lo_exhausted_subline  = $bbai_lo_remaining_for_cta > 0
         number_format_i18n( $bbai_lo_remaining_for_cta )
     )
     : '';
-$bbai_lo_exhausted_cta      = $bbai_lo_remaining_for_cta > 0
-    ? sprintf(
+if ( $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ) {
+    $bbai_lo_exhausted_cta = __( 'Sign back in', 'beepbeep-ai-alt-text-generator' );
+} elseif ( $bbai_lo_remaining_for_cta > 0 ) {
+    $bbai_lo_exhausted_cta = sprintf(
         /* translators: %s: number of remaining images needing alt text. */
         __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
         number_format_i18n( $bbai_lo_remaining_for_cta )
-    )
-    : __( 'Create your free account', 'beepbeep-ai-alt-text-generator' );
+    );
+} else {
+    $bbai_lo_exhausted_cta = __( 'Create your free account', 'beepbeep-ai-alt-text-generator' );
+}
 
 // Donut background — shows image coverage for the exhausted hero card.
 $bbai_lo_donut_bg = 'conic-gradient(#e2e8f0 0deg 360deg)';
@@ -257,8 +277,8 @@ if ( $bbai_lo_total_images > 0 ) {
                                                 type="button"
                                                 class="bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary bbai-dashboard-hero-action__cta bbai-dashboard-hero-action__cta--primary"
                                                 data-action="show-dashboard-auth"
-                                                data-auth-tab="register"
-                                                data-bbai-modal-context="fix"
+                                                data-auth-tab="<?php echo $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ? 'login' : 'register'; ?>"
+                                                data-bbai-modal-context="<?php echo $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ? 'login' : 'fix'; ?>"
                                                 data-bbai-analytics-upgrade="trial_create_account_clicked"
                                             >
                                                 <?php echo esc_html( $bbai_lo_exhausted_cta ); ?>
