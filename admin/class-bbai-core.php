@@ -2772,9 +2772,14 @@ class Core {
                                     </button>
                                 <?php endif; ?>
                                 <?php if ($bbai_is_authenticated || $bbai_has_license) : ?>
-                                <button type="button" class="bbai-header-logout-btn" data-action="logout">
-                                    <?php esc_html_e('Logout', 'beepbeep-ai-alt-text-generator'); ?>
-                                </button>
+                                <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bbai-header-logout-form">
+                                    <?php wp_nonce_field( 'bbai_logout_action', 'bbai_logout_nonce' ); ?>
+                                    <input type="hidden" name="action" value="bbai_logout">
+                                    <button type="submit" class="bbai-header-logout-btn">
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false"><path d="M5 2H2v8h3M8 8.5l2.5-2.5L8 3.5M4.5 6h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        <?php esc_html_e( 'Sign out', 'beepbeep-ai-alt-text-generator' ); ?>
+                                    </button>
+                                </form>
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
