@@ -8297,7 +8297,10 @@ class Core {
 		            ]
 		        );
 
-	        // Redirect to dashboard with cache buster.
+	        // Store one-shot flag so the logged-out dashboard shows the exhausted hero.
+        set_transient( 'bbai_just_logged_out_' . get_current_user_id(), '1', 60 );
+
+        // Redirect to dashboard with cache buster.
 		        \bbai_debug_log( 'handle_logout redirecting to dashboard' );
 	        wp_safe_redirect(add_query_arg('nocache', time(), admin_url('admin.php?page=bbai')));
 	        exit;
