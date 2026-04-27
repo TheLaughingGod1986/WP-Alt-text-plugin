@@ -2772,7 +2772,6 @@ class Core {
                                     </button>
                                 <?php endif; ?>
                             </div>
-                            <?php if ($bbai_is_authenticated || $bbai_has_license) : ?>
                             <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bbai-header-logout-form">
                                 <?php wp_nonce_field( 'bbai_logout_action', 'bbai_logout_nonce' ); ?>
                                 <input type="hidden" name="action" value="bbai_logout">
@@ -2781,7 +2780,6 @@ class Core {
                                     <?php esc_html_e( 'Sign out', 'beepbeep-ai-alt-text-generator' ); ?>
                                 </button>
                             </form>
-                            <?php endif; ?>
                         <?php else : ?>
                                 <?php if ($bbai_is_anonymous_trial && '' !== $bbai_header_trial_credits_line) : ?>
                                 <span class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>">
