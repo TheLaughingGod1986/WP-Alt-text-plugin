@@ -772,6 +772,7 @@ body.media_page_bbai #wpwrap {
 .bbai-header-actions {
     display: flex;
     align-items: center;
+    gap: 8px;
     flex-shrink: 0;
 }
 
