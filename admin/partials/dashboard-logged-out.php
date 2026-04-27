@@ -71,10 +71,11 @@ $bbai_lo_remaining_for_cta = $bbai_lo_missing_count > 0
     ? $bbai_lo_missing_count
     : $bbai_lo_missing_count + $bbai_lo_needs_review_count;
 
-// Exhausted hero copy.
-if ( $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ) {
+// Exhausted hero copy — differs when the user explicitly signed out of a connected account.
+if ( $bbai_lo_just_logged_out ) {
     $bbai_lo_exhausted_headline = __( "You've signed out of BeepBeep AI", 'beepbeep-ai-alt-text-generator' );
     $bbai_lo_exhausted_support  = __( 'Sign back in to continue fixing your images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
+    $bbai_lo_exhausted_cta      = __( 'Sign back in', 'beepbeep-ai-alt-text-generator' );
 } else {
     $bbai_lo_exhausted_headline = sprintf(
         /* translators: %d: number of free trial generations (e.g. 5). */
@@ -82,6 +83,13 @@ if ( $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ) {
         $bbai_lo_trial_limit
     );
     $bbai_lo_exhausted_support  = __( 'Continue fixing your remaining images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
+    $bbai_lo_exhausted_cta      = $bbai_lo_remaining_for_cta > 0
+        ? sprintf(
+            /* translators: %s: number of remaining images needing alt text. */
+            __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
+            number_format_i18n( $bbai_lo_remaining_for_cta )
+        )
+        : __( 'Create your free account', 'beepbeep-ai-alt-text-generator' );
 }
 $bbai_lo_exhausted_subline  = $bbai_lo_remaining_for_cta > 0
     ? sprintf(
@@ -95,17 +103,6 @@ $bbai_lo_exhausted_subline  = $bbai_lo_remaining_for_cta > 0
         number_format_i18n( $bbai_lo_remaining_for_cta )
     )
     : '';
-if ( $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ) {
-    $bbai_lo_exhausted_cta = __( 'Sign back in', 'beepbeep-ai-alt-text-generator' );
-} elseif ( $bbai_lo_remaining_for_cta > 0 ) {
-    $bbai_lo_exhausted_cta = sprintf(
-        /* translators: %s: number of remaining images needing alt text. */
-        __( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
-        number_format_i18n( $bbai_lo_remaining_for_cta )
-    );
-} else {
-    $bbai_lo_exhausted_cta = __( 'Create your free account', 'beepbeep-ai-alt-text-generator' );
-}
 
 // Donut background — shows image coverage for the exhausted hero card.
 $bbai_lo_donut_bg = 'conic-gradient(#e2e8f0 0deg 360deg)';
@@ -277,8 +274,8 @@ if ( $bbai_lo_total_images > 0 ) {
                                                 type="button"
                                                 class="bbai-command-action bbai-command-action--primary bbai-btn bbai-btn-primary bbai-dashboard-hero-action__cta bbai-dashboard-hero-action__cta--primary"
                                                 data-action="show-dashboard-auth"
-                                                data-auth-tab="<?php echo $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ? 'login' : 'register'; ?>"
-                                                data-bbai-modal-context="<?php echo $bbai_lo_just_logged_out && $bbai_lo_trial_used <= 0 ? 'login' : 'fix'; ?>"
+                                                data-auth-tab="<?php echo $bbai_lo_just_logged_out ? 'login' : 'register'; ?>"
+                                                data-bbai-modal-context="<?php echo $bbai_lo_just_logged_out ? 'login' : 'fix'; ?>"
                                                 data-bbai-analytics-upgrade="trial_create_account_clicked"
                                             >
                                                 <?php echo esc_html( $bbai_lo_exhausted_cta ); ?>
