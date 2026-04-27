@@ -592,43 +592,32 @@ if ( 'scanning' === $bbai_hero_state ) {
     $bbai_primary_action     = $bbai_build_complete_action();
 }
 
-if ( $bbai_is_low_credit_trial_checkpoint && ! $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
-    $bbai_donut_value        = number_format_i18n( max( 0, $bbai_locked_trial_remaining_count ) );
-    $bbai_donut_center_label = '';
-    $bbai_donut_tone         = $bbai_locked_trial_remaining_count > 0 ? 'problem' : 'neutral';
-    $bbai_title              = sprintf(
-        /* translators: %s: number of free trial generations remaining. */
-        _n(
-            'You’re running low — %s free generation left',
-            'You’re running low — %s free generations left',
-            $bbai_state_credits_remaining,
-            'beepbeep-ai-alt-text-generator'
-        ),
-        number_format_i18n( $bbai_state_credits_remaining )
+// Unified guest funnel preview: once the user has library data, always show conversion copy.
+// Ignores credits_remaining, running-low state, and exhausted copy per guest funnel rules.
+if ( $bbai_is_guest_trial_user && 'not_scanned' !== $bbai_hero_state && 'scanning' !== $bbai_hero_state ) {
+    $bbai_guest_actionable   = max( 0, $bbai_state_missing_count + $bbai_state_weak_count );
+    $bbai_donut_value        = number_format_i18n( $bbai_guest_actionable );
+    $bbai_donut_center_label = 1 === $bbai_guest_actionable
+        ? __( 'image to finish', 'beepbeep-ai-alt-text-generator' )
+        : __( 'images to finish', 'beepbeep-ai-alt-text-generator' );
+    $bbai_donut_tone         = $bbai_guest_actionable > 0 ? 'problem' : 'neutral';
+    $bbai_title              = __( 'Unlock your full ALT library', 'beepbeep-ai-alt-text-generator' );
+    $bbai_description        = __( 'You\'ve fixed your first images. Create a free account to review, edit, and finish optimising your library.', 'beepbeep-ai-alt-text-generator' );
+    $bbai_primary_action     = $bbai_build_action(
+        __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
+        [
+            'action'        => 'show-dashboard-auth',
+            'auth_tab'      => 'register',
+            'analytics'     => 'hero_guest_create_account',
+            'modal_context' => 'fix',
+            'hidden'        => false,
+        ]
     );
-    $bbai_description        = __( 'Continue fixing your remaining images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
-    $bbai_primary_action     = $bbai_build_unlock_action();
     $bbai_secondary_action   = $bbai_build_login_action();
-    $bbai_cta_context        = $bbai_locked_trial_cta_context;
+    $bbai_cta_context        = '';
     $bbai_status_label       = '';
     $bbai_support_line       = __( 'No credit card required', 'beepbeep-ai-alt-text-generator' );
-}
-
-if ( $bbai_is_exhausted_trial_checkpoint && 'scanning' !== $bbai_hero_state ) {
-    $bbai_donut_value        = number_format_i18n( max( 0, $bbai_state_missing_count ) );
-    $bbai_donut_center_label = '';
-    $bbai_donut_tone         = $bbai_state_missing_count > 0 ? 'problem' : 'neutral';
-    $bbai_title              = sprintf(
-        /* translators: %s: exhausted free generation limit. */
-        __( 'You’ve used all %s free generations', 'beepbeep-ai-alt-text-generator' ),
-        number_format_i18n( $bbai_state_credits_limit )
-    );
-    $bbai_description        = __( 'Continue fixing your remaining images and unlock full access.', 'beepbeep-ai-alt-text-generator' );
-    $bbai_primary_action     = $bbai_build_unlock_action();
-    $bbai_secondary_action   = $bbai_build_login_action();
-    $bbai_cta_context        = $bbai_locked_trial_cta_context;
-    $bbai_status_label       = '';
-    $bbai_support_line       = __( 'No credit card required', 'beepbeep-ai-alt-text-generator' );
+    $bbai_is_trial_checkpoint = true;
 }
 ?>
 <section

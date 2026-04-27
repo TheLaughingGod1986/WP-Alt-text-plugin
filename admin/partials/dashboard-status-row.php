@@ -22,9 +22,8 @@ if (!defined('ABSPATH')) {
 $bbai_status_row_variant = isset( $bbai_status_row_variant ) ? (string) $bbai_status_row_variant : 'default';
 $bbai_status_row_is_hero = 'hero' === $bbai_status_row_variant;
 $bbai_status_active = 'all';
-$bbai_status_interaction_mode = ( ! empty( $bbai_is_anonymous_trial ) && empty( $bbai_has_connected_account ) )
-    ? 'filter'
-    : 'navigate';
+$bbai_status_is_guest_preview = ! empty( $bbai_is_anonymous_trial ) && empty( $bbai_has_connected_account );
+$bbai_status_interaction_mode = 'navigate';
 
 if ($bbai_state_missing_count > 0) {
     $bbai_status_active = 'missing';
@@ -127,14 +126,25 @@ $bbai_status_items = [
 >
     <h2 id="bbai-dashboard-status-card-heading" class="screen-reader-text"><?php esc_html_e('Image status', 'beepbeep-ai-alt-text-generator'); ?></h2>
     <?php
+    if ( $bbai_status_is_guest_preview ) {
+        $bbai_status_items = array_map( static function ( array $item ): array {
+            $item['disabled'] = true;
+            return $item;
+        }, $bbai_status_items );
+    }
+
     bbai_ui_render(
         'filter-group',
         [
             'id' => 'bbai-dashboard-status-nav',
-            'aria_label' => __('Review images filtered by status', 'beepbeep-ai-alt-text-generator'),
+            'aria_label' => $bbai_status_is_guest_preview
+                ? __( 'Image status overview', 'beepbeep-ai-alt-text-generator' )
+                : __( 'Review images filtered by status', 'beepbeep-ai-alt-text-generator' ),
             'interaction_mode' => $bbai_status_interaction_mode,
             'size' => $bbai_status_row_is_hero ? 'compact' : 'standard',
-            'root_class' => 'bbai-dashboard-status-card__filters' . ( $bbai_status_row_is_hero ? ' bbai-dashboard-status-card__filters--hero' : '' ),
+            'root_class' => 'bbai-dashboard-status-card__filters'
+                . ( $bbai_status_row_is_hero ? ' bbai-dashboard-status-card__filters--hero' : '' )
+                . ( $bbai_status_is_guest_preview ? ' bbai-filter-group--guest-preview' : '' ),
             'root_attrs' => [
                 'data-bbai-dashboard-status-nav' => '1',
                 'data-bbai-status-active-segment' => $bbai_status_active,

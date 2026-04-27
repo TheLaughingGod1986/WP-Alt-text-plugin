@@ -2781,11 +2781,23 @@ class Core {
                                 </button>
                             </form>
                         <?php else : ?>
-                                <?php if ($bbai_is_anonymous_trial && '' !== $bbai_header_trial_credits_line) : ?>
-                                <span class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>">
-                                    <?php echo esc_html($bbai_header_trial_credits_line); ?>
-                                </span>
-                            <?php endif; ?>
+                            <button
+                                type="button"
+                                class="bbai-header-guest-cta bbai-header-guest-cta--register"
+                                data-action="show-dashboard-auth"
+                                data-auth-tab="register"
+                                data-bbai-analytics-upgrade="nav_guest_create_account"
+                            >
+                                <?php esc_html_e( 'Create free account', 'beepbeep-ai-alt-text-generator' ); ?>
+                            </button>
+                            <button
+                                type="button"
+                                class="bbai-header-guest-cta bbai-header-guest-cta--login"
+                                data-action="show-dashboard-auth"
+                                data-auth-tab="login"
+                            >
+                                <?php esc_html_e( 'Log in', 'beepbeep-ai-alt-text-generator' ); ?>
+                            </button>
                         <?php endif; ?>
                 </div>
                 </div>

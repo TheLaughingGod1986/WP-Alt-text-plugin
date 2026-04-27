@@ -34,7 +34,7 @@ $bbai_trial_preview_generation_locked = max( 0, (int) ( $bbai_state_credits_rema
     data-bbai-trial-preview="1"
     data-bbai-trial-preview-limit="3"
     aria-labelledby="bbai-dashboard-trial-preview-heading"
-    <?php echo $bbai_is_exhausted_trial_checkpoint ? 'hidden' : ''; ?>
+    hidden
 >
     <div class="bbai-dashboard-trial-preview__header">
         <div class="bbai-dashboard-trial-preview__copy">

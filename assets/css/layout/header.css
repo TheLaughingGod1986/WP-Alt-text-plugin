@@ -305,6 +305,47 @@
     transform: none;
 }
 
+/* Guest funnel nav CTAs */
+.bbai-header-guest-cta {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    line-height: 1.4;
+    border: none;
+}
+
+.bbai-header-guest-cta--register {
+    padding: 6px 14px;
+    background: #10b981;
+    color: #ffffff;
+    border: 1px solid #10b981;
+    font-weight: 600;
+}
+
+.bbai-header-guest-cta--register:hover {
+    background: #059669;
+    border-color: #059669;
+    color: #ffffff;
+}
+
+.bbai-header-guest-cta--login {
+    padding: 5px 12px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.bbai-header-guest-cta--login:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
 /* Responsive */
 @media (max-width: 900px) {
     .bbai-header {
