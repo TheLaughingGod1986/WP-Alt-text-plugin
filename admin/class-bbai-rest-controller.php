@@ -1883,11 +1883,47 @@ class REST_Controller {
 		if ( $api_client && method_exists( $api_client, 'get_dashboard_state_truth' ) ) {
 			$truth = $api_client->get_dashboard_state_truth();
 			if ( is_array( $truth ) && [] !== $truth ) {
-				return $truth;
+				return $this->reconcile_dashboard_truth_to_local_library_counts( $truth );
 			}
 		}
 
-		return $this->build_logged_in_dashboard_state_truth_fallback();
+		return $this->reconcile_dashboard_truth_to_local_library_counts( $this->build_logged_in_dashboard_state_truth_fallback() );
+	}
+
+	/**
+	 * Make dashboard REST truth use the same visible counts as ALT Library.
+	 *
+	 * @param array<string,mixed> $truth Raw state-truth payload.
+	 * @return array<string,mixed>
+	 */
+	private function reconcile_dashboard_truth_to_local_library_counts( array $truth ): array {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-logged-in-dashboard-resolver.php';
+
+		$coverage       = $this->core->get_alt_text_coverage_scan( true );
+		$library_counts = bbai_get_attention_counts( is_array( $coverage ) ? $coverage : null );
+		$out            = bbai_reconcile_state_truth_payload_to_library_counts( $truth, $library_counts );
+		$model          = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve_from_truth(
+			$out,
+			$this->get_logged_in_dashboard_plan_context()
+		);
+		$state          = is_array( $model ) && ! empty( $model['state'] ) ? (string) $model['state'] : '';
+
+		if ( '' !== $state ) {
+			$out['state'] = $state;
+			if ( isset( $out['data'] ) && is_array( $out['data'] ) ) {
+				$out['data']['state'] = $state;
+			}
+		}
+
+		$out['resolution_sources'] = is_array( $out['resolution_sources'] ?? null ) ? $out['resolution_sources'] : [];
+		$out['resolution_sources']['counts'] = 'local_media_library';
+		if ( isset( $out['data'] ) && is_array( $out['data'] ) ) {
+			$out['data']['resolution_sources'] = is_array( $out['data']['resolution_sources'] ?? null ) ? $out['data']['resolution_sources'] : [];
+			$out['data']['resolution_sources']['counts'] = 'local_media_library';
+		}
+
+		return $out;
 	}
 
 	/**
@@ -1940,6 +1976,7 @@ class REST_Controller {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-logged-in-dashboard-resolver.php';
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
 
 		$api_client = $this->core->get_api_client();
 		$plan_ctx   = $this->get_logged_in_dashboard_plan_context();
@@ -1951,13 +1988,14 @@ class REST_Controller {
 		$usage_stats           = $api_client
 			? \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $api_client, $has_connected_account )
 			: [];
-		$stats_payload         = $this->core->get_dashboard_stats_payload( false );
+		$coverage_scan         = $this->core->get_alt_text_coverage_scan( true );
+		$library_counts        = bbai_get_attention_counts( is_array( $coverage_scan ) ? $coverage_scan : null );
 		$coverage              = [
-			'total_images' => (int) ( $stats_payload['total_images'] ?? $stats_payload['total'] ?? 0 ),
-			'missing'      => (int) ( $stats_payload['images_missing_alt'] ?? $stats_payload['missing'] ?? 0 ),
-			'weak'         => (int) ( $stats_payload['needs_review_count'] ?? $stats_payload['needs_review'] ?? $stats_payload['weak'] ?? 0 ),
-			'optimized'    => (int) ( $stats_payload['optimized_count'] ?? $stats_payload['optimized'] ?? 0 ),
-			'failed'       => (int) ( $stats_payload['failed'] ?? 0 ),
+			'total_images' => (int) ( $library_counts['total_images'] ?? 0 ),
+			'missing'      => (int) ( $library_counts['missing'] ?? 0 ),
+			'weak'         => (int) ( $library_counts['needs_review'] ?? 0 ),
+			'optimized'    => (int) ( $library_counts['optimized_count'] ?? 0 ),
+			'failed'       => 0,
 		];
 		$job_data              = [];
 		if ( method_exists( $this->core, 'get_active_job_status' ) ) {

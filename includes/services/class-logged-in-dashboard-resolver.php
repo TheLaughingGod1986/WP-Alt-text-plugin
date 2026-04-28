@@ -1600,22 +1600,8 @@ class Logged_In_Dashboard_Resolver {
 			}
 		}
 
-		// Add queued / processing pill only while a job is active.
-		if ( self::STATE_QUEUED === $state && $job !== null ) {
-			$queued_count = max( 0, (int) ( $job['total'] ?? 0 ) - (int) ( $job['done'] ?? 0 ) );
-			if ( $queued_count > 0 ) {
-				$pills[] = [
-					'id'    => 'queued',
-					'label' => sprintf(
-						/* translators: %s: count */
-						_n( '%s queued', '%s queued', $queued_count, 'beepbeep-ai-alt-text-generator' ),
-						number_format_i18n( $queued_count )
-					),
-					'count' => $queued_count,
-					'color' => 'gray',
-				];
-			}
-		} elseif ( self::STATE_PROCESSING === $state && $job !== null ) {
+		// Add processing pill only while a job is actively running.
+		if ( self::STATE_PROCESSING === $state && $job !== null ) {
 			$processing_count = max( 0, (int) ( $job['total'] ?? 0 ) - (int) ( $job['done'] ?? 0 ) );
 			if ( $processing_count > 0 ) {
 				$pills[] = [

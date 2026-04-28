@@ -260,7 +260,9 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     $bbai_signup_required = !empty($bbai_usage_stats['signup_required']) || ($bbai_is_anonymous_trial && 'exhausted' === $bbai_quota_state);
     $bbai_upgrade_required = !empty($bbai_usage_stats['upgrade_required']);
 
-    $bbai_coverage = (isset($this) && method_exists($this, 'get_alt_text_coverage_scan')) ? $this->get_alt_text_coverage_scan(false) : [];
+    // Dashboard visible library counts must match ALT Library, so use a fresh
+    // local media scan instead of cached SaaS/action-batch counts.
+    $bbai_coverage = (isset($this) && method_exists($this, 'get_alt_text_coverage_scan')) ? $this->get_alt_text_coverage_scan(true) : [];
     $bbai_attn = bbai_get_attention_counts(
         (!empty($bbai_coverage) && isset($bbai_coverage['total_images'])) ? $bbai_coverage : null
     );
@@ -905,7 +907,17 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         ) {
             $bbai_li_truth_candidate = $this->api_client->get_dashboard_state_truth();
             if ( is_array( $bbai_li_truth_candidate ) && [] !== $bbai_li_truth_candidate ) {
-                $bbai_li_truth_boot = $bbai_li_truth_candidate;
+                $bbai_li_truth_boot = function_exists( 'bbai_reconcile_state_truth_payload_to_library_counts' )
+                    ? bbai_reconcile_state_truth_payload_to_library_counts(
+                        $bbai_li_truth_candidate,
+                        [
+                            'missing'         => $bbai_state_missing_count,
+                            'needs_review'    => $bbai_state_weak_count,
+                            'optimized_count' => $bbai_state_optimized_count,
+                            'total_images'    => $bbai_state_total_images,
+                        ]
+                    )
+                    : $bbai_li_truth_candidate;
                 $bbai_li_state = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve_from_truth(
                     $bbai_li_truth_boot,
                     $bbai_li_plan_ctx
@@ -965,11 +977,14 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     if ( is_array( $bbai_li_truth_boot ) ) {
         $bbai_li_truth_counts  = is_array( $bbai_li_truth_boot['counts'] ?? null ) ? $bbai_li_truth_boot['counts'] : [];
         $bbai_li_truth_credits = is_array( $bbai_li_truth_boot['credits'] ?? null ) ? $bbai_li_truth_boot['credits'] : [];
+        $bbai_use_truth_visible_counts = (string) get_option( 'bbai_e2e_dashboard_state_truth_fixture', '' ) !== '';
 
-        $bbai_dashboard_root_missing_count = (int) ( $bbai_li_truth_counts['missing'] ?? $bbai_li_truth_counts['missing_alt'] ?? $bbai_li_truth_counts['missingAlt'] ?? $bbai_dashboard_root_missing_count );
-        $bbai_dashboard_root_weak_count = (int) ( $bbai_li_truth_counts['review'] ?? $bbai_li_truth_counts['needs_review'] ?? $bbai_li_truth_counts['needsReview'] ?? $bbai_li_truth_counts['weak'] ?? $bbai_dashboard_root_weak_count );
-        $bbai_dashboard_root_optimized_count = (int) ( $bbai_li_truth_counts['optimized'] ?? $bbai_li_truth_counts['complete'] ?? $bbai_dashboard_root_optimized_count );
-        $bbai_dashboard_root_total_count = (int) ( $bbai_li_truth_counts['total'] ?? $bbai_li_truth_counts['total_images'] ?? $bbai_li_truth_counts['totalImages'] ?? $bbai_dashboard_root_total_count );
+        if ( $bbai_use_truth_visible_counts ) {
+            $bbai_dashboard_root_missing_count = (int) ( $bbai_li_truth_counts['missing'] ?? $bbai_li_truth_counts['missing_alt'] ?? $bbai_li_truth_counts['missingAlt'] ?? $bbai_dashboard_root_missing_count );
+            $bbai_dashboard_root_weak_count = (int) ( $bbai_li_truth_counts['review'] ?? $bbai_li_truth_counts['needs_review'] ?? $bbai_li_truth_counts['needsReview'] ?? $bbai_li_truth_counts['weak'] ?? $bbai_dashboard_root_weak_count );
+            $bbai_dashboard_root_optimized_count = (int) ( $bbai_li_truth_counts['optimized'] ?? $bbai_li_truth_counts['complete'] ?? $bbai_dashboard_root_optimized_count );
+            $bbai_dashboard_root_total_count = (int) ( $bbai_li_truth_counts['total'] ?? $bbai_li_truth_counts['total_images'] ?? $bbai_li_truth_counts['totalImages'] ?? $bbai_dashboard_root_total_count );
+        }
         $bbai_dashboard_root_credits_used = (int) ( $bbai_li_truth_credits['used'] ?? $bbai_li_truth_credits['credits_used'] ?? $bbai_li_truth_credits['creditsUsed'] ?? $bbai_dashboard_root_credits_used );
         $bbai_dashboard_root_credits_total = (int) ( $bbai_li_truth_credits['total'] ?? $bbai_li_truth_credits['limit'] ?? $bbai_li_truth_credits['credits_total'] ?? $bbai_li_truth_credits['creditsTotal'] ?? $bbai_dashboard_root_credits_total );
         $bbai_dashboard_root_credits_left = (int) ( $bbai_li_truth_credits['remaining'] ?? $bbai_li_truth_credits['credits_remaining'] ?? $bbai_li_truth_credits['creditsRemaining'] ?? $bbai_dashboard_root_credits_left );

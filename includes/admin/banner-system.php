@@ -113,6 +113,75 @@ function bbai_get_attention_counts(?array $coverage_scan = null): array
 }
 
 /**
+ * Reconcile dashboard state-truth counts to the same local media counts used by
+ * ALT Library. Credits, job metadata, and other non-count fields are preserved.
+ *
+ * @param array<string, mixed> $truth          Raw or nested state-truth payload.
+ * @param array<string, mixed> $library_counts Counts from bbai_get_attention_counts().
+ * @return array<string, mixed>
+ */
+function bbai_reconcile_state_truth_payload_to_library_counts(array $truth, array $library_counts): array
+{
+    if ((string) get_option('bbai_e2e_dashboard_state_truth_fixture', '') !== '') {
+        return $truth;
+    }
+
+    $missing   = max(0, (int) ($library_counts['missing'] ?? 0));
+    $review    = max(0, (int) ($library_counts['needs_review'] ?? $library_counts['review'] ?? 0));
+    $optimized = max(0, (int) ($library_counts['optimized_count'] ?? $library_counts['optimized'] ?? $library_counts['optimised'] ?? 0));
+    $total     = max(0, (int) ($library_counts['total_images'] ?? $library_counts['total'] ?? ($missing + $review + $optimized)));
+    $out       = $truth;
+
+    $apply = static function (array &$counts) use ($missing, $review, $optimized, $total): void {
+        $counts['missing']      = $missing;
+        $counts['missing_alt']  = $missing;
+        $counts['missingAlt']   = $missing;
+        $counts['review']       = $review;
+        $counts['needs_review'] = $review;
+        $counts['needsReview']  = $review;
+        $counts['weak']         = $review;
+        $counts['to_review']    = $review;
+        $counts['toReview']     = $review;
+        $counts['optimized']    = $optimized;
+        $counts['optimised']    = $optimized;
+        $counts['complete']     = $optimized;
+        $counts['total']        = $total;
+        $counts['total_images'] = $total;
+        $counts['totalImages']  = $total;
+    };
+
+    if (isset($out['data']) && is_array($out['data'])) {
+        if (!isset($out['data']['counts']) || !is_array($out['data']['counts'])) {
+            $out['data']['counts'] = [];
+        }
+        $apply($out['data']['counts']);
+        $out['data']['library_counts'] = [
+            'missing'      => $missing,
+            'review'       => $review,
+            'optimized'    => $optimized,
+            'optimised'    => $optimized,
+            'total'        => $total,
+            'total_images' => $total,
+        ];
+    }
+
+    if (!isset($out['counts']) || !is_array($out['counts'])) {
+        $out['counts'] = [];
+    }
+    $apply($out['counts']);
+    $out['library_counts'] = [
+        'missing'      => $missing,
+        'review'       => $review,
+        'optimized'    => $optimized,
+        'optimised'    => $optimized,
+        'total'        => $total,
+        'total_images' => $total,
+    ];
+
+    return $out;
+}
+
+/**
  * Normalize dashboard $bbai_dashboard_state into a resolver snapshot.
  *
  * @param array<string, mixed> $d Dashboard state from dashboard-body.
