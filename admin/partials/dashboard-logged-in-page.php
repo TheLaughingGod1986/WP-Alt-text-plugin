@@ -330,12 +330,14 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 
 	if ( ! empty( $bbai_strip_items ) ) :
 	?>
-	<div class="bbai-li-activity-strip bbai-li-activity-strip--<?php echo esc_attr( $bbai_strip_tone ); ?>" data-bbai-li-activity-strip="1">
-		<span class="bbai-li-activity-strip__dot" aria-hidden="true"></span>
-		<?php foreach ( $bbai_strip_items as $bbai_strip_i => $bbai_strip_text ) : ?>
-			<?php if ( $bbai_strip_i > 0 ) : ?><span class="bbai-li-activity-strip__sep" aria-hidden="true"> · </span><?php endif; ?>
-			<span class="bbai-li-activity-strip__item"<?php echo $bbai_strip_i === $bbai_strip_signal_index ? ' data-bbai-li-queued-signal="1"' : ''; ?>><?php echo esc_html( $bbai_strip_text ); ?></span>
-		<?php endforeach; ?>
+	<div class="bbai-card-meta-row">
+		<div class="bbai-li-activity-strip bbai-li-activity-strip--<?php echo esc_attr( $bbai_strip_tone ); ?>" data-bbai-li-activity-strip="1">
+			<span class="bbai-li-activity-strip__dot" aria-hidden="true"></span>
+			<?php foreach ( $bbai_strip_items as $bbai_strip_i => $bbai_strip_text ) : ?>
+				<?php if ( $bbai_strip_i > 0 ) : ?><span class="bbai-li-activity-strip__sep" aria-hidden="true"> · </span><?php endif; ?>
+				<span class="bbai-li-activity-strip__item"<?php echo $bbai_strip_i === $bbai_strip_signal_index ? ' data-bbai-li-queued-signal="1"' : ''; ?>><?php echo esc_html( $bbai_strip_text ); ?></span>
+			<?php endforeach; ?>
+		</div>
 	</div>
 	<?php endif; ?>
 

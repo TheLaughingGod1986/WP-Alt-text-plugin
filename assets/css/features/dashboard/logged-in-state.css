@@ -834,7 +834,7 @@ section.bbai-logged-in-dashboard {
 .bbai-li-card {
     background: #ffffff;
     border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 14px;
+    border-radius: 16px;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 6px 16px rgba(15, 23, 42, 0.05);
 }
 
@@ -842,9 +842,9 @@ section.bbai-logged-in-dashboard {
 .bbai-li-card--donut {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
-    padding: 28px 20px 28px;
+    padding: 24px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -958,7 +958,7 @@ section.bbai-logged-in-dashboard {
 .bbai-li-card--content {
     display: flex;
     flex-direction: column;
-    padding: 26px 32px 22px;
+    padding: 24px;
     justify-content: flex-start;
     gap: 4px;
 }
@@ -1244,6 +1244,27 @@ section.bbai-logged-in-dashboard {
     font-size: 12.5px;
     line-height: 1.5;
     color: #6b7280;
+}
+
+/* Meta row wrapper — keeps the status strip aligned and premium */
+.bbai-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    color: var(--bbai-text-muted, #6b7280);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.bbai-card-meta-row .bbai-li-activity-strip {
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
 }
 
 /* Coloured dot at the start */
@@ -1621,8 +1642,8 @@ body.toplevel_page_bbai:not(.bbai-dashboard--connected) .bbai-header--trial-funn
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
     position: relative;
-    gap: 28px;
-    --bbai-li-card-radius: 14px;
+    gap: 32px;
+    --bbai-li-card-radius: 16px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard .bbai-command-hero-host {
@@ -1788,7 +1809,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
     justify-content: center;
     height: 360px;
     min-height: 360px;
-    padding: 32px 24px;
+    padding: 24px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
@@ -1834,7 +1855,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__sub-label {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
     height: 360px;
     min-height: 360px;
-    padding: 30px 36px 26px;
+    padding: 24px;
     gap: 0;
 }
 
