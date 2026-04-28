@@ -84,12 +84,12 @@ $bbai_it_library_url   = admin_url( 'admin.php?page=bbai-library' );
 			<?php foreach ( $bbai_it_rows as $bbai_it_row ) :
 				$bbai_rid    = absint( $bbai_it_row['id'] ?? 0 );
 				$bbai_rfile  = (string) ( $bbai_it_row['filename'] ?? '' );
-				$bbai_rthumb = esc_url( (string) ( $bbai_it_row['thumb_url'] ?? '' ) );
+				$bbai_rthumb = (string) ( $bbai_it_row['thumb_url'] ?? '' );
 			?>
 			<tr class="bbai-li-image-table__row" data-attachment-id="<?php echo esc_attr( (string) $bbai_rid ); ?>">
 				<td class="bbai-li-image-table__col-thumb">
 					<?php if ( $bbai_rthumb ) : ?>
-						<img src="<?php echo $bbai_rthumb; ?>" alt="" width="40" height="40" loading="lazy" class="bbai-li-image-table__thumb" />
+						<img src="<?php echo esc_url( $bbai_rthumb ); ?>" alt="" width="40" height="40" loading="lazy" class="bbai-li-image-table__thumb" />
 					<?php else : ?>
 						<span class="bbai-li-image-table__thumb-placeholder" aria-hidden="true"></span>
 					<?php endif; ?>

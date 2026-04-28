@@ -26,12 +26,12 @@ $bbai_li_steps   = is_array( $bbai_li_surface['steps'] ?? null ) ? $bbai_li_surf
 	<?php if ( ! empty( $bbai_li_steps ) ) : ?>
 		<ol class="bbai-li-checklist">
 			<?php foreach ( $bbai_li_steps as $bbai_li_step ) :
-				$bbai_li_step_label = esc_html( (string) ( $bbai_li_step['label'] ?? '' ) );
-				$bbai_li_step_href  = esc_url( (string) ( $bbai_li_step['href'] ?? '#' ) );
+				$bbai_li_step_label = (string) ( $bbai_li_step['label'] ?? '' );
+				$bbai_li_step_href  = (string) ( $bbai_li_step['href'] ?? '#' );
 			?>
 				<li class="bbai-li-checklist__item">
-					<a href="<?php echo $bbai_li_step_href; ?>" class="bbai-li-checklist__link">
-						<?php echo $bbai_li_step_label; ?>
+					<a href="<?php echo esc_url( $bbai_li_step_href ); ?>" class="bbai-li-checklist__link">
+						<?php echo esc_html( $bbai_li_step_label ); ?>
 					</a>
 				</li>
 			<?php endforeach; ?>

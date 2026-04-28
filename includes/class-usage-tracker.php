@@ -246,6 +246,61 @@ class Usage_Tracker {
         set_transient(self::CACHE_KEY, self::normalize_usage_payload($usage_data), self::CACHE_EXPIRY);
         delete_transient('bbai_quota_cache');
     }
+
+    /**
+     * Consume local monthly credits (free plan fallback).
+     *
+     * This is only used when the backend usage source-of-truth is unavailable and the
+     * site is operating on the local monthly quota snapshot. It must never run for
+     * anonymous trial users (Trial_Quota owns that path).
+     *
+     * @param int $count Credits to consume (>= 1).
+     * @return array<string,mixed>|null Updated usage payload or null when not applicable.
+     */
+    public static function consume_local_monthly_credits(int $count = 1): ?array {
+        $count = max(1, (int) $count);
+
+        // Never touch local monthly credits for anonymous trial users.
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( class_exists('\BeepBeepAI\AltTextGenerator\Trial_Quota') && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            return null;
+        }
+
+        $usage = self::get_local_usage_snapshot();
+        $source = strtolower((string) ($usage['source'] ?? ''));
+
+        // Only mutate the local snapshot path.
+        if ( ! in_array($source, ['local_snapshot'], true) ) {
+            return null;
+        }
+
+        $used = max(0, (int) ($usage['used'] ?? 0));
+        $limit = max(1, (int) ($usage['limit'] ?? 0));
+        $remaining = max(0, (int) ($usage['remaining'] ?? max(0, $limit - $used)));
+
+        $new_used = min($limit, $used + $count);
+        $new_remaining = max(0, $limit - $new_used);
+
+        $next = array_merge($usage, [
+            'used' => $new_used,
+            'remaining' => $new_remaining,
+            'limit' => $limit,
+            'credits_used' => $new_used,
+            'credits_remaining' => $new_remaining,
+            'credits_total' => $limit,
+            'creditsUsed' => $new_used,
+            'creditsRemaining' => $new_remaining,
+            'creditsTotal' => $limit,
+            'creditsLimit' => $limit,
+            'source' => 'local_snapshot',
+        ]);
+
+        // Persist to transient (keep local source).
+        set_transient(self::CACHE_KEY, self::normalize_usage_payload($next), self::CACHE_EXPIRY);
+        delete_transient('bbai_quota_cache');
+
+        return self::get_local_usage_snapshot();
+    }
     
     /**
      * Get cached usage data

@@ -57,7 +57,7 @@ class Logged_In_Dashboard_Resolver {
 	public static function resolve( array $ctx ): array {
 		$ctx = self::normalize_ctx( $ctx );
 
-		$state = self::compute_state_id( $ctx );
+		$state = self::enforce_count_state_invariant( self::compute_state_id( $ctx ), $ctx );
 
 		return [
 			'state'         => $state,
@@ -116,15 +116,18 @@ class Logged_In_Dashboard_Resolver {
 			$plan
 		);
 		$backend_state = self::normalize_state_truth_state( (string) ( $truth['state'] ?? '' ) );
-		$state         = self::compute_state_id( $ctx );
+		$state         = self::enforce_count_state_invariant( self::compute_state_id( $ctx ), $ctx );
 
-		error_log(
-			'[bbai-state-priority] raw_counts=' . wp_json_encode( $truth['counts'] ?? [] ) .
-			' normalized_counts=' . wp_json_encode( $ctx['counts'] ) .
-			' backend_state=' . $backend_state .
-			' selected_state=' . $state .
-			' primary_cta=' . ( self::STATE_MIXED_ATTENTION === $state ? 'Generate missing ALT text' : ( self::STATE_NEEDS_REVIEW === $state ? 'Approve all' : 'varies' ) )
-		);
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- debug-only; gated by WP_DEBUG.
+			error_log(
+				'[bbai-state-priority] raw_counts=' . wp_json_encode( $truth['counts'] ?? [] ) .
+				' normalized_counts=' . wp_json_encode( $ctx['counts'] ) .
+				' backend_state=' . $backend_state .
+				' selected_state=' . $state .
+				' primary_cta=' . ( self::STATE_MIXED_ATTENTION === $state ? 'Generate missing ALT text' : ( self::STATE_NEEDS_REVIEW === $state ? 'Approve all' : 'varies' ) )
+			);
+		}
 
 		return [
 			'state'         => $state,
@@ -413,6 +416,35 @@ class Logged_In_Dashboard_Resolver {
 		return self::STATE_ALL_CLEAR;
 	}
 
+	/**
+	 * Guard against impossible complete states caused by stale upstream labels.
+	 *
+	 * @param string              $state State ID constant.
+	 * @param array<string,mixed> $ctx   Normalised context.
+	 * @return string State ID constant.
+	 */
+	private static function enforce_count_state_invariant( string $state, array $ctx ): string {
+		if ( self::STATE_ALL_CLEAR !== $state ) {
+			return $state;
+		}
+
+		$counts  = is_array( $ctx['counts'] ?? null ) ? $ctx['counts'] : [];
+		$missing = max( 0, (int) ( $counts['missing'] ?? 0 ) );
+		$review  = max( 0, (int) ( $counts['review'] ?? 0 ) );
+
+		if ( $missing > 0 && $review > 0 ) {
+			return self::STATE_MIXED_ATTENTION;
+		}
+		if ( $missing > 0 ) {
+			return self::STATE_MISSING_ALT;
+		}
+		if ( $review > 0 ) {
+			return self::STATE_NEEDS_REVIEW;
+		}
+
+		return $state;
+	}
+
 	// ──────────────────────────────────────────────────────────────────────────
 	// Hero builder
 	// ──────────────────────────────────────────────────────────────────────────
@@ -440,6 +472,17 @@ class Logged_In_Dashboard_Resolver {
 		$credits  = $ctx['credits'];
 		$cr_used  = (int) ( $credits['used']  ?? 0 );
 		$cr_total = max( 1, (int) ( $credits['total'] ?? 1 ) );
+
+		// Impossible queue states (stale labels) must never yield review CTAs with zero review items.
+		if ( self::STATE_NEEDS_REVIEW === $state && $review <= 0 ) {
+			$state = $missing > 0 ? self::STATE_MISSING_ALT : self::STATE_ALL_CLEAR;
+		} elseif ( self::STATE_MIXED_ATTENTION === $state && ( $missing <= 0 || $review <= 0 ) ) {
+			$state = $missing > 0 ? self::STATE_MISSING_ALT : ( $review > 0 ? self::STATE_NEEDS_REVIEW : self::STATE_ALL_CLEAR );
+		} elseif ( self::STATE_MISSING_ALT === $state && $missing <= 0 ) {
+			$state = $review > 0 ? self::STATE_NEEDS_REVIEW : self::STATE_ALL_CLEAR;
+		} elseif ( self::STATE_ALL_CLEAR === $state && ( $missing > 0 || $review > 0 ) ) {
+			$state = $missing > 0 && $review > 0 ? self::STATE_MIXED_ATTENTION : ( $missing > 0 ? self::STATE_MISSING_ALT : self::STATE_NEEDS_REVIEW );
+		}
 
 		// Compact summary shown beneath the CTAs. Always present (suppressed per-state only).
 		$summary = self::build_hero_summary( $missing, $review, $complete, $cr_used, $cr_total, $state, $is_pro );
@@ -478,21 +521,25 @@ class Logged_In_Dashboard_Resolver {
 				) . '#bbai-review-filter-tabs';
 
 				return [
-					'badge'         => [ 'text' => __( 'Queued', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'gray' ],
+					'badge'         => [ 'text' => __( 'Ready to generate', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'blue' ],
 					'headline'      => sprintf(
-						/* translators: %s: queued image count */
-						_n( '%s image is queued', '%s images are queued', $queued_total, 'beepbeep-ai-alt-text-generator' ),
+						/* translators: %s: number of images ready to generate */
+						_n( '%s image is ready for ALT text', '%s images are ready for ALT text', $queued_total, 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $queued_total )
 					),
-					'support'       => __( 'Your next batch is lined up. Start it now or leave it queued for automatic processing.', 'beepbeep-ai-alt-text-generator' ),
+					'support'       => __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ),
 					'variant'       => 'queued',
 					'primary_cta'   => [
-						'label'      => __( 'Start generating now', 'beepbeep-ai-alt-text-generator' ),
+						'label'      => sprintf(
+							/* translators: %s: number of images ready to generate */
+							_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $queued_total, 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $queued_total )
+						),
 						'busy_label' => __( 'Starting generation…', 'beepbeep-ai-alt-text-generator' ),
 						'action'     => 'generate-missing',
 					],
 					'secondary_cta' => [
-						'label'  => __( 'View queued images', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => __( 'Preview images', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => $queued_href,
 					],
@@ -553,7 +600,7 @@ class Logged_In_Dashboard_Resolver {
 					'variant'       => 'running',
 					'primary_cta'   => $primary_cta,
 					'secondary_cta' => [
-						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => __( 'Review existing ALT text', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'admin.php?page=bbai-library' ),
 					],
@@ -613,7 +660,7 @@ class Logged_In_Dashboard_Resolver {
 						'action'      => 'retry-failed',
 					],
 					'secondary_cta' => [
-						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => __( 'Review existing ALT text', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'admin.php?page=bbai-library' ),
 					],
@@ -651,7 +698,7 @@ class Logged_In_Dashboard_Resolver {
 							'href'   => '' !== $signup_url ? $signup_url : admin_url( 'admin.php?page=bbai-settings' ),
 						],
 						'secondary_cta' => [
-							'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
+							'label'  => __( 'Review existing ALT text', 'beepbeep-ai-alt-text-generator' ),
 							'action' => 'navigate',
 							'href'   => admin_url( 'admin.php?page=bbai-library' ),
 						],
@@ -693,7 +740,7 @@ class Logged_In_Dashboard_Resolver {
 						'href'   => admin_url( 'admin.php?page=bbai-credit-usage' ),
 					],
 					'secondary_cta' => [
-						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => __( 'Review existing ALT text', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'admin.php?page=bbai-library' ),
 					],
@@ -714,12 +761,8 @@ class Logged_In_Dashboard_Resolver {
 
 				return [
 					'badge'         => [ 'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'amber' ],
-					'headline'      => sprintf(
-						/* translators: 1: missing ALT count, 2: review count */
-						__( '%1$s images need ALT text, %2$s ready for review', 'beepbeep-ai-alt-text-generator' ),
-						number_format_i18n( $missing ),
-						number_format_i18n( $review )
-					),
+					/* Counts live in the hero status row — keep the headline outcome-focused, not a second summary. */
+					'headline'      => __( 'Generate missing ALT text, then review suggestions', 'beepbeep-ai-alt-text-generator' ),
 					'support'       => __( 'Generate missing ALT text first, then review the suggested descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ),
 					'variant'       => 'default',
 					'primary_cta'   => [
@@ -754,8 +797,8 @@ class Logged_In_Dashboard_Resolver {
 					? sprintf(
 						/* translators: %s: number of images ready to approve */
 						_n(
-							'AI has prepared a suggestion for %s image — approve everything now or open the queue for a closer pass.',
-							'AI has prepared suggestions for %s images — approve everything now or open the queue for a closer pass.',
+							'You have %s image waiting for approval — approve all or open the queue to check each one.',
+							'You have %s images waiting for approval — approve all or open the queue to check each one.',
 							$review,
 							'beepbeep-ai-alt-text-generator'
 						),
@@ -778,7 +821,7 @@ class Logged_In_Dashboard_Resolver {
 						'action'      => 'approve-all',
 					],
 					'secondary_cta' => [
-						'label'  => __( 'Open review queue', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => __( 'Review individually →', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => $review_library_href,
 					],
@@ -844,6 +887,14 @@ class Logged_In_Dashboard_Resolver {
 					)
 					: __( 'Generate the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' );
 
+				if ( ! $is_pro && $missing > 0 ) {
+					$missing_support .= ' ' . sprintf(
+						/* translators: %s: number of images missing ALT text */
+						__( 'Fix all %s in one batch — upgrade for higher limits and automation.', 'beepbeep-ai-alt-text-generator' ),
+						number_format_i18n( $missing )
+					);
+				}
+
 				return [
 					'badge'         => [ 'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'amber' ],
 					'headline'      => sprintf(
@@ -859,7 +910,7 @@ class Logged_In_Dashboard_Resolver {
 						'action'      => 'generate-missing',
 					],
 					'secondary_cta' => [
-						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => __( 'Review existing ALT text', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'admin.php?page=bbai-library' ),
 					],
@@ -868,59 +919,28 @@ class Logged_In_Dashboard_Resolver {
 
 			case self::STATE_ALL_CLEAR:
 			default:
-				$last_run_formatted = $last_run
-					? date_i18n( get_option( 'date_format' ), strtotime( $last_run ) )
-					: null;
-
-				// Pro users get proof of value (total optimised). Free get readiness messaging.
-				$all_clear_support = $is_pro
-					? ( $last_run_formatted
-						? sprintf(
-							/* translators: 1: total optimised count, 2: last run date */
-							_n(
-								'All %1$s image is optimised. Last updated %2$s — ready for new uploads.',
-								'All %1$s images are optimised. Last updated %2$s — ready for new uploads.',
-								$complete,
-								'beepbeep-ai-alt-text-generator'
-							),
-							number_format_i18n( $complete ),
-							$last_run_formatted
-						)
-						: sprintf(
-							/* translators: %s: total optimised count */
-							_n(
-								'All %s image is optimised. New uploads are processed automatically.',
-								'All %s images are optimised. New uploads are processed automatically.',
-								$complete,
-								'beepbeep-ai-alt-text-generator'
-							),
-							number_format_i18n( $complete )
-						)
-					)
-					: ( $last_run_formatted
-						? sprintf(
-							/* translators: %s: last run date */
-							__( 'Your library is fully optimised. Last updated %s.', 'beepbeep-ai-alt-text-generator' ),
-							$last_run_formatted
-						)
-						: __( 'Your library is fully optimised. New uploads will be processed automatically.', 'beepbeep-ai-alt-text-generator' )
-					);
+				$all_clear_support = __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
+				if ( ! $is_pro ) {
+					$all_clear_support .= ' ' . __( 'New uploads will not be optimised automatically on the free plan.', 'beepbeep-ai-alt-text-generator' );
+				}
 
 				return [
 					'badge'         => [ 'text' => __( 'All optimised', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'green' ],
-					'headline'      => sprintf(
-						/* translators: %s: total image count */
-						_n( 'All %s image is optimised', 'All %s images are optimised', $total, 'beepbeep-ai-alt-text-generator' ),
-						number_format_i18n( $total )
-					),
+					'headline'      => __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' ),
 					'support'       => $all_clear_support,
 					'variant'       => 'success',
 					'primary_cta'   => [
-						'label'       => __( 'Re-scan library', 'beepbeep-ai-alt-text-generator' ),
-						'busy_label'  => __( 'Scanning…', 'beepbeep-ai-alt-text-generator' ),
-						'action'      => 'rescan-media-library',
+						'label'  => __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' ),
+						'action' => 'navigate',
+						'href'   => admin_url( 'upload.php' ),
 					],
 					'secondary_cta' => [
+						'label'       => __( 'Re-scan library →', 'beepbeep-ai-alt-text-generator' ),
+						'busy_label'  => __( 'Scanning…', 'beepbeep-ai-alt-text-generator' ),
+						'action'      => 'rescan-media-library',
+						'href'        => '#',
+					],
+					'library_cta'   => [
 						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'admin.php?page=bbai-library' ),
@@ -933,8 +953,13 @@ class Logged_In_Dashboard_Resolver {
 							'mod'   => 'ok',
 						],
 						[
-							'label' => __( 'Credits left', 'beepbeep-ai-alt-text-generator' ),
-							'value' => number_format_i18n( max( 0, $cr_total - $cr_used ) ) . ' / ' . number_format_i18n( $cr_total ),
+							'label' => __( 'Credits (this month)', 'beepbeep-ai-alt-text-generator' ),
+							'value' => sprintf(
+								/* translators: 1: used count, 2: limit */
+								__( '%1$s / %2$s used', 'beepbeep-ai-alt-text-generator' ),
+								number_format_i18n( $cr_used ),
+								number_format_i18n( $cr_total )
+							),
 							'mod'   => 'muted',
 						],
 					],
@@ -1345,8 +1370,15 @@ class Logged_In_Dashboard_Resolver {
 			'mod'   => $is_review_state ? 'primary' : ( $review > 0 ? 'warn' : 'ok' ),
 		];
 		$items[] = [
-			'label' => __( 'Credits left', 'beepbeep-ai-alt-text-generator' ),
-			'value' => number_format_i18n( $cr_left ) . ' / ' . number_format_i18n( $cr_total ),
+			'label' => self::STATE_ALL_CLEAR === $state
+				? __( 'Credits (this month)', 'beepbeep-ai-alt-text-generator' )
+				: __( 'Credits left', 'beepbeep-ai-alt-text-generator' ),
+			'value' => sprintf(
+				/* translators: 1: credits used, 2: credit limit */
+				__( '%1$s / %2$s used', 'beepbeep-ai-alt-text-generator' ),
+				number_format_i18n( $cr_used ),
+				number_format_i18n( $cr_total )
+			),
 			'mod'   => $is_review_state ? 'muted' : ( $cr_left <= 0 ? 'alert' : ( $cr_pct >= 80 ? 'warn' : 'muted' ) ),
 		];
 
@@ -1398,13 +1430,13 @@ class Logged_In_Dashboard_Resolver {
 				$queued_total = $job_total > 0 ? $job_total : $missing;
 				return [
 					'pct'              => 0,
-					'color'            => 'gray',
+					'color'            => 'blue',
 					'animated'         => false,
 					'center_label'     => number_format_i18n( $queued_total ),
-					'center_sub_label' => _n( 'queued image', 'queued images', $queued_total, 'beepbeep-ai-alt-text-generator' ),
+					'center_sub_label' => __( 'Ready to generate', 'beepbeep-ai-alt-text-generator' ),
 					'aria_label'       => sprintf(
-						/* translators: %s: queued image count */
-						_n( '%s image queued; waiting to start', '%s images queued; waiting to start', $queued_total, 'beepbeep-ai-alt-text-generator' ),
+						/* translators: %s: image count ready to generate */
+						_n( '%s image ready to generate ALT text', '%s images ready to generate ALT text', $queued_total, 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $queued_total )
 					),
 					'segments'         => $segments,
@@ -1513,7 +1545,7 @@ class Logged_In_Dashboard_Resolver {
 					'color'            => 'green',
 					'animated'         => false,
 					'center_label'     => '✓',
-					'center_sub_label' => __( 'all clear', 'beepbeep-ai-alt-text-generator' ),
+					'center_sub_label' => '',
 					'aria_label'       => __( 'All images have ALT text', 'beepbeep-ai-alt-text-generator' ),
 					'segments'         => $segments,
 				];
@@ -1600,8 +1632,22 @@ class Logged_In_Dashboard_Resolver {
 			}
 		}
 
-		// Add processing pill only while a job is actively running.
-		if ( self::STATE_PROCESSING === $state && $job !== null ) {
+		// Add queued / processing pill only while a job is active.
+		if ( self::STATE_QUEUED === $state && $job !== null ) {
+			$queued_count = max( 0, (int) ( $job['total'] ?? 0 ) - (int) ( $job['done'] ?? 0 ) );
+			if ( $queued_count > 0 ) {
+				$pills[] = [
+					'id'    => 'queued',
+					'label' => sprintf(
+						/* translators: %s: count */
+						_n( '%s ready to generate', '%s ready to generate', $queued_count, 'beepbeep-ai-alt-text-generator' ),
+						number_format_i18n( $queued_count )
+					),
+					'count' => $queued_count,
+					'color' => 'blue',
+				];
+			}
+		} elseif ( self::STATE_PROCESSING === $state && $job !== null ) {
 			$processing_count = max( 0, (int) ( $job['total'] ?? 0 ) - (int) ( $job['done'] ?? 0 ) );
 			if ( $processing_count > 0 ) {
 				$pills[] = [
@@ -1999,7 +2045,7 @@ class Logged_In_Dashboard_Resolver {
 		$total    = max( 0, (int) ( $coverage['total_images'] ?? $coverage['total'] ?? ( $missing + $review + $complete ) ) );
 
 		$used  = max( 0, (int) ( $usage_stats['credits_used'] ?? $usage_stats['used'] ?? 0 ) );
-		$limit = max( 1, (int) ( $usage_stats['credits_total'] ?? $usage_stats['limit'] ?? 50 ) );
+		$limit = max( 1, (int) ( $usage_stats['credits_total'] ?? $usage_stats['limit'] ?? 1 ) );
 
 		// user_type: 'trial' | 'free' | 'pro'
 		$user_type = sanitize_key( (string) ( $plan['user_type'] ?? 'free' ) );

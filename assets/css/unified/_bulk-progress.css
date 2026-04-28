@@ -146,18 +146,25 @@
 .bbai-bulk-progress__bar {
 	position: relative;
 	height: 12px;
-	background: rgba(226, 232, 240, 0.92);
+	background: rgba(241, 245, 249, 0.95);
 	border-radius: 999px;
 	overflow: hidden;
+	box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+	outline: none;
+}
+
+.bbai-bulk-progress__bar:focus-visible {
+	box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 2px #fff, 0 0 0 4px rgba(37, 99, 235, 0.35);
 }
 
 .bbai-bulk-progress__bar-fill {
 	height: 100%;
 	width: 0;
+	max-width: 100%;
 	border-radius: 999px;
 	background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
-	box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3);
-	transition: width 0.4s ease;
+	box-shadow: 0 6px 16px rgba(34, 197, 94, 0.28);
+	transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .bbai-bulk-progress__status-note {

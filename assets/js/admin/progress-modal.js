@@ -100,32 +100,44 @@
     /**
      * Update bulk progress bar with detailed stats
      */
+    /**
+     * Update bulk progress bar. Fill is always (completed ÷ total) × 100 based on finished slots,
+     * where completed never decreases (supports callers that update before syncing modal data).
+     */
     window.updateBulkProgress = function(current, total, imageTitle) {
         var $modal = $('#bbai-bulk-progress-modal');
         if (!$modal.length) return;
 
-        var percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+        var storedTotal = Math.max(0, parseInt($modal.data('total'), 10) || 0);
+        var tot = Math.max(0, parseInt(total, 10) || 0) || storedTotal;
+        var prevDone = Math.max(0, parseInt($modal.data('current'), 10) || 0);
+        var argDone = Math.max(0, parseInt(current, 10) || 0);
+        var completed = tot > 0 ? Math.min(tot, Math.max(prevDone, argDone)) : Math.max(prevDone, argDone);
+        $modal.data('current', completed);
+        $modal.data('total', tot);
+
+        var percentage = tot > 0 ? Math.min(100, Math.round((completed / tot) * 100)) : 0;
         var startTime = $modal.data('startTime') || Date.now();
         var elapsed = (Date.now() - startTime) / 1000;
 
         var eta = 'Waiting for first image…';
-        if (current > 0 && elapsed > 0) {
-            var avgTimePerImage = elapsed / current;
-            var remaining = total - current;
+        if (completed > 0 && elapsed > 0) {
+            var avgTimePerImage = elapsed / completed;
+            var remaining = tot - completed;
             var etaSeconds = remaining * avgTimePerImage;
 
             if (etaSeconds < 60) {
-                eta = Math.ceil(etaSeconds) + 's';
+                eta = '~' + Math.ceil(etaSeconds) + 's left';
             } else if (etaSeconds < 3600) {
-                eta = Math.ceil(etaSeconds / 60) + 'm';
+                eta = '~' + Math.ceil(etaSeconds / 60) + 'm left';
             } else {
                 var hours = Math.floor(etaSeconds / 3600);
                 var mins = Math.ceil((etaSeconds % 3600) / 60);
-                eta = hours + 'h ' + mins + 'm';
+                eta = '~' + hours + 'h ' + mins + 'm left';
             }
         }
 
-        $modal.find('.bbai-bulk-progress__current').text(current);
+        $modal.find('.bbai-bulk-progress__current').text(completed);
         $modal.find('.bbai-bulk-progress__percentage').text(percentage + '%');
         $modal.find('.bbai-bulk-progress__eta').text(eta);
         $modal.find('.bbai-bulk-progress__bar-fill').css('width', percentage + '%');

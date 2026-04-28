@@ -31,7 +31,7 @@ $bbai_li_state_id = $bbai_li_state['state'] ?? '';
 $bbai_li_usage_hidden = ! empty( $bbai_li_usage['hidden'] );
 $bbai_li_usage_pct    = max( 0, min( 100, (int) ( $bbai_li_usage['pct'] ?? 0 ) ) );
 $bbai_li_usage_color  = sanitize_html_class( $bbai_li_usage['color'] ?? 'green' );
-$bbai_li_usage_label  = esc_html( (string) ( $bbai_li_usage['label'] ?? '' ) );
+$bbai_li_usage_label = (string) ( $bbai_li_usage['label'] ?? '' );
 $bbai_li_billing_url  = admin_url( 'admin.php?page=bbai-credit-usage' );
 ?>
 
@@ -51,17 +51,17 @@ $bbai_li_billing_url  = admin_url( 'admin.php?page=bbai-credit-usage' );
 			<?php foreach ( $bbai_li_pills as $bbai_li_pill ) :
 				$bbai_li_pill_id    = sanitize_html_class( (string) ( $bbai_li_pill['id'] ?? '' ) );
 				$bbai_li_pill_color = sanitize_html_class( (string) ( $bbai_li_pill['color'] ?? 'gray' ) );
-				$bbai_li_pill_label = esc_html( (string) ( $bbai_li_pill['label'] ?? '' ) );
+				$bbai_li_pill_label = (string) ( $bbai_li_pill['label'] ?? '' );
 				$bbai_li_pill_count = (int) ( $bbai_li_pill['count'] ?? 0 );
 				if ( $bbai_li_pill_count <= 0 ) continue;
 			?>
 				<li
-					class="bbai-li-pill bbai-li-pill--<?php echo $bbai_li_pill_id; ?> bbai-li-pill--<?php echo $bbai_li_pill_color; ?>"
-					data-bbai-li-pill="<?php echo $bbai_li_pill_id; ?>"
-					aria-label="<?php echo $bbai_li_pill_label; ?>"
+					class="bbai-li-pill bbai-li-pill--<?php echo esc_attr( $bbai_li_pill_id ); ?> bbai-li-pill--<?php echo esc_attr( $bbai_li_pill_color ); ?>"
+					data-bbai-li-pill="<?php echo esc_attr( $bbai_li_pill_id ); ?>"
+					aria-label="<?php echo esc_attr( $bbai_li_pill_label ); ?>"
 				>
-					<span class="bbai-li-pill__count"><?php echo number_format_i18n( $bbai_li_pill_count ); ?></span>
-					<span class="bbai-li-pill__label"><?php echo $bbai_li_pill_label; ?></span>
+					<span class="bbai-li-pill__count"><?php echo esc_html( (string) number_format_i18n( $bbai_li_pill_count ) ); ?></span>
+					<span class="bbai-li-pill__label"><?php echo esc_html( $bbai_li_pill_label ); ?></span>
 				</li>
 			<?php endforeach; ?>
 		</ul>
@@ -70,11 +70,11 @@ $bbai_li_billing_url  = admin_url( 'admin.php?page=bbai-credit-usage' );
 	<?php /* ── Usage bar ─────────────────────────────────────────────────── */ ?>
 	<?php if ( ! $bbai_li_usage_hidden ) : ?>
 		<a
-			class="bbai-li-usage-bar bbai-li-usage-bar--<?php echo $bbai_li_usage_color; ?>"
+			class="bbai-li-usage-bar bbai-li-usage-bar--<?php echo esc_attr( $bbai_li_usage_color ); ?>"
 			href="<?php echo esc_url( $bbai_li_billing_url ); ?>"
 			data-bbai-li-usage-bar="1"
-			title="<?php echo $bbai_li_usage_label; ?>"
-			aria-label="<?php echo $bbai_li_usage_label; ?>"
+			title="<?php echo esc_attr( $bbai_li_usage_label ); ?>"
+			aria-label="<?php echo esc_attr( $bbai_li_usage_label ); ?>"
 		>
 			<div class="bbai-li-usage-bar__track">
 				<div
@@ -83,7 +83,7 @@ $bbai_li_billing_url  = admin_url( 'admin.php?page=bbai-credit-usage' );
 					data-bbai-li-usage-pct="<?php echo esc_attr( $bbai_li_usage_pct ); ?>"
 				></div>
 			</div>
-			<span class="bbai-li-usage-bar__label"><?php echo $bbai_li_usage_label; ?></span>
+			<span class="bbai-li-usage-bar__label"><?php echo esc_html( $bbai_li_usage_label ); ?></span>
 		</a>
 	<?php endif; ?>
 

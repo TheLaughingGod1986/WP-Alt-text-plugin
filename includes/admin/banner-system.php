@@ -113,72 +113,117 @@ function bbai_get_attention_counts(?array $coverage_scan = null): array
 }
 
 /**
- * Reconcile dashboard state-truth counts to the same local media counts used by
- * ALT Library. Credits, job metadata, and other non-count fields are preserved.
+ * Reconcile remote dashboard counts with the local media library (same source as
+ * ALT Library: get_alt_text_coverage_scan / bbai_get_attention_counts). The SaaS
+ * ledger can be ahead/behind WordPress; the dashboard and library must agree.
+ * Skipped when the E2E state-truth fixture is active.
  *
- * @param array<string, mixed> $truth          Raw or nested state-truth payload.
- * @param array<string, mixed> $library_counts Counts from bbai_get_attention_counts().
+ * @param array<string, mixed> $truth            Raw or nested state-truth payload.
+ * @param int                  $local_missing    Local images_missing_alt count.
+ * @param int|null             $local_needs_review Local needs-review (weak) count; null = do not override.
+ * @param int|null             $local_optimized  Local optimised count; null = do not override.
+ * @param int|null             $local_total      Local total image count; null = do not override.
  * @return array<string, mixed>
  */
-function bbai_reconcile_state_truth_payload_to_library_counts(array $truth, array $library_counts): array
-{
-    if ((string) get_option('bbai_e2e_dashboard_state_truth_fixture', '') !== '') {
-        return $truth;
+function bbai_reconcile_state_truth_payload_missing_to_local( array $truth, int $local_missing, ?int $local_needs_review = null, ?int $local_optimized = null, ?int $local_total = null ) {
+    $fixture_raw = get_option( 'bbai_e2e_dashboard_state_truth_fixture', '' );
+    if ( '' !== (string) $fixture_raw ) {
+        // Most E2E fixtures must bypass local scan so counts match the scripted payload.
+        // Bootstrap-sync tests intentionally ship an empty remote ledger while the site has
+        // real attachments; merge local coverage so the resolver does not fall through to NO_IMAGES.
+        $fixture_decoded = null;
+        if ( is_string( $fixture_raw ) ) {
+            $fixture_decoded = json_decode( $fixture_raw, true );
+        } elseif ( is_array( $fixture_raw ) ) {
+            $fixture_decoded = $fixture_raw;
+        }
+        $fixture_counts_src = is_array( $fixture_decoded )
+            && isset( $fixture_decoded['resolution_sources'] )
+            && is_array( $fixture_decoded['resolution_sources'] )
+            ? (string) ( $fixture_decoded['resolution_sources']['counts'] ?? '' )
+            : '';
+        if ( 'image_alt_states_empty_unseeded' !== $fixture_counts_src ) {
+            return $truth;
+        }
     }
 
-    $missing   = max(0, (int) ($library_counts['missing'] ?? 0));
-    $review    = max(0, (int) ($library_counts['needs_review'] ?? $library_counts['review'] ?? 0));
-    $optimized = max(0, (int) ($library_counts['optimized_count'] ?? $library_counts['optimized'] ?? $library_counts['optimised'] ?? 0));
-    $total     = max(0, (int) ($library_counts['total_images'] ?? $library_counts['total'] ?? ($missing + $review + $optimized)));
-    $out       = $truth;
+    $local_missing = max( 0, (int) $local_missing );
+    $out            = $truth;
 
-    $apply = static function (array &$counts) use ($missing, $review, $optimized, $total): void {
-        $counts['missing']      = $missing;
-        $counts['missing_alt']  = $missing;
-        $counts['missingAlt']   = $missing;
-        $counts['review']       = $review;
-        $counts['needs_review'] = $review;
-        $counts['needsReview']  = $review;
-        $counts['weak']         = $review;
-        $counts['to_review']    = $review;
-        $counts['toReview']     = $review;
-        $counts['optimized']    = $optimized;
-        $counts['optimised']    = $optimized;
-        $counts['complete']     = $optimized;
-        $counts['total']        = $total;
-        $counts['total_images'] = $total;
-        $counts['totalImages']  = $total;
+    if ( null !== $local_needs_review ) {
+        $local_needs_review = max( 0, (int) $local_needs_review );
+    }
+    if ( null !== $local_optimized ) {
+        $local_optimized = max( 0, (int) $local_optimized );
+    }
+    if ( null !== $local_total ) {
+        $local_total = max( 0, (int) $local_total );
+    }
+
+    $apply = static function ( array &$counts ) use ( $local_missing, $local_needs_review, $local_optimized, $local_total ) {
+        $counts['missing']     = $local_missing;
+        $counts['missing_alt'] = $local_missing;
+        $counts['missingAlt']  = $local_missing;
+        if ( null !== $local_needs_review ) {
+            $counts['review']      = $local_needs_review;
+            $counts['needs_review'] = $local_needs_review;
+            $counts['needsReview']  = $local_needs_review;
+            $counts['weak']         = $local_needs_review;
+            $counts['to_review']     = $local_needs_review;
+            $counts['toReview']      = $local_needs_review;
+        }
+        if ( null !== $local_optimized ) {
+            $counts['complete']   = $local_optimized;
+            $counts['optimized']  = $local_optimized;
+            $counts['optimised']  = $local_optimized;
+            $counts['generated']  = $local_optimized;
+        }
+        if ( null !== $local_total ) {
+            $counts['total']        = $local_total;
+            $counts['total_images'] = $local_total;
+            $counts['totalImages']  = $local_total;
+        }
     };
 
-    if (isset($out['data']) && is_array($out['data'])) {
-        if (!isset($out['data']['counts']) || !is_array($out['data']['counts'])) {
+    if ( isset( $out['data'] ) && is_array( $out['data'] ) ) {
+        if ( ! isset( $out['data']['counts'] ) || ! is_array( $out['data']['counts'] ) ) {
             $out['data']['counts'] = [];
         }
-        $apply($out['data']['counts']);
-        $out['data']['library_counts'] = [
-            'missing'      => $missing,
-            'review'       => $review,
-            'optimized'    => $optimized,
-            'optimised'    => $optimized,
-            'total'        => $total,
-            'total_images' => $total,
-        ];
+        $apply( $out['data']['counts'] );
     }
 
-    if (!isset($out['counts']) || !is_array($out['counts'])) {
+    if ( ! isset( $out['counts'] ) || ! is_array( $out['counts'] ) ) {
         $out['counts'] = [];
     }
-    $apply($out['counts']);
-    $out['library_counts'] = [
-        'missing'      => $missing,
-        'review'       => $review,
-        'optimized'    => $optimized,
-        'optimised'    => $optimized,
-        'total'        => $total,
-        'total_images' => $total,
-    ];
+    $apply( $out['counts'] );
 
     return $out;
+}
+
+/**
+ * Build the canonical hash used by SSR and REST dashboard count payloads.
+ *
+ * @param array<string, mixed> $counts Raw or normalized count payload.
+ * @return string
+ */
+function bbai_state_truth_counts_hash( array $counts ): string {
+    $missing   = max( 0, (int) ( $counts['missing'] ?? $counts['missing_alt'] ?? $counts['missingAlt'] ?? 0 ) );
+    $review    = max( 0, (int) ( $counts['review'] ?? $counts['to_review'] ?? $counts['toReview'] ?? $counts['needs_review'] ?? $counts['needsReview'] ?? $counts['weak'] ?? 0 ) );
+    $optimized = max( 0, (int) ( $counts['optimized'] ?? $counts['complete'] ?? $counts['optimised'] ?? 0 ) );
+    $failed    = max( 0, (int) ( $counts['failed'] ?? 0 ) );
+    $total     = max( 0, (int) ( $counts['total'] ?? $counts['total_images'] ?? $counts['totalImages'] ?? ( $missing + $review + $optimized + $failed ) ) );
+
+    return md5(
+        wp_json_encode(
+            [
+                'missing'   => $missing,
+                'review'    => $review,
+                'optimized' => $optimized,
+                'failed'    => $failed,
+                'total'     => $total,
+            ]
+        )
+    );
 }
 
 /**

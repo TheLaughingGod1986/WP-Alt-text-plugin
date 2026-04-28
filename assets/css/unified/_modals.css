@@ -124,6 +124,82 @@
     color: var(--bbai-text);
 }
 
+/* Logged-out dashboard: post–first-generation “conversion” (signup) dialog over trial hero */
+.bbai-ftue-conversion-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--bbai-space-4);
+    box-sizing: border-box;
+}
+
+.bbai-ftue-conversion-modal.is-open {
+    display: flex;
+}
+
+.bbai-ftue-conversion-modal.is-dismissed,
+.bbai-ftue-conversion-modal[hidden] {
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.bbai-ftue-conversion-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.bbai-ftue-conversion-modal__panel {
+    position: relative;
+    z-index: 1;
+    width: min(480px, 100%);
+    max-height: min(90vh, 640px);
+    overflow: auto;
+    border-radius: var(--bbai-radius-xl);
+    border: 1px solid var(--bbai-border);
+    background: var(--bbai-bg, #fff);
+    box-shadow: var(--bbai-shadow-modal);
+    padding: var(--bbai-space-6) var(--bbai-space-6) var(--bbai-space-5);
+    margin: 0;
+}
+
+.bbai-ftue-conversion-modal__header {
+    text-align: left;
+}
+
+.bbai-ftue-conversion-modal__close {
+    position: absolute;
+    top: var(--bbai-space-3);
+    right: var(--bbai-space-3);
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: var(--bbai-radius-full);
+    background: transparent;
+    color: var(--bbai-text-muted);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--bbai-transition-fast) var(--bbai-ease-out),
+        color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-ftue-conversion-modal__close:hover,
+.bbai-ftue-conversion-modal__close:focus-visible {
+    background: var(--bbai-bg-secondary);
+    color: var(--bbai-text);
+    outline: none;
+}
+
 /* Force display for inline styles */
 #bbai-upgrade-modal[style*="display: flex"],
 #bbai-upgrade-modal[style*="display:flex"] {

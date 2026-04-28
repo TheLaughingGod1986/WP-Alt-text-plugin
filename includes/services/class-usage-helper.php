@@ -15,6 +15,20 @@ if (!defined('ABSPATH')) {
 }
 
 class Usage_Helper {
+    /**
+     * WP_DEBUG-only structured logging for quota/usage debugging.
+     *
+     * @param string               $event Short event name.
+     * @param array<string, mixed> $data  Context payload.
+     * @return void
+     */
+    private static function debug_log(string $event, array $data = []): void {
+        if ( ! defined('WP_DEBUG') || ! WP_DEBUG ) {
+            return;
+        }
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        error_log('[BBAI usage_helper] ' . $event . ' ' . wp_json_encode($data));
+    }
 	/**
 	 * Resolve the current anonymous-trial credit limit.
 	 *
@@ -202,6 +216,13 @@ class Usage_Helper {
     public static function get_usage($api_client, bool $has_connected_account = false): array {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 
+        // No connected SaaS account: always use local Trial_Quota for credits. Otherwise a stale JWT
+        // can make can_fetch true and pull remote quota, so the guest hero never reaches
+        // "You've used all N free generations" + locked-library (exhausted) when the local trial is done.
+        if ( ! $has_connected_account ) {
+            return self::get_guest_trial_usage();
+        }
+
         $live_usage = null;
         $has_backend_usage = false;
         $usage_stats = Usage_Tracker::get_local_usage_snapshot();
@@ -213,6 +234,16 @@ class Usage_Helper {
                 || (is_object($api_client) && method_exists($api_client, 'has_active_license') && $api_client->has_active_license());
 
             if ($can_fetch) {
+                self::debug_log('before_get_usage', [
+                    'has_connected_account' => $has_connected_account,
+                    'can_fetch' => $can_fetch,
+                    'local_snapshot' => [
+                        'source' => $usage_stats['source'] ?? null,
+                        'used' => $usage_stats['used'] ?? null,
+                        'limit' => $usage_stats['limit'] ?? null,
+                        'remaining' => $usage_stats['remaining'] ?? null,
+                    ],
+                ]);
                 $live_usage = $api_client->get_usage();
                 if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
                     $source = strtolower(trim((string) ($live_usage['source'] ?? 'remote_usage')));
@@ -224,12 +255,33 @@ class Usage_Helper {
             }
         } catch (Exception $e) {
             $usage_stats = Usage_Tracker::get_local_usage_snapshot();
+            self::debug_log('exception', [
+                'message' => $e->getMessage(),
+                'has_connected_account' => $has_connected_account,
+                'can_fetch' => $can_fetch,
+            ]);
         } catch (Error $e) {
             $usage_stats = Usage_Tracker::get_local_usage_snapshot();
+            self::debug_log('error', [
+                'message' => $e->getMessage(),
+                'has_connected_account' => $has_connected_account,
+                'can_fetch' => $can_fetch,
+            ]);
         }
 
         if ($has_backend_usage && isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
             $usage_stats = self::normalize_usage($usage_stats, $live_usage);
+            self::debug_log('after_get_usage_backend', [
+                'live_source' => $live_usage['source'] ?? null,
+                'normalized' => [
+                    'source' => $usage_stats['source'] ?? null,
+                    'used' => $usage_stats['used'] ?? null,
+                    'limit' => $usage_stats['limit'] ?? null,
+                    'remaining' => $usage_stats['remaining'] ?? null,
+                    'plan' => $usage_stats['plan'] ?? null,
+                    'quota_type' => $usage_stats['quota_type'] ?? null,
+                ],
+            ]);
             return $usage_stats;
         }
 
@@ -242,6 +294,19 @@ class Usage_Helper {
             return self::get_guest_trial_usage();
         }
 
+        self::debug_log('after_get_usage_fallback', [
+            'has_connected_account' => $has_connected_account,
+            'can_fetch' => $can_fetch,
+            'has_backend_usage' => $has_backend_usage,
+            'live_usage_type' => is_wp_error($live_usage) ? 'wp_error' : (is_array($live_usage) ? 'array' : gettype($live_usage)),
+            'live_source' => is_array($live_usage) ? ($live_usage['source'] ?? null) : null,
+            'returning_local_snapshot' => [
+                'source' => $usage_stats['source'] ?? null,
+                'used' => $usage_stats['used'] ?? null,
+                'limit' => $usage_stats['limit'] ?? null,
+                'remaining' => $usage_stats['remaining'] ?? null,
+            ],
+        ]);
         return $usage_stats;
     }
 
@@ -298,7 +363,7 @@ class Usage_Helper {
 
         $limit = $read_number($live_usage, ['credits_total', 'creditsTotal', 'creditsLimit', 'limit'], null);
         if (null === $limit) {
-            $limit = $read_number($quota, ['credits_total', 'creditsTotal', 'creditsLimit', 'limit'], $usage_stats['limit'] ?? 50);
+            $limit = $read_number($quota, ['credits_total', 'creditsTotal', 'creditsLimit', 'limit'], $usage_stats['limit'] ?? 1);
         }
         $limit = max(1, intval($limit));
 

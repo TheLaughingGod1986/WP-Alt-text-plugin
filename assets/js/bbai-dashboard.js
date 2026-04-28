@@ -288,9 +288,6 @@ function bbaiNormalizeUsageObject(rawUsage) {
         if (isPaidPlan || normalizedQuota === 'paid' || upgradeRequired) {
             return false;
         }
-        if (source !== 'local_snapshot' && source !== 'local_trial_snapshot') {
-            return false;
-        }
 
         return limitValue > 0 && limitValue <= getTrialLimitValue() && !hasResetSignal();
     }
@@ -481,11 +478,6 @@ function bbaiIsAnonymousTrialUsage(usage) {
         !!usage.is_trial;
 }
 
-function bbaiHasTruthDrivenLoggedInDashboardRoot(root) {
-    var dashboard = document.querySelector('[data-bbai-logged-in-dashboard][data-bbai-li-ssr="1"]');
-    return !!(root && dashboard);
-}
-
 function bbaiGetUsageObject() {
     var root = document.querySelector('[data-bbai-dashboard-root="1"]');
     var rootUsage = null;
@@ -495,43 +487,25 @@ function bbaiGetUsageObject() {
         (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage) ||
         null);
 
-    if (root) {
-        var rootUsedAttr = root.getAttribute('data-bbai-credits-used');
-        var rootLimitAttr = root.getAttribute('data-bbai-credits-total');
-        var rootRemainingAttr = root.getAttribute('data-bbai-credits-remaining');
-        var hasRootCredits = rootUsedAttr !== null || rootLimitAttr !== null || rootRemainingAttr !== null;
+        if (root) {
+            var rootUsed = parseInt(root.getAttribute('data-bbai-credits-used') || '0', 10);
+            var rootLimit = parseInt(root.getAttribute('data-bbai-credits-total') || '0', 10);
+            var rootRemaining = parseInt(root.getAttribute('data-bbai-credits-remaining') || '0', 10);
 
-        if (hasRootCredits) {
-            var rootUsed = parseInt(rootUsedAttr || '0', 10);
-            var rootLimit = parseInt(rootLimitAttr || '0', 10);
-            var rootRemaining = parseInt(rootRemainingAttr || '0', 10);
-            var rootFallbackLimit = isNaN(rootLimit) || rootLimit <= 0 ? 1 : rootLimit;
-            var rootIsPremium = root.getAttribute('data-bbai-is-premium') === '1';
-
-            rootUsage = bbaiNormalizeUsageObject({
-                used: isNaN(rootUsed) ? 0 : rootUsed,
-                limit: rootFallbackLimit,
-                remaining: isNaN(rootRemaining) ? Math.max(0, rootFallbackLimit - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
-                plan: rootIsPremium ? 'growth' : '',
-                plan_type: rootIsPremium ? 'growth' : '',
-                plan_label: root.getAttribute('data-bbai-plan-label') || '',
-                is_pro: rootIsPremium,
-                reset_line: root.getAttribute('data-bbai-credits-reset-line') || '',
-                auth_state: root.getAttribute('data-bbai-auth-state') || '',
-                quota_type: root.getAttribute('data-bbai-quota-type') || '',
-                quota_state: root.getAttribute('data-bbai-quota-state') || '',
-                signup_required: root.getAttribute('data-bbai-signup-required') === '1',
-                free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 50,
-                source: 'dashboard_root'
-            });
+            if (!isNaN(rootUsed) || !isNaN(rootLimit) || !isNaN(rootRemaining)) {
+                rootUsage = bbaiNormalizeUsageObject({
+                    used: isNaN(rootUsed) ? 0 : rootUsed,
+                    limit: isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit,
+                    remaining: isNaN(rootRemaining) ? Math.max(0, (isNaN(rootLimit) || rootLimit <= 0 ? 50 : rootLimit) - (isNaN(rootUsed) ? 0 : rootUsed)) : rootRemaining,
+                    reset_line: root.getAttribute('data-bbai-credits-reset-line') || '',
+                    auth_state: root.getAttribute('data-bbai-auth-state') || '',
+                    quota_type: root.getAttribute('data-bbai-quota-type') || '',
+                    quota_state: root.getAttribute('data-bbai-quota-state') || '',
+                    signup_required: root.getAttribute('data-bbai-signup-required') === '1',
+                    free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 50
+                });
+            }
         }
-    }
-
-    if (root && rootUsage && bbaiHasTruthDrivenLoggedInDashboardRoot(root)) {
-        return globalUsage && typeof globalUsage === 'object'
-            ? bbaiNormalizeUsageObject(Object.assign({}, globalUsage, rootUsage))
-            : rootUsage;
-    }
 
     var merged = rootUsage && globalUsage && typeof globalUsage === 'object'
         ? bbaiNormalizeUsageObject(Object.assign({}, rootUsage, globalUsage))
@@ -4356,17 +4330,9 @@ bbaiRunWithJQuery(function($) {
 	    return bbaiOpenDashboardAuthDirect(trigger);
 	}
 
-    function hasTruthDrivenLoggedInDashboard(root) {
-        return bbaiHasTruthDrivenLoggedInDashboardRoot(root);
-    }
-
     function syncStatsToRoot(stats) {
         var root = getDashboardRoot();
         if (!root || !stats || typeof stats !== 'object') {
-            return;
-        }
-
-        if (hasTruthDrivenLoggedInDashboard(root)) {
             return;
         }
 
@@ -4450,10 +4416,6 @@ bbaiRunWithJQuery(function($) {
         var trialExhausted;
 
         if (!usage || typeof usage !== 'object') {
-            return;
-        }
-
-        if (hasTruthDrivenLoggedInDashboard(root)) {
             return;
         }
 
@@ -7034,22 +6996,33 @@ bbaiRunWithJQuery(function($) {
         return coverage.coverage >= 100 || (coverage.missing === 0 && coverage.weak === 0);
     }
 
-    function shouldShowDashboardReviewPrompt() {
-        return !!(window.BBAI_REVIEW_PROMPT && window.BBAI_REVIEW_PROMPT.shouldShow);
-    }
+    function shouldShowDashboardReviewPrompt(data) {
+        var now = Date.now();
+        var successTimestamp = getStoredNumber(LAST_SUCCESS_TIMESTAMP_KEY);
+        var snoozedUntil = getStoredNumber(REVIEW_SNOOZE_UNTIL_KEY);
+        var actionCount = getStoredNumber(USER_ACTION_COUNT_KEY);
+        var coverage = getStatusCoverageData(data);
 
-    function persistReviewAction(reviewAction) {
-        var cfg = window.BBAI_REVIEW_PROMPT;
-        if (!cfg || !cfg.ajaxUrl || !cfg.nonce) {
-            return;
+        if (!data || !isSuccessState(data) || coverage.coverage < 100) {
+            return false;
         }
-        var body = new URLSearchParams();
-        body.append('action', 'bbai_review_prompt_action');
-        body.append('nonce', cfg.nonce);
-        body.append('review_action', reviewAction);
-        fetch(cfg.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body }).catch(function() {});
-        // Optimistically update client-side shouldShow so the modal won't re-appear on same page.
-        cfg.shouldShow = false;
+        if (!successTimestamp) {
+            return false;
+        }
+        if (getStoredBoolean(REVIEW_COMPLETED_KEY)) {
+            return false;
+        }
+        if (snoozedUntil && now < snoozedUntil) {
+            return false;
+        }
+        if (getStoredBoolean(REVIEW_PROMPT_SHOWN_KEY)) {
+            return false;
+        }
+        if (actionCount < 1 && Math.max(0, parseCount(data.generated)) < 1) {
+            return false;
+        }
+
+        return true;
     }
 
     function bindDashboardActionTracking() {
@@ -7161,7 +7134,7 @@ bbaiRunWithJQuery(function($) {
         }
     }
 
-    function dismissReviewModal(promptNode) {
+    function dismissReviewModal(promptNode, reason) {
         if (promptNode.hidden) {
             return;
         }
@@ -7172,6 +7145,11 @@ bbaiRunWithJQuery(function($) {
             promptNode.removeAttribute('data-bbai-review-revealed');
             document.body.style.overflow = '';
         }, 260);
+        if (reason === 'later') {
+            setStoredValue(REVIEW_SNOOZE_UNTIL_KEY, Date.now() + REVIEW_SNOOZE_MS);
+            setStoredValue(REVIEW_PROMPT_SHOWN_KEY, 'false');
+            emitDashboardAnalyticsEvent('review_dismissed', { source: 'dashboard_success_loop' });
+        }
     }
 
     function bindReviewPromptActions(promptNode) {
@@ -7185,35 +7163,20 @@ bbaiRunWithJQuery(function($) {
             if (actionEl) {
                 var action = actionEl.getAttribute('data-bbai-review-action');
                 if (action === 'leave') {
-                    persistReviewAction('leave_review');
-                    emitDashboardAnalyticsEvent('review_prompt_leave_review_clicked', { source: 'dashboard' });
-                    dismissReviewModal(promptNode);
+                    setStoredValue(REVIEW_COMPLETED_KEY, 'true');
+                    setStoredValue(REVIEW_PROMPT_SHOWN_KEY, 'true');
+                    emitDashboardAnalyticsEvent('review_clicked', { source: 'dashboard_success_loop' });
+                    dismissReviewModal(promptNode, 'leave');
                     return;
                 }
-                if (action === 'remind-later') {
-                    persistReviewAction('remind_later');
-                    emitDashboardAnalyticsEvent('review_prompt_remind_later_clicked', { source: 'dashboard' });
-                    dismissReviewModal(promptNode);
-                    return;
-                }
-                if (action === 'already-reviewed') {
-                    persistReviewAction('already_reviewed');
-                    emitDashboardAnalyticsEvent('review_prompt_already_left_clicked', { source: 'dashboard' });
-                    dismissReviewModal(promptNode);
-                    return;
-                }
-                if (action === 'dismiss') {
-                    persistReviewAction('dismiss');
-                    emitDashboardAnalyticsEvent('review_prompt_dismissed', { source: 'dashboard' });
-                    dismissReviewModal(promptNode);
+                if (action === 'later') {
+                    dismissReviewModal(promptNode, 'later');
                     return;
                 }
             }
 
             if (e.target.closest('[data-bbai-review-backdrop]')) {
-                persistReviewAction('dismiss');
-                emitDashboardAnalyticsEvent('review_prompt_dismissed', { source: 'dashboard', trigger: 'backdrop' });
-                dismissReviewModal(promptNode);
+                dismissReviewModal(promptNode, 'later');
             }
         });
 
@@ -7221,13 +7184,11 @@ bbaiRunWithJQuery(function($) {
             if (event.key !== 'Escape' || promptNode.hidden) {
                 return;
             }
-            persistReviewAction('dismiss');
-            emitDashboardAnalyticsEvent('review_prompt_dismissed', { source: 'dashboard', trigger: 'escape' });
-            dismissReviewModal(promptNode);
+            dismissReviewModal(promptNode, 'later');
         });
     }
 
-    function renderDashboardReviewPrompt() {
+    function renderDashboardReviewPrompt(data) {
         var promptNode = document.querySelector('[data-bbai-dashboard-review-prompt]');
 
         if (!promptNode) {
@@ -7236,7 +7197,7 @@ bbaiRunWithJQuery(function($) {
 
         bindReviewPromptActions(promptNode);
 
-        if (!shouldShowDashboardReviewPrompt()) {
+        if (!shouldShowDashboardReviewPrompt(data)) {
             promptNode.hidden = true;
             promptNode.removeAttribute('data-bbai-review-revealed');
             return;
@@ -7248,7 +7209,7 @@ bbaiRunWithJQuery(function($) {
 
         promptNode.setAttribute('data-bbai-review-revealed', '1');
         window.setTimeout(function() {
-            if (!shouldShowDashboardReviewPrompt()) {
+            if (!shouldShowDashboardReviewPrompt(data)) {
                 promptNode.removeAttribute('data-bbai-review-revealed');
                 return;
             }
@@ -7256,8 +7217,8 @@ bbaiRunWithJQuery(function($) {
             document.body.style.overflow = 'hidden';
             promptNode.classList.remove('bbai-dashboard-review-overlay--exit');
             promptNode.classList.add('bbai-dashboard-review-overlay--enter');
-            persistReviewAction('shown');
-            emitDashboardAnalyticsEvent('review_prompt_shown', { source: 'dashboard' });
+            setStoredValue(REVIEW_PROMPT_SHOWN_KEY, 'true');
+            emitDashboardAnalyticsEvent('review_prompt_shown', { source: 'dashboard_success_loop' });
 
             var focusTarget = promptNode.querySelector('[data-bbai-review-action="leave"]');
             if (focusTarget) {
@@ -7377,7 +7338,7 @@ bbaiRunWithJQuery(function($) {
             renderUpgradeContext(data);
         });
         runStep('review-prompt', function() {
-            renderDashboardReviewPrompt();
+            renderDashboardReviewPrompt(data);
         });
     }
 
@@ -7866,10 +7827,6 @@ bbaiRunWithJQuery(function($) {
         var overlayDelayMs = 300;
 
         if (!root || dashboardMountLoadingController) {
-            return;
-        }
-
-        if (hasTruthDrivenLoggedInDashboard(root)) {
             return;
         }
 

@@ -466,10 +466,18 @@ JS,
             'wizard' => $this->get_setup_wizard_bootstrap(),
             'monetisation' => $this->get_monetisation_bootstrap_for_localize(),
         ]);
+        $bbai_canonical_api_base = '';
+        if ( isset( $this->api_client ) && is_object( $this->api_client ) && method_exists( $this->api_client, 'get_api_url' ) ) {
+            $bbai_canonical_api_base = $this->api_client->get_api_url();
+        } else {
+            $bbai_canonical_api_base = \BeepBeepAI\AltTextGenerator\API_Client_V2::get_instance()->get_api_url();
+        }
+
         wp_localize_script('bbai-admin', 'bbai_ajax', [
             'ajaxurl' => admin_url('admin-ajax.php'),
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('beepbeepai_nonce'),
+            'api_url' => esc_url_raw( untrailingslashit( $bbai_canonical_api_base ) ),
             'admin_url' => admin_url('admin.php'),
             'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
             'can_manage' => $this->user_can_manage(),
@@ -517,7 +525,7 @@ JS,
                 'bbai-funnel-state',
                 $base_url . $bbai_funnel_state_js,
                 [ 'bbai-admin' ],
-                $this->get_asset_version( $bbai_funnel_state_js, '1.0.0', $base_path ),
+                $this->get_asset_version( $bbai_funnel_state_js, '1.0.2', $base_path ),
                 true
             );
         }
@@ -577,7 +585,7 @@ JS,
             'bbai-unified',
             $base_url . $unified_css,
             [],
-            $asset_version( $unified_css, '6.0.15' )
+            $asset_version( $unified_css, '6.0.17' )
         );
 
         $admin_foundation_tokens_css = 'assets/css/system/bbai-admin-foundation-tokens.css';
@@ -647,7 +655,7 @@ JS,
                 'bbai-funnel-hero',
                 $base_url . $funnel_hero_css,
                 [ 'bbai-queue-workflow' ],
-                $asset_version( $funnel_hero_css, '1.0.0' )
+                $asset_version( $funnel_hero_css, '1.0.3' )
             );
         }
 
@@ -1369,7 +1377,13 @@ JS,
 
         wp_localize_script('bbai-dashboard', 'BBAI_DASH', $bbai_dash_data);
 
-        $api_url = 'https://alttext-ai-backend.onrender.com';
+        $bbai_canonical_api_base = '';
+        if ( isset( $this->api_client ) && is_object( $this->api_client ) && method_exists( $this->api_client, 'get_api_url' ) ) {
+            $bbai_canonical_api_base = $this->api_client->get_api_url();
+        } else {
+            $bbai_canonical_api_base = \BeepBeepAI\AltTextGenerator\API_Client_V2::get_instance()->get_api_url();
+        }
+        $api_url = esc_url_raw( untrailingslashit( $bbai_canonical_api_base ) );
         $sanitized_user_data = $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data());
 
         wp_localize_script('bbai-dashboard', 'bbai_ajax', [

@@ -34,39 +34,132 @@ $bbai_li_hero     = $bbai_li_state['hero']  ?? [];
 $bbai_li_donut    = $bbai_li_state['donut'] ?? [];
 $bbai_li_state_id = $bbai_li_state['state'] ?? '';
 
+$bbai_hero_is_free_plan = true;
+if ( isset( $bbai_state_is_pro_plan ) ) {
+	$bbai_hero_is_free_plan = ! (bool) $bbai_state_is_pro_plan;
+} elseif ( isset( $bbai_is_premium ) ) {
+	$bbai_hero_is_free_plan = ! (bool) $bbai_is_premium;
+}
+$bbai_li_all_clear_free_upsell = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero_is_free_plan );
+$bbai_li_all_clear_upgrade_panel = $bbai_li_all_clear_free_upsell;
+
 // ── Donut ────────────────────────────────────────────────────────────────────
 $bbai_li_donut_color    = (string) ( $bbai_li_donut['color'] ?? 'gray' );
 $bbai_li_donut_animated = ! empty( $bbai_li_donut['animated'] );
-$bbai_li_donut_center   = esc_html( (string) ( $bbai_li_donut['center_label'] ?? '' ) );
-$bbai_li_donut_sub      = esc_html( (string) ( $bbai_li_donut['center_sub_label'] ?? '' ) );
-$bbai_li_donut_aria     = esc_attr( (string) ( $bbai_li_donut['aria_label'] ?? '' ) );
+$bbai_li_donut_sub      = (string) ( $bbai_li_donut['center_sub_label'] ?? '' );
+$bbai_li_donut_aria     = (string) ( $bbai_li_donut['aria_label'] ?? '' );
 $bbai_li_donut_pct      = max( 0, min( 100, (int) ( $bbai_li_donut['pct'] ?? 0 ) ) );
 
-// Build multi-segment conic-gradient: green → amber → red → gray.
+// Build multi-segment conic-gradient: **missing (red) → review (amber) → optimised (green) → empty (gray)**.
 $bbai_li_seg      = is_array( $bbai_li_donut['segments'] ?? null ) ? $bbai_li_donut['segments'] : [];
 $bbai_li_seg_opt  = max( 0, (int) ( $bbai_li_seg['optimized'] ?? 0 ) );
 $bbai_li_seg_weak = max( 0, (int) ( $bbai_li_seg['weak']      ?? 0 ) );
 $bbai_li_seg_miss = max( 0, (int) ( $bbai_li_seg['missing']   ?? 0 ) );
 $bbai_li_seg_tot  = max( 1, (int) ( $bbai_li_seg['total']     ?? 1 ) );
 
-$bbai_li_opt_end  = round( ( 360 * $bbai_li_seg_opt ) / $bbai_li_seg_tot, 3 );
-$bbai_li_weak_end = round( min( 360, $bbai_li_opt_end + ( 360 * $bbai_li_seg_weak ) / $bbai_li_seg_tot ), 3 );
-$bbai_li_miss_end = round( min( 360, $bbai_li_weak_end + ( 360 * $bbai_li_seg_miss ) / $bbai_li_seg_tot ), 3 );
+// Donut centre text: use resolver `center_label` when present (queue/processing/etc.), else segment order.
+$bbai_li_donut_center = isset( $bbai_li_donut['center_label'] ) && (string) $bbai_li_donut['center_label'] !== ''
+	? (string) $bbai_li_donut['center_label']
+	: ( $bbai_li_seg_miss > 0
+		? (string) number_format_i18n( $bbai_li_seg_miss )
+		: ( $bbai_li_seg_weak > 0
+			? (string) number_format_i18n( $bbai_li_seg_weak )
+			: '✓' ) );
+
+// Value colour: jobs/system states use tone; data states use segment-based emphasis.
+$bbai_li_donut_value_uses_tone = in_array( $bbai_li_state_id, [ 'QUEUED', 'PROCESSING', 'ERROR', 'NO_IMAGES' ], true );
+if ( $bbai_li_donut_value_uses_tone ) {
+	$bbai_li_donut_value_class = 'bbai-li-donut__value--' . $bbai_li_donut_tone;
+} elseif ( $bbai_li_seg_miss > 0 ) {
+	$bbai_li_donut_value_class = 'bbai-li-donut__value--center-missing';
+} elseif ( $bbai_li_seg_weak > 0 ) {
+	$bbai_li_donut_value_class = 'bbai-li-donut__value--center-review';
+} else {
+	$bbai_li_donut_value_class = 'bbai-li-donut__value--center-clear';
+}
+
+// While a batch is queued or generating, trust copy lives in donut meta + activity strip;
+// avoid hiding meta behind the generic missing-image helper (still true for static MISSING_ALT).
+$bbai_li_donut_helper = ( $bbai_li_seg_miss > 0 && ! in_array( $bbai_li_state_id, [ 'QUEUED', 'PROCESSING' ], true ) )
+	? __( 'Fix these first to improve SEO and accessibility.', 'beepbeep-ai-alt-text-generator' )
+	: '';
+
+if ( ! function_exists( 'bbai_dashboard_donut_ring_degrees' ) ) {
+	/**
+	 * Donut ring boundaries: real proportions, with a minimum ~20% arc for the
+	 * current primary action (missing → red, else review → amber) so the ring never reads “all done” when it is not.
+	 *
+	 * @return array{0:float,1:float,2:float} End angles (deg) for red, amber, green segments.
+	 */
+	function bbai_dashboard_donut_ring_degrees( int $miss, int $weak, int $opt, int $tot ): array {
+		$tot        = max( 1, $tot );
+		$min_action = 72.0;
+		$dm         = 360.0 * $miss / $tot;
+		$dw         = 360.0 * $weak / $tot;
+		$do         = 360.0 * $opt / $tot;
+		if ( $miss > 0 ) {
+			$dm = max( $dm, $min_action );
+		} elseif ( $weak > 0 ) {
+			$dw = max( $dw, $min_action );
+		}
+		$sum = $dm + $dw + $do;
+		if ( $sum > 360.0001 ) {
+			if ( $miss > 0 ) {
+				$room = 360.0 - $dm;
+				$rest = $dw + $do;
+				if ( $rest > 0.0001 ) {
+					$f  = $room / $rest;
+					$dw = $dw * $f;
+					$do = $do * $f;
+				} else {
+					$dw = 0.0;
+					$do = 0.0;
+				}
+			} elseif ( $weak > 0 ) {
+				$dm = 0.0;
+				$do = 360.0 - $dw;
+			} else {
+				$f  = 360.0 / $sum;
+				$dm = $dm * $f;
+				$dw = $dw * $f;
+				$do = $do * $f;
+			}
+		}
+		$a1 = round( min( 360, $dm ), 3 );
+		$a2 = round( min( 360, $dm + $dw ), 3 );
+		$a3 = round( min( 360, $dm + $dw + $do ), 3 );
+
+		return [ $a1, $a2, $a3 ];
+	}
+}
 
 if ( $bbai_li_seg_opt + $bbai_li_seg_weak + $bbai_li_seg_miss === 0 ) {
 	$bbai_li_donut_bg = 'conic-gradient(#e2e8f0 0deg 360deg)';
 } elseif ( $bbai_li_seg_opt >= $bbai_li_seg_tot ) {
 	$bbai_li_donut_bg = 'conic-gradient(#22c55e 0deg 360deg)';
 } else {
-	$bbai_li_donut_bg = sprintf(
-		'conic-gradient(#22c55e 0deg %.3Fdeg, #f59e0b %.3Fdeg %.3Fdeg, #ef4444 %.3Fdeg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
-		$bbai_li_opt_end,
-		$bbai_li_opt_end,
-		$bbai_li_weak_end,
-		$bbai_li_weak_end,
-		$bbai_li_miss_end,
-		$bbai_li_miss_end
+	list( $bbai_li_donut_a1, $bbai_li_donut_a2, $bbai_li_donut_a3 ) = bbai_dashboard_donut_ring_degrees(
+		$bbai_li_seg_miss,
+		$bbai_li_seg_weak,
+		$bbai_li_seg_opt,
+		$bbai_li_seg_tot
 	);
+	// In QUEUED, the “missing” segment is a ready action (not an error) — use a neutral blue accent.
+	$bbai_li_missing_seg_color = ( 'QUEUED' === $bbai_li_state_id ) ? '#3b82f6' : '#ef4444';
+	$bbai_li_donut_bg = sprintf(
+		'conic-gradient(%1$s 0deg %.3Fdeg, #f59e0b %.3Fdeg %.3Fdeg, #22c55e %.3Fdeg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
+		$bbai_li_missing_seg_color,
+		$bbai_li_donut_a1,
+		$bbai_li_donut_a1,
+		$bbai_li_donut_a2,
+		$bbai_li_donut_a2,
+		$bbai_li_donut_a3,
+		$bbai_li_donut_a3
+	);
+}
+
+if ( ! isset( $bbai_li_donut_a1, $bbai_li_donut_a2, $bbai_li_donut_a3 ) ) {
+	$bbai_li_donut_a1 = $bbai_li_donut_a2 = $bbai_li_donut_a3 = 0.0;
 }
 
 // Map resolver color → tone class.
@@ -83,10 +176,16 @@ $bbai_li_donut_tone = sanitize_html_class( $bbai_li_tone_map[ $bbai_li_donut_col
 // the rest fades to the empty-track grey. Center label shows the segment count.
 $bbai_li_seg_hover = [];
 if ( $bbai_li_seg_tot > 0 ) {
-	$bbai_li_seg_all_pct  = 360; // "all" = full ring, use the real multi-segment bg
-	$bbai_li_seg_opt_deg  = round( ( 360 * $bbai_li_seg_opt  ) / $bbai_li_seg_tot, 3 );
-	$bbai_li_seg_weak_deg = round( ( 360 * $bbai_li_seg_weak ) / $bbai_li_seg_tot, 3 );
-	$bbai_li_seg_miss_deg = round( ( 360 * $bbai_li_seg_miss ) / $bbai_li_seg_tot, 3 );
+	$bbai_li_seg_all_pct = 360; // "all" = full ring, use the real multi-segment bg
+	if ( ( $bbai_li_seg_miss + $bbai_li_seg_weak + $bbai_li_seg_opt ) > 0 && $bbai_li_seg_opt < $bbai_li_seg_tot ) {
+		$bbai_li_seg_opt_deg  = round( $bbai_li_donut_a3 - $bbai_li_donut_a2, 3 );
+		$bbai_li_seg_weak_deg = round( $bbai_li_donut_a2 - $bbai_li_donut_a1, 3 );
+		$bbai_li_seg_miss_deg = round( $bbai_li_donut_a1, 3 );
+	} else {
+		$bbai_li_seg_opt_deg  = round( ( 360 * $bbai_li_seg_opt ) / $bbai_li_seg_tot, 3 );
+		$bbai_li_seg_weak_deg = round( ( 360 * $bbai_li_seg_weak ) / $bbai_li_seg_tot, 3 );
+		$bbai_li_seg_miss_deg = round( ( 360 * $bbai_li_seg_miss ) / $bbai_li_seg_tot, 3 );
+	}
 
 	// "all" → restore the real gradient (stored as empty string = use default)
 	$bbai_li_seg_hover['all'] = [
@@ -116,7 +215,12 @@ if ( $bbai_li_seg_tot > 0 ) {
 	// "missing" → full red arc
 	$bbai_li_seg_hover['missing'] = [
 		'bg'    => $bbai_li_seg_miss_deg > 0
-			? sprintf( 'conic-gradient(#ef4444 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)', $bbai_li_seg_miss_deg, $bbai_li_seg_miss_deg )
+			? sprintf(
+				'conic-gradient(%1$s 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
+				( 'QUEUED' === $bbai_li_state_id ) ? '#3b82f6' : '#ef4444',
+				$bbai_li_seg_miss_deg,
+				$bbai_li_seg_miss_deg
+			)
 			: 'conic-gradient(#e2e8f0 0deg 360deg)',
 		'label' => (string) $bbai_li_seg_miss,
 		'sub'   => esc_js( __( 'missing ALT', 'beepbeep-ai-alt-text-generator' ) ),
@@ -126,8 +230,27 @@ if ( $bbai_li_seg_tot > 0 ) {
 $bbai_li_seg_hover_json = wp_json_encode( $bbai_li_seg_hover );
 
 // ── Copy ─────────────────────────────────────────────────────────────────────
-$bbai_li_title       = esc_html( (string) ( $bbai_li_hero['headline'] ?? '' ) );
-$bbai_li_description = esc_html( (string) ( $bbai_li_hero['support'] ?? '' ) );
+$bbai_li_title       = (string) ( $bbai_li_hero['headline'] ?? '' );
+$bbai_li_description = (string) ( $bbai_li_hero['support'] ?? '' );
+
+// Right-card action strip (same numbers as donut segments).
+$bbai_li_missing_count = $bbai_li_seg_miss;
+$bbai_li_review_count  = $bbai_li_seg_weak;
+$bbai_li_flow_hidden   = in_array( $bbai_li_state_id, [ 'QUEUED', 'QUOTA_EXHAUSTED', 'ERROR', 'NO_IMAGES' ], true );
+$bbai_li_flow_gen_on   = ( $bbai_li_missing_count > 0 );
+$bbai_li_flow_rev_on   = ( $bbai_li_review_count > 0 );
+$bbai_li_flow_done_on  = ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count );
+
+$bbai_hero_cta_hint = '';
+if ( $bbai_li_missing_count > 0 ) {
+	if ( $bbai_hero_is_free_plan && 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) {
+		$bbai_hero_cta_hint = __( 'Manual generation on the free plan', 'beepbeep-ai-alt-text-generator' );
+	} else {
+		$bbai_hero_cta_hint = __( 'Generate ALT text to move to review.', 'beepbeep-ai-alt-text-generator' );
+	}
+} elseif ( $bbai_li_review_count > 0 ) {
+	$bbai_hero_cta_hint = __( 'Complete your optimisation', 'beepbeep-ai-alt-text-generator' );
+}
 
 // ── CTAs ─────────────────────────────────────────────────────────────────────
 $bbai_li_primary_cta   = is_array( $bbai_li_hero['primary_cta'] ?? null ) ? $bbai_li_hero['primary_cta'] : [];
@@ -135,10 +258,132 @@ $bbai_li_secondary_cta = is_array( $bbai_li_hero['secondary_cta'] ?? null ) ? $b
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['badge'] : null;
+
+// ── Presentation overrides: QUEUED reads as “Ready to generate” ───────────────
+// Keep internal state + action wiring unchanged; only improve user-facing copy.
+if ( 'QUEUED' === $bbai_li_state_id ) {
+	$bbai_li_queued_total = max( 0, (int) ( $bbai_li_donut['job_total'] ?? 0 ) );
+	if ( $bbai_li_queued_total <= 0 ) {
+		$bbai_li_queued_total = $bbai_li_missing_count;
+	}
+	if ( $bbai_li_queued_total <= 0 ) {
+		$bbai_li_queued_total = 1;
+	}
+
+	$bbai_li_badge = [
+		'text' => __( 'READY TO GENERATE', 'beepbeep-ai-alt-text-generator' ),
+		'mod'  => 'blue',
+	];
+	$bbai_li_title = sprintf(
+		/* translators: %s: number of images ready to generate */
+		_n( '%s image is ready for ALT text', '%s images are ready for ALT text', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
+		number_format_i18n( $bbai_li_queued_total )
+	);
+	$bbai_li_description = __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' );
+
+	if ( is_array( $bbai_li_primary_cta ) && 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) {
+		$bbai_li_primary_cta['label'] = sprintf(
+			/* translators: %s: number of images ready to generate */
+			_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
+			number_format_i18n( $bbai_li_queued_total )
+		);
+		$bbai_li_primary_cta['busy_label'] = __( 'Starting generation…', 'beepbeep-ai-alt-text-generator' );
+	}
+
+	if ( is_array( $bbai_li_secondary_cta ) ) {
+		$bbai_li_secondary_cta['label'] = __( 'Preview images', 'beepbeep-ai-alt-text-generator' );
+	}
+
+	$bbai_hero_cta_hint = __( 'Moves images into review before they go live.', 'beepbeep-ai-alt-text-generator' );
+}
+
+// Credit usage: prefer dashboard root totals (truth-reconciled in dashboard-body) over raw usage/trial defaults.
+if ( isset( $bbai_dashboard_root_credits_total, $bbai_dashboard_root_credits_used, $bbai_dashboard_root_credits_left ) ) {
+	$bbai_hero_c_lim  = max( 1, (int) $bbai_dashboard_root_credits_total );
+	$bbai_hero_c_used = max( 0, (int) $bbai_dashboard_root_credits_used );
+	$bbai_hero_c_rem  = max( 0, (int) $bbai_dashboard_root_credits_left );
+} else {
+	$bbai_hero_c_rem = isset( $bbai_credits_remaining ) ? max( 0, (int) $bbai_credits_remaining ) : 0;
+	$bbai_hero_c_lim = 1;
+	if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) ) {
+		$bbai_hero_c_lim = max( 1, (int) \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() );
+	}
+	if ( isset( $bbai_credits_total ) ) {
+		$bbai_hero_c_lim = max( 1, (int) $bbai_credits_total );
+	} elseif ( isset( $bbai_usage_stats ) && is_array( $bbai_usage_stats ) ) {
+		$bbai_hero_c_lim = max( 1, (int) ( $bbai_usage_stats['credits_total'] ?? $bbai_usage_stats['creditsTotal'] ?? $bbai_usage_stats['limit'] ?? 1 ) );
+		if ( ! isset( $bbai_credits_remaining ) ) {
+			$bbai_hero_c_rem = max( 0, (int) ( $bbai_usage_stats['credits_remaining'] ?? $bbai_usage_stats['creditsRemaining'] ?? $bbai_usage_stats['remaining'] ?? 0 ) );
+		}
+	}
+	$bbai_hero_c_used = max( 0, (int) ( $bbai_credits_used ?? ( $bbai_hero_c_lim - $bbai_hero_c_rem ) ) );
+}
+$bbai_hero_c_pct = (int) min( 100, max( 0, round( ( $bbai_hero_c_used / $bbai_hero_c_lim ) * 100 ) ) );
+
+$bbai_hero_credit_state = 'healthy';
+if ( $bbai_hero_c_rem <= 0 ) {
+	$bbai_hero_credit_state = 'empty';
+} elseif ( $bbai_hero_c_rem <= 10 ) {
+	$bbai_hero_credit_state = 'low';
+}
+
+$bbai_hero_credit_usage_line = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero_is_free_plan )
+	? __( 'Resets monthly', 'beepbeep-ai-alt-text-generator' )
+	: __( 'Used when generating or improving ALT text', 'beepbeep-ai-alt-text-generator' );
+
+$bbai_hero_credit_state_hint = '';
+$bbai_hero_credit_low_suffix  = '';
+if ( $bbai_hero_c_rem > 0 ) {
+	if ( $bbai_hero_c_rem <= 10 ) {
+		$bbai_hero_credit_low_suffix = __( 'Running low — upgrade or top up before you run out.', 'beepbeep-ai-alt-text-generator' );
+	}
+	switch ( $bbai_li_state_id ) {
+		case 'MISSING_ALT':
+		case 'MIXED_ATTENTION':
+			$bbai_hero_credit_state_hint = __( 'Manual generation uses credits.', 'beepbeep-ai-alt-text-generator' );
+			break;
+		case 'NEEDS_REVIEW':
+			$bbai_hero_credit_state_hint = __( 'Reviewing does not use credits.', 'beepbeep-ai-alt-text-generator' );
+			break;
+		case 'ALL_CLEAR':
+			$bbai_hero_credit_state_hint = __( 'Credits are ready for your next uploads.', 'beepbeep-ai-alt-text-generator' );
+			break;
+		case 'PROCESSING':
+		case 'QUEUED':
+			$bbai_hero_credit_state_hint = __( 'Manual generation uses credits.', 'beepbeep-ai-alt-text-generator' );
+			break;
+		default:
+			$bbai_hero_credit_state_hint = '';
+	}
+}
+
+$bbai_hero_credit_context_line = trim( trim( (string) $bbai_hero_credit_state_hint ) . ( $bbai_hero_credit_state_hint && $bbai_hero_credit_low_suffix ? ' ' : '' ) . (string) $bbai_hero_credit_low_suffix );
+
+$bbai_hero_credit_helper          = '';
+$bbai_hero_credit_helper_hidden = true;
+
+if ( 0 === $bbai_hero_c_rem ) {
+	$bbai_hero_credit_helper        = __( 'Add credits to continue generating ALT text.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_hero_credit_helper_hidden = false;
+}
+
+$bbai_hero_credit_label = sprintf(
+	/* translators: 1: credits used this period, 2: monthly or plan credit limit */
+	__( '%1$s / %2$s used this month', 'beepbeep-ai-alt-text-generator' ),
+	number_format_i18n( $bbai_hero_c_used ),
+	number_format_i18n( $bbai_hero_c_lim )
+);
+
+$bbai_hero_credit_bar_aria = sprintf(
+	/* translators: 1: credits used, 2: credit limit */
+	__( '%1$s of %2$s credits used this month', 'beepbeep-ai-alt-text-generator' ),
+	number_format_i18n( $bbai_hero_c_used ),
+	number_format_i18n( $bbai_hero_c_lim )
+);
 ?>
 
 <div
-	class="bbai-li-hero-grid"
+	class="bbai-li-hero-grid<?php echo 'ALL_CLEAR' === $bbai_li_state_id ? ' bbai-all-clear-state' : ''; ?><?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-hero--needs-review' : ''; ?>"
 	data-bbai-li-hero="1"
 	data-bbai-li-state="<?php echo esc_attr( $bbai_li_state_id ); ?>"
 	data-bbai-li-variant="<?php echo esc_attr( (string) ( $bbai_li_hero['variant'] ?? 'default' ) ); ?>"
@@ -154,12 +399,12 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		) || 'NEEDS_REVIEW' === $bbai_li_state_id
 			|| ( 'PROCESSING' === $bbai_li_state_id && $bbai_li_has_primary_cta );
 		$bbai_li_donut_action_label = $bbai_li_primary_cta['label'] ?? __( 'Take action', 'beepbeep-ai-alt-text-generator' );
-		if ( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['label'] ) ) {
-			$bbai_li_donut_action_label = $bbai_li_secondary_cta['label'];
+		if ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
+			$bbai_li_donut_action_label = __( 'Review images', 'beepbeep-ai-alt-text-generator' );
 		}
 		?>
 	<?php /* ── LEFT CARD: donut + "X images left" + footer pills ─────────── */ ?>
-	<div class="bbai-li-card bbai-li-card--donut<?php echo $bbai_li_donut_clickable ? ' bbai-li-card--donut-clickable' : ''; ?>"
+	<div class="bbai-li-card bbai-li-card--donut<?php echo esc_attr( $bbai_li_donut_clickable ? ' bbai-li-card--donut-clickable' : '' ); ?>"
 		<?php if ( $bbai_li_donut_clickable ) : ?>
 			role="button"
 			tabindex="0"
@@ -170,18 +415,18 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		<div class="bbai-li-donut-area">
 			<div
-				class="bbai-li-donut bbai-command-donut--<?php echo esc_attr( $bbai_li_donut_tone ); ?><?php echo $bbai_li_donut_animated ? ' bbai-li-donut--animated' : ''; ?>"
+				class="bbai-li-donut bbai-command-donut--<?php echo esc_attr( $bbai_li_donut_tone ); ?><?php echo esc_attr( $bbai_li_donut_animated ? ' bbai-li-donut--animated' : '' ); ?>"
 				data-bbai-li-donut="1"
 				data-bbai-li-donut-pct="<?php echo esc_attr( (string) $bbai_li_donut_pct ); ?>"
 				data-bbai-li-donut-color="<?php echo esc_attr( $bbai_li_donut_color ); ?>"
 				data-bbai-li-seg-hover="<?php echo esc_attr( $bbai_li_seg_hover_json ); ?>"
-				aria-label="<?php echo $bbai_li_donut_aria; ?>"
+				aria-label="<?php echo esc_attr( $bbai_li_donut_aria ); ?>"
 				style="background: <?php echo esc_attr( $bbai_li_donut_bg ); ?>;"
 			>
 				<span class="bbai-li-donut__inner"></span>
 				<span class="bbai-li-donut__center">
-					<span class="bbai-li-donut__value bbai-li-donut__value--<?php echo esc_attr( $bbai_li_donut_tone ); ?>" data-bbai-li-donut-label="1">
-						<?php echo $bbai_li_donut_center; ?>
+					<span class="bbai-li-donut__value <?php echo esc_attr( $bbai_li_donut_value_class ); ?>" data-bbai-li-donut-label="1">
+						<?php echo esc_html( $bbai_li_donut_center ); ?>
 					</span>
 				</span>
 			</div>
@@ -189,59 +434,155 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			<?php
 		// Build a clearer sub-label based on state and counts.
 		$bbai_li_donut_sub_display = '';
-		if ( 'QUEUED' === $bbai_li_state_id ) {
+		if ( in_array( $bbai_li_state_id, [ 'QUEUED', 'ERROR', 'NO_IMAGES' ], true ) && $bbai_li_donut_sub ) {
 			$bbai_li_donut_sub_display = $bbai_li_donut_sub;
 		} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
-			$bbai_li_donut_sub_display = esc_html__( 'generating now', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( 'ALL_CLEAR' === $bbai_li_state_id ) {
-			$bbai_li_donut_sub_display = esc_html__( 'all optimised', 'beepbeep-ai-alt-text-generator' );
+			$bbai_li_donut_sub_display = __( 'generating now', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
+			$bbai_li_donut_sub_display = __( 'Images ready for review', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( $bbai_li_seg_miss > 0 ) {
-			$bbai_li_donut_sub_display = sprintf(
-				/* translators: %s: count of images missing ALT text */
-				esc_html( _n( '%s image needs ALT', '%s images need ALT', $bbai_li_seg_miss, 'beepbeep-ai-alt-text-generator' ) ),
-				number_format_i18n( $bbai_li_seg_miss )
+			// Completes the sentence with the large centre numeral: "4" + "images need ALT text".
+			$bbai_li_donut_sub_display = _n(
+				'image needs ALT text',
+				'images need ALT text',
+				$bbai_li_seg_miss,
+				'beepbeep-ai-alt-text-generator'
 			);
 		} elseif ( $bbai_li_seg_weak > 0 ) {
-			$bbai_li_donut_sub_display = sprintf(
-				/* translators: %s: count of images needing review */
-				esc_html( _n( '%s ready for review', '%s ready for review', $bbai_li_seg_weak, 'beepbeep-ai-alt-text-generator' ) ),
-				number_format_i18n( $bbai_li_seg_weak )
+			// Centre shows the count; sub is the tail of the sentence.
+			$bbai_li_donut_sub_display = _n(
+				'image ready for review',
+				'images ready for review',
+				$bbai_li_seg_weak,
+				'beepbeep-ai-alt-text-generator'
 			);
 		} elseif ( $bbai_li_donut_sub ) {
 			$bbai_li_donut_sub_display = $bbai_li_donut_sub;
 		}
 		if ( $bbai_li_donut_sub_display ) :
 		?>
-		<p class="bbai-li-donut__sub-label" data-bbai-li-donut-sub="1"><?php echo $bbai_li_donut_sub_display; ?></p>
+		<p class="bbai-donut-label bbai-li-donut__sub-label<?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-donut__sub-label--review-ready' : ''; ?>" data-bbai-li-donut-sub="1"><?php echo esc_html( $bbai_li_donut_sub_display ); ?></p>
 		<?php endif; ?>
 
 		<?php
-		// Donut meta line — brief contextual nudge beneath sub-label.
-		$bbai_li_donut_meta = '';
-		if ( 'QUEUED' === $bbai_li_state_id ) {
-			$bbai_li_donut_meta = esc_html__( 'Queued automatically', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
-			$bbai_li_donut_meta = esc_html__( 'This may take a few minutes', 'beepbeep-ai-alt-text-generator' );
+		$bbai_li_donut_cm_href   = '';
+		$bbai_li_donut_cm_label = '';
+		if ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_seg_miss > 0 && ! empty( $bbai_li_primary_cta['href'] ) ) {
+			$bbai_li_donut_cm_href   = $bbai_li_primary_cta['href'];
+			$bbai_li_donut_cm_label = __( 'Fix missing images →', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( in_array( $bbai_li_state_id, [ 'NEEDS_REVIEW', 'MIXED_ATTENTION' ], true ) && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
+			$bbai_li_donut_cm_href   = $bbai_needs_review_library_url;
+			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'ALL_CLEAR' === $bbai_li_state_id ) {
-			$bbai_li_donut_meta = esc_html__( 'Library fully optimised', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
-			$bbai_li_donut_meta = esc_html__( 'Open review queue', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( 'MISSING_ALT' === $bbai_li_state_id ) {
-			$bbai_li_donut_meta = esc_html__( 'Click to generate', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( 'QUOTA_EXHAUSTED' === $bbai_li_state_id ) {
-			$bbai_li_donut_meta = esc_html__( 'Add credits to continue', 'beepbeep-ai-alt-text-generator' );
+			$bbai_li_donut_cm_href   = admin_url( 'upload.php' );
+			$bbai_li_donut_cm_label = __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' );
+		}
+		?>
+		<?php if ( $bbai_li_donut_cm_href && $bbai_li_donut_cm_label ) : ?>
+		<p class="bbai-li-donut__action-wrap"><a href="<?php echo esc_url( $bbai_li_donut_cm_href ); ?>" class="bbai-li-donut__action-cm"><?php echo esc_html( $bbai_li_donut_cm_label ); ?></a></p>
+		<?php endif; ?>
+
+		<div
+			class="bbai-li-donut__review-block"
+			data-bbai-li-donut-review-block="1"
+			<?php echo ( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['href'] ) ) ? '' : 'hidden'; ?>
+		>
+			<p class="bbai-li-donut__review-prompt" data-bbai-li-donut-review-prompt="1"><?php esc_html_e( 'Review now to complete your optimisation', 'beepbeep-ai-alt-text-generator' ); ?></p>
+			<a
+				class="bbai-li-donut__text-cta"
+				data-bbai-li-donut-review-link="1"
+				href="<?php echo esc_url( ( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['href'] ) ) ? $bbai_li_secondary_cta['href'] : '#' ); ?>"
+				data-action="<?php echo esc_attr( 'NEEDS_REVIEW' === $bbai_li_state_id ? ( $bbai_li_secondary_cta['action'] ?? 'navigate' ) : 'navigate' ); ?>"
+			><?php esc_html_e( 'Review images →', 'beepbeep-ai-alt-text-generator' ); ?></a>
+		</div>
+
+		<p class="bbai-li-donut__helper" data-bbai-li-donut-helper="1" <?php echo $bbai_li_donut_helper ? '' : 'hidden'; ?>><?php echo $bbai_li_donut_helper ? esc_html( $bbai_li_donut_helper ) : ''; ?></p>
+
+		<?php
+		// Donut meta line — only when not using the SEO helper (avoid duplicate nudges).
+		$bbai_li_donut_meta = '';
+		if ( ! $bbai_li_donut_helper ) {
+			if ( 'QUEUED' === $bbai_li_state_id ) {
+				$bbai_li_donut_meta = __( 'Start generation when you’re ready.', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
+				$bbai_li_donut_meta = __( 'This may take a few minutes', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( 'ALL_CLEAR' === $bbai_li_state_id ) {
+				$bbai_li_donut_meta = __( 'Everything is optimised and SEO-ready', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( 'MISSING_ALT' === $bbai_li_state_id ) {
+				$bbai_li_donut_meta = __( 'Click to generate', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( 'QUOTA_EXHAUSTED' === $bbai_li_state_id ) {
+				$bbai_li_donut_meta = __( 'Add credits to continue', 'beepbeep-ai-alt-text-generator' );
+			}
 		}
 		if ( $bbai_li_donut_meta ) :
 		?>
-		<p class="bbai-li-donut__meta"><?php echo $bbai_li_donut_meta; ?></p>
+		<p class="bbai-li-donut__meta" data-bbai-li-donut-meta="1"><?php echo esc_html( $bbai_li_donut_meta ); ?></p>
 		<?php endif; ?>
+		</div>
+
+		<div class="bbai-li-donut-context" data-bbai-li-donut-context="1">
+			<div class="bbai-status-summary" role="group" aria-label="<?php esc_attr_e( 'Status summary', 'beepbeep-ai-alt-text-generator' ); ?>">
+			<button type="button" class="bbai-status-item bbai-status-item--readout is-missing" data-bbai-dashboard-status-filter="missing" data-filter="missing" aria-label="<?php echo esc_attr( 'QUEUED' === $bbai_li_state_id ? __( 'Preview images ready to generate', 'beepbeep-ai-alt-text-generator' ) : __( 'Show images that need alt text', 'beepbeep-ai-alt-text-generator' ) ); ?>">
+				<span class="bbai-dot <?php echo esc_attr( 'QUEUED' === $bbai_li_state_id ? 'blue' : 'red' ); ?>" aria-hidden="true"></span>
+				<span class="bbai-status-text">
+					<strong class="bbai-count" data-bbai-status-metric="missing"><?php echo esc_html( (string) number_format_i18n( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ? $bbai_li_queued_total : $bbai_li_missing_count ) ); ?></strong>
+					<?php
+					$bbai_li_ready_label_count = ( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ) ? $bbai_li_queued_total : $bbai_li_missing_count;
+					echo esc_html( 'QUEUED' === $bbai_li_state_id
+						? ' ' . _n( 'ready to generate', 'ready to generate', $bbai_li_ready_label_count, 'beepbeep-ai-alt-text-generator' )
+						: ' ' . _n( 'image needs ALT text', 'images need ALT text', $bbai_li_missing_count, 'beepbeep-ai-alt-text-generator' )
+					);
+					?>
+				</span>
+			</button>
+			<button type="button" class="bbai-status-item bbai-status-item--readout is-review" data-bbai-dashboard-status-filter="weak" data-filter="review" title="<?php esc_attr_e( 'Review improves accuracy before publishing', 'beepbeep-ai-alt-text-generator' ); ?>" aria-label="<?php esc_attr_e( 'Show images ready for review', 'beepbeep-ai-alt-text-generator' ); ?>">
+				<span class="bbai-dot orange" aria-hidden="true"></span>
+				<span class="bbai-status-text">
+					<strong class="bbai-count" data-bbai-status-metric="review"><?php echo esc_html( (string) number_format_i18n( $bbai_li_review_count ) ); ?></strong>
+					<?php
+					echo esc_html(
+						' ' . _n( 'ready for review', 'ready for review', $bbai_li_review_count, 'beepbeep-ai-alt-text-generator' )
+					);
+					?>
+				</span>
+			</button>
+			</div>
+
+			<?php
+			$bbai_li_gen_class  = $bbai_li_flow_gen_on ? 'is-active' : 'is-inactive';
+			$bbai_li_rev_class  = $bbai_li_flow_rev_on ? 'is-active' : 'is-inactive';
+			$bbai_li_done_class = $bbai_li_flow_done_on ? 'is-active' : 'is-inactive';
+			?>
+			<div
+				class="bbai-progress-flow"
+				data-bbai-li-flow="1"
+				<?php echo $bbai_li_flow_hidden ? 'hidden' : ''; ?>
+				role="group"
+				aria-label="<?php esc_attr_e( 'Workflow: Generate, Review, Done', 'beepbeep-ai-alt-text-generator' ); ?>"
+			>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_rev_class ); ?>" data-bbai-flow-step="review"><?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_done_class ); ?>" data-bbai-flow-step="done"><?php esc_html_e( 'Done', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			</div>
+		</div>
+
+		<div class="bbai-card-meta-row">
+			<div
+				class="bbai-li-activity-strip"
+				data-bbai-li-activity-strip="1"
+				hidden="hidden"
+				aria-hidden="true"
+			></div>
 		</div>
 
 	</div>
 
-	<?php /* ── RIGHT CARD: badge + headline + support + CTAs + summary ────── */ ?>
+	<?php /* ── RIGHT CARD: badge + headline + support + CTAs + credits ────── */ ?>
 	<div class="bbai-li-card bbai-li-card--content">
 
+		<div class="bbai-li-card-section bbai-li-card-section--intro">
 		<?php if ( $bbai_li_badge ) : ?>
 		<span class="bbai-li-state-badge bbai-li-state-badge--<?php echo sanitize_html_class( $bbai_li_badge['mod'] ); ?>" aria-hidden="true">
 			<?php echo esc_html( $bbai_li_badge['text'] ); ?>
@@ -253,119 +594,167 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			class="bbai-li-headline"
 			data-bbai-li-hero-headline="1"
 			<?php if ( $bbai_li_donut_animated ) : ?>aria-live="polite" aria-atomic="true"<?php endif; ?>
-		><?php echo $bbai_li_title; ?></h1>
+		><?php echo esc_html( $bbai_li_title ); ?></h1>
 
 		<p
 			class="bbai-li-support"
 			data-bbai-li-hero-support="1"
 			<?php if ( $bbai_li_donut_animated ) : ?>aria-live="polite" aria-atomic="true"<?php endif; ?>
-		><?php echo $bbai_li_description; ?></p>
+		><?php echo esc_html( $bbai_li_description ); ?></p>
 
-		<div class="bbai-li-cta-row">
+		</div>
+
+		<div class="bbai-li-card-section bbai-li-card-section--actions">
+		<div class="bbai-action-block">
+			<div class="bbai-li-cta-row bbai-li-cta-group bbai-cta-group">
 			<?php if ( ! empty( $bbai_li_primary_cta['label'] ) ) :
 					$bbai_li_busy_label = (string) ( $bbai_li_primary_cta['busy_label'] ?? '' );
 					if ( '' === $bbai_li_busy_label ) {
 						$bbai_li_busy_label = __( 'Working…', 'beepbeep-ai-alt-text-generator' );
 					}
 				?>
+				<div class="bbai-li-cta-primary-col">
 					<a
 						class="bbai-li-btn-primary bbai-btn bbai-btn-primary"
 						href="<?php echo esc_url( $bbai_li_primary_cta['href'] ?? '#' ); ?>"
 						data-bbai-li-action="<?php echo esc_attr( $bbai_li_primary_cta['action'] ?? '' ); ?>"
 						<?php if ( 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) : ?>
+							data-action="generate-missing"
 							data-bbai-action="generate_missing"
 						<?php endif; ?>
 						data-bbai-li-primary-cta="1"
 						data-busy-label="<?php echo esc_attr( $bbai_li_busy_label ); ?>"
-					><?php echo esc_html( $bbai_li_primary_cta['label'] ); ?></a>
+					><?php if ( 'approve-all' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) : ?><span class="bbai-btn-content"><?php echo esc_html( $bbai_li_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php echo esc_html( $bbai_li_busy_label ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span><?php else : echo esc_html( $bbai_li_primary_cta['label'] ); endif; ?></a>
+					<?php if ( $bbai_hero_cta_hint ) : ?>
+					<p class="bbai-hero-cta-hint" data-bbai-hero-cta-hint="1"><?php echo esc_html( $bbai_hero_cta_hint ); ?></p>
+					<?php endif; ?>
+					<a
+						class="bbai-hero-review-inline-link"
+						href="<?php echo esc_url( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['href'] ) ? $bbai_li_secondary_cta['href'] : '#' ); ?>"
+						data-action="<?php echo esc_attr( 'NEEDS_REVIEW' === $bbai_li_state_id ? ( $bbai_li_secondary_cta['action'] ?? 'navigate' ) : 'navigate' ); ?>"
+						data-bbai-li-secondary-inline-cta="1"
+						<?php echo ( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['href'] ) ) ? '' : 'hidden'; ?>
+					><?php echo esc_html( ( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['label'] ) ) ? $bbai_li_secondary_cta['label'] : __( 'Review individually →', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+					<?php
+					$bbai_li_all_clear_rescan_busy = is_array( $bbai_li_secondary_cta ) ? (string) ( $bbai_li_secondary_cta['busy_label'] ?? '' ) : '';
+					?>
+					<a
+						class="bbai-all-clear-rescan-link"
+						href="<?php echo esc_url( 'ALL_CLEAR' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) ? ( $bbai_li_secondary_cta['href'] ?? '#' ) : '#' ); ?>"
+						data-action="<?php echo esc_attr( 'ALL_CLEAR' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) ? ( $bbai_li_secondary_cta['action'] ?? 'rescan-media-library' ) : 'rescan-media-library' ); ?>"
+						data-bbai-li-all-clear-rescan="1"
+						<?php if ( 'ALL_CLEAR' === $bbai_li_state_id && '' !== $bbai_li_all_clear_rescan_busy ) : ?>
+						data-busy-label="<?php echo esc_attr( $bbai_li_all_clear_rescan_busy ); ?>"
+						<?php endif; ?>
+						<?php echo ( 'ALL_CLEAR' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) ) ? '' : 'hidden'; ?>
+					><?php echo esc_html( ( 'ALL_CLEAR' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) ) ? $bbai_li_secondary_cta['label'] : __( 'Re-scan library →', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+					<?php
+					$bbai_li_library_cta = is_array( $bbai_li_hero['library_cta'] ?? null ) ? $bbai_li_hero['library_cta'] : null;
+					?>
+					<a
+						class="bbai-all-clear-library-link bbai-hero-review-inline-link"
+						href="<?php echo esc_url( ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_li_library_cta && ! empty( $bbai_li_library_cta['href'] ) ) ? $bbai_li_library_cta['href'] : '#' ); ?>"
+						data-action="<?php echo esc_attr( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_li_library_cta ? ( $bbai_li_library_cta['action'] ?? 'navigate' ) : 'navigate' ); ?>"
+						data-bbai-li-all-clear-library="1"
+						<?php echo ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_li_library_cta && ! empty( $bbai_li_library_cta['href'] ) ) ? '' : 'hidden'; ?>
+					><?php echo esc_html( ( $bbai_li_library_cta && ! empty( $bbai_li_library_cta['label'] ) ) ? $bbai_li_library_cta['label'] : __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+				</div>
 			<?php endif; ?>
 
-			<?php if ( ! empty( $bbai_li_secondary_cta['label'] ) ) : ?>
+			<?php if ( is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) && 'NEEDS_REVIEW' !== $bbai_li_state_id && 'ALL_CLEAR' !== $bbai_li_state_id ) :
+				$bbai_li_secondary_busy = (string) ( $bbai_li_secondary_cta['busy_label'] ?? '' );
+				?>
 				<a
-					class="bbai-li-btn-secondary bbai-btn bbai-btn-secondary"
+					class="bbai-li-btn-secondary bbai-btn bbai-btn-secondary bbai-button-secondary"
 					href="<?php echo esc_url( $bbai_li_secondary_cta['href'] ?? '#' ); ?>"
 					data-action="<?php echo esc_attr( $bbai_li_secondary_cta['action'] ?? '' ); ?>"
 					data-bbai-li-secondary-cta="1"
+					<?php if ( '' !== $bbai_li_secondary_busy ) : ?>
+						data-busy-label="<?php echo esc_attr( $bbai_li_secondary_busy ); ?>"
+					<?php endif; ?>
 				><?php echo esc_html( $bbai_li_secondary_cta['label'] ); ?></a>
 			<?php endif; ?>
-		</div>
-
-		<?php
-		// ── Summary metrics row ───────────────────────────────────────────────
-		$bbai_li_summary = is_array( $bbai_li_hero['summary'] ?? null ) ? $bbai_li_hero['summary'] : [];
-		if ( ! empty( $bbai_li_summary ) ) :
-		?>
-		<dl class="bbai-li-summary" aria-label="<?php esc_attr_e( 'Status summary', 'beepbeep-ai-alt-text-generator' ); ?>">
-			<?php foreach ( $bbai_li_summary as $bbai_li_stat ) :
-				$bbai_li_stat_label = (string) ( $bbai_li_stat['label'] ?? '' );
-				$bbai_li_stat_value = (string) ( $bbai_li_stat['value'] ?? '' );
-				$bbai_li_stat_mod   = sanitize_html_class( (string) ( $bbai_li_stat['mod'] ?? 'muted' ) );
-				if ( '' === $bbai_li_stat_label || '' === $bbai_li_stat_value ) { continue; }
-			?>
-			<div class="bbai-li-summary__item bbai-li-summary__item--<?php echo $bbai_li_stat_mod; ?>">
-				<dt class="bbai-li-summary__label"><?php echo esc_html( $bbai_li_stat_label ); ?></dt>
-				<dd class="bbai-li-summary__value"><?php echo esc_html( $bbai_li_stat_value ); ?></dd>
 			</div>
-			<?php endforeach; ?>
-		</dl>
-		<?php endif; ?>
-
-		<?php
-		// ── Progress narrative row ────────────────────────────────────────────
-		// Step 1: Generate → Step 2: Review → Step 3: Done
-		// Active step is determined by current state.
-		$bbai_li_progress_step = 1; // default: generate
-		if ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
-			$bbai_li_progress_step = 2;
-		} elseif ( 'ALL_CLEAR' === $bbai_li_state_id ) {
-			$bbai_li_progress_step = 3;
-		} elseif ( in_array( $bbai_li_state_id, [ 'QUEUED', 'QUOTA_EXHAUSTED', 'ERROR', 'NO_IMAGES' ], true ) ) {
-			$bbai_li_progress_step = 0; // hide
-		}
-		if ( $bbai_li_progress_step > 0 ) :
-			$bbai_li_step_classes = [
-				1 => [ 'bbai-li-progress-steps__step--idle' ],
-				2 => [ 'bbai-li-progress-steps__step--idle' ],
-				3 => [ 'bbai-li-progress-steps__step--idle' ],
-			];
-			if ( 'MIXED_ATTENTION' === $bbai_li_state_id ) {
-				$bbai_li_step_classes[1] = [ 'bbai-li-progress-steps__step--active' ];
-				$bbai_li_step_classes[2] = [ 'bbai-li-progress-steps__step--active', 'bbai-li-progress-steps__step--available' ];
-			} else {
-				$bbai_li_step_classes[1] = 1 === $bbai_li_progress_step ? [ 'bbai-li-progress-steps__step--active' ] : ( $bbai_li_progress_step > 1 ? [ 'bbai-li-progress-steps__step--done' ] : [ 'bbai-li-progress-steps__step--idle' ] );
-				$bbai_li_step_classes[2] = 2 === $bbai_li_progress_step ? [ 'bbai-li-progress-steps__step--active' ] : ( $bbai_li_progress_step > 2 ? [ 'bbai-li-progress-steps__step--done' ] : [ 'bbai-li-progress-steps__step--idle' ] );
-				$bbai_li_step_classes[3] = 3 === $bbai_li_progress_step ? [ 'bbai-li-progress-steps__step--active', 'bbai-li-progress-steps__step--done' ] : [ 'bbai-li-progress-steps__step--idle' ];
-			}
-		?>
-		<div class="bbai-li-progress-steps" role="list" aria-label="<?php esc_attr_e( 'Workflow steps', 'beepbeep-ai-alt-text-generator' ); ?>">
-
-			<span class="bbai-li-progress-steps__step <?php echo esc_attr( implode( ' ', $bbai_li_step_classes[1] ) ); ?>" role="listitem">
-				<span class="bbai-li-progress-steps__dot" aria-hidden="true"></span>
-				<?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?>
-			</span>
-
-			<span class="bbai-li-progress-steps__sep" aria-hidden="true"></span>
-
-			<span class="bbai-li-progress-steps__step <?php echo esc_attr( implode( ' ', $bbai_li_step_classes[2] ) ); ?>" role="listitem">
-				<span class="bbai-li-progress-steps__dot" aria-hidden="true"></span>
-				<?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?>
-			</span>
-
-			<span class="bbai-li-progress-steps__sep" aria-hidden="true"></span>
-
-			<span class="bbai-li-progress-steps__step <?php echo esc_attr( implode( ' ', $bbai_li_step_classes[3] ) ); ?>" role="listitem">
-				<span class="bbai-li-progress-steps__dot" aria-hidden="true"></span>
-				<?php esc_html_e( 'Done', 'beepbeep-ai-alt-text-generator' ); ?>
-			</span>
-
 		</div>
-		<?php endif; ?>
+		</div>
+
+		<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-li-card-section--spaced">
+
+			<?php if ( $bbai_li_all_clear_upgrade_panel ) : ?>
+			<hr class="bbai-all-clear-section-divider" aria-hidden="true" />
+			<div class="bbai-all-clear-upgrade" data-bbai-all-clear-upgrade="1">
+				<p class="bbai-li-free-plan-upsell__note" data-bbai-li-free-upsell="1"><?php esc_html_e( 'New uploads won’t be optimised automatically.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<div class="bbai-all-clear-upgrade__panel">
+					<p class="bbai-all-clear-upgrade__title"><?php esc_html_e( '⚡ Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<p class="bbai-all-clear-upgrade__desc"><?php esc_html_e( 'Automatically generate ALT text for every new image you upload.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<button
+						type="button"
+						class="bbai-all-clear-upgrade__cta"
+						data-action="show-upgrade-modal"
+						data-bbai-analytics-upgrade="all_clear_automate_uploads"
+					><?php esc_html_e( 'Upgrade plan', 'beepbeep-ai-alt-text-generator' ); ?></button>
+				</div>
+				<p class="bbai-all-clear-upgrade__nudge"><?php esc_html_e( 'Keep your library optimised as you upload new images.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+			</div>
+			<?php endif; ?>
+
+			<div
+				class="bbai-credit-usage<?php echo 'ALL_CLEAR' === $bbai_li_state_id ? ' bbai-credit-usage--all-clear-muted' : ''; ?>"
+				data-bbai-hero-credit-usage="1"
+				data-credit-state="<?php echo esc_attr( $bbai_hero_credit_state ); ?>"
+				data-bbai-hero-credits-used="<?php echo esc_attr( (string) $bbai_hero_c_used ); ?>"
+				data-bbai-hero-credits-remaining="<?php echo esc_attr( (string) $bbai_hero_c_rem ); ?>"
+				data-bbai-hero-credits-limit="<?php echo esc_attr( (string) $bbai_hero_c_lim ); ?>"
+			>
+				<div class="bbai-credit-head">
+					<div class="bbai-credit-label" data-bbai-hero-credit-label="1"><?php echo esc_html( $bbai_hero_credit_label ); ?></div>
+					<p class="bbai-credit-clarity" data-bbai-hero-credit-clarity="1"><?php echo esc_html( $bbai_hero_credit_usage_line ); ?></p>
+				</div>
+				<div
+					class="bbai-credit-bar"
+					role="progressbar"
+					aria-valuemin="0"
+					aria-valuemax="100"
+					aria-valuenow="<?php echo esc_attr( (string) $bbai_hero_c_pct ); ?>"
+					aria-label="<?php echo esc_attr( $bbai_hero_credit_bar_aria ); ?>"
+					data-bbai-hero-credit-bar="1"
+				>
+					<div class="bbai-credit-fill" data-bbai-hero-credit-fill="1" style="--bbai-credit-percent: <?php echo esc_attr( (string) $bbai_hero_c_pct ); ?>%;"></div>
+				</div>
+				<p
+					class="bbai-credit-context"
+					data-bbai-hero-credit-context="1"
+					<?php echo ( $bbai_hero_c_rem > 0 && '' !== $bbai_hero_credit_context_line ) ? '' : 'hidden'; ?>
+				><?php echo ( $bbai_hero_c_rem > 0 && '' !== $bbai_hero_credit_context_line ) ? esc_html( $bbai_hero_credit_context_line ) : ''; ?></p>
+				<p
+					class="bbai-credit-helper"
+					data-bbai-hero-credit-helper="1"
+					<?php echo $bbai_hero_credit_helper_hidden ? 'hidden' : ''; ?>
+				><?php echo $bbai_hero_credit_helper_hidden ? '' : esc_html( $bbai_hero_credit_helper ); ?></p>
+				<?php if ( $bbai_hero_is_free_plan && 'ALL_CLEAR' !== $bbai_li_state_id ) : ?>
+				<div class="bbai-credit-upgrade-panel" data-bbai-credit-upgrade-panel="1">
+					<p class="bbai-credit-upgrade-panel__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<p class="bbai-credit-upgrade-panel__sub"><?php esc_html_e( 'Upgrade to generate ALT text automatically when new images are added.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<span
+						class="bbai-credit-upgrade-panel__cta"
+						role="button"
+						tabindex="0"
+						data-action="show-upgrade-modal"
+						data-bbai-analytics-upgrade="hero_credits_upgrade_compact"
+					><?php esc_html_e( 'Upgrade', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				</div>
+				<?php endif; ?>
+			</div>
+		</div>
 
 	</div>
 
 </div>
 
 <?php /* ── Perceived-performance: CTA busy state + optimistic status line ── */ ?>
+<?php
+// phpcs:disable WordPress.WP.I18n.MissingTranslatorsComment -- Inline hero script: large TEXT map; placeholders follow standard sprintf patterns.
+?>
 <script>
 (function () {
 	'use strict';
@@ -375,11 +764,13 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 	var heroVariant = hero.getAttribute( 'data-bbai-li-variant' ) || '';
 	var safetyTimer = null;
+	var heroGenerationWatchdog = null;
 	var liveSignalTimer = null;
 	var transientStatusTimer = null;
 	var transitionPulseTimer = null;
 	var successHighlightTimer = null;
 	var processingAnimationFrame = null;
+	var processingAnimationTimer = null;
 	var processingAnimationToken = 0;
 	var dashboardPolling = {
 		timer: null,
@@ -393,6 +784,8 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		requiresResolvedSync: false,
 		optimisticAction: '',
 		bootstrapSyncApplied: false,
+		hydrated: false,
+		ssrRendered: true,
 	};
 
 	// Inline config from PHP — avoids dependency on missing compiled JS bundles.
@@ -408,14 +801,15 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			$bbai_hero_missing_count = 0;
 			$bbai_hero_summary_items = is_array( $bbai_li_state['hero']['summary'] ?? null ) ? $bbai_li_state['hero']['summary'] : [];
 			foreach ( $bbai_hero_summary_items as $bbai_hero_stat ) {
-				$lbl = strtolower( (string) ( $bbai_hero_stat['label'] ?? '' ) );
-				if ( strpos( $lbl, 'missing' ) !== false ) {
+				$bbai_hero_lbl = strtolower( (string) ( $bbai_hero_stat['label'] ?? '' ) );
+				if ( strpos( $bbai_hero_lbl, 'missing' ) !== false ) {
 					$bbai_hero_missing_count = (int) str_replace( ',', '', (string) ( $bbai_hero_stat['value'] ?? '0' ) );
 					break;
 				}
 			}
-			echo $bbai_hero_missing_count;
+			echo absint( $bbai_hero_missing_count );
 			?>,
+		wpDebug: '<?php echo ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? '1' : '0'; ?>',
 	};
 
 	var BOOTSTRAP_SYNC_LOCK_TTL_MS = 5 * 60 * 1000;
@@ -435,7 +829,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	var TEXT = {
 		working: '<?php echo esc_js( __( 'Working…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		aMoment: '<?php echo esc_js( __( 'a moment', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generationInProgress: '<?php echo esc_js( __( 'Generation in progress…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generationInProgress: '<?php echo esc_js( __( ' · Generation in progress…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		checkingQueue: '<?php echo esc_js( __( 'Checking queue…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedJustNow: '<?php echo esc_js( __( 'Last checked just now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedSecond: '<?php echo esc_js( __( 'Last checked 1 second ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -445,21 +839,20 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		lastCheckedHour: '<?php echo esc_js( __( 'Last checked 1 hour ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedHours: '<?php echo esc_js( __( 'Last checked %s hours ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastRun: '<?php echo esc_js( __( 'Last run %s', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedBadge: '<?php echo esc_js( __( 'Queued', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedBadge: '<?php echo esc_js( __( 'Ready to generate', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingBadge: '<?php echo esc_js( __( 'Processing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		actionNeededBadge: '<?php echo esc_js( __( 'Action needed', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewReadyBadge: '<?php echo esc_js( __( 'Review ready', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsNeededBadge: '<?php echo esc_js( __( 'Credits needed', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		allOptimisedBadge: '<?php echo esc_js( __( 'All optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedSupport: '<?php echo esc_js( __( 'Your next batch is lined up. Start it now or leave it queued for automatic processing.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedHeadlineSingular: '<?php echo esc_js( _n( '%s image is queued', '%s images are queued', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedHeadlinePlural: '<?php echo esc_js( _n( '%s image is queued', '%s images are queued', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimarySingular: '<?php echo esc_js( __( 'Start generating now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimaryPlural: '<?php echo esc_js( __( 'Start generating now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedSecondary: '<?php echo esc_js( __( 'View queued images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedAutomatically: '<?php echo esc_js( __( 'Queued automatically', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedCountSingular: '<?php echo esc_js( _n( '%s queued', '%s queued', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedCountPlural: '<?php echo esc_js( _n( '%s queued', '%s queued', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedSupport: '<?php echo esc_js( __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedHeadlineSingular: '<?php echo esc_js( _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedHeadlinePlural: '<?php echo esc_js( _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimarySingular: '<?php echo esc_js( __( 'Generate ALT text for %s image', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimaryPlural: '<?php echo esc_js( __( 'Generate ALT text for %s images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedSecondary: '<?php echo esc_js( __( 'Preview images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedReadySingular: '<?php echo esc_js( _n( '%s ready to generate', '%s ready to generate', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedReadyPlural: '<?php echo esc_js( _n( '%s ready to generate', '%s ready to generate', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingHeadline: '<?php echo esc_js( __( 'Generating — %1$s of %2$s images done', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingSupportDone: '<?php echo esc_js( __( '%1$s optimised so far · ~%2$s to finish', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingSupportEta: '<?php echo esc_js( __( '%1$s remaining · ~%2$s to finish', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -471,14 +864,31 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		openAltLibrary: '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveAll: '<?php echo esc_js( __( 'Approve all', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		openReviewQueue: '<?php echo esc_js( __( 'Open review queue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewIndividually: '<?php echo esc_js( __( 'Review individually →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		generateMissingAlt: '<?php echo esc_js( __( 'Generate missing ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		addCredits: '<?php echo esc_js( __( 'Add credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		rescanLibrary: '<?php echo esc_js( __( 'Re-scan library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		rescanLibrary: '<?php echo esc_js( __( 'Re-scan library →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingLabel: '<?php echo esc_js( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewLabel: '<?php echo esc_js( __( 'To review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsLabel: '<?php echo esc_js( __( 'Credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		optimizedLabel: '<?php echo esc_js( __( 'Optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsLeftLabel: '<?php echo esc_js( __( 'Credits left', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditsRemainingLabel: '<?php echo esc_js( __( 'Credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditUsedThisMonth: '<?php echo esc_js( __( '%1$s / %2$s used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditFreeSingular: '<?php echo esc_js( __( '%s monthly credit remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditFreePlural: '<?php echo esc_js( __( '%s monthly credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditPaidNoneLeft: '<?php echo esc_js( __( 'No credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditPaidOneMonth: '<?php echo esc_js( __( '1 credit remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditPaidPluralMonth: '<?php echo esc_js( __( '%s credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditUsageLine: '<?php echo esc_js( __( 'Used when generating or improving ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditHelperExhausted: '<?php echo esc_js( __( 'Add credits to continue generating ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditLowRunningSuffix: '<?php echo esc_js( __( 'Running low — upgrade or top up before you run out.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditCtxManual: '<?php echo esc_js( __( 'Manual generation uses credits.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditCtxReview: '<?php echo esc_js( __( 'Reviewing does not use credits.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditCtxAllClear: '<?php echo esc_js( __( 'Credits are ready for your next uploads.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditAriaMonthly: '<?php echo esc_js( __( '%1$s of %2$s credits used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditAriaPaid: '<?php echo esc_js( __( '%1$s of %2$s plan credits used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditsResetMonthly: '<?php echo esc_js( __( 'Resets monthly', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingStrip: '<?php echo esc_js( __( 'Generation active', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processedCountSingular: '<?php echo esc_js( _n( '%s processed', '%s processed', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processedCountPlural: '<?php echo esc_js( _n( '%s processed', '%s processed', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -496,16 +906,13 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		reviewHeadlineSingular: '<?php echo esc_js( _n( '%s image is ready for review', '%s images are ready for review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewHeadlinePlural: '<?php echo esc_js( _n( '%s image is ready for review', '%s images are ready for review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewSupport: '<?php echo esc_js( __( 'ALT text is ready for a quick review before it goes live.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewSupportSingular: '<?php echo esc_js( _n( 'AI has prepared a suggestion for %s image — approve everything now or open the queue for a closer pass.', 'AI has prepared suggestions for %s images — approve everything now or open the queue for a closer pass.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewSupportPlural: '<?php echo esc_js( _n( 'AI has prepared a suggestion for %s image — approve everything now or open the queue for a closer pass.', 'AI has prepared suggestions for %s images — approve everything now or open the queue for a closer pass.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewSupportSingular: '<?php echo esc_js( _n( 'You have %s image waiting for approval — approve all or open the queue to check each one.', 'You have %s images waiting for approval — approve all or open the queue to check each one.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewSupportPlural: '<?php echo esc_js( _n( 'You have %s image waiting for approval — approve all or open the queue to check each one.', 'You have %s images waiting for approval — approve all or open the queue to check each one.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		allImagesOptimised: '<?php echo esc_js( __( 'All images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		libraryUpToDate: '<?php echo esc_js( __( 'Library is up to date', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allClearHeadlineSingular: '<?php echo esc_js( _n( 'All %s image is optimised', 'All %s images are optimised', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allClearHeadlinePlural: '<?php echo esc_js( _n( 'All %s image is optimised', 'All %s images are optimised', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allClearSupport: '<?php echo esc_js( __( 'Your library is fully optimised. New uploads will be processed automatically.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allClearSupportProSingular: '<?php echo esc_js( _n( 'All %s image is optimised. New uploads are processed automatically.', 'All %s images are optimised. New uploads are processed automatically.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allClearSupportProPlural: '<?php echo esc_js( _n( 'All %s image is optimised. New uploads are processed automatically.', 'All %s images are optimised. New uploads are processed automatically.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		readyForNewUploads: '<?php echo esc_js( __( 'Ready for new uploads', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		allClearHeadline: '<?php echo esc_js( __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		allClearSupport: '<?php echo esc_js( __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		readyForNewUploads: '<?php echo esc_js( __( 'Everything is optimised and SEO-ready', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditLeftSingular: '<?php echo esc_js( _n( '%s credit left', '%s credits left', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditLeftPlural: '<?php echo esc_js( _n( '%s credit left', '%s credits left', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		outOfCredits: '<?php echo esc_js( __( 'Out of credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -518,7 +925,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		generationPaused: '<?php echo esc_js( __( 'Generation paused', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		checkSettingsToContinue: '<?php echo esc_js( __( 'Check settings to continue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		libraryReadyToOptimise: '<?php echo esc_js( __( 'Library ready to optimise', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		impactQueued: '<?php echo esc_js( __( 'We\'ll start generating these automatically.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		impactQueued: '<?php echo esc_js( __( 'Ready when you are — start generating to move images into review.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactProcessing: '<?php echo esc_js( __( 'BeepBeep is working through your library now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactAllClearSingle: '<?php echo esc_js( _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactAllClearPlural: '<?php echo esc_js( _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -529,14 +936,21 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		queuedImagePlural: '<?php echo esc_js( _n( 'queued image', 'queued images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		imageLeftSingular: '<?php echo esc_js( _n( 'image left', 'images left', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		imageLeftPlural: '<?php echo esc_js( _n( 'image left', 'images left', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		confirmFailed: '<?php echo esc_js( __( 'Could not confirm the latest dashboard state yet. Refresh to check progress.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		startFailed: '<?php echo esc_js( __( 'Could not start generation. Please try again.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		noImagesNeedAlt: '<?php echo esc_js( __( 'No images need ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		startFailed: '<?php echo esc_js( __( 'Generation could not start. Please refresh and try again.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		sessionExpired: '<?php echo esc_js( __( 'Your session expired. Please refresh and try again.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		noMissingFoundRescan: '<?php echo esc_js( __( 'No missing images were found. Please re-scan your library.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		preparingBulkRun: '<?php echo esc_js( __( 'Preparing bulk run...', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		etaSeconds: '<?php echo esc_js( __( '%ds', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		etaMinutes: '<?php echo esc_js( __( '%dm', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		batchReadyForReview: '<?php echo esc_js( __( 'Batch complete. Ready for review.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewComplete: '<?php echo esc_js( __( 'Review complete. Library is all clear.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveUpdating: '<?php echo esc_js( __( 'Updating review queue…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightMinsEst: '<?php echo esc_js( __( '%s min (est.)', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightImagesOptimisedSingular: '<?php echo esc_js( __( '%s image optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightImagesOptimisedPlural: '<?php echo esc_js( __( '%s images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightAccessibleSuffix: '<?php echo esc_js( __( 'of images accessible', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightMinsSaved: '<?php echo esc_js( __( '~%s mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightMinsSavedZero: '<?php echo esc_js( __( '~0 mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 	};
 
 	var lastStateTruthFailureLogAt = 0;
@@ -699,6 +1113,16 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function getSecondaryCta() {
+		var state = hero.getAttribute( 'data-bbai-li-state' ) || '';
+		var inline = hero.querySelector( '[data-bbai-li-secondary-inline-cta="1"]' );
+		var rescan;
+		if ( 'NEEDS_REVIEW' === state && inline && ! inline.hidden && inline.getAttribute( 'aria-hidden' ) !== 'true' ) {
+			return inline;
+		}
+		rescan = hero.querySelector( '[data-bbai-li-all-clear-rescan="1"]' );
+		if ( 'ALL_CLEAR' === state && rescan && ! rescan.hidden && rescan.getAttribute( 'aria-hidden' ) !== 'true' ) {
+			return rescan;
+		}
 		return hero.querySelector( '[data-bbai-li-secondary-cta]' );
 	}
 
@@ -718,6 +1142,72 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return safe.toLocaleString();
 	}
 
+	function formatHeroCreditDashboardLabel( rem ) {
+		var dr = getDashboardRoot();
+		var lim = dr ? parseInt( dr.getAttribute( 'data-bbai-credits-total' ), 10 ) : NaN;
+		var used = dr ? parseInt( dr.getAttribute( 'data-bbai-credits-used' ), 10 ) : NaN;
+		var r = Math.max( 0, parseInt( rem, 10 ) || 0 );
+		lim = Math.max( 1, isNaN( lim ) ? 1 : lim );
+		if ( isNaN( used ) || used < 0 ) {
+			used = Math.max( 0, lim - r );
+		}
+		return replaceTokens( TEXT.heroCreditUsedThisMonth || '', {
+			'%1$s': formatCount( used ),
+			'%2$s': formatCount( lim ),
+		} );
+	}
+
+	function buildHeroCreditContextLine( rem, liState ) {
+		var r = Math.max( 0, parseInt( rem, 10 ) || 0 );
+		var st = String( liState || '' );
+		var hint = '';
+		var low = '';
+		var line;
+		if ( r <= 0 ) {
+			return '';
+		}
+		if ( r <= 10 ) {
+			low = TEXT.creditLowRunningSuffix || '';
+		}
+		switch ( st ) {
+			case 'MISSING_ALT':
+			case 'MIXED_ATTENTION':
+				hint = TEXT.creditCtxManual || '';
+				break;
+			case 'NEEDS_REVIEW':
+				hint = TEXT.creditCtxReview || '';
+				break;
+			case 'ALL_CLEAR':
+				hint = TEXT.creditCtxAllClear || '';
+				break;
+			case 'PROCESSING':
+			case 'QUEUED':
+				hint = TEXT.creditCtxManual || '';
+				break;
+			default:
+				hint = '';
+		}
+		line = ( hint ? hint : '' ) + ( hint && low ? ' ' : '' ) + ( low ? low : '' );
+		return line.trim();
+	}
+
+	function formatHeroCreditBarAria( rem, lim ) {
+		var l = Math.max( 1, parseInt( lim, 10 ) || 1 );
+		var r = Math.max( 0, parseInt( rem, 10 ) || 0 );
+		var used = Math.max( 0, l - r );
+		var dr = getDashboardRoot();
+		var du = dr ? parseInt( dr.getAttribute( 'data-bbai-credits-used' ), 10 ) : NaN;
+		if ( ! isNaN( du ) && du >= 0 ) {
+			used = du;
+		}
+		var isFree = dr && dr.getAttribute( 'data-bbai-is-premium' ) !== '1';
+		var t = isFree ? TEXT.creditAriaMonthly : TEXT.creditAriaPaid;
+		return replaceTokens( t, {
+			'%1$s': formatCount( used ),
+			'%2$s': formatCount( l ),
+		} );
+	}
+
 	function firstDefined() {
 		var i;
 		for ( i = 0; i < arguments.length; i += 1 ) {
@@ -726,6 +1216,69 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			}
 		}
 		return undefined;
+	}
+
+	function normalizeCounts( counts ) {
+		var source = counts && typeof counts === 'object' ? counts : {};
+		var missing = parseInt( firstDefined( source.missing, source.missing_alt, source.missingAlt, 0 ), 10 );
+		var review = parseInt( firstDefined( source.review, source.to_review, source.toReview, source.needs_review, source.needsReview, source.weak, 0 ), 10 );
+		var complete = parseInt( firstDefined( source.optimized, source.complete, source.optimised, 0 ), 10 );
+		var failed = parseInt( firstDefined( source.failed, 0 ), 10 );
+		var total = parseInt( firstDefined( source.total, source.total_images, source.totalImages, missing + review + complete + failed ), 10 );
+
+		missing = Math.max( 0, isNaN( missing ) ? 0 : missing );
+		review = Math.max( 0, isNaN( review ) ? 0 : review );
+		complete = Math.max( 0, isNaN( complete ) ? 0 : complete );
+		failed = Math.max( 0, isNaN( failed ) ? 0 : failed );
+		total = Math.max( 0, isNaN( total ) ? missing + review + complete + failed : total );
+
+		return {
+			missing: missing,
+			review: review,
+			complete: complete,
+			failed: failed,
+			total: total,
+		};
+	}
+
+	function getDomCounts() {
+		var root = getDashboardRoot();
+		if ( ! root ) {
+			return normalizeCounts( {} );
+		}
+		return normalizeCounts( {
+			missing: root.getAttribute( 'data-bbai-missing-count' ),
+			review: root.getAttribute( 'data-bbai-weak-count' ),
+			optimized: root.getAttribute( 'data-bbai-optimized-count' ),
+			total: root.getAttribute( 'data-bbai-total-count' ),
+		} );
+	}
+
+	function countsEqual( a, b ) {
+		var left = normalizeCounts( a );
+		var right = normalizeCounts( b );
+		return left.missing === right.missing &&
+			left.review === right.review &&
+			left.complete === right.complete &&
+			left.failed === right.failed &&
+			left.total === right.total;
+	}
+
+	function hasCountValues( counts ) {
+		var normalized = normalizeCounts( counts );
+		return normalized.missing > 0 ||
+			normalized.review > 0 ||
+			normalized.complete > 0 ||
+			normalized.failed > 0 ||
+			normalized.total > 0;
+	}
+
+	function getCurrentCountsHash() {
+		var root = getDashboardRoot();
+		var loggedInRoot = getLoggedInDashboardRoot();
+		return root && root.getAttribute( 'data-bbai-counts-hash' )
+			? String( root.getAttribute( 'data-bbai-counts-hash' ) || '' )
+			: ( loggedInRoot ? String( loggedInRoot.getAttribute( 'data-bbai-counts-hash' ) || '' ) : '' );
 	}
 
 	function formatSingularPlural( count, singular, plural ) {
@@ -791,8 +1344,30 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			return 'NEEDS_REVIEW';
 		}
 
+		if ( counts.failed > 0 ) {
+			return 'ERROR';
+		}
+
+		// Stale SaaS state labels must not override reconciled counts (see Logged_In_Dashboard_Resolver::compute_state_id).
+		if (
+			( 'NEEDS_REVIEW' === state && counts.review <= 0 ) ||
+			( 'MISSING_ALT' === state && counts.missing <= 0 ) ||
+			( 'MIXED_ATTENTION' === state && ( counts.missing <= 0 || counts.review <= 0 ) )
+		) {
+			state = '';
+		}
+
 		if ( state ) {
 			return state;
+		}
+
+		if (
+			counts.total <= 0 &&
+			counts.missing <= 0 &&
+			counts.review <= 0 &&
+			counts.complete <= 0
+		) {
+			return 'NO_IMAGES';
 		}
 
 		return 'ALL_CLEAR';
@@ -848,6 +1423,17 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return payload && payload.counts && typeof payload.counts === 'object' ? payload.counts : {};
 	}
 
+	function getTruthCountsHash( payload ) {
+		var direct = payload ? firstDefined( payload.counts_hash, payload.countsHash, '' ) : '';
+		var embedded = '';
+		var stc;
+		if ( payload && payload.meta && payload.meta.state_truth ) {
+			stc = normalizeStateTruthPayload( payload.meta.state_truth );
+			embedded = stc ? firstDefined( stc.counts_hash, stc.countsHash, '' ) : '';
+		}
+		return String( embedded || direct || '' );
+	}
+
 	function getTruthRawCredits( payload ) {
 		return payload && payload.credits && typeof payload.credits === 'object' ? payload.credits : {};
 	}
@@ -864,20 +1450,48 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function getTruthCounts( payload ) {
-		var counts = payload && payload.counts && typeof payload.counts === 'object' ? payload.counts : {};
-		var missing = parseInt( firstDefined( counts.missing, counts.missing_alt, counts.missingAlt, 0 ), 10 );
-		var review = parseInt( firstDefined( counts.review, counts.to_review, counts.toReview, counts.needs_review, counts.needsReview, counts.weak, 0 ), 10 );
-		var complete = parseInt( firstDefined( counts.complete, counts.optimized, counts.optimised, 0 ), 10 );
-		var failed = parseInt( firstDefined( counts.failed, 0 ), 10 );
-		var total = parseInt( firstDefined( counts.total, counts.total_images, counts.totalImages, missing + review + complete + failed ), 10 );
+		var direct = payload && payload.counts && typeof payload.counts === 'object' ? payload.counts : null;
+		var embedded = null;
+		if ( payload && payload.meta && payload.meta.state_truth ) {
+			var stc = normalizeStateTruthPayload( payload.meta.state_truth );
+			embedded = stc && stc.counts && typeof stc.counts === 'object' ? stc.counts : null;
+		}
+		if ( embedded && Object.keys( embedded ).length > 0 ) {
+			return normalizeCounts( embedded );
+		}
+		if ( direct && Object.keys( direct ).length > 0 ) {
+			if ( hasCountValues( direct ) || ! hasCountValues( getDomCounts() ) ) {
+				return normalizeCounts( direct );
+			}
+		}
+		return getDomCounts();
+	}
 
-		return {
-			missing: Math.max( 0, isNaN( missing ) ? 0 : missing ),
-			review: Math.max( 0, isNaN( review ) ? 0 : review ),
-			complete: Math.max( 0, isNaN( complete ) ? 0 : complete ),
-			failed: Math.max( 0, isNaN( failed ) ? 0 : failed ),
-			total: Math.max( 0, isNaN( total ) ? 0 : total ),
-		};
+	function updateInsightCardsFromTruth( truth ) {
+		var counts = getTruthCounts( truth );
+		var opt = counts.complete;
+		var total = counts.total;
+		var miss = counts.missing;
+		var withAlt = total > 0 ? Math.max( 0, total - miss ) : 0;
+		var cov = total > 0 ? Math.min( 100, Math.round( 100 * withAlt / total ) ) : 0;
+		var mins = opt * 2;
+		var elOpt = document.querySelector( '[data-bbai-li-insight-optimized]' );
+		var elCov = document.querySelector( '[data-bbai-li-insight-coverage]' );
+		var elMins = document.querySelector( '[data-bbai-li-insight-mins]' );
+
+		if ( elOpt ) {
+			elOpt.textContent = formatSingularPlural( opt, TEXT.insightImagesOptimisedSingular, TEXT.insightImagesOptimisedPlural );
+		}
+		if ( elCov ) {
+			elCov.textContent = String( cov ) + '% ' + TEXT.insightAccessibleSuffix;
+		}
+		if ( elMins ) {
+			if ( mins <= 0 ) {
+				elMins.textContent = TEXT.insightMinsSavedZero;
+			} else {
+				elMins.textContent = replaceTokens( TEXT.insightMinsSaved, { '%s': formatCount( mins ) } );
+			}
+		}
 	}
 
 	function truthSupportsBootstrapSync( truth ) {
@@ -1067,10 +1681,19 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function getTruthCredits( payload ) {
-		var credits = payload && payload.credits && typeof payload.credits === 'object' ? payload.credits : {};
-		var used = parseInt( firstDefined( credits.used, credits.credits_used, credits.creditsUsed, 0 ), 10 );
-		var total = parseInt( firstDefined( credits.total, credits.limit, credits.credits_total, credits.creditsTotal, 1 ), 10 );
-		var remaining = parseInt( firstDefined( credits.remaining, credits.credits_remaining, credits.creditsRemaining, Math.max( 0, total - used ) ), 10 );
+		var direct = payload && payload.credits && typeof payload.credits === 'object' ? payload.credits : null;
+		var embedded = null;
+		if ( payload && payload.meta && payload.meta.state_truth ) {
+			var stx = normalizeStateTruthPayload( payload.meta.state_truth );
+			embedded = stx && stx.credits && typeof stx.credits === 'object' ? stx.credits : null;
+		}
+		var credits = ( direct && Object.keys( direct ).length > 0 ) ? direct : ( embedded || {} );
+		var usedRaw = parseInt( firstDefined( credits.used, credits.credits_used, credits.creditsUsed, 0 ), 10 );
+		var totalRaw = parseInt( firstDefined( credits.total, credits.limit, credits.credits_total, credits.creditsTotal, 1 ), 10 );
+		var used = Math.max( 0, isNaN( usedRaw ) ? 0 : usedRaw );
+		var total = Math.max( 1, isNaN( totalRaw ) ? 1 : totalRaw );
+		used = Math.min( used, total );
+		var remaining = Math.max( 0, total - used );
 		var plan = String( firstDefined( credits.plan, credits.plan_slug, credits.planSlug, credits.plan_type, credits.planType, '' ) ).toLowerCase();
 		var isPro = !! ( credits.is_pro || credits.isPro );
 
@@ -1079,9 +1702,9 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		return {
-			used: Math.max( 0, isNaN( used ) ? 0 : used ),
-			total: Math.max( 1, isNaN( total ) ? 1 : total ),
-			remaining: Math.max( 0, isNaN( remaining ) ? Math.max( 0, total - used ) : remaining ),
+			used: used,
+			total: total,
+			remaining: remaining,
 			isPro: isPro,
 			plan: plan,
 		};
@@ -1552,12 +2175,20 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		dashboardPolling.optimisticAction = String( action || '' );
 	}
 
+	function clearHeroGenerationWatchdog() {
+		if ( heroGenerationWatchdog ) {
+			window.clearTimeout( heroGenerationWatchdog );
+			heroGenerationWatchdog = null;
+		}
+	}
+
 	function clearOptimisticAction() {
 		var primaryCta = getPrimaryCta();
 		if ( dashboardPolling.optimisticAction && primaryCta && primaryCta.getAttribute( 'aria-busy' ) === 'true' ) {
 			setBusy( primaryCta, false );
 		}
 		dashboardPolling.optimisticAction = '';
+		clearHeroGenerationWatchdog();
 		if ( safetyTimer ) {
 			window.clearTimeout( safetyTimer );
 			safetyTimer = null;
@@ -1816,7 +2447,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function flashSummaryUpdating() {
-		var values = hero.querySelectorAll( '.bbai-li-summary__value' );
+		var values = hero.querySelectorAll( '.bbai-status-summary .bbai-count' );
 		values.forEach( function ( v ) { v.classList.add( 'bbai-li-summary__value--updating' ); } );
 		setTimeout( function () {
 			values.forEach( function ( v ) { v.classList.remove( 'bbai-li-summary__value--updating' ); } );
@@ -1873,7 +2504,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var credits = getTruthCredits( truth );
 		var remainingPct = credits.total > 0 ? Math.round( ( credits.remaining / credits.total ) * 100 ) : 0;
 		var item = {
-			label: TEXT.creditsLeftLabel,
+			label: 'ALL_CLEAR' === state ? TEXT.creditsRemainingLabel : TEXT.creditsLeftLabel,
 			value: formatCount( credits.remaining ) + ' / ' + formatCount( credits.total ),
 			mod: 'NEEDS_REVIEW' === state || 'ALL_CLEAR' === state
 				? 'muted'
@@ -1971,6 +2602,15 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return !! ( pauseCta && ! pauseCta.hidden && pauseCta.getAttribute( 'aria-hidden' ) !== 'true' );
 	}
 
+	function truthUsageForStatePayload( truth ) {
+		var c = getTruthCredits( truth );
+		return {
+			used: c.used,
+			total: c.total,
+			remaining: c.remaining,
+		};
+	}
+
 	function buildQueuedStateData( truth ) {
 		var counts = getTruthCounts( truth );
 		var job = getTruthJob( truth );
@@ -1978,6 +2618,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		return {
 			state: 'QUEUED',
+			usage: truthUsageForStatePayload( truth ),
 			hero: {
 				badge: { text: TEXT.queuedBadge, mod: 'gray' },
 				headline: formatSingularPlural( queuedTotal, TEXT.queuedHeadlineSingular, TEXT.queuedHeadlinePlural ),
@@ -2043,7 +2684,13 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				label: label,
 				action: isPrimary ? ( node.getAttribute( 'data-bbai-li-action' ) || '' ) : ( node.getAttribute( 'data-action' ) || '' ),
 				href: node.getAttribute( 'href' ) || '#',
-				busy_label: isPrimary ? ( node.getAttribute( 'data-busy-label' ) || getActionStatusText( node ) || TEXT.working ) : undefined,
+				busy_label: ( function () {
+					var b = node.getAttribute( 'data-busy-label' ) || '';
+					if ( isPrimary ) {
+						return b || getActionStatusText( node ) || TEXT.working;
+					}
+					return b || undefined;
+				}() ),
 			};
 		}
 
@@ -2133,7 +2780,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					color: 'green',
 					animated: false,
 					center_label: '✓',
-					center_sub_label: 'all clear',
+					center_sub_label: '',
 					aria_label: '<?php echo esc_js( __( 'All images have ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 					segments: segments,
 				};
@@ -2155,7 +2802,6 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var variant = reuseCurrentState && current.variant ? current.variant : ( 'ALL_CLEAR' === state ? 'success' : 'default' );
 		var primaryCta = reuseCurrentState ? current.primaryCta : null;
 		var secondaryCta = reuseCurrentState ? current.secondaryCta : null;
-		var totalOptimised = Math.max( counts.total, counts.complete );
 
 		switch ( state ) {
 			case 'MIXED_ATTENTION':
@@ -2233,7 +2879,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					href: '#',
 				};
 				secondaryCta = secondaryCta || {
-					label: TEXT.openReviewQueue,
+					label: TEXT.reviewIndividually,
 					action: 'navigate',
 					href: getReviewLibraryHref(),
 				};
@@ -2261,26 +2907,27 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					href: getLibraryHref(),
 				};
 				break;
-			case 'ALL_CLEAR':
-				headline = formatSingularPlural( totalOptimised, TEXT.allClearHeadlineSingular, TEXT.allClearHeadlinePlural );
-				support = reuseCurrentState && current.support
-					? current.support
-					: ( credits.isPro
-						? formatSingularPlural( totalOptimised, TEXT.allClearSupportProSingular, TEXT.allClearSupportProPlural )
-						: TEXT.allClearSupport );
+			case 'ALL_CLEAR': {
+				headline = TEXT.allClearHeadline;
+				if ( reuseCurrentState && current.support ) {
+					support = current.support;
+				} else {
+					support = TEXT.allClearSupport;
+				}
 				badge = badge || { text: TEXT.allOptimisedBadge, mod: 'green' };
 				primaryCta = primaryCta || {
+					label: TEXT.openAltLibrary,
+					action: 'navigate',
+					href: getLibraryHref(),
+				};
+				secondaryCta = secondaryCta || {
 					label: TEXT.rescanLibrary,
 					busy_label: ACTION_STATUS[ 'rescan-media-library' ] || TEXT.working,
 					action: 'rescan-media-library',
 					href: '#',
 				};
-				secondaryCta = secondaryCta || {
-					label: TEXT.openAltLibrary,
-					action: 'navigate',
-					href: getLibraryHref(),
-				};
 				break;
+			}
 			default:
 				return null;
 		}
@@ -2288,6 +2935,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return {
 			state: state,
 			id: state,
+			usage: truthUsageForStatePayload( truth ),
 			hero: {
 				badge: badge,
 				headline: headline,
@@ -2333,6 +2981,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 		return {
 			state: 'PROCESSING',
+			usage: truthUsageForStatePayload( truth ),
 			hero: {
 				badge: { text: TEXT.processingBadge, mod: 'blue' },
 				headline: replaceTokens( TEXT.processingHeadline, {
@@ -2395,10 +3044,89 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return '';
 	}
 
+	/**
+	 * Keep the right-rail hero credit meter in sync with state-truth (same numbers as #bbai-dashboard-main).
+	 * Without this, SSR/Poller update the root data attributes but the visible label/bar stayed stale until reload.
+	 */
+	function syncHeroCreditBlockFromTruth( truth ) {
+		var wrap = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' );
+		if ( ! wrap ) {
+			return;
+		}
+		var credits = getTruthCredits( truth );
+		var used = Math.max( 0, credits.used );
+		var total = Math.max( 1, credits.total );
+		var remaining = Math.max( 0, credits.remaining );
+		var pct = Math.min( 100, Math.max( 0, Math.round( ( used / total ) * 100 ) ) );
+		var state = getStateTruthState( truth );
+		var isFreePlan = ! credits.isPro;
+		var creditState = remaining <= 0 ? 'empty' : ( remaining <= 10 ? 'low' : 'healthy' );
+
+		wrap.setAttribute( 'data-bbai-hero-credits-used', String( used ) );
+		wrap.setAttribute( 'data-bbai-hero-credits-remaining', String( remaining ) );
+		wrap.setAttribute( 'data-bbai-hero-credits-limit', String( total ) );
+		wrap.setAttribute( 'data-credit-state', creditState );
+		wrap.classList.toggle( 'bbai-credit-usage--all-clear-muted', 'ALL_CLEAR' === state && isFreePlan );
+
+		var labelEl = wrap.querySelector( '[data-bbai-hero-credit-label="1"]' );
+		if ( labelEl ) {
+			labelEl.textContent = replaceTokens( TEXT.heroCreditUsedThisMonth || '', {
+				'%1$s': formatCount( used ),
+				'%2$s': formatCount( total ),
+			} );
+			labelEl.classList.add( 'bbai-li-summary__value--updating' );
+			window.setTimeout( function () {
+				labelEl.classList.remove( 'bbai-li-summary__value--updating' );
+			}, 420 );
+		}
+
+		var clarity = wrap.querySelector( '[data-bbai-hero-credit-clarity="1"]' );
+		if ( clarity ) {
+			clarity.textContent = ( 'ALL_CLEAR' === state && isFreePlan )
+				? ( TEXT.creditsResetMonthly || '' )
+				: ( TEXT.creditUsageLine || '' );
+		}
+
+		var fill = wrap.querySelector( '[data-bbai-hero-credit-fill="1"]' );
+		if ( fill ) {
+			fill.style.setProperty( '--bbai-credit-percent', String( pct ) + '%' );
+		}
+
+		var bar = wrap.querySelector( '[data-bbai-hero-credit-bar="1"]' );
+		if ( bar ) {
+			bar.setAttribute( 'aria-valuenow', String( pct ) );
+			bar.setAttribute( 'aria-label', formatHeroCreditBarAria( remaining, total ) );
+		}
+
+		var ctx = wrap.querySelector( '[data-bbai-hero-credit-context="1"]' );
+		var ctxLine = buildHeroCreditContextLine( remaining, state );
+		if ( ctx ) {
+			if ( remaining > 0 && ctxLine ) {
+				ctx.removeAttribute( 'hidden' );
+				ctx.textContent = ctxLine;
+			} else {
+				ctx.setAttribute( 'hidden', 'hidden' );
+				ctx.textContent = '';
+			}
+		}
+
+		var helper = wrap.querySelector( '[data-bbai-hero-credit-helper="1"]' );
+		if ( helper ) {
+			if ( remaining <= 0 ) {
+				helper.removeAttribute( 'hidden' );
+				helper.textContent = TEXT.heroCreditHelperExhausted || '';
+			} else {
+				helper.setAttribute( 'hidden', 'hidden' );
+				helper.textContent = '';
+			}
+		}
+	}
+
 	function syncDashboardRootFromTruth( truth ) {
 		var root = getDashboardRoot();
 		var loggedInRoot = getLoggedInDashboardRoot();
 		var counts = getTruthCounts( truth );
+		var countsHash = getTruthCountsHash( truth );
 		var credits = getTruthCredits( truth );
 		var state = getStateTruthState( truth );
 
@@ -2412,13 +3140,25 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			root.setAttribute( 'data-bbai-credits-total', String( credits.total ) );
 			root.setAttribute( 'data-bbai-credits-remaining', String( credits.remaining ) );
 			root.setAttribute( 'data-bbai-is-premium', credits.isPro ? '1' : '0' );
+			if ( countsHash ) {
+				root.setAttribute( 'data-bbai-counts-hash', countsHash );
+			}
 		}
 
 		if ( loggedInRoot ) {
 			loggedInRoot.setAttribute( 'data-state', state );
+			if ( countsHash ) {
+				loggedInRoot.setAttribute( 'data-bbai-counts-hash', countsHash );
+			}
 		}
 
 		BBAI_HERO_CFG.missingCount = counts.missing;
+
+		syncHeroCreditBlockFromTruth( truth );
+
+		if ( root && typeof window.jQuery !== 'undefined' ) {
+			window.jQuery( document ).trigger( 'bbai:usage-updated' );
+		}
 	}
 
 	function renderActivityStripItems( strip, tone, items, signalIndex ) {
@@ -2477,9 +3217,8 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		switch ( state ) {
 			case 'QUEUED':
 				tone = 'queued';
-				items.push( TEXT.queuedAutomatically );
 				if ( job && job.total > 0 ) {
-					items.push( formatSingularPlural( job.total, TEXT.queuedCountSingular, TEXT.queuedCountPlural ) );
+					items.push( formatSingularPlural( job.total, TEXT.queuedReadySingular, TEXT.queuedReadyPlural ) );
 				}
 				checkedAge = job && job.lastCheckedAt ? getQueuedSignalText( Math.max( 0, Math.floor( ( Date.now() - job.lastCheckedAt ) / 1000 ) ) ) : TEXT.lastCheckedJustNow;
 				items.push( checkedAge );
@@ -2496,34 +3235,17 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				}
 				break;
 			case 'MIXED_ATTENTION':
+				/* Counts are in the hero status row only. */
 				tone = 'alert';
-
-				if ( counts.missing > 0 ) {
-					items.push( formatSingularPlural( counts.missing, TEXT.missingAltSingular, TEXT.missingAltPlural ) );
-				}
-
-				if ( counts.review > 0 ) {
-					items.push( formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural ) );
-				}
-
 				break;
 			case 'MISSING_ALT':
 				tone = 'alert';
-				if ( counts.missing > 0 ) {
-					items.push( formatSingularPlural( counts.missing, TEXT.missingAltSingular, TEXT.missingAltPlural ) );
-				}
-				if ( counts.review > 0 ) {
-					items.push( formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural ) );
-				}
 				if ( lastRunAt ) {
 					items.push( replaceTokens( TEXT.lastRun, { '%s': formatRelativeAge( lastRunAt ) } ) );
 				}
 				break;
 			case 'NEEDS_REVIEW':
 				tone = 'warn';
-				if ( counts.review > 0 ) {
-					items.push( formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural ) );
-				}
 				if ( lastRunAt ) {
 					items.push( replaceTokens( TEXT.lastRun, { '%s': formatRelativeAge( lastRunAt ) } ) );
 				}
@@ -2554,7 +3276,20 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		items = items.slice( 0, 3 );
+
+		if ( ! items.length ) {
+			Array.prototype.forEach.call( strips, function ( strip ) {
+				strip.innerHTML = '';
+				strip.hidden = true;
+				strip.setAttribute( 'aria-hidden', 'true' );
+			} );
+			logStatusStrip( 'activity_strip_write', buildStatusStripLogContext( truth, meta || buildStatusStripMeta( 'truth_activity_strip', 'renderActivityStripFromTruth' ), '', 'activity_strip', 'clear' ) );
+			return;
+		}
+
 		Array.prototype.forEach.call( strips, function ( strip ) {
+			strip.hidden = false;
+			strip.removeAttribute( 'aria-hidden' );
 			renderActivityStripItems( strip, tone, items, signalIndex );
 		} );
 		logStatusStrip( 'activity_strip_write', buildStatusStripLogContext( truth, meta || buildStatusStripMeta( 'truth_activity_strip', 'renderActivityStripFromTruth' ), items.join( ' | ' ), 'activity_strip', 'write' ) );
@@ -2576,12 +3311,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					: TEXT.impactAllClearFallback;
 				break;
 			case 'MIXED_ATTENTION':
-				if ( counts.missing > 0 && counts.review > 0 ) {
-					nextText =
-						formatSingularPlural( counts.missing, TEXT.missingAltSingular, TEXT.missingAltPlural ) +
-						' · ' +
-						formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural );
-				}
+				nextText = '';
 				break;
 			case 'MISSING_ALT':
 				if ( complete > 0 ) {
@@ -2589,9 +3319,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				}
 				break;
 			case 'NEEDS_REVIEW':
-				if ( counts.review > 0 ) {
-					nextText = formatSingularPlural( counts.review, TEXT.readyReviewSingular, TEXT.readyReviewPlural );
-				} else if ( complete > 0 ) {
+				if ( complete > 0 ) {
 					nextText = formatSingularPlural( complete, TEXT.impactSoFarSingle, TEXT.impactSoFarPlural );
 				}
 				break;
@@ -2606,9 +3334,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		}
 
 		if ( ! line && host ) {
+			var belowBand = host.querySelector( '.bbai-li-hero-below' );
+			var appendHost  = belowBand || host;
 			line = document.createElement( 'p' );
 			line.className = 'bbai-li-impact-line';
-			host.appendChild( line );
+			appendHost.appendChild( line );
 		}
 
 		if ( line ) {
@@ -2618,58 +3348,63 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	}
 
 	function getSummaryItemByLabel( labelText ) {
-		var items = hero.querySelectorAll( '.bbai-li-summary__item' );
-		var match = null;
-		Array.prototype.forEach.call( items, function ( item ) {
-			var labelNode = item.querySelector( '.bbai-li-summary__label' );
-			if ( match || ! labelNode ) {
-				return;
-			}
-			if ( labelNode.textContent.trim().toLowerCase() === String( labelText || '' ).trim().toLowerCase() ) {
-				match = item;
-			}
-		} );
-		return match;
+		var key = String( labelText || '' ).trim().toLowerCase();
+		var countEl;
+		if ( key === String( TEXT.missingLabel || '' ).trim().toLowerCase() ) {
+			countEl = hero.querySelector( '.bbai-status-summary [data-bbai-status-metric="missing"]' );
+			return countEl ? countEl.closest( '.bbai-status-item' ) : null;
+		}
+		if ( key === String( TEXT.reviewLabel || '' ).trim().toLowerCase() ) {
+			countEl = hero.querySelector( '.bbai-status-summary [data-bbai-status-metric="review"]' );
+			return countEl ? countEl.closest( '.bbai-status-item' ) : null;
+		}
+		if ( key === String( TEXT.creditsLeftLabel || '' ).trim().toLowerCase() || key === String( TEXT.creditsRemainingLabel || '' ).trim().toLowerCase() || key === String( TEXT.creditsLabel || '' ).trim().toLowerCase() ) {
+			/* Credits are no longer in the hero status row; read from dashboard root. */
+			return getDashboardRoot() || null;
+		}
+		return null;
 	}
 
 	function getDisplayedCreditsSummary() {
-		var item = getSummaryItemByLabel( TEXT.creditsLeftLabel ) || getSummaryItemByLabel( TEXT.creditsLabel );
-		var labelNode;
-		var valueNode;
-
-		if ( ! item ) {
+		var root = getDashboardRoot();
+		var rem;
+		var tot;
+		if ( ! root ) {
 			return null;
 		}
-
-		labelNode = item.querySelector( '.bbai-li-summary__label' );
-		valueNode = item.querySelector( '.bbai-li-summary__value' );
-
+		rem = root.getAttribute( 'data-bbai-credits-remaining' );
+		tot = root.getAttribute( 'data-bbai-credits-total' );
+		if ( null == rem && null == tot ) {
+			return null;
+		}
 		return {
-			displayed_label: labelNode ? String( labelNode.textContent || '' ).trim() : '',
-			displayed_value: valueNode ? String( valueNode.textContent || '' ).trim() : '',
+			displayed_label: ( 'ALL_CLEAR' === ( hero.getAttribute( 'data-bbai-li-state' ) || '' ) && parseInt( rem, 10 ) > 0 )
+				? String( TEXT.creditsRemainingLabel || '' ).trim()
+				: String( TEXT.creditsLeftLabel || '' ).trim(),
+			displayed_value: formatHeroCreditDashboardLabel( rem ),
 		};
 	}
 
 	function updateSummaryValueByLabel( labelText, value, mod ) {
 		var item = getSummaryItemByLabel( labelText );
 		var valueNode;
+		var key = String( labelText || '' ).trim().toLowerCase();
 
 		if ( ! item ) {
 			return;
 		}
 
-		valueNode = item.querySelector( '.bbai-li-summary__value' );
+		if ( item === getDashboardRoot() && ( key === String( TEXT.creditsLeftLabel || '' ).trim().toLowerCase() || key === String( TEXT.creditsRemainingLabel || '' ).trim().toLowerCase() || key === String( TEXT.creditsLabel || '' ).trim().toLowerCase() ) ) {
+			return;
+		}
+
+		valueNode = item.querySelector( '.bbai-count' );
 		if ( valueNode ) {
 			valueNode.textContent = String( value );
 			valueNode.classList.add( 'bbai-li-summary__value--updating' );
 			window.setTimeout( function () {
 				valueNode.classList.remove( 'bbai-li-summary__value--updating' );
 			}, 420 );
-		}
-
-		if ( mod ) {
-			removeClassesWithPrefix( item, 'bbai-li-summary__item--' );
-			item.classList.add( 'bbai-li-summary__item--' + String( mod ).replace( /[^a-z0-9_-]/gi, '' ) );
 		}
 	}
 
@@ -2741,6 +3476,10 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		if ( processingAnimationFrame ) {
 			window.cancelAnimationFrame( processingAnimationFrame );
 			processingAnimationFrame = null;
+		}
+		if ( processingAnimationTimer ) {
+			window.clearTimeout( processingAnimationTimer );
+			processingAnimationTimer = null;
 		}
 		hero.removeAttribute( 'data-bbai-li-live-progress' );
 		var dashboard = getLoggedInDashboardRoot();
@@ -2819,68 +3558,70 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			previousJob.etaSeconds !== nextJob.etaSeconds;
 	}
 
-	function animateProcessingTruthUpdate( previousTruth, nextTruth ) {
+	function maybeRunProcessingTruthAnimation( previousTruth, nextTruth ) {
 		var dashboard = getLoggedInDashboardRoot();
-		var startedAt = 0;
 		var duration = 950;
-		var token;
 
-		if ( ! canAnimateProcessingUpdate( previousTruth, nextTruth ) || 'function' !== typeof window.bbaiRenderLoggedInDashboardHeroState ) {
+		if ( ! previousTruth || 'function' !== typeof window.bbaiRenderLoggedInDashboardHeroState ) {
+			return null;
+		}
+		if ( ! canAnimateProcessingUpdate( previousTruth, nextTruth ) ) {
 			cancelProcessingAnimation();
-			return false;
+			return null;
 		}
 
 		cancelProcessingAnimation();
-		token = processingAnimationToken;
 		hero.setAttribute( 'data-bbai-li-live-progress', '1' );
 		if ( dashboard ) {
 			dashboard.setAttribute( 'data-bbai-li-live-progress', '1' );
 		}
 
-		function step( now ) {
-			var frameProgress;
-			var eased;
-			var frameTruth;
+		return new Promise( function ( resolve ) {
+			var startedAt = Date.now();
+			processingAnimationToken += 1;
+			var myToken = processingAnimationToken;
 
-			if ( token !== processingAnimationToken ) {
-				return;
-			}
+			function tick() {
+				if ( myToken !== processingAnimationToken ) {
+					resolve();
+					return;
+				}
 
-			if ( ! startedAt ) {
-				startedAt = now;
-			}
+				var elapsed = Date.now() - startedAt;
+				var frameProgress = Math.min( 1, elapsed / duration );
+				var eased = 1 - Math.pow( 1 - frameProgress, 3 );
+				var frameTruth = buildInterpolatedProcessingTruth( previousTruth, nextTruth, eased );
 
-			frameProgress = Math.min( 1, ( now - startedAt ) / duration );
-			eased = 1 - Math.pow( 1 - frameProgress, 3 );
-			frameTruth = buildInterpolatedProcessingTruth( previousTruth, nextTruth, eased );
-
-			window.bbaiRenderLoggedInDashboardHeroState( buildProcessingStateData( frameTruth ), {
-				skipCtas: true,
-				skipUpgradeFloat: true,
-				skipReviewSurface: true,
-				skipDashboardAttrs: true,
-			} );
-			renderActivityStripFromTruth( frameTruth, buildStatusStripMeta( 'processing_animation_frame', 'animateProcessingTruthUpdate' ) );
-
-			if ( frameProgress >= 1 ) {
-				cancelProcessingAnimation();
-				window.bbaiRenderLoggedInDashboardHeroState( buildProcessingStateData( nextTruth ), {
+				window.bbaiRenderLoggedInDashboardHeroState( buildProcessingStateData( frameTruth ), {
 					skipCtas: true,
 					skipUpgradeFloat: true,
 					skipReviewSurface: true,
 					skipDashboardAttrs: true,
 				} );
-				renderActivityStripFromTruth( nextTruth, buildStatusStripMeta( 'processing_animation_complete', 'animateProcessingTruthUpdate' ) );
-				return;
+				renderActivityStripFromTruth( frameTruth, buildStatusStripMeta( 'processing_animation_frame', 'animateProcessingTruthUpdate' ) );
+
+				if ( frameProgress >= 1 ) {
+					if ( processingAnimationTimer ) {
+						window.clearTimeout( processingAnimationTimer );
+						processingAnimationTimer = null;
+					}
+					cancelProcessingAnimation();
+					window.bbaiRenderLoggedInDashboardHeroState( buildProcessingStateData( nextTruth ), {
+						skipCtas: true,
+						skipUpgradeFloat: true,
+						skipReviewSurface: true,
+						skipDashboardAttrs: true,
+					} );
+					renderActivityStripFromTruth( nextTruth, buildStatusStripMeta( 'processing_animation_complete', 'animateProcessingTruthUpdate' ) );
+					resolve();
+					return;
+				}
+
+				processingAnimationTimer = window.setTimeout( tick, 16 );
 			}
 
-			processingAnimationFrame = window.requestAnimationFrame( step );
-		}
-
-		processingAnimationToken += 1;
-		token = processingAnimationToken;
-		processingAnimationFrame = window.requestAnimationFrame( step );
-		return true;
+			tick();
+		} );
 	}
 
 	function domTruthMismatch( truth ) {
@@ -2927,13 +3668,23 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 
 	function shouldUseResolvedDashboard( truth, previousTruth ) {
 		var nextState = getStateTruthState( truth );
+		var prevState;
 		if ( ! previousTruth ) {
 			if ( 'QUEUED' === nextState || 'PROCESSING' === nextState ) {
 				return false;
 			}
 			return 'NEEDS_REVIEW' === nextState;
 		}
-		if ( nextState !== getStateTruthState( previousTruth ) ) {
+		prevState = getStateTruthState( previousTruth );
+		// Queued ↔ processing: same truth source as state-truth; skip extra /dashboard fetch so
+		// hero hydrates from buildQueuedStateData / buildProcessingStateData without a second network dependency.
+		if ( nextState !== prevState ) {
+			if (
+				( 'QUEUED' === prevState && 'PROCESSING' === nextState ) ||
+				( 'PROCESSING' === prevState && 'QUEUED' === nextState )
+			) {
+				return false;
+			}
 			return true;
 		}
 		if ( 'NEEDS_REVIEW' === nextState ) {
@@ -2960,6 +3711,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		dashboardPolling.requiresResolvedSync = false;
 		dashboardPolling.bootstrapSyncApplied = false;
 		syncDashboardRootFromTruth( truth );
+		updateInsightCardsFromTruth( truth );
 		if ( ! opts.skipActivityStrip ) {
 			renderActivityStripFromTruth( truth, statusStripMeta );
 		}
@@ -3053,17 +3805,99 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			} );
 	}
 
+	function markTruthSeenWithoutUiUpdate( truth ) {
+		dashboardPolling.currentTruth = truth;
+		dashboardPolling.currentSignature = buildTruthSignature( truth );
+		dashboardPolling.latestState = getStateTruthState( truth );
+		dashboardPolling.failureCount = 0;
+		dashboardPolling.bootstrapSyncApplied = false;
+		renderActivityStripFromTruth(
+			truth,
+			buildStatusStripMeta( 'truth_seen_no_full_commit', 'markTruthSeenWithoutUiUpdate' )
+		);
+	}
+
+	function shouldSkipTruthUiUpdate( truth, context, forceResolved ) {
+		var incomingHash = getTruthCountsHash( truth );
+		var currentHash = getCurrentCountsHash();
+		var incomingCounts = getTruthCounts( truth );
+		var currentCounts = getDomCounts();
+		var currentState = hero.getAttribute( 'data-bbai-li-state' ) || '';
+		var incomingState = getStateTruthState( truth );
+		var root = getDashboardRoot();
+		var incomingCredits = getTruthCredits( truth );
+
+		// Never skip when the resolver state changes (QUEUED→PROCESSING, etc.).
+		if ( incomingState !== currentState ) {
+			return false;
+		}
+
+		var domUsed = root ? parseInt( root.getAttribute( 'data-bbai-credits-used' ) || '', 10 ) : NaN;
+		var domTotal = root ? parseInt( root.getAttribute( 'data-bbai-credits-total' ) || '', 10 ) : NaN;
+		if ( root ) {
+			if ( ! isNaN( domUsed ) && domUsed !== incomingCredits.used ) {
+				return false;
+			}
+			if ( ! isNaN( domTotal ) && domTotal !== incomingCredits.total ) {
+				return false;
+			}
+		}
+		var heroCredit = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' );
+		var heroUsed = heroCredit ? parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-used' ) || '', 10 ) : NaN;
+		if ( ! isNaN( heroUsed ) && heroUsed !== incomingCredits.used ) {
+			return false;
+		}
+		var heroLim = heroCredit ? parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-limit' ) || '', 10 ) : NaN;
+		if ( ! isNaN( heroLim ) && heroLim !== incomingCredits.total ) {
+			return false;
+		}
+
+		if ( incomingHash && currentHash && incomingHash === currentHash ) {
+			logDashboardUi( 'state_counts_hash_unchanged', {
+				context: context || '',
+				state: incomingState,
+			} );
+			return true;
+		}
+
+		if ( ! forceResolved && countsEqual( incomingCounts, currentCounts ) && incomingState === currentState ) {
+			logDashboardUi( 'state_counts_unchanged', {
+				context: context || '',
+				state: incomingState,
+			} );
+			return true;
+		}
+
+		return false;
+	}
+
 	function commitTruthPayload( truth, context, forceResolved ) {
 		var previousTruth = dashboardPolling.currentTruth;
+		if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated ) {
+			markTruthSeenWithoutUiUpdate( truth );
+			schedulePolling( 'hydration_guard' );
+			return Promise.resolve( truth );
+		}
+		if ( shouldSkipTruthUiUpdate( truth, context, forceResolved ) ) {
+			markTruthSeenWithoutUiUpdate( truth );
+			schedulePolling( 'counts_unchanged' );
+			return Promise.resolve( truth );
+		}
 		if ( forceResolved ) {
 			cancelProcessingAnimation();
 			return applyResolvedDashboardTruth( truth, context );
 		}
-		if ( previousTruth && animateProcessingTruthUpdate( previousTruth, truth ) ) {
-			commitTruthSnapshot( truth, context, true, {
-				skipActivityStrip: true,
+		var anim = previousTruth ? maybeRunProcessingTruthAnimation( previousTruth, truth ) : null;
+		if ( anim ) {
+			return anim.then( function () {
+				commitTruthSnapshot( truth, context, true, {
+					skipActivityStrip: true,
+				} );
+				if ( 'function' === typeof window.bbaiApplyLoggedInDashboardStatePayload && 'PROCESSING' === getStateTruthState( truth ) ) {
+					window.bbaiApplyLoggedInDashboardStatePayload( buildProcessingStateData( truth ) );
+				}
+				return truth;
 			} );
-			return Promise.resolve( truth );
 		}
 		if ( applyLocalActiveTruthState( truth, context ) ) {
 			return Promise.resolve( truth );
@@ -3121,6 +3955,18 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				var nextSignature = buildTruthSignature( truth );
 				var forceResolved = dashboardPolling.requiresResolvedSync || shouldUseResolvedDashboard( truth, previousTruth );
 
+				if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated ) {
+					markTruthSeenWithoutUiUpdate( truth );
+					schedulePolling( 'hydration_guard' );
+					return;
+				}
+
+				if ( shouldSkipTruthUiUpdate( truth, pollContext, forceResolved ) ) {
+					markTruthSeenWithoutUiUpdate( truth );
+					schedulePolling( 'counts_unchanged' );
+					return;
+				}
+
 				if ( ! previousTruth && ! forceResolved && ! dashboardPolling.bootstrapSyncApplied && ! domTruthMismatch( truth ) ) {
 					var unchangedMeta = buildStatusStripMeta( pollContext, 'runPollingTick_state_unchanged' );
 					dashboardPolling.currentTruth = truth;
@@ -3129,6 +3975,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					dashboardPolling.failureCount = 0;
 					dashboardPolling.bootstrapSyncApplied = false;
 					syncDashboardRootFromTruth( truth );
+					updateInsightCardsFromTruth( truth );
 					renderActivityStripFromTruth( truth, unchangedMeta );
 					renderImpactLineFromTruth( truth, unchangedMeta );
 					syncStatusLineForTruth( truth, unchangedMeta );
@@ -3147,6 +3994,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 					dashboardPolling.failureCount = 0;
 					dashboardPolling.bootstrapSyncApplied = false;
 					syncDashboardRootFromTruth( truth );
+					updateInsightCardsFromTruth( truth );
 					renderActivityStripFromTruth( truth, signatureMeta );
 					renderImpactLineFromTruth( truth, signatureMeta );
 					syncStatusLineForTruth( truth, signatureMeta );
@@ -3186,6 +4034,23 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			} )
 			.finally( function () {
 				dashboardPolling.inFlight = false;
+				if ( 'startup' === pollContext ) {
+					if ( typeof window.requestAnimationFrame === 'function' ) {
+						window.requestAnimationFrame( function () {
+							window.requestAnimationFrame( function () {
+								if ( typeof window.bbaiMarkDashboardMainHydrated === 'function' ) {
+									window.bbaiMarkDashboardMainHydrated();
+								}
+							} );
+						} );
+					} else {
+						window.setTimeout( function () {
+							if ( typeof window.bbaiMarkDashboardMainHydrated === 'function' ) {
+								window.bbaiMarkDashboardMainHydrated();
+							}
+						}, 0 );
+					}
+				}
 			} );
 	}
 
@@ -3214,6 +4079,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		return false;
 	}
 
+	function bbaiHeroLooksLikeSessionOrNonceMessage( raw ) {
+		var s = String( raw || '' ).toLowerCase();
+		return s.indexOf( 'nonce' ) !== -1 || s.indexOf( 'unauthorized' ) !== -1 || s.indexOf( 'session' ) !== -1 || s.indexOf( 'expired' ) !== -1 || s.indexOf( 'forbidden' ) !== -1;
+	}
+
 	function fetchMissingAttachmentIds( limit ) {
 		var body = new URLSearchParams();
 		body.append( 'action', 'beepbeepai_get_attachment_ids' );
@@ -3229,11 +4099,23 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			body:        body.toString(),
 		} )
 		.then( function ( res ) {
-			if ( ! res.ok ) { throw new Error( 'list ' + res.status ); }
-			return res.json();
+			return res.json().then( function ( json ) {
+				return { res: res, json: json };
+			} );
 		} )
-		.then( function ( json ) {
-			if ( ! json || ! json.success || ! json.data || ! Array.isArray( json.data.ids ) ) {
+		.then( function ( payload ) {
+			var json = payload && payload.json;
+			var res  = payload && payload.res;
+			if ( ! json ) {
+				throw new Error( 'list invalid' );
+			}
+			if ( json.success === false ) {
+				var ajaxErr = new Error( 'list_ajax' );
+				ajaxErr.bbaiAjaxMessage = ( json.data && json.data.message ) ? String( json.data.message ) : '';
+				ajaxErr.bbaiHttpStatus  = res ? res.status : 0;
+				throw ajaxErr;
+			}
+			if ( ! json.success || ! json.data || ! Array.isArray( json.data.ids ) ) {
 				throw new Error( 'list invalid' );
 			}
 			return json.data.ids;
@@ -3249,6 +4131,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		body.append( 'action',  'beepbeepai_bulk_queue' );
 		body.append( 'nonce',   BBAI_HERO_CFG.ajaxNonce );
 		body.append( 'source',  'dashboard' );
+		body.append( 'skip_schedule', '1' );
 		ids.forEach( function ( id ) { body.append( 'attachment_ids[]', id ); } );
 
 		return fetch( BBAI_HERO_CFG.ajaxUrl, {
@@ -3270,7 +4153,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			if ( runEstablishedGenerateFlow( e ) ) {
 				return;
 			}
-			showStatusLine( '<?php echo esc_js( __( 'Could not start generation. Please try again.', 'beepbeep-ai-alt-text-generator' ) ); ?>' );
+			showStatusLine( TEXT.startFailed );
 			return;
 		}
 
@@ -3281,51 +4164,116 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		flashSummaryUpdating();
 
 		var limit = Math.max( 1, Math.min( 500, BBAI_HERO_CFG.missingCount || 500 ) );
+		var idsQueued = null;
 
 		// Step 1: fetch missing attachment IDs through the registered WP Ajax action.
 		fetchMissingAttachmentIds( limit )
 		.then( function ( ids ) {
 			if ( ids.length === 0 ) {
 				clearOptimisticAction();
-				showStatusLine( TEXT.noImagesNeedAlt );
+				showStatusLine( TEXT.noMissingFoundRescan );
+				var showMismatch = ( BBAI_HERO_CFG.missingCount || 0 ) > 0;
+				if ( showMismatch && BBAI_HERO_CFG.wpDebug === '1' ) {
+					logDashboardUi( 'get_attachment_ids_empty_with_positive_missing_hero', {
+						scope: 'missing',
+						heroMissingCount: BBAI_HERO_CFG.missingCount,
+						idsReturned: 0,
+						source: 'beepbeepai_get_attachment_ids',
+					} );
+				}
 				return null;
 			}
 
+			idsQueued = ids;
 			return postBulkQueue( ids );
 		} )
 		.then( function ( queueJson ) {
 			if ( ! queueJson ) { return; } // handled above (no images)
-			if ( queueJson && queueJson.success ) {
-				return confirmLatestStateTruth( 'generate_missing', 900 )
-					.then( function ( truth ) {
-						var beforeTruth = dashboardPolling.currentTruth;
-						var beforeState = beforeTruth ? getStateTruthState( beforeTruth ) : ( hero.getAttribute( 'data-bbai-li-state' ) || '' );
-						var forceResolved = shouldUseResolvedDashboard( truth, beforeTruth );
-						return commitTruthPayload( truth, 'generate_missing', forceResolved )
-							.then( function () {
-								logDashboardUi( 'state_updated', {
-									context: 'generate_missing',
-									from_state: beforeState,
-									to_state: getStateTruthState( truth ),
-									mode: forceResolved ? 'resolved' : 'local',
-								} );
-							} );
-					} )
-					.catch( function ( error ) {
-						clearOptimisticAction();
-						logDashboardUiFailure( 'generate_missing', error );
-						showStatusLine( TEXT.confirmFailed );
-					} );
-			} else {
-				var msg = ( queueJson && queueJson.data && queueJson.data.message )
-					? queueJson.data.message
-					: TEXT.startFailed;
+			if ( ! queueJson.success ) {
 				clearOptimisticAction();
-				showStatusLine( msg );
+				var failRaw = queueJson.data && queueJson.data.message ? String( queueJson.data.message ) : '';
+				if ( bbaiHeroLooksLikeSessionOrNonceMessage( failRaw ) ) {
+					showStatusLine( TEXT.sessionExpired );
+				} else {
+					showStatusLine( failRaw || TEXT.startFailed );
+				}
+				return;
 			}
-		} )
-		.catch( function () {
+
+			var responseData = queueJson.data || {};
+
+			logDashboardUi( 'bulk_queue_success', {
+				context: 'generate_missing',
+				ids_count: idsQueued.length,
+				queued: responseData.queued,
+			} );
+
+			clearHeroGenerationWatchdog();
+
+			var flowOk = false;
+			if ( typeof window.startGenerationFlow === 'function' ) {
+				flowOk = window.startGenerationFlow( idsQueued, {
+					source: 'generate-missing',
+					entry: 'dashboard_hero',
+					responseData: responseData,
+					progressLabel: TEXT.preparingBulkRun,
+					queued: responseData.queued != null ? responseData.queued : idsQueued.length,
+				} );
+			}
+
+			if ( ! flowOk ) {
+				clearOptimisticAction();
+				showStatusLine( TEXT.startFailed );
+				return;
+			}
+
 			clearOptimisticAction();
+
+			heroGenerationWatchdog = window.setTimeout( function () {
+				heroGenerationWatchdog = null;
+				var modal = document.getElementById( 'bbai-bulk-progress-modal' );
+				var modalActive = modal && modal.classList.contains( 'active' );
+				var jobRunning = window.bbaiJobState && typeof window.bbaiJobState.getState === 'function' && window.bbaiJobState.getState().running;
+				if ( ! modalActive && ! jobRunning ) {
+					logDashboardUi( 'generation_start_watchdog_failed', {
+						entry: 'dashboard_hero',
+						ids_count: idsQueued.length,
+					} );
+					showStatusLine( TEXT.startFailed );
+					var cta = getPrimaryCta();
+					if ( cta ) {
+						setBusy( cta, false );
+					}
+					dashboardPolling.optimisticAction = '';
+				}
+			}, 4000 );
+
+			confirmLatestStateTruth( 'generate_missing', 900 )
+				.then( function ( truth ) {
+					var beforeTruth = dashboardPolling.currentTruth;
+					var beforeState = beforeTruth ? getStateTruthState( beforeTruth ) : ( hero.getAttribute( 'data-bbai-li-state' ) || '' );
+					var forceResolved = shouldUseResolvedDashboard( truth, beforeTruth );
+					return commitTruthPayload( truth, 'generate_missing', forceResolved )
+						.then( function () {
+							logDashboardUi( 'state_updated', {
+								context: 'generate_missing',
+								from_state: beforeState,
+								to_state: getStateTruthState( truth ),
+								mode: forceResolved ? 'resolved' : 'local',
+							} );
+						} );
+				} )
+				.catch( function ( error ) {
+					logDashboardUiFailure( 'generate_missing_truth_async', error );
+				} );
+		} )
+		.catch( function ( err ) {
+			clearOptimisticAction();
+			var ajaxMsg = err && err.bbaiAjaxMessage ? String( err.bbaiAjaxMessage ) : '';
+			if ( ajaxMsg && bbaiHeroLooksLikeSessionOrNonceMessage( ajaxMsg ) ) {
+				showStatusLine( TEXT.sessionExpired );
+				return;
+			}
 			showStatusLine( TEXT.startFailed );
 		} );
 	}
@@ -3335,6 +4283,12 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	if ( donutCard ) {
 		function donutCardActivate( e ) {
 			var primaryCta = getPrimaryCta();
+			var t = e && e.target ? e.target : null;
+			if ( t && typeof t.closest === 'function' ) {
+				if ( t.closest( '.bbai-status-summary' ) || t.closest( '.bbai-progress-flow' ) || t.closest( '.bbai-li-donut__text-cta' ) ) {
+					return;
+				}
+			}
 			if ( ! donutCard.hasAttribute( 'data-bbai-li-donut-card-trigger' ) ) { return; }
 			if ( e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ' ) { return; }
 			if ( e.type === 'keydown' ) { e.preventDefault(); }
@@ -3362,7 +4316,7 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			return;
 		}
 
-		if ( primaryCta.getAttribute( 'aria-busy' ) === 'true' ) {
+		if ( primaryCta.getAttribute( 'aria-busy' ) === 'true' || primaryCta.classList.contains( 'is-loading' ) ) {
 			e.preventDefault();
 			return;
 		}
@@ -3441,20 +4395,43 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		var detail = event && event.detail ? event.detail : {};
 		var approvedCount = Math.max( 0, parseInt( detail.approvedCount, 10 ) || 0 );
 		var currentTruth = dashboardPolling.currentTruth;
+		var heroState = hero.getAttribute( 'data-bbai-li-state' ) || '';
+		var truthState = currentTruth ? getStateTruthState( currentTruth ) : '';
 		var counts;
+		var currentReview;
 		var nextReview;
 		var root;
+		var reviewMetric;
 
-		if ( approvedCount <= 0 || ! currentTruth || 'NEEDS_REVIEW' !== getStateTruthState( currentTruth ) ) {
+		if ( approvedCount <= 0 || 'NEEDS_REVIEW' !== heroState ) {
+			return;
+		}
+		if ( currentTruth && 'NEEDS_REVIEW' !== truthState ) {
 			return;
 		}
 
-		counts = getTruthCounts( currentTruth );
-		nextReview = Math.max( 0, counts.review - approvedCount );
+		counts = currentTruth ? getTruthCounts( currentTruth ) : null;
+		currentReview = counts ? counts.review : NaN;
+		reviewMetric = hero.querySelector( '.bbai-status-summary [data-bbai-status-metric="review"]' );
+		if ( isNaN( currentReview ) || currentReview <= 0 ) {
+			currentReview = reviewMetric
+				? parseInt( String( reviewMetric.textContent || '' ).replace( /,/g, '' ), 10 ) || 0
+				: 0;
+		}
+
+		nextReview = Math.max( 0, currentReview - approvedCount );
 		root = getDashboardRoot();
 
 		if ( root ) {
 			root.setAttribute( 'data-bbai-weak-count', String( nextReview ) );
+		}
+
+		if ( reviewMetric ) {
+			reviewMetric.textContent = formatCount( nextReview );
+			reviewMetric.classList.add( 'bbai-li-summary__value--updating' );
+			window.setTimeout( function () {
+				reviewMetric.classList.remove( 'bbai-li-summary__value--updating' );
+			}, 420 );
 		}
 
 		updateSummaryValueByLabel( TEXT.reviewLabel, formatCount( nextReview ), nextReview > 0 ? 'primary' : 'ok' );
@@ -3516,6 +4493,125 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 		stopPolling( 'beforeunload' );
 	} );
 
+	function mapStatusSummaryToFilterSlug( raw ) {
+		var s = String( raw || '' ).toLowerCase();
+		if ( 'review' === s ) {
+			return 'weak';
+		}
+		return s;
+	}
+
+	function getLibraryFilterButtonBySlug( slug ) {
+		if ( ! slug ) {
+			return null;
+		}
+		return document.querySelector( '#bbai-review-filter-tabs button[data-filter="' + slug + '"]' );
+	}
+
+	function syncBbaiStatusSummaryActive() {
+		var activeBtn = document.querySelector( '#bbai-review-filter-tabs button.bbai-filter-group__item--active' );
+		var wrap = document.querySelector( '.bbai-status-summary' );
+		var slug;
+		var el;
+		if ( ! wrap ) {
+			return;
+		}
+		wrap.querySelectorAll( '.bbai-status-item.is-active' ).forEach( function ( n ) {
+			n.classList.remove( 'is-active' );
+		} );
+		if ( ! activeBtn ) {
+			return;
+		}
+		slug = activeBtn.getAttribute( 'data-filter' ) || '';
+		if ( 'weak' === slug ) {
+			el = wrap.querySelector( '.bbai-status-item[data-bbai-dashboard-status-filter="weak"]' );
+		} else if ( 'missing' === slug ) {
+			el = wrap.querySelector( '.bbai-status-item[data-bbai-dashboard-status-filter="missing"]' );
+		}
+		if ( el ) {
+			el.classList.add( 'is-active' );
+		}
+	}
+
+	function initBbaiStatusSummary() {
+		var wrap = document.querySelector( '.bbai-status-summary' );
+		if ( ! wrap || wrap.getAttribute( 'data-bbai-status-bound' ) === '1' ) {
+			return;
+		}
+		wrap.setAttribute( 'data-bbai-status-bound', '1' );
+		wrap.querySelectorAll( '.bbai-status-item' ).forEach( function ( item ) {
+			item.addEventListener( 'click', function () {
+				var raw = item.getAttribute( 'data-bbai-dashboard-status-filter' ) || item.getAttribute( 'data-filter' ) || '';
+				var slug = mapStatusSummaryToFilterSlug( raw );
+				var target = getLibraryFilterButtonBySlug( slug );
+				var root;
+				if ( target ) {
+					target.click();
+					window.setTimeout( syncBbaiStatusSummaryActive, 0 );
+					return;
+				}
+				root = getDashboardRoot();
+				if ( ! root ) {
+					return;
+				}
+				if ( 'missing' === slug ) {
+					window.location.assign( root.getAttribute( 'data-bbai-missing-library-url' ) || root.getAttribute( 'data-bbai-library-url' ) || '' );
+					return;
+				}
+				if ( 'weak' === slug ) {
+					window.location.assign( root.getAttribute( 'data-bbai-needs-review-library-url' ) || root.getAttribute( 'data-bbai-library-url' ) || '' );
+				}
+			} );
+		} );
+		syncBbaiStatusSummaryActive();
+	}
+
+	function afterDashboardHydration( callback ) {
+		var run = function () {
+			dashboardPolling.hydrated = true;
+			if ( typeof window.bbaiMarkDashboardMainHydrated === 'function' ) {
+				window.bbaiMarkDashboardMainHydrated();
+			}
+			callback();
+		};
+
+		if ( typeof window.requestAnimationFrame === 'function' ) {
+			window.requestAnimationFrame( function () {
+				window.requestAnimationFrame( run );
+			} );
+			return;
+		}
+
+		window.setTimeout( run, 0 );
+	}
+
+	if ( 'loading' === document.readyState ) {
+		document.addEventListener( 'DOMContentLoaded', initBbaiStatusSummary );
+	} else {
+		initBbaiStatusSummary();
+	}
+	document.addEventListener( 'bbai:logged-in-dashboard-state-applied', function () {
+		window.setTimeout( syncBbaiStatusSummaryActive, 0 );
+	} );
+
+	(function initAllClearHeroFromSsr() {
+		if ( hero.getAttribute( 'data-bbai-li-state' ) !== 'ALL_CLEAR' ) {
+			return;
+		}
+		hero.classList.add( 'bbai-all-clear-state' );
+		if ( hero.getAttribute( 'data-bbai-all-clear-hydration-applied' ) === '1' ) {
+			return;
+		}
+		hero.setAttribute( 'data-bbai-all-clear-hydration-applied', '1' );
+		requestAnimationFrame( function () {
+			requestAnimationFrame( function () {
+				if ( hero.getAttribute( 'data-bbai-li-state' ) === 'ALL_CLEAR' ) {
+					hero.classList.add( 'bbai-all-clear-state--entered' );
+				}
+			} );
+		} );
+	}());
+
 	if ( heroVariant === 'running' ) {
 		showStatusLine( TEXT.generationInProgress, 'scanning', {
 			meta: buildStatusStripMeta( 'legacy_init_running', 'initial_hero_variant' ),
@@ -3523,7 +4619,12 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 	} else if ( heroVariant === 'queued' ) {
 		renderQueuedSignal( buildStatusStripMeta( 'legacy_init_queued', 'initial_hero_variant' ) );
 	}
-	runPollingTick( 'startup' );
+	afterDashboardHydration( function () {
+		runPollingTick( 'startup' );
+	} );
 
 }());
 </script>
+<?php
+// phpcs:enable WordPress.WP.I18n.MissingTranslatorsComment
+?>

@@ -52,7 +52,7 @@ $bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_compone
 ?>
 
 <div
-	class="bbai-li-surface bbai-li-surface--<?php echo $bbai_it_modifier; ?>"
+	class="bbai-li-surface bbai-li-surface--<?php echo esc_attr( $bbai_it_modifier ); ?>"
 	data-bbai-li-surface="<?php echo esc_attr( $bbai_it_component ); ?>"
 >
 
@@ -70,7 +70,7 @@ $bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_compone
 					href="<?php echo esc_url( $bbai_it_primary_cta['href'] ?? '#' ); ?>"
 					class="bbai-li-surface__cta bbai-li-surface__cta--primary"
 					data-action="<?php echo esc_attr( $bbai_it_primary_cta['action'] ?? '' ); ?>"
-				><?php echo esc_html( $bbai_it_primary_cta['label'] ); ?></a>
+				><?php if ( 'approve-all' === (string) ( $bbai_it_primary_cta['action'] ?? '' ) ) : ?><span class="bbai-btn-content"><?php echo esc_html( $bbai_it_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php esc_html_e( 'Approving...', 'beepbeep-ai-alt-text-generator' ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span><?php else : echo esc_html( $bbai_it_primary_cta['label'] ); endif; ?></a>
 			<?php endif; ?>
 
 			<?php if ( $bbai_it_library_url ) : ?>
@@ -111,14 +111,14 @@ $bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_compone
 						<?php
 						$bbai_rid   = absint( $bbai_it_row['id'] ?? 0 );
 						$bbai_rfile = (string) ( $bbai_it_row['filename'] ?? '' );
-						$bbai_rthumb = esc_url( (string) ( $bbai_it_row['thumb_url'] ?? '' ) );
+						$bbai_rthumb = (string) ( $bbai_it_row['thumb_url'] ?? '' );
 						$bbai_rscope = (string) ( $bbai_it_row['scope'] ?? $bbai_it_scope );
 						$bbai_is_miss = ( 'needs_review' !== $bbai_rscope );
 						?>
 						<tr class="bbai-li-image-table__row" data-attachment-id="<?php echo esc_attr( (string) $bbai_rid ); ?>">
 							<td class="bbai-li-image-table__col-thumb">
 								<?php if ( $bbai_rthumb ) : ?>
-									<img src="<?php echo $bbai_rthumb; ?>" alt="" width="40" height="40" loading="lazy" class="bbai-li-image-table__thumb" />
+									<img src="<?php echo esc_url( $bbai_rthumb ); ?>" alt="" width="40" height="40" loading="lazy" class="bbai-li-image-table__thumb" />
 								<?php else : ?>
 									<span class="bbai-li-image-table__thumb-placeholder" aria-hidden="true"></span>
 								<?php endif; ?>

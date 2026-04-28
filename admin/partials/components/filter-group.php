@@ -246,4 +246,4 @@ foreach ($bbai_fg_items as $bbai_item) {
     <?php
 }
 
-echo '</' . $bbai_root_tag . '>';
+echo '</' . tag_escape( $bbai_root_tag ) . '>';

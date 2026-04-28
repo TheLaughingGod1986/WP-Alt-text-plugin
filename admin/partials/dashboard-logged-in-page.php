@@ -50,38 +50,11 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	data-state="<?php echo esc_attr( $bbai_li_state_raw ); ?>"
 	data-bbai-li-initial-state="<?php echo esc_attr( $bbai_li_initial_json ); ?>"
 	data-bbai-li-state-truth-url="<?php echo esc_url( rest_url( 'bbai/v1/dashboard/state-truth' ) ); ?>"
+	data-bbai-counts-hash="<?php echo esc_attr( (string) ( $bbai_dashboard_root_counts_hash ?? '' ) ); ?>"
 	aria-label="<?php echo esc_attr__( 'Logged-in dashboard', 'beepbeep-ai-alt-text-generator' ); ?>"
 >
 
-	<?php
-	// ── State-aware top banner — same shared component used on Library, Analytics, Usage ────
-	if ( isset( $bbai_dashboard_command_hero ) && is_array( $bbai_dashboard_command_hero ) ) {
-		$bbai_command_hero = $bbai_dashboard_command_hero;
-		$bbai_ch_partial   = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/status-banner.php';
-		if ( is_readable( $bbai_ch_partial ) ) {
-			require $bbai_ch_partial;
-		}
-	}
-	?>
-
-	<?php
-	$bbai_li_upgrade_float_enabled = ! empty( $bbai_has_connected_account )
-		&& empty( $bbai_state_is_pro_plan )
-		&& empty( $bbai_is_anonymous_trial );
-	$bbai_li_upgrade_float_variants = [
-		'MISSING_ALT' => [
-			'title' => __( 'Scale up with BeepBeep Pro', 'beepbeep-ai-alt-text-generator' ),
-			'text'  => __( 'Unlock API key management, faster bulk actions, and priority support as you work through larger libraries.', 'beepbeep-ai-alt-text-generator' ),
-		],
-		'ALL_CLEAR'   => [
-			'title' => __( 'Keep new uploads moving with Pro', 'beepbeep-ai-alt-text-generator' ),
-			'text'  => __( 'Stay ahead as your library grows with faster bulk actions, API key management, and priority support.', 'beepbeep-ai-alt-text-generator' ),
-		],
-	];
-	$bbai_li_upgrade_float_state = isset( $bbai_li_upgrade_float_variants[ $bbai_li_state_raw ] ) ? $bbai_li_state_raw : '';
-	$bbai_li_upgrade_float_copy  = $bbai_li_upgrade_float_variants[ $bbai_li_upgrade_float_state ] ?? reset( $bbai_li_upgrade_float_variants );
-	$bbai_li_show_upgrade_float  = $bbai_li_upgrade_float_enabled && '' !== $bbai_li_upgrade_float_state;
-	?>
+	<?php /* Intentionally no top marketing banner on dashboard — copy lives in the hero. */ ?>
 	<?php /* Hero grid — primary action surface */ ?>
 	<div class="bbai-li-hero-shell">
 
@@ -95,296 +68,77 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 
 	</div><?php /* /.bbai-li-hero-shell */ ?>
 
-	<?php if ( $bbai_li_upgrade_float_enabled ) : ?>
-	<aside
-		class="bbai-li-upgrade-float bbai-li-upgrade-float--standalone"
-		data-bbai-li-upgrade-float="1"
-		data-bbai-li-upgrade-state="<?php echo esc_attr( $bbai_li_upgrade_float_state ); ?>"
-		data-bbai-li-upgrade-title-missing-alt="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['MISSING_ALT']['title'] ?? '' ) ); ?>"
-		data-bbai-li-upgrade-text-missing-alt="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['MISSING_ALT']['text'] ?? '' ) ); ?>"
-		data-bbai-li-upgrade-title-all-clear="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['ALL_CLEAR']['title'] ?? '' ) ); ?>"
-		data-bbai-li-upgrade-text-all-clear="<?php echo esc_attr( (string) ( $bbai_li_upgrade_float_variants['ALL_CLEAR']['text'] ?? '' ) ); ?>"
-		aria-label="<?php esc_attr_e( 'Upgrade suggestion', 'beepbeep-ai-alt-text-generator' ); ?>"
-		<?php echo $bbai_li_show_upgrade_float ? '' : 'hidden'; ?>
+	<?php
+	// ── Insight stat cards (display-only; values mirror donut + library totals) ──
+	$bbai_li_seg   = is_array( $bbai_li_state['donut']['segments'] ?? null ) ? $bbai_li_state['donut']['segments'] : [];
+	$bbai_li_opt   = max( 0, (int) ( $bbai_li_seg['optimized'] ?? 0 ) );
+	$bbai_li_miss  = max( 0, (int) ( $bbai_li_seg['missing'] ?? 0 ) );
+	$bbai_li_lib_n = max( 0, (int) ( $bbai_li_state['meta']['total_images'] ?? 0 ) );
+	$bbai_li_with  = $bbai_li_lib_n > 0 ? max( 0, $bbai_li_lib_n - $bbai_li_miss ) : 0;
+	$bbai_li_cov   = $bbai_li_lib_n > 0 ? (int) min( 100, (int) round( ( 100 * $bbai_li_with ) / $bbai_li_lib_n ) ) : 0;
+	// Rough UX estimate: ~2 minutes manual ALT work per optimised image.
+	$bbai_li_mins  = $bbai_li_opt * 2;
+	?>
+	<section
+		class="bbai-li-insights"
+		aria-label="<?php echo esc_attr__( 'Library insights', 'beepbeep-ai-alt-text-generator' ); ?>"
 	>
-		<div class="bbai-li-upgrade-float__body">
-			<span class="bbai-li-upgrade-float__icon" aria-hidden="true">
-				<svg width="18" height="18" viewBox="0 0 18 18" fill="none" focusable="false">
-					<circle cx="9" cy="9" r="7.25" stroke="currentColor" stroke-width="1.5"/>
-					<path d="M6.25 8.4L8.3 10.45L12 6.75" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-				</svg>
-			</span>
-			<div class="bbai-li-upgrade-float__copy">
-				<h2 class="bbai-li-upgrade-float__title"><?php echo esc_html( (string) ( $bbai_li_upgrade_float_copy['title'] ?? '' ) ); ?></h2>
-				<p class="bbai-li-upgrade-float__text"><?php echo esc_html( (string) ( $bbai_li_upgrade_float_copy['text'] ?? '' ) ); ?></p>
-			</div>
-		</div>
-		<div class="bbai-li-upgrade-float__actions">
-			<button type="button" class="bbai-li-upgrade-float__button" data-action="show-upgrade-modal">
-				<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?>
-			</button>
-		</div>
-	</aside>
-	<?php endif; ?>
-
-	<?php
-	// ── Activity strip — thin contextual row under the hero ──────────────────
-	$bbai_strip_meta    = is_array( $bbai_li_state['meta']    ?? null ) ? $bbai_li_state['meta']    : [];
-	$bbai_strip_summary = is_array( $bbai_li_state['hero']['summary'] ?? null ) ? $bbai_li_state['hero']['summary'] : [];
-	$bbai_strip_job     = is_array( $bbai_strip_meta['job']   ?? null ) ? $bbai_strip_meta['job']   : null;
-	$bbai_strip_last    = (string) ( $bbai_strip_meta['last_run_at'] ?? '' );
-	$bbai_strip_checked = $bbai_strip_job ? (string) ( $bbai_strip_job['last_checked_at'] ?? '' ) : '';
-
-	// Pull counts from hero summary items (label → value map).
-	$bbai_strip_counts = [];
-	foreach ( $bbai_strip_summary as $bbai_strip_item ) {
-		$bbai_strip_counts[ strtolower( (string) ( $bbai_strip_item['label'] ?? '' ) ) ] = (string) ( $bbai_strip_item['value'] ?? '' );
-	}
-	$bbai_strip_missing      = $bbai_strip_counts[ strtolower( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
-	$bbai_strip_review       = $bbai_strip_counts[ strtolower( __( 'To review', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
-	$bbai_strip_credits_left = $bbai_strip_counts[ strtolower( __( 'Credits left', 'beepbeep-ai-alt-text-generator' ) ) ] ?? '';
-
-	// Format relative time (simple, no dependency).
-	$bbai_li_format_relative = static function ( string $raw ): string {
-		if ( '' === $raw ) {
-			return '';
-		}
-
-		$bbai_strip_age = time() - (int) strtotime( $raw );
-		if ( $bbai_strip_age < 60 ) {
-			return __( 'just now', 'beepbeep-ai-alt-text-generator' );
-		}
-		if ( $bbai_strip_age < 3600 ) {
-			return sprintf(
-				/* translators: %d: minutes ago */
-				_n( '%d minute ago', '%d minutes ago', (int) floor( $bbai_strip_age / 60 ), 'beepbeep-ai-alt-text-generator' ),
-				(int) floor( $bbai_strip_age / 60 )
-			);
-		}
-		if ( $bbai_strip_age < 86400 ) {
-			return sprintf(
-				/* translators: %d: hours ago */
-				_n( '%d hour ago', '%d hours ago', (int) floor( $bbai_strip_age / 3600 ), 'beepbeep-ai-alt-text-generator' ),
-				(int) floor( $bbai_strip_age / 3600 )
-			);
-		}
-		return sprintf(
-			/* translators: %d: days ago */
-			_n( '%d day ago', '%d days ago', (int) floor( $bbai_strip_age / 86400 ), 'beepbeep-ai-alt-text-generator' ),
-			(int) floor( $bbai_strip_age / 86400 )
-		);
-	};
-	$bbai_strip_last_fmt    = $bbai_li_format_relative( $bbai_strip_last );
-	$bbai_strip_checked_fmt = $bbai_li_format_relative( $bbai_strip_checked );
-
-	// Build items array based on state.
-	$bbai_strip_items        = [];
-	$bbai_strip_tone         = 'neutral'; // dot colour: neutral | warn | ok | alert
-	$bbai_strip_signal_index = -1;
-
-		switch ( $bbai_li_state_raw ) {
-
-		case 'QUEUED':
-			$bbai_strip_tone  = 'queued';
-			$bbai_strip_total = $bbai_strip_job ? (int) $bbai_strip_job['total'] : 0;
-			$bbai_strip_items[] = __( 'Queued automatically', 'beepbeep-ai-alt-text-generator' );
-			if ( $bbai_strip_total > 0 ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s queued', '%s queued', $bbai_strip_total, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_strip_total )
+		<article class="bbai-li-insight-card bbai-stat-card primary">
+			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Accessibility', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			<p
+				class="bbai-li-insight-card__value"
+				data-bbai-li-insight-coverage
+			><?php
+			echo esc_html( sprintf(
+				/* translators: 1: percentage (0-100) */
+				__( '%1$s%% of images accessible', 'beepbeep-ai-alt-text-generator' ),
+				(string) $bbai_li_cov
+			) );
+			?></p>
+			<p class="bbai-li-insight-card__desc"><?php esc_html_e( 'Accessibility coverage improving.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+		</article>
+		<article class="bbai-li-insight-card bbai-stat-card secondary">
+			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Time saved', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			<p
+				class="bbai-li-insight-card__value"
+				data-bbai-li-insight-mins
+			><?php
+			if ( $bbai_li_mins > 0 ) {
+				printf(
+					/* translators: %s: estimated minutes (integer, formatted) */
+					esc_html( _n( '%s min saved', '%s mins saved', $bbai_li_mins, 'beepbeep-ai-alt-text-generator' ) ),
+					esc_html( number_format_i18n( $bbai_li_mins ) )
 				);
+			} else {
+				esc_html_e( '~0 mins saved', 'beepbeep-ai-alt-text-generator' );
 			}
-			$bbai_strip_items[] = $bbai_strip_checked_fmt
-				? sprintf(
-					/* translators: %s: relative time */
-					__( 'Last checked %s', 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_checked_fmt
+			?></p>
+			<p class="bbai-li-insight-card__desc"><?php
+			echo $bbai_li_mins > 0
+				? esc_html__( 'No manual writing needed.', 'beepbeep-ai-alt-text-generator' )
+				: esc_html__( 'Generate ALT in bulk to see time saved here.', 'beepbeep-ai-alt-text-generator' );
+			?></p>
+		</article>
+		<article class="bbai-li-insight-card bbai-stat-card tertiary">
+			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'SEO', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			<p
+				class="bbai-li-insight-card__value"
+				data-bbai-li-insight-optimized
+			><?php
+			echo esc_html(
+				sprintf(
+					/* translators: %s: number of images (formatted) */
+					_n( '%s image optimised', '%s images optimised', $bbai_li_opt, 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $bbai_li_opt )
 				)
-				: __( 'Last checked just now', 'beepbeep-ai-alt-text-generator' );
-			$bbai_strip_signal_index = count( $bbai_strip_items ) - 1;
-			break;
-
-		case 'PROCESSING':
-			$bbai_strip_tone = 'scanning';
-			$bbai_strip_done  = $bbai_strip_job ? (int) $bbai_strip_job['done']  : 0;
-			$bbai_strip_total = $bbai_strip_job ? (int) $bbai_strip_job['total'] : 0;
-			$bbai_strip_left  = max( 0, $bbai_strip_total - $bbai_strip_done );
-			$bbai_strip_items[] = __( 'Generation active', 'beepbeep-ai-alt-text-generator' );
-			if ( $bbai_strip_done > 0 ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s processed', '%s processed', $bbai_strip_done, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_strip_done )
-				);
-			}
-			if ( $bbai_strip_left > 0 ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s remaining', '%s remaining', $bbai_strip_left, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_strip_left )
-				);
-			}
-			break;
-
-		case 'MIXED_ATTENTION':
-			$bbai_strip_tone = 'alert';
-			if ( $bbai_strip_missing !== '' ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s image needs ALT text', '%s images need ALT text', (int) str_replace( ',', '', $bbai_strip_missing ), 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_missing
-				);
-			}
-			if ( $bbai_strip_review !== '' && (int) str_replace( ',', '', $bbai_strip_review ) > 0 ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s ready for review', '%s ready for review', (int) str_replace( ',', '', $bbai_strip_review ), 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_review
-				);
-			}
-			break;
-
-		case 'MISSING_ALT':
-			$bbai_strip_tone = 'alert';
-			if ( $bbai_strip_missing !== '' ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s image needs ALT text', '%s images need ALT text', (int) str_replace( ',', '', $bbai_strip_missing ), 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_missing
-				);
-			}
-			if ( $bbai_strip_review !== '' && (int) str_replace( ',', '', $bbai_strip_review ) > 0 ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s ready for review', '%s ready for review', (int) str_replace( ',', '', $bbai_strip_review ), 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_review
-				);
-			}
-			if ( $bbai_strip_last_fmt ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: relative time */
-					__( 'Last run %s', 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_last_fmt
-				);
-			}
-			break;
-
-		case 'NEEDS_REVIEW':
-			$bbai_strip_tone = 'warn';
-			if ( $bbai_strip_review !== '' ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: count */
-					_n( '%s ready for review', '%s ready for review', (int) str_replace( ',', '', $bbai_strip_review ), 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_review
-				);
-			}
-			if ( $bbai_strip_last_fmt ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: relative time */
-					__( 'Last run %s', 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_last_fmt
-				);
-			}
-			break;
-
-		case 'ALL_CLEAR':
-			$bbai_strip_tone    = 'ok';
-			$bbai_strip_items[] = __( 'Ready for new uploads', 'beepbeep-ai-alt-text-generator' );
-			if ( '' !== $bbai_strip_credits_left && (int) str_replace( ',', '', $bbai_strip_credits_left ) > 0 ) {
-				$bbai_strip_credit_count = (int) str_replace( ',', '', $bbai_strip_credits_left );
-				$bbai_strip_items[]      = sprintf(
-					/* translators: %s: remaining credits */
-					_n( '%s credit left', '%s credits left', $bbai_strip_credit_count, 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_credits_left
-				);
-			}
-			if ( $bbai_strip_last_fmt ) {
-				$bbai_strip_items[] = sprintf(
-					/* translators: %s: relative time */
-					__( 'Last run %s', 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_last_fmt
-				);
-			}
-			break;
-
-		case 'QUOTA_EXHAUSTED':
-			$bbai_strip_tone    = 'alert';
-			$bbai_strip_items[] = __( 'Out of credits', 'beepbeep-ai-alt-text-generator' );
-			$bbai_strip_items[] = __( 'Add more to continue generating', 'beepbeep-ai-alt-text-generator' );
-			break;
-
-		case 'ERROR':
-			$bbai_strip_tone    = 'alert';
-			$bbai_strip_items[] = __( 'Generation paused', 'beepbeep-ai-alt-text-generator' );
-			$bbai_strip_items[] = __( 'Check settings to continue', 'beepbeep-ai-alt-text-generator' );
-			break;
-
-		default:
-			$bbai_strip_items[] = __( 'Library ready to optimise', 'beepbeep-ai-alt-text-generator' );
-			break;
-	}
-
-	// Cap at 3 items.
-	$bbai_strip_items = array_slice( $bbai_strip_items, 0, 3 );
-
-	if ( ! empty( $bbai_strip_items ) ) :
-	?>
-	<div class="bbai-card-meta-row">
-		<div class="bbai-li-activity-strip bbai-li-activity-strip--<?php echo esc_attr( $bbai_strip_tone ); ?>" data-bbai-li-activity-strip="1">
-			<span class="bbai-li-activity-strip__dot" aria-hidden="true"></span>
-			<?php foreach ( $bbai_strip_items as $bbai_strip_i => $bbai_strip_text ) : ?>
-				<?php if ( $bbai_strip_i > 0 ) : ?><span class="bbai-li-activity-strip__sep" aria-hidden="true"> · </span><?php endif; ?>
-				<span class="bbai-li-activity-strip__item"<?php echo $bbai_strip_i === $bbai_strip_signal_index ? ' data-bbai-li-queued-signal="1"' : ''; ?>><?php echo esc_html( $bbai_strip_text ); ?></span>
-			<?php endforeach; ?>
-		</div>
-	</div>
-	<?php endif; ?>
-
-	<?php
-	// ── Value / impact line — lightweight, positive, below the strip ─────────
-	$bbai_impact_line = '';
-	// Pull optimised count from donut segments (resolver puts it there for all states).
-	$bbai_impact_complete = (int) ( $bbai_li_state['donut']['segments']['optimized'] ?? 0 );
-	switch ( $bbai_li_state_raw ) {
-		case 'ALL_CLEAR':
-			$bbai_impact_line = $bbai_impact_complete > 0
-				? sprintf(
-					/* translators: %s: count of optimised images */
-					_n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', $bbai_impact_complete, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_impact_complete )
-				)
-				: __( 'Your library is fully optimised for accessibility and search.', 'beepbeep-ai-alt-text-generator' );
-			break;
-		case 'MISSING_ALT':
-			if ( $bbai_impact_complete > 0 ) {
-				$bbai_impact_line = sprintf(
-					/* translators: %s: count of optimised images */
-					_n( 'You\'ve improved accessibility on %s image so far.', 'You\'ve improved accessibility on %s images so far.', $bbai_impact_complete, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_impact_complete )
-				);
-			}
-			break;
-		case 'NEEDS_REVIEW':
-			if ( '' !== $bbai_strip_review && (int) str_replace( ',', '', $bbai_strip_review ) > 0 ) {
-				$bbai_impact_line = sprintf(
-					/* translators: %s: count of images ready for review */
-					_n( '%s ready for review', '%s ready for review', (int) str_replace( ',', '', $bbai_strip_review ), 'beepbeep-ai-alt-text-generator' ),
-					$bbai_strip_review
-				);
-			} elseif ( $bbai_impact_complete > 0 ) {
-				$bbai_impact_line = sprintf(
-					/* translators: %s: count of optimised images */
-					_n( 'You\'ve improved accessibility on %s image so far.', 'You\'ve improved accessibility on %s images so far.', $bbai_impact_complete, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_impact_complete )
-				);
-			}
-			break;
-	}
-	if ( '' !== $bbai_impact_line ) :
-	?>
-	<p class="bbai-li-impact-line"><?php echo esc_html( $bbai_impact_line ); ?></p>
-	<?php endif; ?>
-
+			);
+			?></p>
+			<p class="bbai-li-insight-card__desc"><?php
+			echo $bbai_li_opt > 0
+				? esc_html__( 'Helping search engines understand your content.', 'beepbeep-ai-alt-text-generator' )
+				: esc_html__( 'Generate ALT text to start improving rankings.', 'beepbeep-ai-alt-text-generator' );
+			?></p>
+		</article>
+	</section>
 
 </section>
