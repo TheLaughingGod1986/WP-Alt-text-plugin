@@ -1036,6 +1036,8 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         $bbai_is_exhausted_trial_checkpoint = ! empty( $bbai_is_anonymous_trial )
             && empty( $bbai_has_connected_account )
             && ! empty( $bbai_product_state_model['trial']['exhausted'] );
+        // Logged-in dashboard: keep focus on execution surfaces (hero, pills, library work).
+        // The before/after showcase is reserved for trial / onboarding context.
         $bbai_show_before_after = ! $bbai_is_exhausted_trial_checkpoint && empty( $bbai_has_connected_account );
 
         // Guest / anonymous trial users: render the funnel hero design.
@@ -1046,6 +1048,59 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
                 include $bbai_hero_partial;
             }
         } else {
+            $bbai_li_page_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-page.php';
+            if ( is_readable( $bbai_li_page_partial ) ) {
+                if ( isset( $this ) && is_object( $this ) ) {
+                    require $bbai_li_page_partial;
+                } else {
+                    echo '<div class="notice notice-error"><p>' . esc_html__( 'Dashboard could not load (missing context).', 'beepbeep-ai-alt-text-generator' ) . '</p></div>';
+                }
+            }
+        }
+
+        // Logged-in dashboard (connected SaaS account): PHP-first unified shell.
+        $bbai_li_state = null;
+        if ( ! empty( $bbai_has_connected_account ) ) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-logged-in-dashboard-resolver.php';
+
+            $bbai_li_job_for_ctx = [];
+            if ( isset( $this ) && is_object( $this ) && method_exists( $this, 'get_active_job_status' ) ) {
+                $bbai_li_raw_job = $this->get_active_job_status();
+                if ( is_array( $bbai_li_raw_job ) && [] !== $bbai_li_raw_job ) {
+                    $bbai_li_job_for_ctx = $bbai_li_raw_job;
+                }
+            }
+
+            $bbai_li_last_run_for_ctx = null;
+            if ( isset( $this ) && is_object( $this ) && method_exists( $this, 'get_last_job_completed_at' ) ) {
+                $bbai_li_last_ts = $this->get_last_job_completed_at();
+                if ( $bbai_li_last_ts ) {
+                    $bbai_li_last_run_for_ctx = is_numeric( $bbai_li_last_ts ) ? gmdate( 'c', (int) $bbai_li_last_ts ) : (string) $bbai_li_last_ts;
+                }
+            }
+
+            $bbai_li_ctx = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::build_ctx(
+                $bbai_usage_stats,
+                [
+                    'total_images'  => $bbai_state_total_images,
+                    'missing'       => $bbai_state_missing_count,
+                    'weak'          => $bbai_state_weak_count,
+                    'optimized'     => $bbai_state_optimized_count,
+                    'failed'        => 0,
+                ],
+                $bbai_li_job_for_ctx,
+                ( ! bbai_is_authenticated() )
+                    ? [ 'code' => 'NO_API_KEY', 'message' => __( 'API key not connected. Open settings to continue.', 'beepbeep-ai-alt-text-generator' ) ]
+                    : [],
+                $bbai_li_last_run_for_ctx ?: ( $bbai_last_scan_timestamp > 0 ? gmdate( 'c', $bbai_last_scan_timestamp ) : null ),
+                [
+                    'is_pro'     => ! empty( $bbai_state_is_pro_plan ),
+                    'plan_slug'  => (string) ( $bbai_plan_slug_ladder ?? 'free' ),
+                ]
+            );
+
+            $bbai_li_state = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve( $bbai_li_ctx );
+
             $bbai_li_page_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-page.php';
             if ( is_readable( $bbai_li_page_partial ) ) {
                 if ( isset( $this ) && is_object( $this ) ) {
