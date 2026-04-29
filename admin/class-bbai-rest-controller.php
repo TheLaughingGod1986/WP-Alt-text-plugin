@@ -1951,7 +1951,9 @@ class REST_Controller {
 		$usage_stats           = $api_client
 			? \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $api_client, $has_connected_account )
 			: [];
-		$stats_payload         = $this->core->get_dashboard_stats_payload( false );
+		// Force-fresh stats so REST fallback truth matches SSR (which also forces fresh).
+		// Without this, SSR (fresh) and REST (cached) disagree → flicker on first hydrate.
+		$stats_payload         = $this->core->get_dashboard_stats_payload( true );
 		$coverage              = [
 			'total_images' => (int) ( $stats_payload['total_images'] ?? $stats_payload['total'] ?? 0 ),
 			'missing'      => (int) ( $stats_payload['images_missing_alt'] ?? $stats_payload['missing'] ?? 0 ),

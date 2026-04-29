@@ -260,7 +260,10 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     $bbai_signup_required = !empty($bbai_usage_stats['signup_required']) || ($bbai_is_anonymous_trial && 'exhausted' === $bbai_quota_state);
     $bbai_upgrade_required = !empty($bbai_usage_stats['upgrade_required']);
 
-    $bbai_coverage = (isset($this) && method_exists($this, 'get_alt_text_coverage_scan')) ? $this->get_alt_text_coverage_scan(false) : [];
+    // Force-fresh coverage scan so dashboard SSR first paint matches ALT Library
+    // (which also calls get_alt_text_coverage_scan(true)). Prevents stale-cache
+    // counts on first render that would later flicker when JS hydrates.
+    $bbai_coverage = (isset($this) && method_exists($this, 'get_alt_text_coverage_scan')) ? $this->get_alt_text_coverage_scan(true) : [];
     $bbai_attn = bbai_get_attention_counts(
         (!empty($bbai_coverage) && isset($bbai_coverage['total_images'])) ? $bbai_coverage : null
     );

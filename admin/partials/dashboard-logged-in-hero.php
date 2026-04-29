@@ -3121,7 +3121,11 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 				var nextSignature = buildTruthSignature( truth );
 				var forceResolved = dashboardPolling.requiresResolvedSync || shouldUseResolvedDashboard( truth, previousTruth );
 
-				if ( ! previousTruth && ! forceResolved && ! dashboardPolling.bootstrapSyncApplied && ! domTruthMismatch( truth ) ) {
+				// First-paint idempotency: when SSR data already matches truth, skip the
+				// re-render even if shouldUseResolvedDashboard wanted a resolved fetch.
+				// Without this, NEEDS_REVIEW always re-renders the hero on first paint,
+				// causing a visible flicker even when nothing changed.
+				if ( ! previousTruth && ! dashboardPolling.bootstrapSyncApplied && ! domTruthMismatch( truth ) ) {
 					var unchangedMeta = buildStatusStripMeta( pollContext, 'runPollingTick_state_unchanged' );
 					dashboardPolling.currentTruth = truth;
 					dashboardPolling.currentSignature = nextSignature;
