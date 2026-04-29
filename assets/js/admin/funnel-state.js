@@ -236,6 +236,10 @@
             root.getAttribute('data-bbai-has-connected-account') !== '1';
     }
 
+    function isDashboardGuest(root) {
+        return !!root && root.getAttribute('data-bbai-has-connected-account') !== '1';
+    }
+
     function hasRecentSuccess(root) {
         var successTs;
 
@@ -494,7 +498,9 @@
     function openAuthModal(tab, modalContext) {
         var mode = tab === 'register' ? 'register' : 'login';
         var context = modalContext || (mode === 'login' ? 'login' : 'fix');
-        var nextUrl;
+        var fallbackUrl = mode === 'login'
+            ? 'https://app.beepbeep.ai/login'
+            : 'https://app.beepbeep.ai/register';
 
         if (window.authModal && typeof window.authModal.show === 'function') {
             try {
@@ -526,18 +532,8 @@
             }
         }
 
-        try {
-            nextUrl = new URL(window.location.href);
-            nextUrl.searchParams.set('bbai_open_auth', '1');
-            nextUrl.searchParams.set('bbai_auth_tab', mode);
-            nextUrl.searchParams.set('bbai_auth_context', context);
-            window.location.assign(nextUrl.toString());
-            return true;
-        } catch (error) {
-            // Fall through to hard false if URL construction fails.
-        }
-
-        return false;
+        window.location.assign(fallbackUrl);
+        return true;
     }
 
     function isUpgradeModalLocked(root) {
@@ -685,12 +681,12 @@
     }
 
     function buildUnlockAction(root) {
-        if (isGuestTrialUser(root)) {
-            return buildAction(getLockedTrialCtaLabel(root), {
+        if (isDashboardGuest(root)) {
+            return buildAction('Create free account', {
                 action: 'show-dashboard-auth',
                 authTab: 'register',
-                analytics: 'hero_continue_optimizing_signup',
-                modalContext: 'fix'
+                analytics: 'hero_guest_preview_signup',
+                modalContext: 'register'
             });
         }
 
@@ -710,6 +706,28 @@
 
     function buildConversionPromptModel(root) {
         var creditState = getCreditFunnelState(root);
+
+        if (isDashboardGuest(root) && getTrialCreditsRemaining(root) > 0) {
+            return {
+                visible: false,
+                tone: 'soft',
+                title: '',
+                copy: '',
+                note: '',
+                action: null
+            };
+        }
+
+        if (isDashboardGuest(root) && getTrialCreditsRemaining(root) <= 0) {
+            return {
+                visible: false,
+                tone: 'exhausted',
+                title: '',
+                copy: '',
+                note: '',
+                action: null
+            };
+        }
 
         if (creditState.isPremium || (!creditState.isLow && !creditState.isExhausted)) {
             return {
@@ -794,27 +812,35 @@
         };
     }
 
+    function getGuestActionableCount(counts) {
+        var c = counts || {};
+        var m = Math.max(0, parseCount(c.missing));
+        var w = Math.max(0, parseCount(c.weak));
+
+        return Math.max(m, w, m + w);
+    }
+
     function getLockedTrialCtaLabel(root) {
+        if (isDashboardGuest(root)) {
+            return 'Create free account';
+        }
+
         var counts = getCounts(root);
         var remaining = Math.max(0, counts.missing || (counts.missing + counts.weak));
 
         return 'Fix your ' + formatCount(remaining) + ' remaining images';
     }
 
-    function getLockedTrialCtaContext(root, missingCount) {
-        var count = typeof missingCount === 'number'
-            ? Math.max(0, missingCount)
-            : Math.max(0, getCounts(root).missing);
+    function getLockedTrialCtaContext(root, actionableCount) {
+        var n = typeof actionableCount === 'number' ? Math.max(0, actionableCount) : getGuestActionableCount(getCounts(root));
 
-        if (count === 1) {
-            return 'You\u2019re 1 image away from full optimisation';
+        if (n <= 0) {
+            return '';
         }
 
-        if (count > 1) {
-            return 'You\u2019re ' + formatCount(count) + ' images away from full optimisation';
-        }
-
-        return 'Continue fixing your images and unlock full access';
+        return n === 1
+            ? 'You\u2019re 1 step away from fixing 1 image'
+            : 'You\u2019re 1 step away from fixing all ' + formatCount(n) + ' images';
     }
 
     function resolveLockedAction(root) {
@@ -843,7 +869,7 @@
     function buildFixPrimaryAction(root, actionableCount) {
         var quotaState = String(root && root.getAttribute('data-bbai-quota-state') || '');
 
-        if (isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
+        if (isDashboardGuest(root) && getTrialCreditsRemaining(root) <= 0) {
             return buildAction(getLockedTrialCtaLabel(root), {
                 action: 'show-dashboard-auth',
                 authTab: 'register',
@@ -858,7 +884,7 @@
             });
         }
 
-        return buildAction('Fix all images', {
+        return buildAction(isDashboardGuest(root) ? 'Generate free ALT text' : 'Fix all images', {
             action: 'generate-missing',
             bbaiAction: 'generate_missing',
             fixDashboard: true
@@ -866,7 +892,7 @@
     }
 
     function buildReviewPrimaryAction(root) {
-        if (isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
+        if (isDashboardGuest(root) && getTrialCreditsRemaining(root) <= 0) {
             return buildAction(getLockedTrialCtaLabel(root), {
                 action: 'show-dashboard-auth',
                 authTab: 'register',
@@ -918,24 +944,28 @@
     }
 
     function buildExhaustedTrialHeroModel(root, counts) {
+        var nextCounts = counts || getCounts(root);
         var credits = getCreditsModel(root);
-        var missingCount = Math.max(0, counts && typeof counts.missing === 'number' ? counts.missing : 0);
-        var remainingCount = Math.max(0, missingCount || (counts.missing + counts.weak));
-        var limit = getCreditFunnelState(root).limit;
-        var title = 'You\u2019ve used all ' + formatCount(limit) + ' free generations';
+        var actionable = getGuestActionableCount(nextCounts);
+        var sublabel = '';
+
+        if (actionable > 0) {
+            sublabel = actionable === 1 ? 'image to finish' : 'images to finish';
+        }
+
         return {
             statusLabel: '',
             statusDetail: '',
-            donutValue: formatCount(missingCount),
-            donutLabel: '',
-            donutTone: missingCount > 0 ? 'problem' : 'neutral',
-            donutBackground: buildDonutGradient(counts),
-            title: title,
-            description: 'Continue fixing your remaining images and unlock full access.',
+            donutValue: formatCount(actionable),
+            donutLabel: sublabel,
+            donutTone: actionable > 0 ? 'problem' : 'neutral',
+            donutBackground: buildDonutGradient(nextCounts),
+            title: 'Unlock your full ALT library',
+            description: 'You\u2019ve fixed your first images. Create a free account to review, edit, and finish optimising your library.',
             primaryAction: buildUnlockAction(root),
             secondaryAction: buildLoginAction(),
-            ctaContext: getLockedTrialCtaContext(root, remainingCount),
-            supportLine: 'No credit card required',
+            ctaContext: getLockedTrialCtaContext(root, actionable),
+            supportLine: '',
             showCredits: false,
             showConversionPrompt: false,
             showMicrocopy: false,
@@ -946,6 +976,11 @@
 
     function buildHeroModel(root, state) {
         var counts = getCounts(root);
+        var funnelModeRoot = root.getAttribute('data-bbai-dashboard-funnel');
+        var guestExhaustedRoot = root.getAttribute('data-bbai-trial-exhausted') === '1';
+        if (funnelModeRoot === 'trial_exhausted_guest' || (funnelModeRoot === 'guest_dashboard' && guestExhaustedRoot)) {
+            return buildExhaustedTrialHeroModel(root, counts);
+        }
         var actionable = getActionableState(root, counts);
         var runtime = String(root.getAttribute('data-bbai-dashboard-runtime-state') || 'idle');
         var generationBusy = runtime === 'generation_running' || runtime === 'logged_out_trial_running';
@@ -953,6 +988,7 @@
         var reviewAction = buildReviewPrimaryAction(root);
         var defaultDescription = 'Automatically generate SEO-friendly ALT text';
         var reviewDescription = 'Quickly review generated ALT text before publishing.';
+        var guestMidTrial = isDashboardGuest(root) && getTrialCreditsRemaining(root) > 0;
         var donutValue = actionable.key === ACTIONABLE_STATES.MISSING
             ? formatCount(actionable.actionableCount)
             : (actionable.key === ACTIONABLE_STATES.REVIEW ? formatCount(actionable.reviewCount) : '100%');
@@ -961,8 +997,20 @@
             : (actionable.key === ACTIONABLE_STATES.REVIEW ? 'TO REVIEW' : 'OPTIMIZED');
         var heroStatusLabel = buildHeroStatusLabel(state, actionable);
 
+        function withGuestFunnelSimplification(model) {
+            if (guestMidTrial) {
+                return Object.assign({}, model, {
+                    showCredits: false,
+                    showConversionPrompt: false,
+                    showMicrocopy: false
+                });
+            }
+
+            return model;
+        }
+
         if (state === HERO_STATES.NOT_SCANNED) {
-            return {
+            return withGuestFunnelSimplification({
                 statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: '0%',
@@ -976,11 +1024,11 @@
                 }),
                 secondaryAction: null,
                 credits: getCreditsModel(root)
-            };
+            });
         }
 
         if (state === HERO_STATES.SCANNING) {
-            return {
+            return withGuestFunnelSimplification({
                 statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: '0',
@@ -992,11 +1040,11 @@
                 primaryAction: buildAction('Scanning images...', { disabled: true, ariaBusy: true }),
                 secondaryAction: null,
                 credits: getCreditsModel(root)
-            };
+            });
         }
 
         if (generationBusy) {
-            return {
+            return withGuestFunnelSimplification({
                 statusLabel: heroStatusLabel,
                 statusDetail: '',
                 donutValue: donutValue,
@@ -1010,11 +1058,51 @@
                 primaryAction: buildAction('Fixing images...', { disabled: true, ariaBusy: true }),
                 secondaryAction: null,
                 credits: getCreditsModel(root)
+            });
+        }
+
+        if (isDashboardGuest(root) && getTrialCreditsRemaining(root) <= 0) {
+            return buildExhaustedTrialHeroModel(root, counts);
+        }
+
+        if (guestMidTrial && state === HERO_STATES.SCANNED_HAS_ISSUES) {
+            return {
+                statusLabel: '',
+                statusDetail: '',
+                donutValue: formatCount(getTrialCreditsRemaining(root)),
+                donutLabel: 'LEFT',
+                donutTone: getTrialCreditsRemaining(root) > 0 && getTrialCreditsRemaining(root) <= 2 ? 'problem' : 'neutral',
+                donutBackground: buildDonutGradient(counts),
+                title: getTrialCreditsRemaining(root) === 1
+                    ? '1 free generation left'
+                    : formatCount(getTrialCreditsRemaining(root)) + ' free generations left',
+                description: 'Run a quick scan, then use your free generations to fix missing ALT text before you run out.',
+                primaryAction: fixAction,
+                secondaryAction: null,
+                showCredits: false,
+                showConversionPrompt: false,
+                showMicrocopy: false,
+                credits: getCreditsModel(root)
             };
         }
 
-        if (isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0) {
-            return buildExhaustedTrialHeroModel(root, counts);
+        if (guestMidTrial && state === HERO_STATES.SCANNED_CLEAN) {
+            return {
+                statusLabel: '',
+                statusDetail: '',
+                donutValue: '100%',
+                donutLabel: 'OPTIMIZED',
+                donutTone: 'healthy',
+                donutBackground: 'conic-gradient(#22c55e 0deg 360deg)',
+                title: 'Your images are fully optimised',
+                description: 'You still have free generations for new media or a later scan if you add more images.',
+                primaryAction: buildAction('Scan for new issues', { bbaiAction: 'scan-opportunity' }),
+                secondaryAction: null,
+                showCredits: false,
+                showConversionPrompt: false,
+                showMicrocopy: false,
+                credits: getCreditsModel(root)
+            };
         }
 
         if (state === HERO_STATES.SCANNED_HAS_ISSUES && actionable.key === ACTIONABLE_STATES.REVIEW) {
@@ -1229,17 +1317,22 @@
         }
     }
 
-    function setConversionPrompt(hero, prompt) {
-        var promptRoot = hero.querySelector('[data-bbai-hero-conversion-prompt]');
+    function setConversionPrompt(hero, prompt, showSlot) {
+        var promptRoot = document.querySelector('[data-bbai-hero-conversion-prompt]');
+        var guestConversionModal = document.getElementById('bbai-guest-conversion-modal');
         var titleNode;
         var copyNode;
         var noteNode;
         var actionsNode;
         var ctaNode;
+        var allowSlot;
+        var show;
 
         if (!promptRoot) {
             return;
         }
+
+        allowSlot = showSlot !== false;
 
         titleNode = promptRoot.querySelector('[data-bbai-hero-conversion-title]');
         copyNode = promptRoot.querySelector('[data-bbai-hero-conversion-copy]');
@@ -1250,7 +1343,13 @@
         promptRoot.classList.remove('bbai-dashboard-conversion-prompt--low', 'bbai-dashboard-conversion-prompt--exhausted', 'bbai-dashboard-conversion-prompt--soft');
         promptRoot.classList.add('bbai-dashboard-conversion-prompt--' + String(prompt && prompt.tone ? prompt.tone : 'soft'));
         promptRoot.setAttribute('data-bbai-hero-conversion-tone', String(prompt && prompt.tone ? prompt.tone : 'soft'));
-        setHidden(promptRoot, !prompt || !prompt.visible);
+        show = allowSlot && !!(prompt && prompt.visible);
+        if (guestConversionModal) {
+            setHidden(guestConversionModal, !show);
+            document.body.classList.toggle('bbai-guest-conversion-modal-open', show);
+        } else {
+            setHidden(promptRoot, !show);
+        }
 
         if (titleNode) {
             titleNode.textContent = prompt && prompt.title ? prompt.title : '';
@@ -1287,16 +1386,26 @@
         var statusBlock;
         var supportLine;
         var creditsRoot;
-        var conversionPrompt;
         var microcopy;
 
         if (!root || !hero) {
             return;
         }
 
+        if (hero.getAttribute('data-bbai-guest-hero-static') === '1') {
+            return;
+        }
+
         previousState = String(hero.getAttribute('data-bbai-funnel-hero-state') || '');
-        nextState = resolveHeroState(root);
-        model = buildHeroModel(root, nextState);
+        var dashboardFunnelMode = root.getAttribute('data-bbai-dashboard-funnel');
+        var guestTrialExhausted = root.getAttribute('data-bbai-trial-exhausted') === '1';
+        if (dashboardFunnelMode === 'trial_exhausted_guest' || (dashboardFunnelMode === 'guest_dashboard' && guestTrialExhausted)) {
+            nextState = 'guest_preview_funnel';
+            model = buildExhaustedTrialHeroModel(root, getCounts(root));
+        } else {
+            nextState = resolveHeroState(root);
+            model = buildHeroModel(root, nextState);
+        }
         donut = hero.querySelector('[data-bbai-status-donut]');
         donutValue = hero.querySelector('[data-bbai-funnel-donut-value]');
         donutLabel = hero.querySelector('[data-bbai-funnel-donut-label]');
@@ -1308,16 +1417,20 @@
         statusBlock = hero.querySelector('[data-bbai-hero-status-block]');
         supportLine = hero.querySelector('[data-bbai-funnel-hero-support]');
         creditsRoot = hero.querySelector('[data-bbai-dashboard-credits]');
-        conversionPrompt = hero.querySelector('[data-bbai-hero-conversion-prompt]');
         microcopy = hero.querySelector('[data-bbai-hero-microcopy]');
 
         hero.setAttribute('data-bbai-funnel-hero-state', nextState);
         hero.setAttribute('data-bbai-hero-ui-state', nextState);
         root.setAttribute('data-bbai-funnel-state', nextState);
-        hero.classList.toggle('bbai-funnel-hero--trial-exhausted', !!model.isExhaustedTrial);
+        var funnelMode = root.getAttribute('data-bbai-dashboard-funnel');
+        var guestPreviewShell = funnelMode === 'trial_exhausted_guest' || funnelMode === 'guest_dashboard';
+        hero.classList.toggle('bbai-funnel-hero--trial-exhausted', !!model.isExhaustedTrial && !guestPreviewShell);
+        hero.classList.toggle('bbai-funnel-hero--guest-preview', guestPreviewShell);
 
         if (hero.querySelector('[data-bbai-dashboard-hero-action]')) {
-            hero.querySelector('[data-bbai-dashboard-hero-action]').classList.toggle('bbai-dashboard-hero-action--exhausted-trial', !!model.isExhaustedTrial);
+            var heroActionNode = hero.querySelector('[data-bbai-dashboard-hero-action]');
+            heroActionNode.classList.toggle('bbai-dashboard-hero-action--exhausted-trial', !!model.isExhaustedTrial && !guestPreviewShell);
+            heroActionNode.classList.toggle('bbai-dashboard-hero-action--guest-preview', guestPreviewShell);
         }
 
         if (donut) {
@@ -1363,13 +1476,10 @@
         setActionNode(hero.querySelector('[data-bbai-funnel-hero-primary]'), model.primaryAction);
         setActionNode(hero.querySelector('[data-bbai-funnel-hero-secondary]'), model.secondaryAction || null);
         setCreditsBlock(hero, model.credits || {});
-        setConversionPrompt(hero, buildConversionPromptModel(root));
+        setConversionPrompt(hero, buildConversionPromptModel(root), model.showConversionPrompt);
 
         if (creditsRoot) {
             setHidden(creditsRoot, model.showCredits === false);
-        }
-        if (conversionPrompt) {
-            setHidden(conversionPrompt, model.showConversionPrompt === false);
         }
         if (microcopy) {
             setHidden(microcopy, model.showMicrocopy === false);
@@ -1477,7 +1587,7 @@
                 emptyNode.textContent = '';
                 setHidden(emptyNode, true);
             } else if (visibleCount === 0 && totalForSegment > 0) {
-                emptyNode.textContent = 'This preview shows only the first 3 images. Create a free account to unlock the full ALT Library.';
+                emptyNode.textContent = 'Create a free account to unlock your full ALT library.';
                 setHidden(emptyNode, false);
             } else if (visibleCount === 0) {
                 emptyNode.textContent = 'No ' + getPreviewSegmentLabel(normalizedSegment) + ' images in this preview yet.';
@@ -1898,8 +2008,9 @@
 
         showLocked = isGuestTrialUser(root) && getTrialCreditsRemaining(root) <= 0;
 
+        // Real "Review your first results" list stays visible (blurred); only the value strip toggles with exhausted state.
         if (activePreview) {
-            setHidden(activePreview, showLocked);
+            setHidden(activePreview, false);
         }
 
         if (lockedPreview) {
@@ -1913,6 +2024,7 @@
     }
 
     function syncTrialPreview() {
+        var root = getRoot();
         var row = getStatusRow();
         var preview = getTrialPreview();
         var segment;
@@ -1932,7 +2044,18 @@
         applyTrialPreviewFilter(segment || 'all');
     }
 
+    function reparentGuestConversionModal() {
+        var el = document.getElementById('bbai-guest-conversion-modal');
+
+        if (!el || el.parentNode === document.body) {
+            return;
+        }
+
+        document.body.appendChild(el);
+    }
+
     function refresh() {
+        reparentGuestConversionModal();
         syncHero();
         syncTrialPreviewSurface();
         syncStatusRow();

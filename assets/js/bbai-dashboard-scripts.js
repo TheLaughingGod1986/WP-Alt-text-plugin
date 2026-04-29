@@ -146,8 +146,15 @@
         initEqualHeights();
     }
 
+    var bbaiEqualizeResizeTimer = null;
     window.addEventListener('resize', function() {
-        setTimeout(equalizeCardHeights, 100);
+        if (bbaiEqualizeResizeTimer) {
+            clearTimeout(bbaiEqualizeResizeTimer);
+        }
+        bbaiEqualizeResizeTimer = setTimeout(function() {
+            bbaiEqualizeResizeTimer = null;
+            equalizeCardHeights();
+        }, 150);
     });
 })();
 
@@ -614,3 +621,68 @@
         window.refreshUsageStats = window.alttextai_refresh_usage;
     }
 })(jQuery);
+
+/**
+ * Logged-out conversion dialog: dismiss overlay so the trial hero stays visible underneath.
+ */
+(function() {
+    'use strict';
+
+    function getModal() {
+        return document.getElementById('bbai-ftue-conversion-modal');
+    }
+
+    function dismissConversionModal() {
+        var modal = getModal();
+        if (!modal || modal.getAttribute('hidden') === 'true') {
+            return;
+        }
+        modal.classList.remove('is-open');
+        modal.classList.add('is-dismissed');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.setAttribute('hidden', 'hidden');
+        document.body.classList.remove('bbai-modal-open');
+    }
+
+    function openConversionModalState() {
+        var modal = getModal();
+        if (!modal || !modal.classList.contains('is-open')) {
+            return;
+        }
+        document.body.classList.add('bbai-modal-open');
+    }
+
+    function bind() {
+        var modal = getModal();
+        if (!modal) {
+            return;
+        }
+
+        openConversionModalState();
+
+        modal.addEventListener('click', function(e) {
+            var t = e.target;
+            if (t && t.getAttribute && t.getAttribute('data-bbai-ftue-conversion-dismiss') === '1') {
+                e.preventDefault();
+                dismissConversionModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape' && e.keyCode !== 27) {
+                return;
+            }
+            var m = getModal();
+            if (!m || !m.classList.contains('is-open') || m.classList.contains('is-dismissed')) {
+                return;
+            }
+            dismissConversionModal();
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bind);
+    } else {
+        bind();
+    }
+})();

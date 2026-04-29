@@ -12,12 +12,6 @@ if (!defined('ABSPATH')) {
 if (!class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
     require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 }
-if (!class_exists('\BeepBeepAI\AltTextGenerator\Auth_State')) {
-    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
-}
-if (!class_exists('\BeepBeepAI\AltTextGenerator\Services\Usage_Helper')) {
-    require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
-}
 
 $bbai_is_authenticated = $this->api_client->is_authenticated();
 $bbai_has_license = $this->api_client->has_active_license();
@@ -277,23 +271,23 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
             <!-- Settings Page -->
             <div class="bbai-container bbai-settings-page">
                 <?php
-                    $bbai_settings_auth = \BeepBeepAI\AltTextGenerator\Auth_State::resolve($this->api_client);
-                    $bbai_usage_box = \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage(
-                        $this->api_client,
-                        (bool) ($bbai_settings_auth['has_connected_account'] ?? false)
-                    );
+                    // Pull fresh usage from backend to avoid stale cache in Settings
+                    if (isset($this->api_client)) {
+                        $bbai_live = $this->api_client->get_usage();
+                        if (is_array($bbai_live) && !empty($bbai_live)) { \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_live); }
+                    }
+                    $bbai_usage_box = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display();
                     $bbai_o = wp_parse_args($opts, []);
                     
                     // Check for license plan first
                     $bbai_license_data = $this->api_client->get_license_data();
                 
-                $bbai_plan = sanitize_key((string) ($bbai_usage_box['plan_type'] ?? $bbai_usage_box['plan'] ?? 'free'));
-                $bbai_usage_source = strtolower((string) ($bbai_usage_box['source'] ?? ''));
+                $bbai_plan = $bbai_usage_box['plan'] ?? 'free';
                 
-                // License data is only a fallback when backend usage truth was unavailable.
+                // If license is active, use license plan
                 if ($bbai_has_license && $bbai_license_data && isset($bbai_license_data['organization'])) {
                     $bbai_license_plan = strtolower($bbai_license_data['organization']['plan'] ?? 'free');
-                    if ($bbai_license_plan !== 'free' && in_array($bbai_usage_source, ['local_snapshot', 'local_trial_snapshot', ''], true)) {
+                    if ($bbai_license_plan !== 'free') {
                         $bbai_plan = $bbai_license_plan;
                     }
                 }
@@ -301,12 +295,16 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                 $bbai_is_pro = ($bbai_plan === 'pro' || $bbai_plan === 'growth');
                 $bbai_is_agency = $bbai_plan === 'agency';
                 $bbai_is_growth_plan = ($bbai_is_pro || $bbai_is_agency);
+                $bbai_can_use_upload_generation = method_exists($this, 'current_account_can_use_upload_generation')
+                    ? $this->current_account_can_use_upload_generation()
+                    : $bbai_is_growth_plan;
+                if (!$bbai_can_use_upload_generation) {
+                    $bbai_o['enable_on_upload'] = false;
+                }
 
-                $bbai_plan_label = !empty($bbai_usage_box['plan_label']) && is_string($bbai_usage_box['plan_label'])
-                    ? sanitize_text_field($bbai_usage_box['plan_label'])
-                    : ($bbai_is_growth_plan
+                $bbai_plan_label = $bbai_is_growth_plan
                     ? esc_html__('Growth', 'beepbeep-ai-alt-text-generator')
-                    : esc_html__('Free', 'beepbeep-ai-alt-text-generator'));
+                    : esc_html__('Free', 'beepbeep-ai-alt-text-generator');
 
                 $bbai_used_credits = intval($bbai_usage_box['used'] ?? 0);
                 $bbai_total_credits = intval($bbai_usage_box['limit'] ?? 0);
@@ -509,6 +507,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                         <h3 class="bbai-settings-card-title bbai-section-title"><?php esc_html_e('ALT Text Generation', 'beepbeep-ai-alt-text-generator'); ?></h3>
                         <p class="bbai-settings-card-description bbai-description"><?php esc_html_e('Control how AI-generated ALT text behaves.', 'beepbeep-ai-alt-text-generator'); ?></p>
 
+                        <?php if ($bbai_can_use_upload_generation) : ?>
                         <div class="bbai-settings-form-group">
                             <div class="bbai-settings-form-field bbai-settings-form-field--toggle">
                                 <div class="bbai-settings-form-field-content">
@@ -531,6 +530,23 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                                 </label>
                             </div>
                         </div>
+                        <?php else : ?>
+                        <div class="bbai-settings-form-group">
+                            <div class="bbai-settings-form-field bbai-settings-form-field--locked">
+                                <div class="bbai-settings-form-field-content">
+                                    <span class="bbai-settings-form-label">
+                                        <?php esc_html_e('Auto-generate alt text on image upload', 'beepbeep-ai-alt-text-generator'); ?>
+                                    </span>
+                                    <p class="bbai-settings-form-description">
+                                        <?php esc_html_e('Upload automation is available on paid plans. Free users can still generate ALT text manually from the ALT Library.', 'beepbeep-ai-alt-text-generator'); ?>
+                                    </p>
+                                </div>
+                                <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="show-upgrade-modal">
+                                    <?php esc_html_e('Upgrade', 'beepbeep-ai-alt-text-generator'); ?>
+                                </button>
+                            </div>
+                        </div>
+                        <?php endif; ?>
 
                         <div class="bbai-settings-form-group">
                             <label for="bbai-tone" class="bbai-settings-form-label" data-bbai-tooltip="Choose a style profile for generated alt text. This applies to all new AI descriptions." data-bbai-tooltip-position="right">

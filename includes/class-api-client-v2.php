@@ -132,6 +132,15 @@ class API_Client_V2 {
             }
         }
     }
+
+    /**
+     * Canonical backend API base URL (trailing slash), same resolution as server-side API calls.
+     *
+     * @return string
+     */
+    public function get_api_url() {
+        return trailingslashit( $this->api_url );
+    }
     
     /**
      * Get stored JWT token
@@ -1536,9 +1545,8 @@ class API_Client_V2 {
     /**
      * Get the canonical logged-in dashboard state truth payload from the backend.
      *
-     * Frontend dashboard state should resolve from this endpoint first. Keep a
-     * second endpoint candidate for compatibility while the backend rollout
-     * settles.
+     * Frontend dashboard state resolves through the canonical /api dashboard
+     * alias so every plugin flow uses the same backend API surface.
      *
      * @return array|\WP_Error
      */
@@ -1570,7 +1578,6 @@ class API_Client_V2 {
         }
 
         $candidates = [
-            '/dashboard/state-truth',
             '/api/dashboard/state-truth',
         ];
         $last_error = null;
@@ -2389,6 +2396,12 @@ class API_Client_V2 {
         }
 
         $response = $this->request_with_retry($endpoint, 'POST', $body, 3, false, $extra_headers);
+
+        // WP_DEBUG-only: log raw generation response for credit tracking investigations.
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('[BBAI DEBUG] generate response: ' . wp_json_encode($response));
+        }
 
         if (is_wp_error($response)) {
             return $response;

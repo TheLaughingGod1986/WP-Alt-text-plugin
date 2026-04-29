@@ -509,8 +509,7 @@ class Logged_In_Dashboard_Resolver {
 				];
 
 			case self::STATE_QUEUED:
-				$job_total    = (int) ( $job['total'] ?? 0 );
-				$queued_total = $job_total > 0 ? $job_total : $missing;
+				$queued_total = self::get_queued_remaining_count( is_array( $job ) ? $job : null, $missing );
 				$queued_href  = add_query_arg(
 					[
 						'page'   => 'bbai-library',
@@ -759,14 +758,29 @@ class Logged_In_Dashboard_Resolver {
 						admin_url( 'admin.php' )
 					) . '#bbai-review-filter-tabs';
 
+				$missing_phrase = sprintf(
+					/* translators: %s: missing ALT count */
+					_n( '%s image needs ALT text', '%s images need ALT text', $missing, 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $missing )
+				);
+				$review_phrase = sprintf(
+					/* translators: %s: review count */
+					_n( '%s image ready for review', '%s images ready for review', $review, 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $review )
+				);
+
 				return [
 					'badge'         => [ 'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'amber' ],
-					/* Counts live in the hero status row — keep the headline outcome-focused, not a second summary. */
-					'headline'      => __( 'Generate ALT text, then review suggestions', 'beepbeep-ai-alt-text-generator' ),
+					// First paint must match the dashboard client renderer (no hydration flash).
+					'headline'      => sprintf( '%1$s, %2$s', $missing_phrase, $review_phrase ),
 					'support'       => __( 'Generate ALT text first, then review the suggested descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ),
 					'variant'       => 'default',
 					'primary_cta'   => [
-						'label'       => __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ),
+						'label'       => sprintf(
+							/* translators: %s: missing count */
+							_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $missing, 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $missing )
+						),
 						'busy_label'  => __( 'Starting…', 'beepbeep-ai-alt-text-generator' ),
 						'action'      => 'generate-missing',
 					],
@@ -967,6 +981,44 @@ class Logged_In_Dashboard_Resolver {
 		}
 	}
 
+	/**
+	 * Resolve the best "items remaining" number for queued/processing UI.
+	 *
+	 * Backend payloads may report:
+	 * - queue_count: remaining items waiting to start
+	 * - total/done: batch totals and progress
+	 *
+	 * The dashboard should display what's left to do, not the original batch size.
+	 *
+	 * @param array<string,mixed>|null $job Raw/normalized job payload.
+	 * @param int                      $fallback_missing Missing count fallback when job has no usable counts.
+	 * @return int
+	 */
+	private static function get_queued_remaining_count( ?array $job, int $fallback_missing ): int {
+		$job = is_array( $job ) ? $job : [];
+
+		$queue_count = max( 0, (int) ( $job['queue_count'] ?? 0 ) );
+		$done        = max( 0, (int) ( $job['done'] ?? 0 ) );
+		$total       = max( 0, (int) ( $job['total'] ?? 0 ) );
+
+		$remaining_from_total = $total > 0 ? max( 0, $total - $done ) : 0;
+		$best                 = max( $queue_count, $remaining_from_total );
+
+		if ( $best > 0 ) {
+			// If we have a local missing count, don't over-report queued work beyond what is
+			// currently missing ALT text in the Media Library.
+			$fallback_missing = max( 0, (int) $fallback_missing );
+			return $fallback_missing > 0 ? min( $best, $fallback_missing ) : $best;
+		}
+
+		// Some payloads only provide total for queued state (no progress).
+		if ( $total > 0 ) {
+			return $total;
+		}
+
+		return max( 0, $fallback_missing );
+	}
+
 	// ──────────────────────────────────────────────────────────────────────────
 	// Banner builder — top status-banner component, state-aware
 	// ──────────────────────────────────────────────────────────────────────────
@@ -1026,8 +1078,7 @@ class Logged_In_Dashboard_Resolver {
 
 			// ── QUEUED ───────────────────────────────────────────────────────
 			case self::STATE_QUEUED:
-				$job_total = (int) ( $job['total'] ?? 0 );
-				$queued_total = $job_total > 0 ? $job_total : $missing;
+				$queued_total = self::get_queued_remaining_count( is_array( $job ) ? $job : null, $missing );
 
 				// queued on dashboard — hero owns this state; suppress the banner
 				// to avoid offering another "generate" action while work is waiting.
@@ -1426,8 +1477,7 @@ class Logged_In_Dashboard_Resolver {
 				];
 
 			case self::STATE_QUEUED:
-				$job_total = (int) ( $job['total'] ?? 0 );
-				$queued_total = $job_total > 0 ? $job_total : $missing;
+				$queued_total = self::get_queued_remaining_count( is_array( $job ) ? $job : null, $missing );
 				return [
 					'pct'              => 0,
 					'color'            => 'blue',

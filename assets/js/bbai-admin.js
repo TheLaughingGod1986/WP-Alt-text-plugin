@@ -244,8 +244,28 @@
     }
 
     // Prime the canonical state early on dashboard pages so modals never read stale local snapshots.
+    //
+    // IMPORTANT: The logged-in dashboard has its own truth polling pipeline (SSR + hydration)
+    // inside `admin/partials/dashboard-logged-in-hero.php`. When available, reuse the SSR
+    // payload instead of issuing an extra /dashboard/state-truth request that can cause
+    // duplicate "startup" fetches and briefly conflicting UI.
     if (document && document.querySelector && document.querySelector('[data-bbai-dashboard-root="1"]')) {
-        refreshDashboardStateTruth().catch(function() {});
+        var liRoot = document.querySelector('[data-bbai-li-initial-state]');
+        if (liRoot) {
+            try {
+                var initial = String(liRoot.getAttribute('data-bbai-li-initial-state') || '');
+                if (initial) {
+                    var parsed = JSON.parse(initial);
+                    window.BBAI_STATE = extractCanonicalStateFromTruth(parsed);
+                }
+            } catch (e) {
+                // Fall back to a network fetch below.
+            }
+        }
+
+        if (!window.BBAI_STATE) {
+            refreshDashboardStateTruth().catch(function() {});
+        }
     }
 
     // If the dashboard already indicates a live generation job (e.g. after reload),
@@ -2600,28 +2620,32 @@
             return;
         }
 
-        try {
-            var currentUrl = new URL(window.location.href);
-            var currentPage = String(currentUrl.searchParams.get('page') || '').toLowerCase();
+        window.location.href = 'https://app.beepbeep.ai/register';
+    }
 
-            if (!currentPage || currentPage.indexOf('bbai') !== 0) {
-                currentUrl.searchParams.set('page', 'bbai');
-                currentUrl.searchParams.delete('tab');
-            }
-
-            currentUrl.searchParams.set('bbai_open_auth', '1');
-            currentUrl.searchParams.set('bbai_auth_tab', 'register');
-            currentUrl.searchParams.set('bbai_auth_context', modalContext);
-            currentUrl.searchParams.delete('checkout');
-            currentUrl.searchParams.delete('checkout_error');
-            window.location.href = currentUrl.toString();
+    function openAuthLoginModal() {
+        if (typeof showAuthModal === 'function') {
+            showAuthModal('login', 'login');
             return;
-        } catch (error) {
-            // Fall through to the static admin URL below.
+        }
+        if (typeof window.showAuthModal === 'function') {
+            window.showAuthModal('login', 'login');
+            return;
+        }
+        if (window.authModal && typeof window.authModal.show === 'function') {
+            if (typeof window.authModal.setModalContext === 'function') {
+                window.authModal.setModalContext('login');
+            }
+            window.authModal.show({
+                context: 'login'
+            });
+            if (typeof window.authModal.showLoginForm === 'function') {
+                window.authModal.showLoginForm('login');
+            }
+            return;
         }
 
-        var adminUrl = (window.bbai_ajax && window.bbai_ajax.admin_url) || 'admin.php';
-        window.location.href = adminUrl + '?page=bbai&bbai_open_auth=1&bbai_auth_tab=register&bbai_auth_context=' + encodeURIComponent(modalContext);
+        window.location.href = 'https://app.beepbeep.ai/login';
     }
 
     function normalizeLimitErrorData(errorData) {
@@ -6927,6 +6951,13 @@
             setDashboardRuntimeState('generation_starting');
             bbaiSetGenerationLock && bbaiSetGenerationLock('dashboard_generate', null);
 
+            var initialActionable = getDashboardActionableStateSnapshot();
+            var initialTotal = initialActionable && initialActionable.missingCount > 0
+                ? initialActionable.missingCount
+                : 1;
+            showBulkProgress(__('Preparing image list...', 'beepbeep-ai-alt-text-generator'), initialTotal, 0);
+            setBulkProgressHelperText(__('Finding images that need ALT text...', 'beepbeep-ai-alt-text-generator'));
+
             // Get list of images missing alt text (REST with admin-ajax fallback)
             fetchBulkImageIds('missing', 500)
             .done(function(response) {
@@ -7031,6 +7062,9 @@
             var ids = response.ids || [];
             var starterCap = parseInt($btn.attr('data-bbai-starter-cap') || '0', 10) || 0;
             var explicitLimit = parseInt($btn.attr('data-bbai-bulk-limit') || '0', 10) || 0;
+            var remainingLimit = remaining !== null && remaining !== undefined && !isNaN(remaining) && remaining > 0
+                ? remaining
+                : 0;
             var allowedCount = ids.length;
 
             if (starterCap > 0 && allowedCount > starterCap) {
@@ -7038,6 +7072,9 @@
             }
             if (explicitLimit > 0 && allowedCount > explicitLimit) {
                 allowedCount = explicitLimit;
+            }
+            if (remainingLimit > 0 && allowedCount > remainingLimit) {
+                allowedCount = remainingLimit;
             }
 
             ids = ids.slice(0, allowedCount);
@@ -7087,6 +7124,27 @@
                 } else {
                     // Check for quota errors FIRST - show upgrade modal immediately
                     if (isLimitReachedError(error)) {
+                        var quotaRemaining = error && error.remaining !== undefined && error.remaining !== null
+                            ? parseInt(error.remaining, 10)
+                            : 0;
+                        if (!isNaN(quotaRemaining) && quotaRemaining > 0) {
+                            setGenerationInProgress(false);
+                            setDashboardRuntimeState('generation_failed');
+                            logBulkProgressError(
+                                error && error.message
+                                    ? error.message
+                                    : sprintf(
+                                        _n(
+                                            'You only have %d generation remaining. Please select fewer images.',
+                                            'You only have %d generations remaining. Please select fewer images.',
+                                            quotaRemaining,
+                                            'beepbeep-ai-alt-text-generator'
+                                        ),
+                                        quotaRemaining
+                                    )
+                            );
+                            return;
+                        }
                         setGenerationInProgress(false);
                         hideBulkProgress();
                         handleLimitReached(error);
@@ -7220,13 +7278,14 @@
                         window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Queue failed for generate missing - no error details');
                     }
 
+                    setGenerationInProgress(false);
                     // Keep modal open to show error - user can close manually
                 }
             });
         })
         .fail(function(xhr, status, error) {
             window.BBAI_LOG && window.BBAI_LOG.error('[AI Alt Text] Failed to get missing images:', error, xhr);
-            restoreGenerateBusyState();
+            setGenerationInProgress(false);
             setDashboardRuntimeState('generation_failed');
 
             logBulkProgressError(__('Failed to load images. Please try again.', 'beepbeep-ai-alt-text-generator'));
@@ -19997,9 +20056,6 @@
                 }
                 return;
             }
-            if (bbaiSetGenerationLock) {
-                bbaiSetGenerationLock('delegated_click', null);
-            }
         }
 
         if (trigger.closest && trigger.closest('#bbai-review-filter-tabs') && trigger.hasAttribute('data-filter')) {
@@ -20037,6 +20093,21 @@
         }
 
         var action = trigger.getAttribute('data-action') || '';
+        if (action === 'show-auth-modal' || action === 'show-dashboard-auth') {
+            if (e && typeof e.preventDefault === 'function') {
+                e.preventDefault();
+            }
+            if (e && typeof e.stopPropagation === 'function') {
+                e.stopPropagation();
+            }
+
+            if (trigger.getAttribute('data-auth-tab') === 'login') {
+                openAuthLoginModal();
+            } else {
+                openAuthSignupModal(trigger);
+            }
+            return;
+        }
         if (action === 'show-upgrade-modal' && trigger.closest && trigger.closest('#bbai-feature-unlock-modal')) {
             var featModal = document.getElementById('bbai-feature-unlock-modal');
             if (featModal) {
@@ -20404,6 +20475,35 @@
      */
     function initDashboardOnce() {
         if (bbaiAdminInitialized) {
+            return;
+        }
+
+        // Avoid binding heavy delegated handlers + observers on wp-admin screens that
+        // don't include any BeepBeep AI UI. This keeps page-to-page navigation snappy
+        // and prevents duplicate "state" pipelines from ever starting.
+        var qs = (typeof window !== 'undefined' && window.location && window.location.search) ? String(window.location.search) : '';
+        var isBbaiAdminPage = /[?&]page=bbai(?:[&#]|$)/.test(qs) || /[?&]page=bbai-[^&#]+/.test(qs);
+        var hasBbaiUi =
+            !!(document && document.querySelector && document.querySelector([
+                '[data-bbai-dashboard-root="1"]',
+                '[data-bbai-li-initial-state]',
+                '[data-bbai-library-workspace-root="1"]',
+                '#bbai-dashboard-main',
+                '#bbai-library-table-body',
+                '.bbai-library-container',
+                '.bbai-bulk-progress-modal',
+                '.bbai-regenerate-modal',
+                '#bbai-upgrade-modal',
+                '[data-bbai-action]',
+                '[data-bbai-locked-cta="1"]',
+                '[data-action="generate-missing"]',
+                '[data-action="regenerate-all"]',
+                '[data-action="regenerate-single"]',
+                '[data-action="scan-media-library"]',
+                '[data-action="show-upgrade-modal"]'
+            ].join(',')));
+
+        if (!isBbaiAdminPage && !hasBbaiUi) {
             return;
         }
         bbaiAdminInitialized = true;

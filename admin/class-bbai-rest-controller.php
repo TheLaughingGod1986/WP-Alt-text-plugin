@@ -41,6 +41,16 @@ class REST_Controller {
 	public function register_routes() {
 		register_rest_route(
 			'bbai/v1',
+			'/dashboard-state',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'handle_dashboard_state' ],
+				'permission_callback' => [ $this, 'can_edit_media' ],
+			]
+		);
+
+		register_rest_route(
+			'bbai/v1',
 			'/generate/(?P<id>\d+)',
 			[
 				'methods'             => 'POST',
@@ -515,6 +525,109 @@ class REST_Controller {
 						'sanitize_callback' => 'absint',
 						'validate_callback' => [ __CLASS__, 'validate_positive_int_arg' ],
 					],
+				],
+			]
+		);
+
+		// WP_DEBUG-only: usage diagnostics for credit-decrement investigations.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			register_rest_route(
+				'bbai/v1',
+				'/debug/usage-diagnostics',
+				[
+					'methods'             => 'GET',
+					'callback'            => [ $this, 'handle_debug_usage_diagnostics' ],
+					'permission_callback' => [ $this, 'can_manage_admin' ],
+				]
+			);
+		}
+	}
+
+	/**
+	 * Canonical dashboard/library state for all admin UI.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function handle_dashboard_state() {
+		$provider = BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-dashboard-state-provider.php';
+		if ( is_readable( $provider ) ) {
+			require_once $provider;
+		}
+
+		if ( class_exists( \BeepBeepAI\AltTextGenerator\Services\Dashboard_State_Provider::class ) ) {
+			return \BeepBeepAI\AltTextGenerator\Services\Dashboard_State_Provider::build( $this->core );
+		}
+
+		return [
+			'counts'     => [ 'missing' => 0, 'queued' => 0, 'needs_review' => 0, 'optimized' => 0 ],
+			'credits'    => [ 'used' => 0, 'limit' => 1, 'remaining' => 0, 'has_credit' => false ],
+			'generation' => [ 'in_progress' => false, 'queue_total' => 0, 'queue_remaining' => 0 ],
+		];
+	}
+
+	/**
+	 * WP_DEBUG-only usage diagnostics payload.
+	 *
+	 * @param \WP_REST_Request $request REST request instance.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_debug_usage_diagnostics( \WP_REST_Request $request ) {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return new \WP_Error(
+				'not_available',
+				__( 'Diagnostics are only available when WP_DEBUG is enabled.', 'beepbeep-ai-alt-text-generator' ),
+				[ 'status' => 404 ]
+			);
+		}
+
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+
+		$api_client = $this->core->get_api_client();
+		$auth_state = is_object( $api_client )
+			? \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $api_client )
+			: [];
+		$has_connected_account = (bool) ( $auth_state['has_connected_account'] ?? false );
+
+		$api_usage = null;
+		if ( is_object( $api_client ) && method_exists( $api_client, 'get_usage' ) ) {
+			$api_usage = $api_client->get_usage();
+		}
+
+		$helper_usage = \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage(
+			$api_client,
+			$has_connected_account
+		);
+
+		$local_snapshot = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
+		$cached_snapshot = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage( false );
+
+		$license_data = is_object( $api_client ) && method_exists( $api_client, 'get_license_data' ) ? ( $api_client->get_license_data() ?? [] ) : [];
+
+		return rest_ensure_response(
+			[
+				'debug' => [
+					'user_id' => (int) get_current_user_id(),
+					'site_url' => (string) get_site_url(),
+					'site_hash' => is_object( $api_client ) && method_exists( $api_client, 'get_site_id' ) ? (string) $api_client->get_site_id() : '',
+					'has_connected_account' => $has_connected_account,
+					'auth_state' => $auth_state,
+					'free_credits_allocated' => (bool) get_option( 'beepbeepai_free_credits_allocated', false ),
+					'usage_transient_exists' => false !== get_transient( \BeepBeepAI\AltTextGenerator\Usage_Tracker::CACHE_KEY ),
+				],
+				'api_client_usage' => $api_usage,
+				'usage_helper' => $helper_usage,
+				'usage_tracker' => [
+					'local_snapshot' => $local_snapshot,
+					'cached_usage' => $cached_snapshot,
+				],
+				'license' => [
+					'has_active_license' => is_object( $api_client ) && method_exists( $api_client, 'has_active_license' ) ? (bool) $api_client->has_active_license() : false,
+					'license_data_keys' => is_array( $license_data ) ? array_keys( $license_data ) : [],
+					'organization_keys' => ( is_array( $license_data ) && isset( $license_data['organization'] ) && is_array( $license_data['organization'] ) )
+						? array_keys( $license_data['organization'] )
+						: [],
 				],
 			]
 		);
@@ -1405,6 +1518,21 @@ class REST_Controller {
 			);
 		}
 
+		// Align truth counts with local coverage scan (same source as ALT Library).
+		$truth = $this->reconcile_truth_missing_count_with_local_media( $truth );
+		$truth = $this->normalize_state_truth_credits_for_rest( $truth );
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$counts = isset( $truth['counts'] ) && is_array( $truth['counts'] ) ? $truth['counts'] : [];
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[BBAI counts] state_truth ' . wp_json_encode( [
+				'missing'      => (int) ( $counts['missing'] ?? $counts['missing_alt'] ?? $counts['missingAlt'] ?? 0 ),
+				'needs_review' => (int) ( $counts['review'] ?? $counts['needs_review'] ?? $counts['needsReview'] ?? $counts['to_review'] ?? $counts['toReview'] ?? $counts['weak'] ?? 0 ),
+				'optimized'    => (int) ( $counts['optimized'] ?? $counts['complete'] ?? 0 ),
+				'total'        => (int) ( $counts['total'] ?? $counts['total_images'] ?? $counts['totalImages'] ?? 0 ),
+			] ) );
+		}
+
 		return rest_ensure_response( $truth );
 	}
 
@@ -1876,6 +2004,10 @@ class REST_Controller {
 	 * Fetch backend dashboard truth with a local fallback so the dashboard never
 	 * hard-fails when the backend endpoint is temporarily unavailable.
 	 *
+	 * Merges in local WordPress media counts (get_alt_text_coverage_scan) for any
+	 * display counts in the truth payload so they match the ALT Library. Skipped
+	 * when the E2E state-truth fixture is present (see bbai_reconcile_state_truth_payload_missing_to_local).
+	 *
 	 * @return array<string,mixed>|null
 	 */
 	private function get_logged_in_dashboard_state_truth_payload(): ?array {
@@ -1883,11 +2015,65 @@ class REST_Controller {
 		if ( $api_client && method_exists( $api_client, 'get_dashboard_state_truth' ) ) {
 			$truth = $api_client->get_dashboard_state_truth();
 			if ( is_array( $truth ) && [] !== $truth ) {
-				return $truth;
+				$truth = $this->reconcile_truth_missing_count_with_local_media( $truth );
+				$truth = $this->reconcile_truth_credits_with_usage_helper( $truth );
+
+				return $this->align_state_truth_payload_state_with_resolver( $truth );
 			}
 		}
 
-		return $this->build_logged_in_dashboard_state_truth_fallback();
+		$fallback = $this->build_logged_in_dashboard_state_truth_fallback();
+		if ( is_array( $fallback ) && [] !== $fallback ) {
+			$fallback = $this->reconcile_truth_missing_count_with_local_media( $fallback );
+
+			return $this->align_state_truth_payload_state_with_resolver( $fallback );
+		}
+
+		return is_array( $fallback ) ? $fallback : null;
+	}
+
+	/**
+	 * Overwrite truth.state with Logged_In_Dashboard_Resolver output so REST polling
+	 * cannot show NEEDS_REVIEW (or other queue states) when counts say otherwise.
+	 *
+	 * @param array<string,mixed> $truth Reconciled dashboard truth payload.
+	 * @return array<string,mixed>
+	 */
+	private function align_state_truth_payload_state_with_resolver( array $truth ): array {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-logged-in-dashboard-resolver.php';
+		if ( ! function_exists( 'bbai_state_truth_counts_hash' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+		}
+
+		$model = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve_from_truth(
+			$truth,
+			$this->get_logged_in_dashboard_plan_context()
+		);
+		if ( ! is_array( $model ) || ! isset( $model['state'] ) || '' === (string) $model['state'] ) {
+			$out = $truth;
+			if ( isset( $out['data']['counts'] ) && is_array( $out['data']['counts'] ) ) {
+				$out['data']['counts_hash'] = bbai_state_truth_counts_hash( $out['data']['counts'] );
+			}
+			if ( isset( $out['counts'] ) && is_array( $out['counts'] ) ) {
+				$out['counts_hash'] = bbai_state_truth_counts_hash( $out['counts'] );
+			}
+			return $out;
+		}
+
+		$state = (string) $model['state'];
+		$out   = $truth;
+		if ( isset( $out['data'] ) && is_array( $out['data'] ) ) {
+			$out['data']['state'] = $state;
+			if ( isset( $out['data']['counts'] ) && is_array( $out['data']['counts'] ) ) {
+				$out['data']['counts_hash'] = bbai_state_truth_counts_hash( $out['data']['counts'] );
+			}
+		}
+		$out['state'] = $state;
+		if ( isset( $out['counts'] ) && is_array( $out['counts'] ) ) {
+			$out['counts_hash'] = bbai_state_truth_counts_hash( $out['counts'] );
+		}
+
+		return $out;
 	}
 
 	/**
@@ -1930,6 +2116,206 @@ class REST_Controller {
 	}
 
 	/**
+	 * Replace SaaS truth credits with Usage_Helper::get_usage() so REST matches the
+	 * same quota as SSR, admin nav, and post-generation when the backend state-truth
+	 * snapshot lags the usage API.
+	 *
+	 * Skipped when the E2E state-truth fixture is active.
+	 *
+	 * @param array<string, mixed> $truth Dashboard truth payload.
+	 * @return array<string, mixed>
+	 */
+	private function reconcile_truth_credits_with_usage_helper( array $truth ): array {
+		$fixture = get_option( 'bbai_e2e_dashboard_state_truth_fixture', null );
+		if ( is_string( $fixture ) && '' !== trim( $fixture ) ) {
+			return $truth;
+		}
+		if ( is_array( $fixture ) && ! empty( $fixture['state'] ) ) {
+			return $truth;
+		}
+
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+
+		$api_client = $this->core->get_api_client();
+		if ( ! $api_client ) {
+			return $truth;
+		}
+
+		$auth_state            = \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $api_client );
+		$has_connected_account = (bool) ( $auth_state['has_connected_account'] ?? false );
+
+		// Credits can be authoritative even when has_connected_account is stale.
+		// If the API client has a valid JWT or an active license, treat it as connected for usage purposes.
+		$can_fetch_usage = $has_connected_account;
+		if ( ! $can_fetch_usage ) {
+			$can_fetch_usage = ( is_object( $api_client ) && method_exists( $api_client, 'is_authenticated' ) && $api_client->is_authenticated() )
+				|| ( is_object( $api_client ) && method_exists( $api_client, 'has_active_license' ) && $api_client->has_active_license() );
+		}
+
+		$usage_stats = \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $api_client, $can_fetch_usage );
+
+		if ( ! is_array( $usage_stats ) || [] === $usage_stats ) {
+			return $truth;
+		}
+
+		// Avoid clobbering backend state-truth credits with local fallback snapshots.
+		// When the backend usage endpoint is unavailable or lagging, Usage_Helper may return a local snapshot
+		// (often 0/limit). In that case, the backend dashboard/state-truth credits remain the better source.
+		$usage_source = strtolower( trim( (string) ( $usage_stats['source'] ?? '' ) ) );
+		$is_local_fallback = in_array(
+			$usage_source,
+			[
+				'local_snapshot',
+				'local_trial_snapshot',
+				'anonymous_trial',
+			],
+			true
+		);
+
+		// If the backend truth payload did not include usable credits, still apply Usage_Helper
+		// (even when it is a local fallback) so the UI contract always has a credits block.
+		$truth_payload = ( isset( $truth['data'] ) && is_array( $truth['data'] ) ) ? $truth['data'] : $truth;
+		$truth_credits = isset( $truth_payload['credits'] ) && is_array( $truth_payload['credits'] ) ? $truth_payload['credits'] : [];
+		$truth_has_credits = array_key_exists( 'used', $truth_credits )
+			|| array_key_exists( 'credits_used', $truth_credits )
+			|| array_key_exists( 'creditsUsed', $truth_credits )
+			|| array_key_exists( 'remaining', $truth_credits )
+			|| array_key_exists( 'credits_remaining', $truth_credits )
+			|| array_key_exists( 'creditsRemaining', $truth_credits )
+			|| array_key_exists( 'total', $truth_credits )
+			|| array_key_exists( 'limit', $truth_credits )
+			|| array_key_exists( 'credits_total', $truth_credits )
+			|| array_key_exists( 'creditsTotal', $truth_credits );
+
+		if ( $is_local_fallback && $truth_has_credits ) {
+			return $truth;
+		}
+
+		$used  = max( 0, (int) ( $usage_stats['credits_used'] ?? $usage_stats['creditsUsed'] ?? $usage_stats['used'] ?? 0 ) );
+		$limit = max( 1, (int) ( $usage_stats['credits_total'] ?? $usage_stats['creditsTotal'] ?? $usage_stats['creditsLimit'] ?? $usage_stats['limit'] ?? 1 ) );
+
+		$remaining_raw = $usage_stats['credits_remaining'] ?? $usage_stats['creditsRemaining'] ?? $usage_stats['remaining'] ?? null;
+		$remaining     = null !== $remaining_raw
+			? max( 0, (int) $remaining_raw )
+			: max( 0, $limit - $used );
+
+		$plan_slug = strtolower( (string) ( $usage_stats['plan_type'] ?? $usage_stats['plan'] ?? 'free' ) );
+		$is_pro    = in_array( $plan_slug, [ 'pro', 'growth', 'agency', 'enterprise' ], true )
+			|| ! empty( $usage_stats['is_pro'] );
+
+		$credits_block = [
+			'used'      => $used,
+			'total'     => $limit,
+			'limit'     => $limit,
+			'remaining' => $remaining,
+			'plan'      => $plan_slug,
+			'plan_slug' => $plan_slug,
+			'is_pro'    => $is_pro,
+			'source'    => (string) ( $usage_stats['source'] ?? 'usage_helper' ),
+		];
+
+		$truth = $this->apply_reconciled_credits_to_truth_payload( $truth, $credits_block );
+
+		if ( ! isset( $truth['resolution_sources'] ) || ! is_array( $truth['resolution_sources'] ) ) {
+			$truth['resolution_sources'] = [];
+		}
+		$truth['resolution_sources']['credits'] = 'usage_helper';
+
+		if ( isset( $truth['data'] ) && is_array( $truth['data'] ) ) {
+			if ( ! isset( $truth['data']['resolution_sources'] ) || ! is_array( $truth['data']['resolution_sources'] ) ) {
+				$truth['data']['resolution_sources'] = [];
+			}
+			$truth['data']['resolution_sources']['credits'] = 'usage_helper';
+		}
+
+		return $truth;
+	}
+
+	/**
+	 * @param array<string, mixed> $truth         Truth payload.
+	 * @param array<string, mixed> $credits_block Normalized credits (used, total, remaining, plan_slug, ...).
+	 * @return array<string, mixed>
+	 */
+	private function apply_reconciled_credits_to_truth_payload( array $truth, array $credits_block ): array {
+		$truth['credits'] = array_merge(
+			isset( $truth['credits'] ) && is_array( $truth['credits'] ) ? $truth['credits'] : [],
+			$credits_block
+		);
+		if ( isset( $truth['data'] ) && is_array( $truth['data'] ) ) {
+			$truth['data']['credits'] = array_merge(
+				isset( $truth['data']['credits'] ) && is_array( $truth['data']['credits'] ) ? $truth['data']['credits'] : [],
+				$credits_block
+			);
+		}
+		return $truth;
+	}
+
+	/**
+	 * Expose credits with stable REST keys: limit, used, remaining (remaining = limit − used).
+	 *
+	 * @param array<string, mixed> $truth Truth payload.
+	 * @return array<string, mixed>
+	 */
+	private function normalize_state_truth_credits_for_rest( array $truth ): array {
+		$c = isset( $truth['credits'] ) && is_array( $truth['credits'] ) ? $truth['credits'] : [];
+
+		$used = max( 0, (int) ( $c['used'] ?? $c['credits_used'] ?? $c['creditsUsed'] ?? 0 ) );
+		$limit = max( 1, (int) ( $c['limit'] ?? $c['total'] ?? $c['credits_total'] ?? $c['creditsTotal'] ?? 1 ) );
+
+		$remaining_in = $c['remaining'] ?? $c['credits_remaining'] ?? $c['creditsRemaining'] ?? null;
+		$remaining    = null !== $remaining_in && '' !== $remaining_in
+			? max( 0, (int) $remaining_in )
+			: max( 0, $limit - $used );
+
+		$used = min( $used, $limit );
+		$remaining = max( 0, $limit - $used );
+
+		$merged = array_merge( $c, [
+			'used'      => $used,
+			'limit'     => $limit,
+			'remaining' => $remaining,
+			'total'     => $limit,
+		] );
+
+		$truth['credits'] = $merged;
+		if ( isset( $truth['data'] ) && is_array( $truth['data'] ) ) {
+			$truth['data']['credits'] = array_merge(
+				isset( $truth['data']['credits'] ) && is_array( $truth['data']['credits'] ) ? $truth['data']['credits'] : [],
+				$merged
+			);
+		}
+
+		return $truth;
+	}
+
+	/**
+	 * Align truth display counts to local media library (get_alt_text_coverage_scan).
+	 * Uses a fresh scan so results match the ALT Library / bbai_get_attention_counts.
+	 *
+	 * @param array<string,mixed> $truth Raw truth payload.
+	 * @return array<string,mixed>
+	 */
+	private function reconcile_truth_missing_count_with_local_media( array $truth ): array {
+		if ( ! function_exists( 'bbai_reconcile_state_truth_payload_missing_to_local' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
+		}
+		$coverage            = $this->core->get_alt_text_coverage_scan( true );
+		$local_missing       = (int) ( $coverage['images_missing_alt'] ?? 0 );
+		$local_needs_review  = (int) ( $coverage['needs_review_count'] ?? 0 );
+		$local_optimized     = (int) ( $coverage['optimized_count'] ?? 0 );
+		$local_total         = (int) ( $coverage['total_images'] ?? 0 );
+
+		return bbai_reconcile_state_truth_payload_missing_to_local(
+			$truth,
+			$local_missing,
+			$local_needs_review,
+			$local_optimized,
+			$local_total
+		);
+	}
+
+	/**
 	 * Build a conservative local truth payload when the backend truth endpoint
 	 * cannot be reached. This preserves the existing backend fallbacks without
 	 * inventing an optimistic processing state on the client.
@@ -1951,13 +2337,13 @@ class REST_Controller {
 		$usage_stats           = $api_client
 			? \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $api_client, $has_connected_account )
 			: [];
-		$stats_payload         = $this->core->get_dashboard_stats_payload( false );
+		$scan                  = $this->core->get_alt_text_coverage_scan( true );
 		$coverage              = [
-			'total_images' => (int) ( $stats_payload['total_images'] ?? $stats_payload['total'] ?? 0 ),
-			'missing'      => (int) ( $stats_payload['images_missing_alt'] ?? $stats_payload['missing'] ?? 0 ),
-			'weak'         => (int) ( $stats_payload['needs_review_count'] ?? $stats_payload['needs_review'] ?? $stats_payload['weak'] ?? 0 ),
-			'optimized'    => (int) ( $stats_payload['optimized_count'] ?? $stats_payload['optimized'] ?? 0 ),
-			'failed'       => (int) ( $stats_payload['failed'] ?? 0 ),
+			'total_images' => (int) ( $scan['total_images'] ?? 0 ),
+			'missing'      => (int) ( $scan['images_missing_alt'] ?? 0 ),
+			'weak'         => (int) ( $scan['needs_review_count'] ?? 0 ),
+			'optimized'    => (int) ( $scan['optimized_count'] ?? 0 ),
+			'failed'       => (int) ( $scan['failed'] ?? 0 ),
 		];
 		$job_data              = [];
 		if ( method_exists( $this->core, 'get_active_job_status' ) ) {
@@ -2032,7 +2418,7 @@ class REST_Controller {
 			],
 			'resolution_sources' => [
 				'state'   => 'plugin_fallback',
-				'counts'  => 'dashboard_stats_payload',
+				'counts'  => 'alt_text_coverage_scan',
 				'job'     => 'active_generation_job_store',
 				'credits' => 'usage_helper',
 				'site'    => 'site_identifier',

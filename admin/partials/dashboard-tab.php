@@ -1,6 +1,11 @@
 <?php
 /**
- * Dashboard tab wrapper. Delegates to modular partials and shared helpers.
+ * Dashboard tab entry. Loads dashboard-authenticated.php → dashboard-body.php.
+ *
+ * Routing (see dashboard-body.php):
+ * - No connected SaaS account: guest dashboard-hero (funnel) + exhausted-only library overlay partials.
+ * - Connected account: logged-in dashboard (dashboard-logged-in-page), not the guest hero partial.
+ * - BBAI_FORCE_CLEAN_LOGGED_OUT: legacy FTUE in dashboard-logged-out.php (bypasses body).
  */
 
 if (!defined('ABSPATH')) {

@@ -37,7 +37,7 @@ if ( ! $bbai_li_is_queued ) {
 
 $bbai_li_surface_heading = __( 'Processing', 'beepbeep-ai-alt-text-generator' );
 if ( $bbai_li_is_queued ) {
-	$bbai_li_surface_heading = __( 'Queued', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_surface_heading = __( 'Ready to generate', 'beepbeep-ai-alt-text-generator' );
 } elseif ( 'paused' === $bbai_li_job_status ) {
 	$bbai_li_surface_heading = __( 'Job paused', 'beepbeep-ai-alt-text-generator' );
 }
@@ -58,8 +58,8 @@ if ( $bbai_li_is_queued ) {
 				<?php
 				if ( $bbai_li_is_queued ) {
 					echo esc_html( sprintf(
-						/* translators: %s: queued image count */
-						_n( '%s image queued for generation', '%s images queued for generation', $bbai_li_job_total, 'beepbeep-ai-alt-text-generator' ),
+						/* translators: %s: ready-to-generate image count */
+						_n( '%s image ready to generate', '%s images ready to generate', $bbai_li_job_total, 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $bbai_li_job_total )
 					) );
 				} else {
@@ -102,7 +102,7 @@ if ( $bbai_li_is_queued ) {
 		role="log"
 	>
 		<li class="bbai-li-feed__empty" data-bbai-li-feed-empty="1">
-			<?php echo esc_html( $bbai_li_is_queued ? __( 'No action needed. We\'ll start this queue automatically.', 'beepbeep-ai-alt-text-generator' ) : __( 'Starting…', 'beepbeep-ai-alt-text-generator' ) ); ?>
+			<?php echo esc_html( $bbai_li_is_queued ? __( 'Start generation when you’re ready.', 'beepbeep-ai-alt-text-generator' ) : __( 'Starting…', 'beepbeep-ai-alt-text-generator' ) ); ?>
 		</li>
 	</ul>
 

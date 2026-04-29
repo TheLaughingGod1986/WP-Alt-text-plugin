@@ -50,6 +50,15 @@ $bbai_li_donut_sub      = (string) ( $bbai_li_donut['center_sub_label'] ?? '' );
 $bbai_li_donut_aria     = (string) ( $bbai_li_donut['aria_label'] ?? '' );
 $bbai_li_donut_pct      = max( 0, min( 100, (int) ( $bbai_li_donut['pct'] ?? 0 ) ) );
 
+// Map resolver color → tone class (needed before computing center value class).
+$bbai_li_tone_map = [
+	'blue'  => 'scanning',
+	'green' => 'healthy',
+	'amber' => 'problem',
+	'gray'  => 'neutral',
+];
+$bbai_li_donut_tone = sanitize_html_class( $bbai_li_tone_map[ $bbai_li_donut_color ] ?? 'neutral' );
+
 // Build multi-segment conic-gradient: **missing (red) → review (amber) → optimised (green) → empty (gray)**.
 $bbai_li_seg      = is_array( $bbai_li_donut['segments'] ?? null ) ? $bbai_li_donut['segments'] : [];
 $bbai_li_seg_opt  = max( 0, (int) ( $bbai_li_seg['optimized'] ?? 0 ) );
@@ -162,15 +171,6 @@ if ( ! isset( $bbai_li_donut_a1, $bbai_li_donut_a2, $bbai_li_donut_a3 ) ) {
 	$bbai_li_donut_a1 = $bbai_li_donut_a2 = $bbai_li_donut_a3 = 0.0;
 }
 
-// Map resolver color → tone class.
-$bbai_li_tone_map = [
-	'blue'  => 'scanning',
-	'green' => 'healthy',
-	'amber' => 'problem',
-	'gray'  => 'neutral',
-];
-$bbai_li_donut_tone = sanitize_html_class( $bbai_li_tone_map[ $bbai_li_donut_color ] ?? 'neutral' );
-
 // ── Per-segment hover gradients for the chip → donut interaction ─────────────
 // Each chip highlights its own segment: full ring in that segment's colour,
 // the rest fades to the empty-track grey. Center label shows the segment count.
@@ -280,6 +280,14 @@ if ( 'QUEUED' === $bbai_li_state_id ) {
 	if ( $bbai_li_queued_total <= 0 ) {
 		$bbai_li_queued_total = $bbai_li_missing_count;
 	}
+	// Avoid over-reporting queued work beyond what's currently missing locally.
+	// Prefer the dashboard root counts (local coverage scan; matches ALT Library chips),
+	// because resolver "truth" counts can lag behind the Media Library.
+	$bbai_li_dashboard_missing_cap = isset( $bbai_dashboard_root_missing_count ) ? max( 0, (int) $bbai_dashboard_root_missing_count ) : 0;
+	$bbai_li_missing_cap = $bbai_li_dashboard_missing_cap > 0 ? $bbai_li_dashboard_missing_cap : max( 0, (int) $bbai_li_missing_count );
+	if ( $bbai_li_missing_cap > 0 ) {
+		$bbai_li_queued_total = min( $bbai_li_queued_total, $bbai_li_missing_cap );
+	}
 	if ( $bbai_li_queued_total <= 0 ) {
 		$bbai_li_queued_total = 1;
 	}
@@ -316,6 +324,10 @@ if ( isset( $bbai_dashboard_root_credits_total, $bbai_dashboard_root_credits_use
 	$bbai_hero_c_lim  = max( 1, (int) $bbai_dashboard_root_credits_total );
 	$bbai_hero_c_used = max( 0, (int) $bbai_dashboard_root_credits_used );
 	$bbai_hero_c_rem  = max( 0, (int) $bbai_dashboard_root_credits_left );
+
+	// Keep the triple consistent; prefer "remaining" when present (truth can lag on "used" right after generation).
+	$bbai_hero_c_rem  = min( $bbai_hero_c_rem, $bbai_hero_c_lim );
+	$bbai_hero_c_used = max( 0, min( $bbai_hero_c_lim, $bbai_hero_c_lim - $bbai_hero_c_rem ) );
 } else {
 	$bbai_hero_c_rem = isset( $bbai_credits_remaining ) ? max( 0, (int) $bbai_credits_remaining ) : 0;
 	$bbai_hero_c_lim = 1;
@@ -333,7 +345,8 @@ if ( isset( $bbai_dashboard_root_credits_total, $bbai_dashboard_root_credits_use
 	$bbai_hero_c_used = max( 0, (int) ( $bbai_credits_used ?? ( $bbai_hero_c_lim - $bbai_hero_c_rem ) ) );
 }
 $bbai_hero_c_used = min( $bbai_hero_c_used, $bbai_hero_c_lim );
-$bbai_hero_c_rem  = max( 0, $bbai_hero_c_lim - $bbai_hero_c_used );
+$bbai_hero_c_rem  = min( max( 0, $bbai_hero_c_rem ), $bbai_hero_c_lim );
+$bbai_hero_c_rem  = min( $bbai_hero_c_rem, max( 0, $bbai_hero_c_lim - $bbai_hero_c_used ) );
 $bbai_hero_c_pct = (int) min( 100, max( 0, round( ( $bbai_hero_c_used / $bbai_hero_c_lim ) * 100 ) ) );
 
 $bbai_hero_credit_state = 'healthy';
@@ -491,7 +504,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
 			$bbai_li_donut_sub_display = __( 'generating now', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
-			$bbai_li_donut_sub_display = __( 'Images ready for review', 'beepbeep-ai-alt-text-generator' );
+			$bbai_li_donut_sub_display = __( 'IMAGES READY FOR REVIEW', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( $bbai_li_seg_miss > 0 ) {
 			// Completes the sentence with the large centre numeral: "4" + "images need ALT text".
 			$bbai_li_donut_sub_display = _n(
@@ -522,7 +535,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		if ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_seg_miss > 0 ) {
 			$bbai_li_donut_cm_href   = $bbai_li_primary_cta['href'] ?? '#';
 			$bbai_li_donut_cm_label = __( 'Generate ALT text →', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( in_array( $bbai_li_state_id, [ 'NEEDS_REVIEW', 'MIXED_ATTENTION' ], true ) && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
+		} elseif ( 'MIXED_ATTENTION' === $bbai_li_state_id && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
 			$bbai_li_donut_cm_href   = $bbai_needs_review_library_url;
 			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'ALL_CLEAR' === $bbai_li_state_id ) {
@@ -867,7 +880,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		stateTruthUrl: '<?php echo esc_js( rest_url( 'bbai/v1/dashboard/state-truth' ) ); ?>',
 		bootstrapSyncUrl: '<?php echo esc_js( rest_url( 'bbai/v1/dashboard/bootstrap-sync' ) ); ?>',
 		dashboardUrl: '<?php echo esc_js( rest_url( 'bbai/v1/dashboard' ) ); ?>',
-		restNonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>',
+		restNonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>' || ( window.wpApiSettings && window.wpApiSettings.nonce ) || '',
 		missingCount: <?php
 			// Pull missing count from hero summary items (same approach as activity strip).
 			$bbai_hero_missing_count = 0;
@@ -883,6 +896,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 			?>,
 		wpDebug: '<?php echo ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? '1' : '0'; ?>',
 	};
+
+	// Expose for debugging and console checks (read-only; no secrets).
+	window.BBAI_HERO_CFG = BBAI_HERO_CFG;
 
 	var BOOTSTRAP_SYNC_LOCK_TTL_MS = 5 * 60 * 1000;
 	var BOOTSTRAP_SYNC_FAILURE_COOLDOWN_MS = 15 * 60 * 1000;
@@ -910,7 +926,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		lastCheckedMinutes: '<?php echo esc_js( __( 'Last checked %s minutes ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedHour: '<?php echo esc_js( __( 'Last checked 1 hour ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedHours: '<?php echo esc_js( __( 'Last checked %s hours ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		lastRun: '<?php echo esc_js( __( 'Last scan: %s', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		lastRun: '<?php echo esc_js( __( 'Last batch completed %s', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedBadge: '<?php echo esc_js( __( 'Ready to generate', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingBadge: '<?php echo esc_js( __( 'Processing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		actionNeededBadge: '<?php echo esc_js( __( 'Action needed', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1183,6 +1199,14 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 	function getDashboardRoot() {
 		return document.querySelector( '[data-bbai-dashboard-root="1"]' );
+	}
+
+	function getDashboardRootMissingCount() {
+		var root = getDashboardRoot();
+		if ( ! root ) {
+			return 0;
+		}
+		return Math.max( 0, parseInt( root.getAttribute( 'data-bbai-missing-count' ) || '0', 10 ) || 0 );
 	}
 
 	function getLoggedInDashboardRoot() {
@@ -1779,12 +1803,30 @@ $bbai_hero_credit_bar_aria = sprintf(
 			embedded = stx && stx.credits && typeof stx.credits === 'object' ? stx.credits : null;
 		}
 		var credits = ( direct && Object.keys( direct ).length > 0 ) ? direct : ( embedded || {} );
-		var usedRaw = parseInt( firstDefined( credits.used, credits.credits_used, credits.creditsUsed, 0 ), 10 );
+		var usedExplicit = credits.used != null || credits.credits_used != null || credits.creditsUsed != null;
+		var usedRaw = parseInt( firstDefined( credits.used, credits.credits_used, credits.creditsUsed, '' ), 10 );
 		var totalRaw = parseInt( firstDefined( credits.total, credits.limit, credits.credits_total, credits.creditsTotal, 1 ), 10 );
-		var used = Math.max( 0, isNaN( usedRaw ) ? 0 : usedRaw );
+		var remRawCandidate = firstDefined( credits.remaining, credits.credits_remaining, credits.creditsRemaining, null );
+		var remRaw = null === remRawCandidate ? NaN : parseInt( remRawCandidate, 10 );
+
 		var total = Math.max( 1, isNaN( totalRaw ) ? 1 : totalRaw );
+
+		// If remaining is provided (common for quota surfaces), respect it for UI.
+		// Fall back to used when remaining is missing; if used is missing but remaining exists, derive used = total - remaining.
+		var remaining = ! isNaN( remRaw ) ? Math.max( 0, Math.min( total, remRaw ) ) : NaN;
+		var used = ! isNaN( usedRaw ) ? Math.max( 0, usedRaw ) : NaN;
+
+		if ( isNaN( used ) && ! isNaN( remaining ) ) {
+			used = Math.max( 0, total - remaining );
+		}
+		if ( isNaN( remaining ) && ! isNaN( used ) ) {
+			remaining = Math.max( 0, total - used );
+		}
+
+		used = Math.max( 0, isNaN( used ) ? 0 : used );
 		used = Math.min( used, total );
-		var remaining = Math.max( 0, total - used );
+		remaining = Math.max( 0, isNaN( remaining ) ? ( total - used ) : remaining );
+
 		var plan = String( firstDefined( credits.plan, credits.plan_slug, credits.planSlug, credits.plan_type, credits.planType, '' ) ).toLowerCase();
 		var isPro = !! ( credits.is_pro || credits.isPro );
 
@@ -1872,6 +1914,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 			if ( ! truth || ! truthState ) {
 				throw new Error( 'state_truth_invalid' );
 			}
+			try {
+				syncCreditsOnlyFromTruth( truth );
+			} catch ( e ) {}
 			logBootstrapSync( 'state_truth_received', Object.assign(
 				{
 					context: context || '',
@@ -2647,7 +2692,13 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var jobPct;
 
 		if ( 'QUEUED' === state ) {
-			queuedTotal = job && job.total > 0 ? job.total : counts.missing;
+			var dashboardMissingCap = getDashboardRootMissingCount();
+			queuedTotal = job && ( job.queue_count > 0 || job.total > 0 )
+				? Math.max( job.queue_count || 0, Math.max( 0, ( job.total || 0 ) - ( job.done || 0 ) ), job.total || 0 )
+				: counts.missing;
+			// Cap to the dashboard's local coverage scan (source of ALT Library chips).
+			// Remote "truth" can lag; the UI should not claim more are ready than are actually missing.
+			queuedTotal = Math.min( queuedTotal, dashboardMissingCap > 0 ? dashboardMissingCap : counts.missing );
 			return {
 				pct: 0,
 				color: 'gray',
@@ -2705,7 +2756,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 	function buildQueuedStateData( truth ) {
 		var counts = getTruthCounts( truth );
 		var job = getTruthJob( truth );
-		var queuedTotal = job && job.total > 0 ? job.total : counts.missing;
+		var dashboardMissingCap = getDashboardRootMissingCount();
+		var queuedTotal = job && ( job.queue_count > 0 || job.total > 0 )
+			? Math.max( job.queue_count || 0, Math.max( 0, ( job.total || 0 ) - ( job.done || 0 ) ), job.total || 0 )
+			: counts.missing;
+		queuedTotal = Math.min( queuedTotal, dashboardMissingCap > 0 ? dashboardMissingCap : counts.missing );
 
 		return {
 			state: 'QUEUED',
@@ -3170,29 +3225,71 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var total = Math.max( 1, credits.total );
 		var remaining = Math.max( 0, credits.remaining );
 		var pct = Math.min( 100, Math.max( 0, Math.round( ( used / total ) * 100 ) ) );
+
+		// Idempotent rendering: skip all DOM writes when credits are unchanged.
+		// Prevents flicker from re-applying text/classes/animations on every poll.
+		window.bbaiLastRenderedCredits = window.bbaiLastRenderedCredits || { used: null, limit: null, remaining: null, pct: null };
+		var prev = window.bbaiLastRenderedCredits;
+		var unchanged = prev
+			&& prev.used === used
+			&& prev.limit === total
+			&& prev.remaining === remaining;
+		var creditsDebug = !!( window.BBAI_DEBUG || ( window.BBAI && window.BBAI.debug ) );
+		if ( unchanged ) {
+			if ( creditsDebug ) {
+				logCredits( 'skipped unchanged render', { previous: prev, next: { used: used, limit: total, remaining: remaining } } );
+			}
+			return;
+		}
+
+		window.bbaiLastRenderedCredits = { used: used, limit: total, remaining: remaining, pct: pct };
+		if ( creditsDebug ) {
+			logCredits( 'updated', { previous: prev, next: window.bbaiLastRenderedCredits } );
+		}
+
 		var state = getStateTruthState( truth );
 		var isFreePlan = ! credits.isPro;
 		var creditState = remaining <= 0 ? 'empty' : ( remaining <= 10 ? 'low' : 'healthy' );
 		var counts = normalizeCounts( truth && truth.counts ? truth.counts : {} );
 
-		wrap.setAttribute( 'data-bbai-hero-credits-used', String( used ) );
-		wrap.setAttribute( 'data-bbai-hero-credits-remaining', String( remaining ) );
-		wrap.setAttribute( 'data-bbai-hero-credits-limit', String( total ) );
-		wrap.setAttribute( 'data-bbai-hero-missing-count', String( counts.missing ) );
-		wrap.setAttribute( 'data-bbai-hero-review-count', String( counts.review ) );
-		wrap.setAttribute( 'data-credit-state', creditState );
-		wrap.classList.toggle( 'bbai-credit-usage--all-clear-muted', 'ALL_CLEAR' === state && isFreePlan );
+		if ( wrap.getAttribute( 'data-bbai-hero-credits-used' ) !== String( used ) ) {
+			wrap.setAttribute( 'data-bbai-hero-credits-used', String( used ) );
+		}
+		if ( wrap.getAttribute( 'data-bbai-hero-credits-remaining' ) !== String( remaining ) ) {
+			wrap.setAttribute( 'data-bbai-hero-credits-remaining', String( remaining ) );
+		}
+		if ( wrap.getAttribute( 'data-bbai-hero-credits-limit' ) !== String( total ) ) {
+			wrap.setAttribute( 'data-bbai-hero-credits-limit', String( total ) );
+		}
+		// These are inside the credit block, but do not change the “10 / 50 used this month” line.
+		// Keep them in sync without re-writing when unchanged.
+		if ( wrap.getAttribute( 'data-bbai-hero-missing-count' ) !== String( counts.missing ) ) {
+			wrap.setAttribute( 'data-bbai-hero-missing-count', String( counts.missing ) );
+		}
+		if ( wrap.getAttribute( 'data-bbai-hero-review-count' ) !== String( counts.review ) ) {
+			wrap.setAttribute( 'data-bbai-hero-review-count', String( counts.review ) );
+		}
+		if ( wrap.getAttribute( 'data-credit-state' ) !== creditState ) {
+			wrap.setAttribute( 'data-credit-state', creditState );
+		}
+		var shouldMute = ( 'ALL_CLEAR' === state && isFreePlan );
+		if ( wrap.classList.contains( 'bbai-credit-usage--all-clear-muted' ) !== shouldMute ) {
+			wrap.classList.toggle( 'bbai-credit-usage--all-clear-muted', shouldMute );
+		}
 
 		var labelEl = wrap.querySelector( '[data-bbai-hero-credit-label="1"]' );
 		if ( labelEl ) {
-			labelEl.textContent = replaceTokens( TEXT.heroCreditUsedThisMonth || '', {
+			var nextLabel = replaceTokens( TEXT.heroCreditUsedThisMonth || '', {
 				'%1$s': formatCount( used ),
 				'%2$s': formatCount( total ),
 			} );
-			labelEl.classList.add( 'bbai-li-summary__value--updating' );
-			window.setTimeout( function () {
-				labelEl.classList.remove( 'bbai-li-summary__value--updating' );
-			}, 420 );
+			if ( labelEl.textContent !== nextLabel ) {
+				labelEl.textContent = nextLabel;
+				labelEl.classList.add( 'bbai-li-summary__value--updating' );
+				window.setTimeout( function () {
+					labelEl.classList.remove( 'bbai-li-summary__value--updating' );
+				}, 420 );
+			}
 		}
 
 		var clarity = wrap.querySelector( '[data-bbai-hero-credit-clarity="1"]' );
@@ -3204,7 +3301,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 		var fill = wrap.querySelector( '[data-bbai-hero-credit-fill="1"]' );
 		if ( fill ) {
-			fill.style.setProperty( '--bbai-credit-percent', String( pct ) + '%' );
+			var nextPct = String( pct ) + '%';
+			// Only update when different to avoid restarting CSS transitions.
+			if ( fill.style.getPropertyValue( '--bbai-credit-percent' ) !== nextPct ) {
+				fill.style.setProperty( '--bbai-credit-percent', nextPct );
+			}
 		}
 
 		var bar = wrap.querySelector( '[data-bbai-hero-credit-bar="1"]' );
@@ -3260,37 +3361,70 @@ $bbai_hero_credit_bar_aria = sprintf(
 		}
 	}
 
+	/**
+	 * Credits can change independently of counts/state (e.g. user generates ALT text
+	 * but coverage counts are preserved from local scan). Keep credit UI accurate
+	 * even when we short-circuit a full UI commit.
+	 */
+	function syncCreditsOnlyFromTruth( truth ) {
+		var root = getDashboardRoot();
+		var credits = getTruthCredits( truth );
+
+		if ( root ) {
+			root.setAttribute( 'data-bbai-credits-used', String( credits.used ) );
+			root.setAttribute( 'data-bbai-credits-total', String( credits.total ) );
+			root.setAttribute( 'data-bbai-credits-remaining', String( credits.remaining ) );
+			root.setAttribute( 'data-bbai-is-premium', credits.isPro ? '1' : '0' );
+		}
+
+		syncHeroCreditBlockFromTruth( truth );
+	}
+
 	function syncDashboardRootFromTruth( truth ) {
+		if ( window.BBAI_DASHBOARD_STATE_ENDPOINT_ACTIVE ) {
+			return;
+		}
 		var root = getDashboardRoot();
 		var loggedInRoot = getLoggedInDashboardRoot();
 		var counts = getTruthCounts( truth );
 		var countsHash = getTruthCountsHash( truth );
 		var credits = getTruthCredits( truth );
 		var state = getStateTruthState( truth );
+		var preserveLocalCounts = false;
 
 		if ( root ) {
-			root.setAttribute( 'data-bbai-missing-count', String( counts.missing ) );
-			root.setAttribute( 'data-bbai-weak-count', String( counts.review ) );
-			root.setAttribute( 'data-bbai-optimized-count', String( counts.complete ) );
-			root.setAttribute( 'data-bbai-total-count', String( counts.total ) );
-			root.setAttribute( 'data-bbai-generated-count', String( counts.complete ) );
+			// Dashboard and ALT Library must agree on coverage counts.
+			// The backend "truth" payload (jobs/ledger) can lag behind the local Media Library scan,
+			// so never overwrite the root coverage counts when we already have scan results.
+			preserveLocalCounts = root.getAttribute( 'data-bbai-has-scan-results' ) === '1';
+			if ( ! preserveLocalCounts ) {
+				root.setAttribute( 'data-bbai-missing-count', String( counts.missing ) );
+				root.setAttribute( 'data-bbai-weak-count', String( counts.review ) );
+				root.setAttribute( 'data-bbai-optimized-count', String( counts.complete ) );
+				root.setAttribute( 'data-bbai-total-count', String( counts.total ) );
+				root.setAttribute( 'data-bbai-generated-count', String( counts.complete ) );
+				if ( countsHash ) {
+					root.setAttribute( 'data-bbai-counts-hash', countsHash );
+				}
+			}
+
+			// Credits / plan state are safe to sync from truth.
 			root.setAttribute( 'data-bbai-credits-used', String( credits.used ) );
 			root.setAttribute( 'data-bbai-credits-total', String( credits.total ) );
 			root.setAttribute( 'data-bbai-credits-remaining', String( credits.remaining ) );
 			root.setAttribute( 'data-bbai-is-premium', credits.isPro ? '1' : '0' );
-			if ( countsHash ) {
-				root.setAttribute( 'data-bbai-counts-hash', countsHash );
-			}
 		}
 
 		if ( loggedInRoot ) {
 			loggedInRoot.setAttribute( 'data-state', state );
-			if ( countsHash ) {
+			// Only sync the counts hash when we are not preserving local scan counts.
+			if ( ! preserveLocalCounts && countsHash ) {
 				loggedInRoot.setAttribute( 'data-bbai-counts-hash', countsHash );
 			}
 		}
 
-		BBAI_HERO_CFG.missingCount = counts.missing;
+		// Keep the hero config consistent with what's on the dashboard root (local scan).
+		BBAI_HERO_CFG.missingCount = getDashboardRootMissingCount();
 
 		syncHeroCreditBlockFromTruth( truth );
 
@@ -3891,10 +4025,37 @@ $bbai_hero_credit_bar_aria = sprintf(
 		schedulePolling( 'state_applied' );
 	}
 
+	function isSameHeroPayload( current, nextHero ) {
+		if ( ! current || ! nextHero ) {
+			return false;
+		}
+		var nextPrimary = nextHero.primary_cta || nextHero.primaryCta || null;
+		var nextSecondary = nextHero.secondary_cta || nextHero.secondaryCta || null;
+		return (
+			String( current.headline || '' ) === String( nextHero.headline || '' )
+			&& String( current.support || '' ) === String( nextHero.support || '' )
+			&& String( ( current.primaryCta && current.primaryCta.label ) || '' ) === String( ( nextPrimary && nextPrimary.label ) || '' )
+			&& String( ( current.secondaryCta && current.secondaryCta.label ) || '' ) === String( ( nextSecondary && nextSecondary.label ) || '' )
+		);
+	}
+
+	function shouldSkipDashboardStateApply( stateData ) {
+		if ( ! stateData || ! stateData.hero ) {
+			return false;
+		}
+		var current = getCurrentHeroCopyData();
+		return isSameHeroPayload( current, stateData.hero );
+	}
+
 	function applyLocalActiveTruthState( truth, context ) {
 		var stateData = buildLocalActiveStateData( truth );
 		if ( ! stateData || 'function' !== typeof window.bbaiApplyLoggedInDashboardStatePayload ) {
 			return false;
+		}
+		// Avoid double-render/hydration flicker: if SSR already matches, skip applying.
+		if ( shouldSkipDashboardStateApply( stateData ) ) {
+			commitTruthSnapshot( truth, context, true );
+			return true;
 		}
 		logRender( 'fallback_state', {
 			context: context || '',
@@ -3917,6 +4078,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 				}
 				if ( String( stateData.state || '' ).toUpperCase() !== truthState ) {
 					throw new Error( 'dashboard_state_mismatch' );
+				}
+				if ( shouldSkipDashboardStateApply( stateData ) ) {
+					commitTruthSnapshot( truth, context, true );
+					return truth;
 				}
 				logRender( 'resolved_dashboard_success', {
 					context: context || '',

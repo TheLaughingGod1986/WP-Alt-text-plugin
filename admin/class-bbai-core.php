@@ -385,6 +385,7 @@ class Core {
 
         // Check for migration on admin init
         add_action('admin_init', [__CLASS__, 'maybe_run_migration'], 5);
+        add_action('admin_init', [$this, 'maybe_guard_guest_access'], 19);
         add_action('admin_init', [$this, 'maybe_guard_library_access'], 20);
         // One-time legacy cache key cleanup (consolidate to bbai_usage_cache / bbai_quota_cache)
         add_action('init', [__CLASS__, 'maybe_clean_legacy_cache_keys'], 1);
@@ -529,6 +530,74 @@ class Core {
     }
 
     /**
+     * Whether the current admin request targets one of this plugin's routed pages.
+     *
+     * @return bool
+     */
+    private function is_bbai_page_request(): bool {
+        if ( ! is_admin() ) {
+            return false;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
+        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+        if ( '' === $page ) {
+            return false;
+        }
+
+        $bbai_pages = [
+            self::MENU_SLUG_DASHBOARD,
+            self::MENU_SLUG_LIBRARY,
+            'bbai-analytics',
+            'bbai-credit-usage',
+            'bbai-settings',
+            'bbai-guide',
+            'bbai-debug',
+            'bbai-ui-kit',
+            'bbai-checkout',
+        ];
+
+        return in_array( $page, $bbai_pages, true );
+    }
+
+    /**
+     * Guests (no connected account) should only be able to access the Dashboard page.
+     *
+     * This is a hard guard for direct URL access, not just menu visibility.
+     *
+     * @return void
+     */
+    public function maybe_guard_guest_access(): void {
+        if ( ! $this->is_bbai_page_request() ) {
+            return;
+        }
+
+        $auth_state = Auth_State::resolve( $this->api_client );
+        $has_connected_account = ! empty( $auth_state['has_connected_account'] );
+
+        if ( $has_connected_account ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
+        $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+        if ( self::MENU_SLUG_DASHBOARD !== $page ) {
+            wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) );
+            exit;
+        }
+
+        // Block tab-based deep links while still on the dashboard route.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
+        $tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+        if ( '' !== $tab && 'dashboard' !== $tab ) {
+            wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) );
+            exit;
+        }
+    }
+
+    /**
      * Redirect anonymous users away from ALT Library before any screen renders.
      *
      * @return void
@@ -648,9 +717,17 @@ class Core {
     private function get_connected_usage_payload(): array {
         $auth_state = Auth_State::resolve($this->api_client);
 
+        // Usage should be fetched whenever we have any valid backend auth, even if the
+        // cached has_connected_account flag is stale (common after session changes).
+        $can_fetch_usage = ! empty( $auth_state['has_connected_account'] );
+        if ( ! $can_fetch_usage && is_object( $this->api_client ) ) {
+            $can_fetch_usage = ( method_exists( $this->api_client, 'is_authenticated' ) && $this->api_client->is_authenticated() )
+                || ( method_exists( $this->api_client, 'has_active_license' ) && $this->api_client->has_active_license() );
+        }
+
         return Usage_Helper::get_usage(
             $this->api_client,
-            !empty($auth_state['has_connected_account'])
+            (bool) $can_fetch_usage
         );
     }
 
@@ -708,7 +785,53 @@ class Core {
         ];
     }
 
+    private function is_paid_plan_slug($plan): bool {
+        $plan = is_scalar($plan) ? sanitize_key((string) $plan) : '';
+        return in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true);
+    }
+
+    private function current_account_can_use_upload_generation(): bool {
+        $license_data = is_object($this->api_client) && method_exists($this->api_client, 'get_license_data')
+            ? $this->api_client->get_license_data()
+            : null;
+
+        if (is_array($license_data) && isset($license_data['organization']) && is_array($license_data['organization'])) {
+            $license_plan = $license_data['organization']['plan'] ?? $license_data['organization']['plan_type'] ?? '';
+            if ($this->is_paid_plan_slug($license_plan)) {
+                return true;
+            }
+        }
+
+        if (!class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+        }
+
+        $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+        if (is_array($usage) && $this->is_paid_plan_slug($usage['plan_type'] ?? ($usage['plan'] ?? ''))) {
+            return true;
+        }
+
+        if (is_object($this->api_client) && method_exists($this->api_client, 'is_authenticated') && $this->api_client->is_authenticated()) {
+            $live_usage = method_exists($this->api_client, 'get_usage') ? $this->api_client->get_usage() : null;
+            if (is_array($live_usage) && $this->is_paid_plan_slug($live_usage['plan_type'] ?? ($live_usage['plan'] ?? ''))) {
+                \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($live_usage);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function is_upload_automation_source($source): bool {
+        $source_key = $source ? sanitize_key((string) $source) : '';
+        return in_array($source_key, ['auto', 'upload', 'metadata', 'update', 'save'], true);
+    }
+
     private function is_upload_generation_enabled(?array $opts = null): bool {
+        if (!$this->current_account_can_use_upload_generation()) {
+            return false;
+        }
+
         $opts = is_array($opts) ? $opts : get_option(self::OPTION_KEY, []);
         if (!is_array($opts) || !array_key_exists('enable_on_upload', $opts)) {
             return true;
@@ -718,7 +841,19 @@ class Core {
 
     private function ensure_upload_generation_default(): void {
         $opts = get_option(self::OPTION_KEY, []);
-        if (!is_array($opts) || array_key_exists('enable_on_upload', $opts)) {
+        if (!is_array($opts)) {
+            return;
+        }
+
+        if (!$this->current_account_can_use_upload_generation()) {
+            if (!empty($opts['enable_on_upload'])) {
+                $opts['enable_on_upload'] = false;
+                update_option(self::OPTION_KEY, $opts, false);
+            }
+            return;
+        }
+
+        if (array_key_exists('enable_on_upload', $opts)) {
             return;
         }
 
@@ -1530,7 +1665,12 @@ class Core {
         }
 
         // Show modal popup if not dismissed
-        $api_url = 'https://alttext-ai-backend.onrender.com';
+        $api_url = '';
+        if ( isset( $this->api_client ) && is_object( $this->api_client ) && method_exists( $this->api_client, 'get_api_url' ) ) {
+            $api_url = untrailingslashit( $this->api_client->get_api_url() );
+        } else {
+            $api_url = untrailingslashit( API_Client_V2::get_instance()->get_api_url() );
+        }
         $privacy_url = 'https://oppti.dev/privacy';
         $terms_url = 'https://oppti.dev/terms';
         $nonce = wp_create_nonce('beepbeepai_nonce');
@@ -1637,8 +1777,10 @@ class Core {
             \BeepBeepAI\AltTextGenerator\Growth_Engine::record_install_timestamp();
         }
 
+        $canonical_api_default = untrailingslashit( API_Client_V2::get_instance()->get_api_url() );
+
         $defaults = [
-            'api_url'          => 'https://alttext-ai-backend.onrender.com',
+            'api_url'          => $canonical_api_default,
             'model'            => 'gpt-4o-mini',
             'max_words'        => 16,
             'language'         => 'en-GB',
@@ -1656,8 +1798,8 @@ class Core {
         $existing = get_option(self::OPTION_KEY, []);
         $updated = wp_parse_args($existing, $defaults);
 
-        // ALWAYS force production API URL
-        $updated['api_url'] = 'https://alttext-ai-backend.onrender.com';
+        // Always align saved option with the canonical resolver (BEEPBEEP_AI_API_URL or production default).
+        $updated['api_url'] = untrailingslashit( API_Client_V2::get_instance()->get_api_url() );
 
         update_option(self::OPTION_KEY, $updated, false);
 
@@ -1919,9 +2061,8 @@ class Core {
                 $existing = get_option(self::OPTION_KEY, []);
                 $input = is_array($input) ? $input : [];
                 $out = [];
-                // ALWAYS force production API URL - no user input allowed
-                $production_url = 'https://alttext-ai-backend.onrender.com';
-                $out['api_url'] = $production_url;
+                // Align with API_Client_V2 base URL (BEEPBEEP_AI_API_URL or production default); no arbitrary user URL.
+                $out['api_url'] = untrailingslashit( API_Client_V2::get_instance()->get_api_url() );
                 $model = isset($input['model']) ? (string)$input['model'] : 'gpt-4o-mini';
                 $out['model'] = $model ? sanitize_text_field($model) : 'gpt-4o-mini';
                 $out['max_words']        = max(4, intval($input['max_words'] ?? 16));
@@ -1936,7 +2077,7 @@ class Core {
                     $out['language'] = $lang_input ?: 'en-GB';
                     $out['language_custom'] = '';
                 }
-                $out['enable_on_upload'] = !empty($input['enable_on_upload']);
+                $out['enable_on_upload'] = $this->current_account_can_use_upload_generation() && !empty($input['enable_on_upload']);
                 $tone = isset($input['tone']) ? (string)$input['tone'] : 'professional, accessible';
                 $out['tone'] = $tone ? sanitize_text_field($tone) : 'professional, accessible';
                 $out['force_overwrite']  = !empty($input['force_overwrite']);
@@ -2771,33 +2912,18 @@ class Core {
                                         <?php esc_html_e('Manage', 'beepbeep-ai-alt-text-generator'); ?>
                                     </button>
                                 <?php endif; ?>
-                            </div>
-                            <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bbai-header-logout-form">
-                                <?php wp_nonce_field( 'bbai_logout_action', 'bbai_logout_nonce' ); ?>
-                                <input type="hidden" name="action" value="bbai_logout">
-                                <button type="submit" class="bbai-header-logout-btn">
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" focusable="false"><path d="M5 2H2v8h3M8 8.5l2.5-2.5L8 3.5M4.5 6h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                    <?php esc_html_e( 'Sign out', 'beepbeep-ai-alt-text-generator' ); ?>
+                                <?php if ($bbai_is_authenticated || $bbai_has_license) : ?>
+                                <button type="button" class="bbai-header-logout-btn" data-action="logout">
+                                    <?php esc_html_e('Logout', 'beepbeep-ai-alt-text-generator'); ?>
                                 </button>
-                            </form>
+                                <?php endif; ?>
+                            </div>
                         <?php else : ?>
-                            <button
-                                type="button"
-                                class="bbai-header-guest-cta bbai-header-guest-cta--register"
-                                data-action="show-dashboard-auth"
-                                data-auth-tab="register"
-                                data-bbai-analytics-upgrade="nav_guest_create_account"
-                            >
-                                <?php esc_html_e( 'Create free account', 'beepbeep-ai-alt-text-generator' ); ?>
-                            </button>
-                            <button
-                                type="button"
-                                class="bbai-header-guest-cta bbai-header-guest-cta--login"
-                                data-action="show-dashboard-auth"
-                                data-auth-tab="login"
-                            >
-                                <?php esc_html_e( 'Log in', 'beepbeep-ai-alt-text-generator' ); ?>
-                            </button>
+                                <?php if ($bbai_is_anonymous_trial && '' !== $bbai_header_trial_credits_line) : ?>
+                                <span class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>">
+                                    <?php echo esc_html($bbai_header_trial_credits_line); ?>
+                                </span>
+                            <?php endif; ?>
                         <?php endif; ?>
                 </div>
                 </div>
@@ -5358,10 +5484,16 @@ class Core {
     }
 
     /**
-     * API key for OpenAI Chat Completions (vision) when generating ALT directly from this site.
-     * Set OPENAI_API_KEY or BBAI_OPENAI_API_KEY in wp-config, option bbai_openai_api_key, or filter bbai_openai_api_key.
+     * API key for dev-only direct OpenAI generation.
+     *
+     * Production SaaS generation must use the backend API client. Direct OpenAI
+     * generation is disabled unless explicitly enabled in wp-config.php.
      */
     private function resolve_openai_api_key_for_direct_generation(): string {
+        if ( ! defined( 'BBAI_ENABLE_DIRECT_OPENAI' ) || true !== BBAI_ENABLE_DIRECT_OPENAI ) {
+            return '';
+        }
+
         if ( defined( 'OPENAI_API_KEY' ) && is_string( OPENAI_API_KEY ) && OPENAI_API_KEY !== '' ) {
             return trim( OPENAI_API_KEY );
         }
@@ -5709,6 +5841,13 @@ class Core {
     public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
         $opts = get_option(self::OPTION_KEY, []);
 
+        if ($this->is_upload_automation_source($source) && !$this->is_upload_generation_enabled($opts)) {
+            return new \WP_Error(
+                'bbai_automation_unavailable',
+                __('Automatic upload generation is available on paid plans only.', 'beepbeep-ai-alt-text-generator')
+            );
+        }
+
         if ( ! $skip_trial_gate ) {
             // Trial quota gate: block unauthenticated users who have exhausted their free trial.
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
@@ -5812,13 +5951,17 @@ class Core {
 
         $context = $this->build_generation_context_for_attachment((int) $attachment_id);
 
-        $local_or_dev_stub = ( defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) && BEEPBEEP_AI_LOCAL_ALT_STUB )
-            || ( defined( 'WP_LOCAL_DEV' ) && WP_LOCAL_DEV );
+        $bbai_has_explicit_backend = defined( 'BEEPBEEP_AI_API_URL' )
+            && is_string( BEEPBEEP_AI_API_URL )
+            && '' !== trim( (string) BEEPBEEP_AI_API_URL );
+        $local_or_dev_stub = ( ! $bbai_has_explicit_backend && defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) && BEEPBEEP_AI_LOCAL_ALT_STUB )
+            || ( ! $bbai_has_explicit_backend && defined( 'WP_LOCAL_DEV' ) && WP_LOCAL_DEV );
 
-        $openai_key = $this->resolve_openai_api_key_for_direct_generation();
-        $use_openai_direct = $openai_key !== '' && apply_filters(
+        $direct_openai_enabled = defined( 'BBAI_ENABLE_DIRECT_OPENAI' ) && true === BBAI_ENABLE_DIRECT_OPENAI;
+        $openai_key = $direct_openai_enabled ? $this->resolve_openai_api_key_for_direct_generation() : '';
+        $use_openai_direct = $direct_openai_enabled && $openai_key !== '' && apply_filters(
             'bbai_use_openai_direct_generation',
-            $local_or_dev_stub,
+            false,
             (int) $attachment_id,
             $source,
             $context
@@ -5900,9 +6043,39 @@ class Core {
             return $stub_alt;
         }
 
+        // WP_DEBUG-only instrumentation: capture usage snapshot before generation.
+        $bbai_dbg_usage_before = null;
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            try {
+                $bbai_dbg_usage_before = is_object( $this->api_client ) && method_exists( $this->api_client, 'get_usage' )
+                    ? $this->api_client->get_usage()
+                    : null;
+            } catch ( \Throwable $e ) {
+                $bbai_dbg_usage_before = [ 'error' => $e->getMessage() ];
+            }
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log(
+                '[BBAI generation] before_generate ' . wp_json_encode(
+                    [
+                        'attachment_id' => (int) $attachment_id,
+                        'source' => (string) $source,
+                        'regenerate' => (bool) $regenerate,
+                        'has_license' => (bool) $bbai_has_license,
+                        'has_token' => (bool) ( is_object( $this->api_client ) && method_exists( $this->api_client, 'get_token' ) ? $this->api_client->get_token() : '' ),
+                        'usage_before' => $bbai_dbg_usage_before,
+                    ]
+                )
+            );
+        }
+
         // Always call the real API to generate actual alt text
         // (Mock mode disabled - we want real AI-generated descriptions)
         $api_response = $this->api_client->generate_alt_text($attachment_id, $context, $regenerate);
+
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log( '[BBAI DEBUG] generate response (core): ' . wp_json_encode( $api_response ) );
+        }
 
         if (is_wp_error($api_response)) {
             $error_code = $api_response->get_error_code();
@@ -6212,6 +6385,47 @@ class Core {
             }
         }
 
+        // WP_DEBUG-only: force a usage fetch/log after generation to validate remote usage has advanced.
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            $usage_after_generate = null;
+            try {
+                $usage_after_generate = is_object( $this->api_client ) && method_exists( $this->api_client, 'get_usage' )
+                    ? $this->api_client->get_usage()
+                    : null;
+            } catch ( \Throwable $e ) {
+                $usage_after_generate = [ 'error' => $e->getMessage() ];
+            }
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log( '[BBAI DEBUG] usage after generate: ' . wp_json_encode( $usage_after_generate ) );
+        }
+
+        // WP_DEBUG-only: capture backend usage after generation response handling.
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            $after = null;
+            try {
+                $after = is_object( $this->api_client ) && method_exists( $this->api_client, 'get_usage' )
+                    ? $this->api_client->get_usage()
+                    : null;
+            } catch ( \Throwable $e ) {
+                $after = [ 'error' => $e->getMessage() ];
+            }
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log(
+                '[BBAI generation] after_generate ' . wp_json_encode(
+                    [
+                        'attachment_id' => (int) $attachment_id,
+                        'source' => (string) $source,
+                        'regenerate' => (bool) $regenerate,
+                        'api_response_keys' => is_array($api_response) ? array_keys($api_response) : gettype($api_response),
+                        'credits_used_in_response' => is_array($api_response) ? ($api_response['credits_used'] ?? null) : null,
+                        'credits_remaining_in_response' => is_array($api_response) ? ($api_response['credits_remaining'] ?? null) : null,
+                        'usage_after' => $after,
+                        'cached_usage_after' => \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false),
+                    ]
+                )
+            );
+        }
+
         // Also log what was actually cached (runs after either path updates usage)
         $cached_after = Usage_Tracker::get_cached_usage(false);
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
@@ -6411,6 +6625,28 @@ class Core {
         // Note: QA review is disabled for API proxy version (quality handled server-side)
         // Persist the generated alt text
         $this->persist_generation_result($attachment_id, $alt, $usage_summary, $source, $model, $image_strategy, $review_result);
+
+        // If we are still on a local monthly snapshot after a successful ALT save, consume 1 credit.
+        // This is the free-plan fallback path when backend usage is unavailable/unreliable.
+        $bbai_cached_after_usage = Usage_Tracker::get_cached_usage(false);
+        $bbai_after_source = is_array($bbai_cached_after_usage) ? strtolower((string) ($bbai_cached_after_usage['source'] ?? '')) : '';
+        if ( 'local_snapshot' === $bbai_after_source ) {
+            $sig = (string) get_post_meta((int) $attachment_id, '_bbai_generated_at', true);
+            $ym  = gmdate('Y-m');
+            $already_ym  = (string) get_post_meta((int) $attachment_id, '_bbai_monthly_credit_consumed_ym', true);
+            $already_sig = (string) get_post_meta((int) $attachment_id, '_bbai_monthly_credit_consumed_sig', true);
+            $next_sig = md5($ym . '|' . (string) $source . '|' . (string) $regenerate . '|' . $sig);
+
+            if ( $already_ym !== $ym || $already_sig !== $next_sig ) {
+                $updated = \BeepBeepAI\AltTextGenerator\Usage_Tracker::consume_local_monthly_credits(1);
+                if ( is_array( $updated ) ) {
+                    update_post_meta((int) $attachment_id, '_bbai_monthly_credit_consumed_ym', $ym);
+                    update_post_meta((int) $attachment_id, '_bbai_monthly_credit_consumed_sig', $next_sig);
+                    // consume_local_monthly_credits() already persisted the fresh local snapshot.
+                }
+            }
+        }
+
         $this->maybe_emit_alt_generated_event(
             (int) $attachment_id,
             (string) $alt,
@@ -6449,10 +6685,7 @@ class Core {
 
         $source_key = $source ? sanitize_key((string) $source) : 'auto';
         $opts = get_option(self::OPTION_KEY, []);
-        if (
-            in_array($source_key, ['auto', 'upload', 'metadata', 'update', 'save'], true) &&
-            !$this->is_upload_generation_enabled($opts)
-        ) {
+        if ($this->is_upload_automation_source($source_key) && !$this->is_upload_generation_enabled($opts)) {
             return false;
         }
 
@@ -7968,6 +8201,11 @@ class Core {
                 $code    = $result->get_error_code();
                 $message = $result->get_error_message();
 
+                if ($code === 'bbai_automation_unavailable') {
+                    Queue::mark_complete($job->id);
+                    continue;
+                }
+
                 if ($code === 'limit_reached') {
                     Queue::mark_retry($job->id, $message);
                     Queue::schedule_processing(apply_filters('bbai_queue_limit_delay', HOUR_IN_SECONDS));
@@ -8307,17 +8545,7 @@ class Core {
 		            ]
 		        );
 
-	        // Exhaust the anonymous trial so the logged-out dashboard shows the
-        // full exhausted-hero panel (donut, image counts, locked library)
-        // rather than the bare "start free trial" or conversion panel.
-        if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) ) {
-            $remaining = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining();
-            if ( $remaining > 0 ) {
-                \BeepBeepAI\AltTextGenerator\Trial_Quota::claim( $remaining );
-            }
-        }
-
-        // Redirect to dashboard with cache buster.
+	        // Redirect to dashboard with cache buster.
 		        \bbai_debug_log( 'handle_logout redirecting to dashboard' );
 	        wp_safe_redirect(add_query_arg('nocache', time(), admin_url('admin.php?page=bbai')));
 	        exit;
@@ -9108,8 +9336,7 @@ class Core {
         }
 
         global $wpdb;
-        $table = Queue::table();
-        $table = esc_sql( $table );
+        $table = $wpdb->prefix . Queue::TABLE_SLUG;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $mysql = $wpdb->get_var(
             $wpdb->prepare(

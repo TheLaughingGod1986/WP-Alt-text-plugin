@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $bbai_li_props    = $bbai_li_state['surface']['props'] ?? [];
 $bbai_li_err_code = sanitize_key( (string) ( $bbai_li_props['error_code'] ?? '' ) );
-$bbai_li_err_msg  = esc_html( (string) ( $bbai_li_props['error_message'] ?? '' ) );
+$bbai_li_err_msg = (string) ( $bbai_li_props['error_message'] ?? '' );
 $bbai_li_is_no_key = 'NO_API_KEY' === $bbai_li_err_code;
 ?>
 
@@ -37,7 +37,7 @@ $bbai_li_is_no_key = 'NO_API_KEY' === $bbai_li_err_code;
 
 	<?php if ( $bbai_li_err_msg ) : ?>
 		<p class="bbai-li-surface__message bbai-li-surface__message--error">
-			<?php echo $bbai_li_err_msg; ?>
+			<?php echo esc_html( $bbai_li_err_msg ); ?>
 		</p>
 	<?php endif; ?>
 

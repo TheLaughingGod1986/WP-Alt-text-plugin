@@ -2133,29 +2133,3 @@
         padding: 2px 6px;
     }
 }
-
-/* Dashboard sign-out link (below hero card) */
-.bbai-dashboard-signout-form {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 8px;
-    padding: 0 4px;
-}
-
-.bbai-dashboard-signout-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0;
-    background: none;
-    border: none;
-    color: #9ca3af;
-    font-size: 12px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: color 0.15s ease;
-}
-
-.bbai-dashboard-signout-btn:hover {
-    color: #6b7280;
-}

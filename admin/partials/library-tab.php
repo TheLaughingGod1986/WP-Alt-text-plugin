@@ -62,29 +62,31 @@ if ($bbai_requested_status !== '' && isset($bbai_workspace_status_map[ $bbai_req
 }
 $bbai_active_library_filter = $bbai_default_review_filter;
 
-// Get total count of all images (cached).
-$bbai_total_images = BBAI_Cache::get( 'library', 'total' );
-if ( false === $bbai_total_images ) {
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $bbai_total_images = (int) $wpdb->get_var($wpdb->prepare(
+// Get total count of all images.
+// Keep this live (not cached) so ALT Library stays consistent with the dashboard
+// coverage scan and does not drift due to stale cache keys.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$bbai_total_images = (int) $wpdb->get_var(
+    $wpdb->prepare(
         'SELECT COUNT(*) FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_status = %s AND post_mime_type LIKE %s',
-        'attachment', 'inherit', $bbai_image_mime_like
-    ));
-    BBAI_Cache::set( 'library', 'total', $bbai_total_images, BBAI_Cache::DEFAULT_TTL );
-}
-$bbai_total_images = (int) $bbai_total_images;
+        'attachment',
+        'inherit',
+        $bbai_image_mime_like
+    )
+);
 
-// Get images with alt text count (cached).
-$bbai_with_alt_count = BBAI_Cache::get( 'library', 'with_alt' );
-if ( false === $bbai_with_alt_count ) {
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-    $bbai_with_alt_count = (int) $wpdb->get_var($wpdb->prepare(
+// Get images with alt text count.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$bbai_with_alt_count = (int) $wpdb->get_var(
+    $wpdb->prepare(
         'SELECT COUNT(DISTINCT p.ID) FROM ' . $wpdb->posts . ' p INNER JOIN ' . $wpdb->postmeta . ' pm ON p.ID = pm.post_id WHERE p.post_type = %s AND p.post_mime_type LIKE %s AND p.post_status = %s AND pm.meta_key = %s AND TRIM(pm.meta_value) <> %s',
-        'attachment', $bbai_image_mime_like, 'inherit', '_wp_attachment_image_alt', ''
-    ));
-    BBAI_Cache::set( 'library', 'with_alt', $bbai_with_alt_count, BBAI_Cache::DEFAULT_TTL );
-}
-$bbai_with_alt_count = (int) $bbai_with_alt_count;
+        'attachment',
+        $bbai_image_mime_like,
+        'inherit',
+        '_wp_attachment_image_alt',
+        ''
+    )
+);
 
 $bbai_missing_count = $bbai_total_images - $bbai_with_alt_count;
 
@@ -301,6 +303,16 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
     );
     $bbai_limit_reached_state = !empty($bbai_product_state_model['flags']['lock_generation_actions']);
     $bbai_stats = isset($bbai_stats) ? $bbai_stats : ['total' => $bbai_total_images, 'with_alt' => $bbai_with_alt_count, 'missing' => $bbai_missing_count];
+
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        error_log( '[BBAI counts] library_source ' . wp_json_encode( [
+            'missing'      => (int) $bbai_cov_missing,
+            'needs_review' => (int) $bbai_cov_needs_review,
+            'optimized'    => (int) $bbai_cov_optimized,
+            'total'        => (int) $bbai_cov_total,
+        ] ) );
+    }
 
     // No stats slot on library page — Quick Actions go straight to action cards.
     $bbai_quick_actions_stats_slot = '';

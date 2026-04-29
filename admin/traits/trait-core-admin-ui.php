@@ -220,9 +220,8 @@ trait Core_Admin_UI {
                 $existing = get_option(self::OPTION_KEY, []);
                 $input = is_array($input) ? $input : [];
                 $out = [];
-                // ALWAYS force production API URL - no user input allowed
-                $production_url = 'https://alttext-ai-backend.onrender.com';
-                $out['api_url'] = $production_url;
+                // Align with API_Client_V2 base URL (BEEPBEEP_AI_API_URL or production default); no arbitrary user URL.
+                $out['api_url'] = untrailingslashit( \BeepBeepAI\AltTextGenerator\API_Client_V2::get_instance()->get_api_url() );
                 $model = isset($input['model']) ? (string)$input['model'] : 'gpt-4o-mini';
                 $out['model'] = $model ? sanitize_text_field($model) : 'gpt-4o-mini';
                 $out['max_words']        = max(4, intval($input['max_words'] ?? 16));
@@ -237,7 +236,9 @@ trait Core_Admin_UI {
                     $out['language'] = $lang_input ?: 'en-GB';
                     $out['language_custom'] = '';
                 }
-                $out['enable_on_upload'] = !empty($input['enable_on_upload']);
+                $out['enable_on_upload'] = method_exists($this, 'current_account_can_use_upload_generation')
+                    ? ($this->current_account_can_use_upload_generation() && !empty($input['enable_on_upload']))
+                    : !empty($input['enable_on_upload']);
                 $tone = isset($input['tone']) ? (string)$input['tone'] : 'professional, accessible';
                 $out['tone'] = $tone ? sanitize_text_field($tone) : 'professional, accessible';
                 $out['force_overwrite']  = !empty($input['force_overwrite']);
@@ -567,14 +568,92 @@ trait Core_Admin_UI {
                             <!-- Compact Account Bar in Header -->
                             <div class="bbai-header-account-bar">
                                 <span class="bbai-header-account-email"><?php echo esc_html(is_string($connected_email) ? $connected_email : __('Connected', 'beepbeep-ai-alt-text-generator')); ?></span>
+                                <?php
+                                $bbai_trait_nav_credits_rem = null;
+                                if ( is_array( $bbai_usage_stats ) ) {
+                                    if ( isset( $bbai_usage_stats['credits_remaining'] ) && is_numeric( $bbai_usage_stats['credits_remaining'] ) ) {
+                                        $bbai_trait_nav_credits_rem = max( 0, (int) $bbai_usage_stats['credits_remaining'] );
+                                    } elseif ( isset( $bbai_usage_stats['remaining'] ) && is_numeric( $bbai_usage_stats['remaining'] ) ) {
+                                        $bbai_trait_nav_credits_rem = max( 0, (int) $bbai_usage_stats['remaining'] );
+                                    } else {
+                                        $bbai_trait_u_used = (int) ( $bbai_usage_stats['used'] ?? $bbai_usage_stats['credits_used'] ?? 0 );
+                                        $bbai_trait_u_lim  = (int) ( $bbai_usage_stats['limit'] ?? $bbai_usage_stats['credits_total'] ?? 0 );
+                                        if ( $bbai_trait_u_lim > 0 ) {
+                                            $bbai_trait_nav_credits_rem = max( 0, $bbai_trait_u_lim - $bbai_trait_u_used );
+                                        }
+                                    }
+                                }
+                                $bbai_trait_credits_pill_state = 'normal';
+                                if ( null !== $bbai_trait_nav_credits_rem ) {
+                                    if ( 0 === $bbai_trait_nav_credits_rem ) {
+                                        $bbai_trait_credits_pill_state = 'empty';
+                                    } elseif ( $bbai_trait_nav_credits_rem <= 10 ) {
+                                        $bbai_trait_credits_pill_state = 'low';
+                                    }
+                                }
+                                $bbai_trait_header_free_inline = (
+                                    'free' === (string) $bbai_plan_slug &&
+                                    ! $bbai_has_license &&
+                                    $bbai_is_authenticated
+                                );
+                                ?>
+                                <?php if ( $bbai_trait_header_free_inline && null !== $bbai_trait_nav_credits_rem ) : ?>
+                                <span
+                                    class="bbai-header-free-credits-upgrade-line"
+                                    tabindex="0"
+                                    role="link"
+                                    data-action="show-upgrade-modal"
+                                    data-bbai-analytics-upgrade="header_free_credits_inline"
+                                    title="<?php esc_attr_e( 'View plans and upgrade', 'beepbeep-ai-alt-text-generator' ); ?>"
+                                ><?php
+                                    echo esc_html(
+                                        sprintf(
+                                            /* translators: %s: number of credits remaining in the free plan period */
+                                            _n(
+                                                'FREE · %s credit left → Upgrade',
+                                                'FREE · %s credits left → Upgrade',
+                                                $bbai_trait_nav_credits_rem,
+                                                'beepbeep-ai-alt-text-generator'
+                                            ),
+                                            number_format_i18n( $bbai_trait_nav_credits_rem )
+                                        )
+                                    );
+                                ?></span>
+                                <?php elseif ( $bbai_trait_header_free_inline && null === $bbai_trait_nav_credits_rem ) : ?>
+                                <span
+                                    class="bbai-header-free-credits-upgrade-line"
+                                    tabindex="0"
+                                    role="link"
+                                    data-action="show-upgrade-modal"
+                                    data-bbai-analytics-upgrade="header_free_credits_inline"
+                                    title="<?php esc_attr_e( 'View plans and upgrade', 'beepbeep-ai-alt-text-generator' ); ?>"
+                                ><?php esc_html_e( 'FREE → Upgrade', 'beepbeep-ai-alt-text-generator' ); ?></span>
+                                <?php else : ?>
                                 <span class="bbai-header-plan-badge"><?php echo esc_html(is_string($plan_label) ? $plan_label : ucfirst($bbai_plan_slug ?? 'free')); ?></span>
-                                <?php if ($bbai_plan_slug === 'free' && !$bbai_has_license && $bbai_tab !== 'dashboard') : ?>
+                                <?php if ( null !== $bbai_trait_nav_credits_rem && $bbai_is_authenticated ) : ?>
+                                <div
+                                    class="bbai-credits-pill"
+                                    data-bbai-credits-pill="1"
+                                    data-state="<?php echo esc_attr( $bbai_trait_credits_pill_state ); ?>"
+                                    title="<?php esc_attr_e( 'Credits remaining this period', 'beepbeep-ai-alt-text-generator' ); ?>"
+                                ><?php
+                                    printf(
+                                        /* translators: %s: number of credits remaining in the current period */
+                                        esc_html( _n( '%s credit left', '%s credits left', $bbai_trait_nav_credits_rem, 'beepbeep-ai-alt-text-generator' ) ),
+                                        esc_html( number_format_i18n( $bbai_trait_nav_credits_rem ) )
+                                    );
+                                ?></div>
+                                <?php elseif ( 'free' === (string) $bbai_plan_slug && ( $bbai_is_authenticated || $bbai_has_license ) && null === $bbai_trait_nav_credits_rem ) : ?>
+                                <span class="bbai-header-credits-note"><?php esc_html_e( 'Free plan', 'beepbeep-ai-alt-text-generator' ); ?></span>
+                                <?php endif; ?>
+                                <?php endif; ?>
+                                <?php if ( $bbai_plan_slug === 'free' && ! $bbai_has_license && ! $bbai_trait_header_free_inline ) : ?>
                                     <button type="button" class="bbai-header-upgrade-btn" data-action="show-upgrade-modal">
-                                        <?php esc_html_e('Upgrade', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e( 'Upgrade', 'beepbeep-ai-alt-text-generator' ); ?>
                                     </button>
-                                <?php elseif (!empty($billing_portal) && $bbai_is_authenticated) : ?>
+                                <?php elseif ( ! empty( $billing_portal ) && $bbai_is_authenticated ) : ?>
                                     <button type="button" class="bbai-header-manage-btn" data-action="open-billing-portal">
-                                        <?php esc_html_e('Manage', 'beepbeep-ai-alt-text-generator'); ?>
+                                        <?php esc_html_e( 'Manage', 'beepbeep-ai-alt-text-generator' ); ?>
                                     </button>
                                 <?php endif; ?>
                                 <?php if ($bbai_is_authenticated || $bbai_has_license) : ?>

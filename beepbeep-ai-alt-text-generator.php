@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
- * Version: 4.6.1
+ * Version: 4.6.2
  * Requires at least: 6.2
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
@@ -17,9 +17,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( defined( 'BBAI_ALREADY_LOADED' ) ) {
+	return;
+}
+define( 'BBAI_ALREADY_LOADED', true );
+
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.6.1' );
-define( 'BBAI_VERSION', '4.6.1' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.6.2' );
+define( 'BBAI_VERSION', '4.6.2' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias

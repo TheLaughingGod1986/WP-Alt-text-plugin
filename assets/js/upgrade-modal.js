@@ -99,7 +99,15 @@
     }
 
     function getUsageSnapshot(context) {
+        var state = window.BBAI_DASHBOARD_STATE_STORE && typeof window.BBAI_DASHBOARD_STATE_STORE.getState === 'function'
+            ? window.BBAI_DASHBOARD_STATE_STORE.getState()
+            : null;
+        var stateCredits = state && state.credits && typeof state.credits === 'object' ? state.credits : null;
+
         if (context && context.usage && typeof context.usage === 'object') {
+            if (stateCredits && typeof stateCredits.has_credit !== 'undefined') {
+                context.usage.has_credit = !!stateCredits.has_credit;
+            }
             return context.usage;
         }
 
@@ -113,7 +121,19 @@
         }
 
         if (window.BBAI_UPGRADE && window.BBAI_UPGRADE.usage && typeof window.BBAI_UPGRADE.usage === 'object') {
+            if (stateCredits && typeof stateCredits.has_credit !== 'undefined') {
+                window.BBAI_UPGRADE.usage.has_credit = !!stateCredits.has_credit;
+            }
             return window.BBAI_UPGRADE.usage;
+        }
+
+        if (stateCredits) {
+            return {
+                used: stateCredits.used,
+                limit: stateCredits.limit,
+                remaining: stateCredits.remaining,
+                has_credit: !!stateCredits.has_credit
+            };
         }
 
         return null;
@@ -825,11 +845,13 @@
         var used = Math.max(0, parseCount(safeUsage && safeUsage.used));
         var limit = Math.max(1, parseCount(safeUsage && safeUsage.limit));
         var percent = Math.min(100, Math.max(0, Math.round((used / limit) * 100)));
-        var remaining = safeUsage && safeUsage.remaining !== undefined
-            ? Math.max(0, parseCount(safeUsage.remaining))
-            : Math.max(0, limit - used);
+        var hasCredit = safeUsage && typeof safeUsage.has_credit !== 'undefined'
+            ? !!safeUsage.has_credit
+            : (safeUsage && safeUsage.remaining !== undefined
+                ? Math.max(0, parseCount(safeUsage.remaining)) > 0
+                : Math.max(0, limit - used) > 0);
 
-        if (percent < 80 || remaining <= 0) {
+        if (percent < 80 || !hasCredit) {
             return false;
         }
 

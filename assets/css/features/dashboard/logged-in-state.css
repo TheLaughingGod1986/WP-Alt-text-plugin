@@ -1178,6 +1178,17 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-all-clear-state .bbai-all-clear-res
     line-height: 1.35;
 }
 
+.bbai-li-donut__helper-main,
+.bbai-li-donut__helper-meta {
+    display: block;
+}
+
+.bbai-li-donut__helper-meta {
+    margin-top: 2px;
+    font-size: 11px;
+    opacity: 0.72;
+}
+
 /* Review-ready donut: calm label + secondary text CTA (NEEDS_REVIEW) */
 .bbai-li-donut__sub-label--review-ready {
     font-weight: 600;
@@ -1444,7 +1455,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-all-clear-state .bbai-all-clear-res
 .bbai-progress-flow .bbai-progress-step.is-active,
 .bbai-progress-flow .is-active {
     color: #2563eb;
-    font-weight: 700;
+    font-weight: 600;
 }
 .bbai-progress-flow .bbai-progress-step.is-active::before,
 .bbai-progress-flow .is-active::before {
@@ -1454,7 +1465,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-all-clear-state .bbai-all-clear-res
 }
 .bbai-progress-flow .bbai-progress-step.is-inactive,
 .bbai-progress-flow .is-inactive {
-    color: #94a3b8;
+    color: #9ca3af;
     font-weight: 500;
     opacity: 0.9;
 }
@@ -1468,15 +1479,15 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-all-clear-state .bbai-all-clear-res
 /* Completed step — subtle success tone, not competing with the active step */
 .bbai-progress-flow .bbai-progress-step.is-done,
 .bbai-progress-flow .is-done {
-    color: #16a34a;
+    color: #6b7280;
     font-weight: 600;
-    opacity: 0.85;
+    opacity: 0.95;
 }
 .bbai-progress-flow .bbai-progress-step.is-done::before,
 .bbai-progress-flow .is-done::before {
     background: currentColor;
     border-color: currentColor;
-    opacity: 0.9;
+    opacity: 0.85;
 }
 
 /* Small transition so step changes feel intentional */
@@ -3439,15 +3450,16 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card,
 body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card {
     margin: 0;
-    padding: 20px 22px;
+    padding: 24px;
     border-radius: 16px;
     border: 1px solid rgba(226, 232, 240, 0.98);
     background: linear-gradient(180deg, #fbfcfe 0%, #f8fafc 100%);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 6px 16px rgba(15, 23, 42, 0.05);
-    min-height: 0;
+    min-height: 140px;
     height: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
 
@@ -3498,6 +3510,28 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__desc {
     color: #4b5563;
     font-weight: 400;
     margin: 14px 0 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Success pill for 100% coverage (Accessibility card) */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-top: 10px;
+}
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-pill--success {
+    background: rgba(22, 163, 74, 0.12);
+    color: #166534;
+    border: 1px solid rgba(22, 163, 74, 0.25);
 }
 
 /* Insight cards: primary (a11y) > secondary (time) > tertiary (SEO) */
@@ -4591,13 +4625,43 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__trial-blurb .bbai-guest
     margin: 0 0 6px;
 }
 
+body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__trial-line-main,
+body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__trial-line-sub {
+    display: block;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__trial-line-main {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bbai-text-secondary, #374151);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__trial-line-sub {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--bbai-text-muted, #6b7280);
+}
+
 body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__trial-line--muted {
     color: var(--bbai-text-muted, #6b7280);
     font-size: 14px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-guest-value-cards {
-    margin-top: 8px;
+    margin-top: 6px;
+}
+
+/* Guest funnel layout targets: more breathing room + clearer hierarchy. */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid--guest-funnel {
+    gap: 32px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid--guest-funnel .bbai-li-card {
+    padding: 30px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid--guest-funnel .bbai-li-card--donut {
+    padding: 30px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__meta-note {

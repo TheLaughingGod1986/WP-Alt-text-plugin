@@ -1,0 +1,28 @@
+# Repo gitignore (GitHub)
+# Note: WordPress.org SVN ignores this; keep `gitignore` for Plugin Check needs.
+
+.DS_Store
+**/.DS_Store
+**/._*
+
+# Dependencies / tooling
+node_modules/
+.playwright-cli/
+.playwright-mcp/
+
+# Builds / artifacts
+dist/
+build/
+output/
+
+# Test artifacts
+playwright-report/
+test-results/
+tests/e2e/node_modules/
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+pcp-report.json
+
+# Local env / deployment working copies
+.wporg-svn/
+.wp-env.json

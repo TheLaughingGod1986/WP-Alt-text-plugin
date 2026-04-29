@@ -320,11 +320,10 @@
                 note: '',
                 primaryAction: isAnonymousTrial
                     ? {
-                          label: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
+                          label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
                           action: 'show-auth-modal',
                           attributes: {
-                              'data-auth-tab': 'register',
-                              'data-bbai-modal-context': pageContext === 'library' ? 'library' : 'fix'
+                              'data-auth-tab': 'register'
                           }
                       }
                     : {
@@ -377,11 +376,10 @@
                 note: '',
                 primaryAction: isAnonymousTrial
                     ? {
-                          label: __('Continue fixing your images', 'beepbeep-ai-alt-text-generator'),
+                          label: __('Create free account', 'beepbeep-ai-alt-text-generator'),
                           action: 'show-auth-modal',
                           attributes: {
-                              'data-auth-tab': 'register',
-                              'data-bbai-modal-context': pageContext === 'library' ? 'library' : 'fix'
+                              'data-auth-tab': 'register'
                           }
                       }
                     : {
@@ -479,11 +477,10 @@
                               href: libraryUrl
                           }
                         : {
-                              label: __('Continue fixing your images'),
+                              label: __('Create free account'),
                               action: 'show-auth-modal',
                               attributes: {
-                                  'data-auth-tab': 'register',
-                                  'data-bbai-modal-context': pageContext === 'library' ? 'library' : 'fix'
+                                  'data-auth-tab': 'register'
                               }
                           })
                     : isPro
@@ -497,11 +494,10 @@
                       },
                 secondaryAction: isAnonymousTrial
                     ? {
-                          label: __('Continue fixing your images'),
+                          label: __('Create free account'),
                           action: 'show-auth-modal',
                           attributes: {
-                              'data-auth-tab': 'register',
-                              'data-bbai-modal-context': pageContext === 'library' ? 'library' : 'fix'
+                              'data-auth-tab': 'register'
                           }
                       }
                     : {

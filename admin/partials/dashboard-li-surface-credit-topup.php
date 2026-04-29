@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $bbai_li_props         = $bbai_li_state['surface']['props'] ?? [];
 $bbai_li_queued_count  = max( 0, (int) ( $bbai_li_props['queued_count'] ?? 0 ) );
-$bbai_li_billing_url   = esc_url( admin_url( 'admin.php?page=bbai-credit-usage' ) );
+$bbai_li_billing_url = admin_url( 'admin.php?page=bbai-credit-usage' );
 ?>
 
 <div
@@ -58,7 +58,7 @@ $bbai_li_billing_url   = esc_url( admin_url( 'admin.php?page=bbai-credit-usage' 
 
 	<div class="bbai-li-surface__actions">
 		<a
-			href="<?php echo $bbai_li_billing_url; ?>"
+			href="<?php echo esc_url( $bbai_li_billing_url ); ?>"
 			class="bbai-li-surface__cta bbai-li-surface__cta--primary"
 			data-action="add-credits"
 		><?php esc_html_e( 'Manage billing', 'beepbeep-ai-alt-text-generator' ); ?></a>
