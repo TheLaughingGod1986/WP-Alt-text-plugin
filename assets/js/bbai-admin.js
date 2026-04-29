@@ -50,6 +50,137 @@
         window.BBAI_LOG && window.BBAI_LOG.warn('[AI Alt Text] REST configuration missing. Bulk operations disabled, but single regenerate will still work.');
     }
 
+    // Global generation running flag (prevents duplicate jobs / double clicks).
+    window.bbaiGenerationInProgress = window.bbaiGenerationInProgress || false;
+    var bbaiRestoreGenerationDisabled = null;
+
+    function setGenerationInProgress(nextValue) {
+        var on = !!nextValue;
+        var note;
+
+        if (on === !!window.bbaiGenerationInProgress) {
+            return;
+        }
+
+        window.bbaiGenerationInProgress = on;
+
+        if (bbaiRestoreGenerationDisabled) {
+            try { bbaiRestoreGenerationDisabled(); } catch (e) { /* noop */ }
+            bbaiRestoreGenerationDisabled = null;
+        }
+
+        note = document.querySelector('[data-bbai-gen-running-note="1"]');
+        if (note) {
+            note.toggleAttribute('hidden', !on);
+        }
+
+        if (!on) {
+            return;
+        }
+
+        // Disable only generation actions (keep review/navigation/upgrade usable).
+        var restoreDashboard = setBusyStateForControls(
+            '[data-action="generate-missing"], [data-bbai-action="generate_missing"]',
+            __('Generation in progress…', 'beepbeep-ai-alt-text-generator')
+        );
+        var restoreLibrary = setBusyStateForControls(
+            [
+                '[data-action="generate-selected"]',
+                '[data-action="regenerate-all"]',
+                '[data-action="regenerate-selected"]',
+                '[data-action="regenerate-single"]',
+                '[data-action="phase17-improve-alt"]',
+                '[data-bbai-action="reoptimize_all"]'
+            ].join(', '),
+            __('Generating…', 'beepbeep-ai-alt-text-generator')
+        );
+        bbaiRestoreGenerationDisabled = function() {
+            restoreDashboard && restoreDashboard();
+            restoreLibrary && restoreLibrary();
+        };
+    }
+
+    /**
+     * Canonical dashboard state: ONLY from /bbai/v1/dashboard/state-truth.
+     * Do not populate from /api/usage, DOM heuristics, or local snapshots.
+     */
+    window.BBAI_STATE = window.BBAI_STATE || null;
+
+    function extractCanonicalStateFromTruth(truth) {
+        var payload = truth && truth.data && typeof truth.data === 'object' ? truth.data : truth;
+        payload = payload && typeof payload === 'object' ? payload : {};
+        var credits = payload.credits && typeof payload.credits === 'object' ? payload.credits : {};
+
+        var used = readUsageNumber(credits, ['used', 'credits_used', 'creditsUsed']);
+        var limit = readUsageNumber(credits, ['limit', 'total', 'credits_total', 'creditsTotal', 'monthly_limit']);
+        var remaining = readUsageNumber(credits, ['remaining', 'credits_remaining', 'creditsRemaining']);
+
+        if (isNaN(used)) used = 0;
+        if (isNaN(limit) || limit <= 0) limit = Math.max(1, used);
+        if (isNaN(remaining)) remaining = Math.max(0, limit - used);
+
+        var planSlug = readUsageString(credits, ['plan_slug', 'planSlug', 'plan_type', 'planType', 'plan']);
+        var isPro = !!(credits.is_pro || credits.isPro);
+        var trialExhausted = payload.trial_exhausted !== undefined
+            ? !!payload.trial_exhausted
+            : (credits.trial_exhausted !== undefined ? !!credits.trial_exhausted : false);
+
+        return {
+            source: 'dashboard_state_truth',
+            usage: {
+                used: used,
+                limit: limit,
+                remaining: remaining
+            },
+            plan: {
+                slug: planSlug || '',
+                is_pro: isPro
+            },
+            trial_exhausted: trialExhausted
+        };
+    }
+
+    function refreshDashboardStateTruth() {
+        var endpoint = getDashboardStateTruthEndpoint();
+        var nonce = getLibraryRestNonce();
+        if (!endpoint) {
+            return Promise.reject(new Error('state_truth_endpoint_missing'));
+        }
+
+        return fetch(endpoint, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-WP-Nonce': nonce
+            }
+        }).then(function(res) {
+            if (!res || !res.ok) {
+                throw new Error('state_truth_fetch_failed');
+            }
+            return res.json();
+        }).then(function(json) {
+            window.BBAI_STATE = extractCanonicalStateFromTruth(json);
+            return window.BBAI_STATE;
+        });
+    }
+
+    function getCanonicalModalStateOrNull() {
+        if (!window.BBAI_STATE || !window.BBAI_STATE.usage) {
+            return null;
+        }
+        var u = window.BBAI_STATE.usage;
+        if (u.used === undefined || u.limit === undefined) {
+            return null;
+        }
+        return window.BBAI_STATE;
+    }
+
+    // Prime the canonical state early on dashboard pages so modals never read stale local snapshots.
+    if (document && document.querySelector && document.querySelector('[data-bbai-dashboard-root="1"]')) {
+        refreshDashboardStateTruth().catch(function() {});
+    }
+
     function getActionButton(action) {
         var selector = '[data-action="' + action + '"]';
         var matches = Array.prototype.slice.call(document.querySelectorAll(selector));
@@ -2073,6 +2204,12 @@
     }
 
     function openUpgradeModal(reasonOrUsage, context) {
+        var canonical = getCanonicalModalStateOrNull();
+        var canonicalUsage = canonical && canonical.usage ? canonical.usage : null;
+        var canonicalUsed = canonicalUsage ? parseInt(canonicalUsage.used, 10) : NaN;
+        var canonicalLimit = canonicalUsage ? parseInt(canonicalUsage.limit, 10) : NaN;
+        var canonicalIsExhausted = !isNaN(canonicalUsed) && !isNaN(canonicalLimit) && canonicalUsed >= canonicalLimit;
+
         var hasReasonContext = typeof reasonOrUsage === 'string' ||
             (!!context && typeof context === 'object');
         var resolvedReason = hasReasonContext && typeof reasonOrUsage === 'string' ? reasonOrUsage : '';
@@ -2089,6 +2226,38 @@
                 source: 'limit-reached',
                 force: true
             };
+        }
+
+        // Always prefer canonical backend truth for modal usage display + gating.
+        if (canonicalUsage) {
+            usage = {
+                used: canonicalUsage.used,
+                limit: canonicalUsage.limit,
+                remaining: canonicalUsage.remaining
+            };
+        }
+
+        // Auto-trigger guards: never show the upgrade modal unless credits are actually exhausted.
+        var source = context && typeof context === 'object' ? String(context.source || '') : '';
+        var isAutoTrigger = !!source &&
+            ['low_credits', 'low_credits_threshold', 'generate_missing_click', 'generate_missing', 'limit-reached'].indexOf(source) !== -1;
+        var isForced = !!(context && typeof context === 'object' && context.force);
+        if (isAutoTrigger && !isForced) {
+            if (!canonicalUsage) {
+                return false;
+            }
+            if (window.console && typeof window.console.log === 'function') {
+                window.console.log('USAGE CHECK', {
+                    used: canonicalUsed,
+                    limit: canonicalLimit,
+                    isExhausted: canonicalIsExhausted,
+                    reason: resolvedReason || '',
+                    source: source
+                });
+            }
+            if (!canonicalIsExhausted) {
+                return false;
+            }
         }
         if (hasVisibleLimitModal()) {
             return true;
@@ -2710,6 +2879,39 @@
 
     function handleLimitReached(errorData) {
         var normalizedError = normalizeLimitErrorData(errorData);
+        var errorCode = normalizedError && normalizedError.code ? String(normalizedError.code) : '';
+
+        // Confirm exhaustion from canonical dashboard truth before opening upgrade flows.
+        // If we cannot confirm, do not show the modal (prevents false positives).
+        refreshDashboardStateTruth()
+            .then(function(state) {
+                var usageState = state && state.usage ? state.usage : null;
+                var used = usageState ? parseInt(usageState.used, 10) : NaN;
+                var limit = usageState ? parseInt(usageState.limit, 10) : NaN;
+                var isExhausted = !isNaN(used) && !isNaN(limit) && used >= limit;
+
+                if (window.console && typeof window.console.log === 'function') {
+                    window.console.log('USAGE CHECK', { used: used, limit: limit, isExhausted: isExhausted, errorCode: errorCode });
+                }
+
+                if (!isExhausted && errorCode !== 'bbai_trial_exhausted') {
+                    if (typeof showNotification === 'function') {
+                        showNotification(
+                            __('We couldn’t confirm that credits are exhausted. Please try again, or refresh if the message persists.', 'beepbeep-ai-alt-text-generator'),
+                            'info'
+                        );
+                    }
+                    return;
+                }
+
+                handleLimitReachedWithConfirmedState(normalizedError);
+            })
+            .catch(function() {
+                // If we cannot confirm state-truth, do not show the modal.
+            });
+    }
+
+    function handleLimitReachedWithConfirmedState(normalizedError) {
         var errorCode = normalizedError && normalizedError.code ? String(normalizedError.code) : '';
         if (
             guestTrialClientShowsRemainingCredits() &&
@@ -15917,8 +16119,11 @@
             return;
         }
 
+        setGenerationInProgress(true);
+
         var $modal = $('#bbai-bulk-progress-modal');
         if (!$modal.length) {
+            setGenerationInProgress(false);
             return;
         }
 
@@ -16279,6 +16484,7 @@
             nextRuntimeState = 'generation_complete';
         }
         setDashboardRuntimeState(nextRuntimeState);
+        setGenerationInProgress(false);
 
         // Build canonical result object so all post-generation UI reads one source of truth.
         var _resultStatus;
@@ -18556,6 +18762,15 @@
         }
 
         var action = trigger.getAttribute('data-action') || '';
+
+        // Guard: prevent duplicate generation starts while a job is active.
+        var isGenerationAction = isGenerationActionControl(trigger) || bbaiAction === 'generate_missing';
+        if (window.bbaiGenerationInProgress && isGenerationAction) {
+            if (e && typeof e.preventDefault === 'function') {
+                e.preventDefault();
+            }
+            return;
+        }
         if (action === 'show-upgrade-modal' && trigger.closest && trigger.closest('#bbai-feature-unlock-modal')) {
             var featModal = document.getElementById('bbai-feature-unlock-modal');
             if (featModal) {
