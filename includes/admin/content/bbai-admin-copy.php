@@ -164,7 +164,7 @@ if (!function_exists('bbai_copy_td')) {
 
     function bbai_copy_cta_fix_missing_alt(): string
     {
-        return __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator');
+        return __('Generate ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_improve_alt(): string
@@ -174,12 +174,12 @@ if (!function_exists('bbai_copy_td')) {
 
     function bbai_copy_cta_generate_missing_images(): string
     {
-        return __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator');
+        return __('Generate ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_generate_alt(): string
     {
-        return __('Generate missing ALT text', 'beepbeep-ai-alt-text-generator');
+        return __('Generate ALT text', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_cta_review_optimized_images(): string
@@ -266,7 +266,7 @@ if (!function_exists('bbai_copy_td')) {
 
     function bbai_copy_helper_generate_then_review(): string
     {
-        return __('Generate missing ALT text, then review descriptions that need improvement.', 'beepbeep-ai-alt-text-generator');
+        return __('Generate ALT text, then review descriptions that need improvement.', 'beepbeep-ai-alt-text-generator');
     }
 
     function bbai_copy_helper_healthy_keep_coverage(): string

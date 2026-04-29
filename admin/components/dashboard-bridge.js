@@ -54,21 +54,21 @@
             return null;
         }
 
-        let used = readUsageNumber(usage, ['used', 'credits_used', 'creditsUsed']);
+        let used = readUsageNumber(usage, ['used']);
         if (Number.isNaN(used)) {
-            used = readUsageNumber(quota, ['used', 'credits_used', 'creditsUsed']);
+            used = readUsageNumber(quota, ['used']);
         }
         used = Number.isNaN(used) ? 0 : Math.max(0, used);
 
-        let limit = readUsageNumber(usage, ['limit', 'credits_total', 'creditsTotal', 'creditsLimit', 'total_limit', 'monthly_limit']);
+        let limit = readUsageNumber(usage, ['limit']);
         if (Number.isNaN(limit)) {
-            limit = readUsageNumber(quota, ['limit', 'credits_total', 'creditsTotal', 'creditsLimit', 'monthly_limit']);
+            limit = readUsageNumber(quota, ['limit']);
         }
-        limit = Number.isNaN(limit) || limit <= 0 ? 1 : limit;
+        limit = Number.isNaN(limit) || limit <= 0 ? 50 : limit;
 
-        let remaining = readUsageNumber(usage, ['remaining', 'credits_remaining', 'creditsRemaining']);
+        let remaining = readUsageNumber(usage, ['remaining']);
         if (Number.isNaN(remaining)) {
-            remaining = readUsageNumber(quota, ['remaining', 'credits_remaining', 'creditsRemaining']);
+            remaining = readUsageNumber(quota, ['remaining']);
         }
         if (Number.isNaN(remaining)) {
             remaining = Math.max(0, limit - used);
@@ -85,7 +85,7 @@
             daysUntilReset = readUsageNumber(quota, ['days_until_reset']);
         }
 
-        const planType = readUsageString(usage, ['plan_type', 'plan']) || readUsageString(quota, ['plan_type', 'plan']) || '';
+        const planType = readUsageString(usage, ['plan_type', 'plan']) || readUsageString(quota, ['plan_type']) || 'free';
 
         return {
             ...usage,
@@ -111,23 +111,6 @@
                 plan_type: planType
             }
         };
-    }
-
-    function getRootUsageFallback() {
-        const root = document.querySelector('[data-bbai-dashboard-root="1"]');
-        if (!root) {
-            return null;
-        }
-
-        return normalizeUsage({
-            used: root.getAttribute('data-bbai-credits-used') || 0,
-            limit: root.getAttribute('data-bbai-credits-total') || 1,
-            remaining: root.getAttribute('data-bbai-credits-remaining') || 0,
-            plan: root.getAttribute('data-bbai-is-premium') === '1' ? 'growth' : '',
-            plan_type: root.getAttribute('data-bbai-is-premium') === '1' ? 'growth' : '',
-            plan_label: root.getAttribute('data-bbai-plan-label') || '',
-            source: 'dom_root_fallback'
-        });
     }
 
     // Check if React and ReactDOM are available
@@ -188,31 +171,30 @@
                     window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] Could not fetch queue stats:', e);
                 }
 
-                const usage = normalizeUsage(usageStats) || getRootUsageFallback() || {
+                const usage = normalizeUsage(usageStats) || {
                     used: 0,
-                    limit: 1,
-                    remaining: 0,
+                    limit: 50,
+                    remaining: 50,
                     resetDate: '',
                     reset_date: '',
                     reset_timestamp: 0,
                     days_until_reset: null,
-                    plan: '',
-                    plan_type: '',
-                    source: 'usage_unavailable',
+                    plan: 'free',
+                    plan_type: 'free',
                     creditsUsed: 0,
-                    creditsTotal: 1,
-                    creditsLimit: 1,
-                    creditsRemaining: 0,
+                    creditsTotal: 50,
+                    creditsLimit: 50,
+                    creditsRemaining: 50,
                     quota: {
                         used: 0,
-                        limit: 1,
-                        remaining: 0,
+                        limit: 50,
+                        remaining: 50,
                         reset_date: '',
                         reset_timestamp: 0,
-                        plan_type: ''
+                        plan_type: 'free'
                     }
                 };
-                const plan = usage.plan_type || usage.plan || '';
+                const plan = usage.plan_type || usage.plan || 'free';
                 // Ensure handleRegenerateAll / handleGenerateMissing can read usage when out of credits
                 if (typeof window !== 'undefined') {
                     window.BBAI_DASH = window.BBAI_DASH || {};
@@ -237,40 +219,30 @@
                 };
             } catch (error) {
                 window.BBAI_LOG && window.BBAI_LOG.error('[BeepBeep AI] Error fetching dashboard data:', error);
-                const fallbackUsage = getRootUsageFallback();
-                if (fallbackUsage) {
-                    return {
-                        plan: fallbackUsage.plan_type || fallbackUsage.plan || '',
-                        usageStats: fallbackUsage,
-                        stats: { total: 0, with_alt: 0, missing: 0 },
-                        queueStats: { pending: 0, completed_recent: 0, failed: 0 }
-                    };
-                }
-
+                // Return defaults on error
                 return {
-                    plan: '',
+                    plan: 'free',
                     usageStats: {
                         used: 0,
-                        limit: 1,
-                        remaining: 0,
+                        limit: 50,
+                        remaining: 50,
                         resetDate: '',
                         reset_date: '',
                         reset_timestamp: 0,
                         days_until_reset: null,
-                        plan: '',
-                        plan_type: '',
-                        source: 'usage_unavailable',
+                        plan: 'free',
+                        plan_type: 'free',
                         creditsUsed: 0,
-                        creditsTotal: 1,
-                        creditsLimit: 1,
-                        creditsRemaining: 0,
+                        creditsTotal: 50,
+                        creditsLimit: 50,
+                        creditsRemaining: 50,
                         quota: {
                             used: 0,
-                            limit: 1,
-                            remaining: 0,
+                            limit: 50,
+                            remaining: 50,
                             reset_date: '',
                             reset_timestamp: 0,
-                            plan_type: ''
+                            plan_type: 'free'
                         }
                     },
                     stats: { total: 0, with_alt: 0, missing: 0 },
@@ -281,10 +253,7 @@
 
         // Callback functions
         function handleUpgradeClick() {
-            if (typeof window.showUpgradeModal === 'function') {
-                window.showUpgradeModal();
-                return;
-            }
+            // Manual user intent: open pricing/upgrade UI (do NOT use the allowance-gated modal).
             if (typeof window.openPricingModal === 'function') {
                 window.openPricingModal('enterprise');
                 return;

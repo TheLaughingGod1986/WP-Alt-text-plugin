@@ -338,14 +338,6 @@
             }
         }
 
-        if (typeof window.showUpgradeModal === 'function') {
-            window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.showUpgradeModal');
-            window.showUpgradeModal();
-            if (isUpgradeModalVisible()) {
-                return true;
-            }
-        }
-
         if (typeof window.alttextaiShowModal === 'function') {
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using window.alttextaiShowModal');
             window.alttextaiShowModal();
