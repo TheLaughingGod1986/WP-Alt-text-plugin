@@ -17000,6 +17000,13 @@
         if ($logContainer.length) {
             $logContainer.prop('hidden', isComplete);
         }
+
+        // Steps panel: show while processing, hide on completion
+        var $stepsPanel = $modal.find('[data-bbai-bulk-progress-steps]');
+        if ($stepsPanel.length) {
+            $stepsPanel.prop('hidden', isComplete);
+        }
+
         $logCount = $modal.find('[data-bbai-bulk-progress-log-count]');
         if ($logCount.length) {
             $logCount.text(formatBulkProgressLogDoneLabel(state));
@@ -17623,6 +17630,26 @@
                 window.bbaiJobState.update({ label: generatingTitle });
             }
 
+            // Step 1: Preparing — log and advance step panel
+            setProgressStep($modal, 'preparing');
+            appendBulkProgressLogEntry(
+                $modal,
+                'info',
+                sprintf(
+                    __('Sending image %1$d of %2$d to AI…', 'beepbeep-ai-alt-text-generator'),
+                    ordinal,
+                    total
+                )
+            );
+
+            // Step 2: Sending → Generating after a brief moment (reflects API call in-flight)
+            window.setTimeout(function() {
+                setProgressStep($modal, 'sending');
+                window.setTimeout(function() {
+                    setProgressStep($modal, 'generating');
+                }, 600);
+            }, 200);
+
             generateAltTextForId(id)
                 .then(function(result) {
                     successes++;
@@ -17638,6 +17665,20 @@
                             buildBulkProgressAnalyticsPayload(getBulkProgressState($modal))
                         );
                     }
+                    // Step 3 & 4: Saving → Done
+                    setProgressStep($modal, 'saving');
+                    appendBulkProgressLogEntry(
+                        $modal,
+                        'success',
+                        sprintf(
+                            __('Saved image %1$d of %2$d to WordPress', 'beepbeep-ai-alt-text-generator'),
+                            ordinal,
+                            total
+                        )
+                    );
+                    window.setTimeout(function() {
+                        setProgressStep($modal, 'done');
+                    }, 400);
                     var state = syncState();
                     updateBulkProgress(state.current, state.total, title);
                     if (window.bbaiJobState) {
@@ -17657,6 +17698,8 @@
                     }
 
                     failures++;
+                    // Mark current step as error
+                    setProgressStep($modal, 'error');
                     if (!progressSeenTracked) {
                         progressSeenTracked = true;
                         clearStalledWatch();
@@ -18213,6 +18256,54 @@
         });
     }
 
+    var PROGRESS_STEP_ORDER = ['preparing', 'sending', 'generating', 'saving', 'done'];
+
+    /**
+     * Drive the step-based progress panel for the current image.
+     * @param {Object} $modal jQuery modal element
+     * @param {string} stepKey One of: preparing | sending | generating | saving | done | error
+     */
+    function setProgressStep($modal, stepKey) {
+        if (!$modal || !$modal.length) return;
+        var $steps = $modal.find('[data-bbai-bulk-progress-steps]');
+        if (!$steps.length) return;
+
+        if (stepKey === 'error') {
+            // Mark whichever step is currently active as errored; leave completed steps as-is
+            $steps.find('.is-active').removeClass('is-active').addClass('is-error');
+            return;
+        }
+
+        var activeIdx = PROGRESS_STEP_ORDER.indexOf(stepKey);
+        if (activeIdx === -1) return;
+
+        $steps.find('[data-step]').each(function() {
+            var step = $(this).attr('data-step');
+            var idx = PROGRESS_STEP_ORDER.indexOf(step);
+            $(this).removeClass('is-complete is-active is-pending is-error');
+            if (idx < activeIdx) {
+                $(this).addClass('is-complete');
+            } else if (idx === activeIdx) {
+                $(this).addClass('is-active');
+            } else {
+                $(this).addClass('is-pending');
+            }
+        });
+    }
+
+    /**
+     * Reset all step rows to their initial state (preparing = active, rest = pending).
+     */
+    function resetProgressSteps($modal) {
+        if (!$modal || !$modal.length) return;
+        var $steps = $modal.find('[data-bbai-bulk-progress-steps]');
+        if (!$steps.length) return;
+        $steps.find('[data-step]').removeClass('is-complete is-active is-pending is-error');
+        $steps.find('[data-step="preparing"]').addClass('is-active');
+        $steps.find('[data-step]').not('[data-step="preparing"]').addClass('is-pending');
+        $steps.prop('hidden', false);
+    }
+
     /**
      * Show bulk progress modal with detailed tracking
      *
@@ -18235,6 +18326,23 @@
         $modal.data('startTime', Date.now());
         $modal.removeData('bbaiBulkCompleteAnimationKey');
         resetBulkProgressLog($modal);
+        resetProgressSteps($modal);
+
+        // Immediately populate the log so it is never empty when the modal opens
+        var prepCount = Math.max(1, parseInt(total, 10) || 1);
+        appendBulkProgressLogEntry(
+            $modal,
+            'info',
+            sprintf(
+                _n(
+                    'Preparing %d image for generation…',
+                    'Preparing %d images for generation…',
+                    prepCount,
+                    'beepbeep-ai-alt-text-generator'
+                ),
+                prepCount
+            )
+        );
 
         // Update initial state
         updateBulkProgressStatusNote($modal, '', '');
@@ -18260,32 +18368,45 @@
     }
 
     /**
-     * Rotate helper messages during bulk generation
+     * Show time-based reassurance messages during bulk generation.
+     * Initial copy appears immediately; copy escalates at 3 s and 8 s if still running.
      */
     function startBulkProgressHelperRotation($modal) {
         stopBulkProgressHelperRotation($modal);
-        var helpers = [
-            __('Preparing your images…', 'beepbeep-ai-alt-text-generator'),
-            __('Writing clear ALT text', 'beepbeep-ai-alt-text-generator'),
-            __('Improving accessibility', 'beepbeep-ai-alt-text-generator'),
-            __('Optimizing for SEO', 'beepbeep-ai-alt-text-generator')
-        ];
-        var idx = 0;
         var $helper = $modal.find('.bbai-bulk-progress__helper');
         if (!$helper.length) return;
-        $helper.text(helpers[0]).prop('hidden', false);
-        var interval = setInterval(function() {
-            idx = (idx + 1) % helpers.length;
-            $helper.text(helpers[idx]);
-        }, 2500);
-        $modal.data('bbaiHelperInterval', interval);
+
+        var msg0 = __('This usually takes a few seconds per image.', 'beepbeep-ai-alt-text-generator');
+        var msg3 = __('Still working… larger images can take a little longer.', 'beepbeep-ai-alt-text-generator');
+        var msg8 = __('Taking longer than usual, but generation is still running.', 'beepbeep-ai-alt-text-generator');
+
+        $helper.text(msg0).prop('hidden', false);
+
+        var t1 = window.setTimeout(function() {
+            if (!isBulkProgressCompleteState(getBulkProgressState($modal))) {
+                $helper.text(msg3);
+            }
+        }, 3000);
+
+        var t2 = window.setTimeout(function() {
+            if (!isBulkProgressCompleteState(getBulkProgressState($modal))) {
+                $helper.text(msg8);
+            }
+        }, 8000);
+
+        $modal.data('bbaiHelperInterval', { t1: t1, t2: t2 });
     }
 
     function stopBulkProgressHelperRotation($modal) {
         if (!$modal || !$modal.length) return;
-        var interval = $modal.data('bbaiHelperInterval');
-        if (interval) {
-            clearInterval(interval);
+        var timers = $modal.data('bbaiHelperInterval');
+        if (timers) {
+            if (timers && typeof timers === 'object') {
+                if (timers.t1) window.clearTimeout(timers.t1);
+                if (timers.t2) window.clearTimeout(timers.t2);
+            } else if (typeof timers === 'number') {
+                window.clearInterval(timers);
+            }
             $modal.removeData('bbaiHelperInterval');
         }
         $modal.find('.bbai-bulk-progress__helper').text('').prop('hidden', true);
@@ -18349,7 +18470,7 @@
             return;
         }
 
-        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success');
+        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : (type === 'info' ? 'info' : 'success'));
         if (options.dedupe) {
             key = tone + ':' + String(message);
             seen = $modal.data('bbaiBulkLogSeen') || {};
@@ -18360,7 +18481,7 @@
             $modal.data('bbaiBulkLogSeen', seen);
         }
 
-        icon = tone === 'error' ? '!' : '✓';
+        icon = tone === 'error' ? '!' : (tone === 'info' ? '→' : '✓');
         timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         entryHtml =
             '<div class="bbai-bulk-progress__log-entry bbai-bulk-progress__log-entry--' + tone + '" role="listitem">' +
@@ -18389,14 +18510,36 @@
             '                <p class="bbai-bulk-progress__helper" aria-live="polite" hidden></p>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__header-actions">' +
-            '                <button type="button" class="bbai-bulk-progress__close" aria-label="' + escapeHtml(__('Close', 'beepbeep-ai-alt-text-generator')) + '">&times;</button>' +
+            '                <button type="button" class="bbai-bulk-progress__close" aria-label="' + escapeHtml(__('Hide progress (generation continues in background)', 'beepbeep-ai-alt-text-generator')) + '" title="' + escapeHtml(__('Hides this window — generation keeps running', 'beepbeep-ai-alt-text-generator')) + '">&times;</button>' +
             '            </div>' +
             '        </div>' +
             '        <div class="bbai-bulk-progress__body">' +
             '            <p class="bbai-bulk-progress__meter-label" data-bbai-bulk-progress-meter-label aria-live="polite"></p>' +
             '            <div class="bbai-bulk-progress__bar-container" data-bbai-bulk-progress-bar-container>' +
-            '                <div class="bbai-bulk-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="' + escapeHtml(__('Generation progress', 'beepbeep-ai-alt-text-generator')) + '">' +
-            '                    <div class="bbai-bulk-progress__bar-fill" data-bbai-bulk-progress-bar-fill style="width: 0%"></div>' +
+            '                <div class="bbai-bulk-progress__bar is-indeterminate" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="' + escapeHtml(__('Generation progress', 'beepbeep-ai-alt-text-generator')) + '">' +
+            '                    <div class="bbai-bulk-progress__bar-fill" data-bbai-bulk-progress-bar-fill style="width: 30%"></div>' +
+            '                </div>' +
+            '            </div>' +
+            '            <div class="bbai-bulk-progress__steps" data-bbai-bulk-progress-steps aria-hidden="true">' +
+            '                <div class="bbai-bulk-progress__step is-active" data-step="preparing">' +
+            '                    <span class="bbai-bulk-progress__step-icon" aria-hidden="true"></span>' +
+            '                    <span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Preparing image', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                </div>' +
+            '                <div class="bbai-bulk-progress__step is-pending" data-step="sending">' +
+            '                    <span class="bbai-bulk-progress__step-icon" aria-hidden="true"></span>' +
+            '                    <span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Sending to AI', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                </div>' +
+            '                <div class="bbai-bulk-progress__step is-pending" data-step="generating">' +
+            '                    <span class="bbai-bulk-progress__step-icon" aria-hidden="true"></span>' +
+            '                    <span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Generating ALT text', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                </div>' +
+            '                <div class="bbai-bulk-progress__step is-pending" data-step="saving">' +
+            '                    <span class="bbai-bulk-progress__step-icon" aria-hidden="true"></span>' +
+            '                    <span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Saving to WordPress', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                </div>' +
+            '                <div class="bbai-bulk-progress__step is-pending" data-step="done">' +
+            '                    <span class="bbai-bulk-progress__step-icon" aria-hidden="true"></span>' +
+            '                    <span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Moving to review', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '                </div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__log-container" data-bbai-bulk-progress-log-container>' +
@@ -18485,8 +18628,16 @@
             updateBulkProgressStatusNote($modal, '', '');
         }
 
-        $modal.find('.bbai-bulk-progress__bar-fill, [data-bbai-bulk-progress-bar-fill]').css('width', percentage + '%');
-        $modal.find('.bbai-bulk-progress__bar[role="progressbar"]').attr('aria-valuenow', String(percentage));
+        var $bar = $modal.find('.bbai-bulk-progress__bar[role="progressbar"]');
+        var $barFill = $modal.find('.bbai-bulk-progress__bar-fill, [data-bbai-bulk-progress-bar-fill]');
+        if (percentage === 0 && !isBulkProgressCompleteState(bulkState)) {
+            $bar.addClass('is-indeterminate');
+            $barFill.css('width', '30%');
+        } else {
+            $bar.removeClass('is-indeterminate');
+            $barFill.css('width', percentage + '%');
+        }
+        $bar.attr('aria-valuenow', String(percentage));
 
         renderBulkProgressState($modal, bulkState);
     }

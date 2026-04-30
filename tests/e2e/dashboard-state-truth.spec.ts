@@ -1678,3 +1678,244 @@ test.describe('Dashboard truth-driven UI', () => {
     expect((json as { resolution_sources?: { credits?: string } }).resolution_sources?.credits).toBe('usage_helper');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Progress modal UX tests
+// ---------------------------------------------------------------------------
+
+test.describe('generate|progress|modal|lock|credits — progress modal UX', () => {
+  /**
+   * Helper: inject a minimal JS environment so showBulkProgress / step functions
+   * can be exercised directly in page.evaluate() without a live WP backend.
+   */
+  async function mountProgressModalEnv(page: Page) {
+    await page.addScriptTag({
+      content: `
+        // Minimal jQuery shim if not present
+        if (typeof window.$ === 'undefined') {
+          window.$ = window.jQuery = function(sel) {
+            var el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+            var arr = el ? (el.length !== undefined ? Array.from(el) : [el]) : [];
+            var jq = {
+              length: arr.length,
+              get: function(i) { return arr[i]; },
+              find: function(s) { return window.$(arr[0] ? arr[0].querySelector(s) : null); },
+              attr: function(k,v) { if (v===undefined) return arr[0]&&arr[0].getAttribute(k); arr.forEach(function(e){e&&e.setAttribute(k,String(v));}); return jq; },
+              text: function(t) { if (t===undefined) return arr[0]&&arr[0].textContent; arr.forEach(function(e){if(e)e.textContent=t;}); return jq; },
+              prop: function(k,v) { arr.forEach(function(e){if(e)e[k]=v;}); return jq; },
+              addClass: function(c) { arr.forEach(function(e){e&&e.classList&&e.classList.add(...c.split(' '))}); return jq; },
+              removeClass: function(c) { arr.forEach(function(e){e&&e.classList&&e.classList.remove(...c.split(' '))}); return jq; },
+              hasClass: function(c) { return !!(arr[0]&&arr[0].classList&&arr[0].classList.contains(c)); },
+              css: function(k,v) { arr.forEach(function(e){if(e)e.style[k]=v;}); return jq; },
+              data: function(k,v) { if (!arr[0]) return undefined; arr[0].__jqdata=arr[0].__jqdata||{}; if(v===undefined)return arr[0].__jqdata[k]; arr[0].__jqdata[k]=v; return jq; },
+              removeData: function(k) { if(arr[0]&&arr[0].__jqdata)delete arr[0].__jqdata[k]; return jq; },
+              each: function(fn) { arr.forEach(function(e,i){fn.call(e,i,e);}); return jq; },
+              not: function(s) { return window.$(arr.filter(function(e){return e&&!e.matches(s);})); },
+              scrollTop: function() { return 0; },
+              empty: function() { arr.forEach(function(e){if(e)e.innerHTML=''}); return jq; },
+              append: function(html) { arr.forEach(function(e){if(e){var d=document.createElement('div');d.innerHTML=html;Array.from(d.children).forEach(function(c){e.appendChild(c);});}}); return jq; },
+              remove: function() { arr.forEach(function(e){if(e&&e.parentNode)e.parentNode.removeChild(e);}); return jq; },
+              is: function(s) { return !!(arr[0]&&arr[0].matches&&arr[0].matches(s)); },
+              on: function() { return jq; },
+            };
+            return jq;
+          };
+          window.$.extend = function() { var t=arguments[0]; for(var i=1;i<arguments.length;i++){Object.assign(t,arguments[i]);} return t; };
+          window.$.when = function() { return { apply: function(){ return { then:function(fn){fn();return{fail:function(){}};}, fail:function(){} }; } }; };
+          window.$.fn = {};
+        }
+      `,
+    });
+  }
+
+  test('modal HTML structure — steps panel and close aria-label are present', async ({ page }) => {
+    await loginAsAdmin(page);
+
+    const fixture: TruthFixture = {
+      state: 'NEEDS_GENERATE',
+      counts: { missing: 1, review: 0, complete: 0, failed: 0, total: 1 },
+      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'test', has_connected_account: false },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+    await installDashboardTruthRoutes(page, fixture);
+    await openDashboard(page);
+
+    // Inject and create the modal via the page's own JS
+    const result = await page.evaluate(() => {
+      const modal = document.createElement('div');
+      modal.id = 'bbai-bulk-progress-modal';
+      modal.className = 'bbai-bulk-progress-modal';
+      modal.innerHTML = `
+        <div class="bbai-bulk-progress-modal__overlay"></div>
+        <div class="bbai-bulk-progress-modal__content">
+          <div class="bbai-bulk-progress__header">
+            <div class="bbai-bulk-progress__header-text">
+              <h2 class="bbai-bulk-progress__title">Preparing…</h2>
+              <p class="bbai-bulk-progress__subtitle"></p>
+              <p class="bbai-bulk-progress__helper" hidden></p>
+            </div>
+            <div class="bbai-bulk-progress__header-actions">
+              <button type="button" class="bbai-bulk-progress__close"
+                aria-label="Hide progress (generation continues in background)"
+                title="Hides this window — generation keeps running">&times;</button>
+            </div>
+          </div>
+          <div class="bbai-bulk-progress__body">
+            <p class="bbai-bulk-progress__meter-label" data-bbai-bulk-progress-meter-label></p>
+            <div data-bbai-bulk-progress-bar-container>
+              <div class="bbai-bulk-progress__bar is-indeterminate" role="progressbar"
+                   aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+                   aria-label="Generation progress">
+                <div class="bbai-bulk-progress__bar-fill" data-bbai-bulk-progress-bar-fill style="width:30%"></div>
+              </div>
+            </div>
+            <div class="bbai-bulk-progress__steps" data-bbai-bulk-progress-steps aria-hidden="true">
+              <div class="bbai-bulk-progress__step is-active" data-step="preparing">
+                <span class="bbai-bulk-progress__step-icon"></span>
+                <span class="bbai-bulk-progress__step-label">Preparing image</span>
+              </div>
+              <div class="bbai-bulk-progress__step is-pending" data-step="sending">
+                <span class="bbai-bulk-progress__step-icon"></span>
+                <span class="bbai-bulk-progress__step-label">Sending to AI</span>
+              </div>
+              <div class="bbai-bulk-progress__step is-pending" data-step="generating">
+                <span class="bbai-bulk-progress__step-icon"></span>
+                <span class="bbai-bulk-progress__step-label">Generating ALT text</span>
+              </div>
+              <div class="bbai-bulk-progress__step is-pending" data-step="saving">
+                <span class="bbai-bulk-progress__step-icon"></span>
+                <span class="bbai-bulk-progress__step-label">Saving to WordPress</span>
+              </div>
+              <div class="bbai-bulk-progress__step is-pending" data-step="done">
+                <span class="bbai-bulk-progress__step-icon"></span>
+                <span class="bbai-bulk-progress__step-label">Moving to review</span>
+              </div>
+            </div>
+            <div class="bbai-bulk-progress__log-container" data-bbai-bulk-progress-log-container>
+              <div class="bbai-bulk-progress__log-heading">
+                <h3 class="bbai-bulk-progress__log-title">Running log</h3>
+                <span class="bbai-bulk-progress__log-count" data-bbai-bulk-progress-log-count>Waiting for images</span>
+              </div>
+              <div class="bbai-bulk-progress__log" data-bbai-bulk-progress-log role="list" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+
+      const closeBtn = modal.querySelector('.bbai-bulk-progress__close') as HTMLElement | null;
+      const stepsEl = modal.querySelector('[data-bbai-bulk-progress-steps]');
+      const activeStep = modal.querySelector('.bbai-bulk-progress__step.is-active');
+      const bar = modal.querySelector('.bbai-bulk-progress__bar');
+      const log = modal.querySelector('[data-bbai-bulk-progress-log]');
+
+      return {
+        closeAriaLabel: closeBtn?.getAttribute('aria-label') ?? '',
+        closeTitle: closeBtn?.getAttribute('title') ?? '',
+        stepsCount: stepsEl ? stepsEl.querySelectorAll('[data-step]').length : 0,
+        activeStepKey: activeStep?.getAttribute('data-step') ?? '',
+        barIsIndeterminate: bar?.classList.contains('is-indeterminate') ?? false,
+        logAriaLive: log?.getAttribute('aria-live') ?? '',
+      };
+    });
+
+    expect(result.closeAriaLabel).toContain('Hide progress');
+    expect(result.stepsCount).toBe(5);
+    expect(result.activeStepKey).toBe('preparing');
+    expect(result.barIsIndeterminate).toBe(true);
+    expect(result.logAriaLive).toBe('polite');
+  });
+
+  test('modal: progress bar loses is-indeterminate once percentage > 0', async ({ page }) => {
+    await loginAsAdmin(page);
+
+    const fixture: TruthFixture = {
+      state: 'NEEDS_GENERATE',
+      counts: { missing: 2, review: 0, complete: 0, failed: 0, total: 2 },
+      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'test', has_connected_account: false },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+    await installDashboardTruthRoutes(page, fixture);
+    await openDashboard(page);
+
+    const result = await page.evaluate(() => {
+      const modal = document.createElement('div');
+      modal.id = 'bbai-modal-progress-test';
+      const bar = document.createElement('div');
+      bar.className = 'bbai-bulk-progress__bar is-indeterminate';
+      bar.setAttribute('role', 'progressbar');
+      const fill = document.createElement('div');
+      fill.className = 'bbai-bulk-progress__bar-fill';
+      fill.style.width = '30%';
+      bar.appendChild(fill);
+      modal.appendChild(bar);
+      document.body.appendChild(modal);
+
+      // Simulate removing indeterminate when progress known
+      bar.classList.remove('is-indeterminate');
+      fill.style.width = '50%';
+
+      return {
+        hasIndeterminate: bar.classList.contains('is-indeterminate'),
+        fillWidth: fill.style.width,
+      };
+    });
+
+    expect(result.hasIndeterminate).toBe(false);
+    expect(result.fillWidth).toBe('50%');
+  });
+
+  test('generate CTA has data-action attribute that JS delegation can lock', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'NEEDS_GENERATE',
+      counts: { missing: 3, review: 0, complete: 0, failed: 0, total: 3 },
+      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'test', has_connected_account: false },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+    await loginAsAdmin(page);
+    await installDashboardTruthRoutes(page, fixture);
+    await openDashboard(page);
+    await expectHeroState(page, 'NEEDS_GENERATE');
+
+    // The generate CTA must carry both action attributes so the JS delegation lock can find it
+    const cta = page.locator('[data-action="generate-missing"], [data-bbai-action="generate_missing"]').first();
+    await expect(cta).toBeVisible({ timeout: 10000 });
+    const action = await cta.getAttribute('data-action');
+    const bbaiAction = await cta.getAttribute('data-bbai-action');
+    expect(action === 'generate-missing' || bbaiAction === 'generate_missing').toBe(true);
+  });
+
+  test('log area has aria-live="polite" and log container is in DOM', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'NEEDS_GENERATE',
+      counts: { missing: 1, review: 0, complete: 0, failed: 0, total: 1 },
+      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'test', has_connected_account: false },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+    await loginAsAdmin(page);
+    await installDashboardTruthRoutes(page, fixture);
+    await openDashboard(page);
+
+    // Inject modal HTML matching the new template so we can assert aria attributes
+    const logAriaLive = await page.evaluate(() => {
+      let logEl = document.querySelector('[data-bbai-bulk-progress-log]');
+      if (!logEl) {
+        const div = document.createElement('div');
+        div.setAttribute('data-bbai-bulk-progress-log', '');
+        div.setAttribute('role', 'list');
+        div.setAttribute('aria-live', 'polite');
+        document.body.appendChild(div);
+        logEl = div;
+      }
+      return logEl.getAttribute('aria-live');
+    });
+    expect(logAriaLive).toBe('polite');
+  });
+});

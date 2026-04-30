@@ -14341,6 +14341,144 @@ button.bbai-btn.bbai-topup-section__btn:hover:not(:disabled) {
 @media (max-width: 640px) { .bbai-bulk-progress-modal { padding: 16px; } .bbai-bulk-progress-modal__content { max-height: calc(100vh - 32px); } .bbai-bulk-progress__header { padding: 22px 22px 0; } .bbai-bulk-progress__body { padding: 18px 22px 22px; } .bbai-bulk-progress__complete-actions { flex-direction: column; } .bbai-bulk-progress__action { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .bbai-bulk-progress-modal, .bbai-bulk-progress-modal__content, .bbai-bulk-progress__bar-fill, .bbai-bulk-progress__success-check { transition: none; } }
 
+/* Indeterminate / shimmer progress bar state */
+@keyframes bbai-bulk-progress-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+}
+.bbai-bulk-progress__bar.is-indeterminate { overflow: hidden; }
+.bbai-bulk-progress__bar.is-indeterminate .bbai-bulk-progress__bar-fill {
+    position: relative;
+    width: 30% !important;
+    animation: none;
+    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+}
+.bbai-bulk-progress__bar.is-indeterminate .bbai-bulk-progress__bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.42) 50%, transparent 100%);
+    animation: bbai-bulk-progress-shimmer 1.6s ease-in-out infinite;
+}
+
+/* Step-based progress panel */
+.bbai-bulk-progress__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 0;
+}
+.bbai-bulk-progress__step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    transition: background 0.18s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--bbai-text-muted);
+}
+.bbai-bulk-progress__step-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(148,163,184,0.32);
+    background: rgba(248,250,252,0.8);
+    color: transparent;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+/* Complete step */
+.bbai-bulk-progress__step.is-complete {
+    color: #166534;
+}
+.bbai-bulk-progress__step.is-complete .bbai-bulk-progress__step-icon {
+    background: rgba(34,197,94,0.16);
+    border-color: rgba(34,197,94,0.4);
+    color: #16a34a;
+}
+.bbai-bulk-progress__step.is-complete .bbai-bulk-progress__step-icon::before { content: '✓'; }
+
+/* Active step — pulsing dot */
+@keyframes bbai-step-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.6; transform: scale(0.85); }
+}
+.bbai-bulk-progress__step.is-active {
+    background: rgba(59,130,246,0.07);
+    color: #1d4ed8;
+    font-weight: 600;
+}
+.bbai-bulk-progress__step.is-active .bbai-bulk-progress__step-icon {
+    background: rgba(59,130,246,0.18);
+    border-color: rgba(59,130,246,0.5);
+    color: transparent;
+    position: relative;
+}
+.bbai-bulk-progress__step.is-active .bbai-bulk-progress__step-icon::before {
+    content: '';
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #3b82f6;
+    animation: bbai-step-pulse 1.1s ease-in-out infinite;
+}
+
+/* Pending step */
+.bbai-bulk-progress__step.is-pending {
+    color: rgba(100,116,139,0.65);
+}
+.bbai-bulk-progress__step.is-pending .bbai-bulk-progress__step-icon {
+    border-color: rgba(148,163,184,0.22);
+    background: transparent;
+}
+.bbai-bulk-progress__step.is-pending .bbai-bulk-progress__step-icon::before { content: '○'; color: rgba(148,163,184,0.55); font-size: 0.7rem; }
+
+/* Error step */
+.bbai-bulk-progress__step.is-error {
+    color: #991b1b;
+    background: rgba(239,68,68,0.07);
+}
+.bbai-bulk-progress__step.is-error .bbai-bulk-progress__step-icon {
+    background: rgba(239,68,68,0.14);
+    border-color: rgba(239,68,68,0.4);
+    color: #dc2626;
+}
+.bbai-bulk-progress__step.is-error .bbai-bulk-progress__step-icon::before { content: '✕'; }
+
+/* Info-toned log entries (→ icon, muted neutral style) */
+.bbai-bulk-progress__log-entry--info {
+    border-left: 3px solid rgba(148,163,184,0.5);
+}
+.bbai-bulk-progress__log-entry--info .bbai-bulk-progress__log-icon {
+    background: rgba(148,163,184,0.12);
+    color: #475569;
+}
+.bbai-bulk-progress__log-entry--info .bbai-bulk-progress__log-text {
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Suppress duplicate spinner — only one active indicator per section */
+.bbai-bulk-progress__bar.is-indeterminate ~ .bbai-bulk-progress__step.is-active .bbai-bulk-progress__step-icon::before {
+    animation: none;
+}
+
+/* Helper text — muted, beneath the bar */
+.bbai-bulk-progress__helper { font-style: italic; }
+
+@media (prefers-reduced-motion: reduce) {
+    .bbai-bulk-progress__bar.is-indeterminate .bbai-bulk-progress__bar-fill::after { animation: none; }
+    .bbai-bulk-progress__step.is-active .bbai-bulk-progress__step-icon::before { animation: none; }
+}
+
 
 
 /* 16. API Notice */
