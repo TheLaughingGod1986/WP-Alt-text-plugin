@@ -1379,8 +1379,8 @@ body.bbai-guest-conversion-modal-open {
     box-sizing: border-box;
     pointer-events: none;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .bbai-dashboard-locked-preview__overlay-card {
@@ -1409,6 +1409,14 @@ body.bbai-guest-conversion-modal-open {
     font-weight: 600;
     color: #64748b;
     text-align: left;
+}
+
+#bbai-dashboard-main .bbai-guest-hero__secondary-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-top: 6px;
+    opacity: 0.9;
 }
 
 /* Subtle donut value animation on load (guest funnel) */

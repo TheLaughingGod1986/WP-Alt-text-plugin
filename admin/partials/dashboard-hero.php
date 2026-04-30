@@ -108,16 +108,16 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	$bbai_guest_body  = ( $bbai_guest_fixed_images > 0 && $bbai_guest_remaining_images > 0 )
 		? sprintf(
 			/* translators: 1: fixed images count, 2: remaining images count */
-			__( 'You’ve fixed %1$s images. Just %2$s left to complete your library.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'You’ve fixed %1$s images. Just %2$s more to go.', 'beepbeep-ai-alt-text-generator' ),
 			number_format_i18n( $bbai_guest_fixed_images ),
 			number_format_i18n( $bbai_guest_remaining_images )
 		)
 		: __( 'You’re one step away from a fully optimised site.', 'beepbeep-ai-alt-text-generator' );
 
 	$bbai_primary_register = [
-		'label'       => __( 'Continue in library', 'beepbeep-ai-alt-text-generator' ),
+		'label'       => __( 'Continue in library →', 'beepbeep-ai-alt-text-generator' ),
 		// Make the hero CTA visually secondary so the modal remains the primary conversion driver.
-		'class'       => 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary',
+		'class'       => 'bbai-guest-hero__text-link bbai-guest-hero__secondary-cta',
 		'action'      => 'show-auth-modal',
 		'auth_tab'    => 'signup',
 		'analytics'   => 'guest_hero_primary_register_exhausted',
