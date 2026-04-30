@@ -309,7 +309,7 @@ if ( 'QUEUED' === $bbai_li_state_id ) {
 			_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
 			number_format_i18n( $bbai_li_queued_total )
 		);
-		$bbai_li_primary_cta['busy_label'] = __( 'Starting generation…', 'beepbeep-ai-alt-text-generator' );
+		$bbai_li_primary_cta['busy_label'] = __( 'Generating ALT text…', 'beepbeep-ai-alt-text-generator' );
 	}
 
 	if ( is_array( $bbai_li_secondary_cta ) ) {
@@ -452,6 +452,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 	data-bbai-li-hero="1"
 	data-bbai-li-state="<?php echo esc_attr( $bbai_li_state_id ); ?>"
 	data-bbai-li-variant="<?php echo esc_attr( (string) ( $bbai_li_hero['variant'] ?? 'default' ) ); ?>"
+	data-bbai-li-missing-count="<?php echo esc_attr( (string) $bbai_li_seg_miss ); ?>"
+	data-bbai-li-review-count="<?php echo esc_attr( (string) $bbai_li_seg_weak ); ?>"
+	data-bbai-li-optimised-count="<?php echo esc_attr( (string) $bbai_li_seg_opt ); ?>"
+	data-bbai-li-total-count="<?php echo esc_attr( (string) $bbai_li_seg_tot ); ?>"
 	aria-labelledby="bbai-li-hero-title"
 >
 
@@ -684,12 +688,13 @@ $bbai_hero_credit_bar_aria = sprintf(
 				?>
 				<div class="bbai-li-cta-primary-col">
 					<a
-						class="bbai-li-btn-primary bbai-btn bbai-btn-primary"
+						class="bbai-li-btn-primary bbai-btn bbai-btn-primary<?php echo 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ? ' bbai-generate-button' : ''; ?>"
 						href="<?php echo esc_url( $bbai_li_primary_cta['href'] ?? '#' ); ?>"
 						data-bbai-li-action="<?php echo esc_attr( $bbai_li_primary_cta['action'] ?? '' ); ?>"
 						<?php if ( 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) : ?>
 							data-action="generate-missing"
 							data-bbai-action="generate_missing"
+							data-bbai-generation-action="1"
 						<?php endif; ?>
 						data-bbai-li-primary-cta="1"
 						data-busy-label="<?php echo esc_attr( $bbai_li_busy_label ); ?>"
@@ -749,6 +754,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 			</div>
 		</div>
 		</div>
+
+		<div class="bbai-li-card-section bbai-li-card-section--activation" data-bbai-activation-host="1" aria-live="polite"></div>
 
 		<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-li-card-section--spaced">
 
@@ -905,7 +912,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 	var BOOTSTRAP_SYNC_SUCCESS_TTL_MS = 2 * 60 * 60 * 1000;
 
 	var ACTION_STATUS = {
-		'generate-missing': '<?php echo esc_js( __( 'Starting generation…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		'generate-missing': '<?php echo esc_js( __( 'Generating ALT text…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		'resume-job':       '<?php echo esc_js( __( 'Resuming…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		'pause-job':        '<?php echo esc_js( __( 'Pausing…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		'retry-failed':     '<?php echo esc_js( __( 'Retrying failed images…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1048,6 +1055,37 @@ $bbai_hero_credit_bar_aria = sprintf(
 		insightAccessibleSuffix: '<?php echo esc_js( __( 'of images accessible', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		insightMinsSaved: '<?php echo esc_js( __( '~%s mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		insightMinsSavedZero: '<?php echo esc_js( __( '~0 mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+	};
+
+	var PROMPT_TEXT = {
+		firstSuccessTitle: '<?php echo esc_js( __( 'Nice — your images now have ALT text 🎉', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		firstSuccessCopy: '<?php echo esc_js( __( 'Search engines and screen readers can now understand them.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewAltText: '<?php echo esc_js( __( 'Review ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateMore: '<?php echo esc_js( __( 'Generate more', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		approveAll: '<?php echo esc_js( __( 'Approve all ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		editFew: '<?php echo esc_js( __( 'Edit a few manually', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		done: '<?php echo esc_js( __( 'Done', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		upgradeTitle: '<?php echo esc_js( __( 'You’ve optimised %s images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		upgradeCopy: '<?php echo esc_js( __( 'Upgrade to automate this for future uploads.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		enableAutomation: '<?php echo esc_js( __( 'Enable automatic ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditUsed: '<?php echo esc_js( __( 'You’ve used %1$s of %2$s credits this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditLowTitle: '<?php echo esc_js( __( 'You’re running low on credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditLowCopy: '<?php echo esc_js( __( 'Upgrade to continue generating ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		upgradePlan: '<?php echo esc_js( __( 'Upgrade plan', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		emptyTitle: '<?php echo esc_js( __( 'Add images to your library to start generating ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		openMedia: '<?php echo esc_js( __( 'Open media library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		learnSeo: '<?php echo esc_js( __( 'Learn how ALT text improves SEO', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewValueTitle: '<?php echo esc_js( __( 'Reviewing helps improve your SEO accuracy', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		scoreImproved: '<?php echo esc_js( __( 'Score improved from 45 → 82', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		nextStepTitle: '<?php echo esc_js( __( 'ALT text generated. Choose your next step.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+	};
+
+	var ACTIVATION_PROMPT_KEYS = {
+		firstSuccessSeen: 'bbai_activation_first_success_seen',
+		creditWarning60Shown: 'bbai_activation_credit_warning_60_shown',
+		creditWarning80Shown: 'bbai_activation_credit_warning_80_shown',
+		upgradeDismissed: 'bbai_activation_upgrade_dismissed',
+		upgradeShown: 'bbai_activation_upgrade_shown',
 	};
 
 	var lastStateTruthFailureLogAt = 0;
@@ -2274,8 +2312,124 @@ $bbai_hero_credit_bar_aria = sprintf(
 				total: job.total,
 				etaSeconds: job.etaSeconds,
 			} : null,
-			lastRunAt: getLastRunAt( truth ),
 		} );
+	}
+
+	function getDashboardRenderMode( state ) {
+		state = String( state || '' ).toUpperCase();
+		return 'ALL_CLEAR' === state ? 'DONE' : state;
+	}
+
+	function isGenerationInProgressForRender( truth ) {
+		var state = truth ? getStateTruthState( truth ) : ( hero.getAttribute( 'data-bbai-li-state' ) || '' );
+		var job = truth ? getTruthJob( truth ) : null;
+		return !! (
+			( window.bbaiGenerationLock && window.bbaiGenerationLock.active ) ||
+			window.bbaiGenerationInProgress ||
+			'QUEUED' === state ||
+			'PROCESSING' === state ||
+			( job && job.active )
+		);
+	}
+
+	function buildDashboardRenderSignatureFromParts( counts, credits, state, generationInProgress ) {
+		return JSON.stringify( {
+			missing: Math.max( 0, parseInt( counts.missing, 10 ) || 0 ),
+			needsReview: Math.max( 0, parseInt( counts.review, 10 ) || 0 ),
+			optimized: Math.max( 0, parseInt( counts.complete, 10 ) || 0 ),
+			total: Math.max( 0, parseInt( counts.total, 10 ) || 0 ),
+			creditsUsed: Math.max( 0, parseInt( credits.used, 10 ) || 0 ),
+			creditsLimit: Math.max( 1, parseInt( credits.total, 10 ) || 1 ),
+			creditsRemaining: Math.max( 0, parseInt( credits.remaining, 10 ) || 0 ),
+			mode: getDashboardRenderMode( state ),
+			generationInProgress: !! generationInProgress,
+		} );
+	}
+
+	function buildDashboardRenderSignature( truth ) {
+		return buildDashboardRenderSignatureFromParts(
+			getTruthCounts( truth ),
+			getTruthCredits( truth ),
+			getStateTruthState( truth ),
+			isGenerationInProgressForRender( truth )
+		);
+	}
+
+	function buildCurrentDashboardRenderSignature() {
+		var root = getDashboardRoot();
+		var heroCredit = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' );
+		var creditsTotal = root ? parseInt( root.getAttribute( 'data-bbai-credits-total' ) || '', 10 ) : NaN;
+		var creditsUsed = root ? parseInt( root.getAttribute( 'data-bbai-credits-used' ) || '', 10 ) : NaN;
+		var creditsRemaining = root ? parseInt( root.getAttribute( 'data-bbai-credits-remaining' ) || '', 10 ) : NaN;
+
+		if ( isNaN( creditsTotal ) && heroCredit ) {
+			creditsTotal = parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-limit' ) || '', 10 );
+		}
+		if ( isNaN( creditsUsed ) && heroCredit ) {
+			creditsUsed = parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-used' ) || '', 10 );
+		}
+		if ( isNaN( creditsRemaining ) && heroCredit ) {
+			creditsRemaining = parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-remaining' ) || '', 10 );
+		}
+		creditsTotal = Math.max( 1, isNaN( creditsTotal ) ? 1 : creditsTotal );
+		creditsUsed = Math.max( 0, isNaN( creditsUsed ) ? 0 : creditsUsed );
+		creditsRemaining = Math.max( 0, isNaN( creditsRemaining ) ? Math.max( 0, creditsTotal - creditsUsed ) : creditsRemaining );
+
+		return buildDashboardRenderSignatureFromParts(
+			getDomCounts(),
+			{
+				used: creditsUsed,
+				total: creditsTotal,
+				remaining: creditsRemaining,
+			},
+			hero.getAttribute( 'data-bbai-li-state' ) || '',
+			isGenerationInProgressForRender()
+		);
+	}
+
+	function getLastDashboardRenderSignature() {
+		return window.bbaiLastDashboardRenderSignature || dashboardPolling.renderSignature || buildCurrentDashboardRenderSignature();
+	}
+
+	function rememberDashboardRenderSignature( truth ) {
+		var signature = buildDashboardRenderSignature( truth );
+		dashboardPolling.renderSignature = signature;
+		window.bbaiLastDashboardRenderSignature = signature;
+		window.bbaiPreviousDashboardMode = getDashboardRenderMode( getStateTruthState( truth ) );
+		return signature;
+	}
+
+	function parseDashboardRenderSignature( signature ) {
+		try {
+			return signature ? JSON.parse( signature ) : null;
+		} catch ( err ) {
+			return null;
+		}
+	}
+
+	function renderSignaturesShareStableModeAndCounts( previous, next ) {
+		return !! (
+			previous &&
+			next &&
+			previous.mode === next.mode &&
+			previous.generationInProgress === next.generationInProgress &&
+			previous.missing === next.missing &&
+			previous.needsReview === next.needsReview &&
+			previous.optimized === next.optimized &&
+			previous.total === next.total
+		);
+	}
+
+	function renderSignatureCreditsChanged( previous, next ) {
+		return !! (
+			previous &&
+			next &&
+			(
+				previous.creditsUsed !== next.creditsUsed ||
+				previous.creditsLimit !== next.creditsLimit ||
+				previous.creditsRemaining !== next.creditsRemaining
+			)
+		);
 	}
 
 	function getPollIntervalForState( state ) {
@@ -2320,7 +2474,12 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 	function clearOptimisticAction() {
 		var primaryCta = getPrimaryCta();
-		if ( dashboardPolling.optimisticAction && primaryCta && primaryCta.getAttribute( 'aria-busy' ) === 'true' ) {
+		if (
+			dashboardPolling.optimisticAction &&
+			primaryCta &&
+			primaryCta.getAttribute( 'aria-busy' ) === 'true' &&
+			! ( window.bbaiGenerationLock && window.bbaiGenerationLock.active )
+		) {
 			setBusy( primaryCta, false );
 		}
 		dashboardPolling.optimisticAction = '';
@@ -2566,20 +2725,78 @@ $bbai_hero_credit_bar_aria = sprintf(
 	}
 
 	function setBusy( el, busy ) {
+		var busyLabel;
+		var spinner;
+		var label;
+		var originalHtml;
+
 		if ( busy ) {
+			if ( ! el.getAttribute( 'data-bbai-busy-original-html' ) ) {
+				el.setAttribute( 'data-bbai-busy-original-html', el.innerHTML );
+			}
 			if ( ! el.getAttribute( 'data-original-label' ) ) {
 				el.setAttribute( 'data-original-label', el.textContent.trim() );
 			}
+			busyLabel = 'generate-missing' === ( el.getAttribute( 'data-bbai-li-action' ) || el.getAttribute( 'data-action' ) || '' )
+				? ACTION_STATUS[ 'generate-missing' ]
+				: ( el.getAttribute( 'data-busy-label' ) || TEXT.working );
 			el.setAttribute( 'aria-busy', 'true' );
+			el.setAttribute( 'aria-disabled', 'true' );
 			el.setAttribute( 'disabled', '' );
-			el.textContent = el.getAttribute( 'data-busy-label' ) || TEXT.working;
+			el.setAttribute( 'data-bbai-generation-action', '1' );
+			el.classList.add( 'is-busy', 'bbai-generate-button' );
+			el.textContent = '';
+			spinner = document.createElement( 'span' );
+			spinner.className = 'bbai-button-spinner';
+			spinner.setAttribute( 'aria-hidden', 'true' );
+			label = document.createElement( 'span' );
+			label.className = 'bbai-button-label';
+			label.textContent = busyLabel;
+			el.appendChild( spinner );
+			el.appendChild( label );
 		} else {
 			el.removeAttribute( 'aria-busy' );
+			el.removeAttribute( 'aria-disabled' );
 			el.removeAttribute( 'disabled' );
-			var orig = el.getAttribute( 'data-original-label' );
-			if ( orig ) { el.textContent = orig; el.removeAttribute( 'data-original-label' ); }
+			el.classList.remove( 'is-busy' );
+			originalHtml = el.getAttribute( 'data-bbai-busy-original-html' );
+			if ( originalHtml ) {
+				el.innerHTML = originalHtml;
+				el.removeAttribute( 'data-bbai-busy-original-html' );
+			} else {
+				var orig = el.getAttribute( 'data-original-label' );
+				if ( orig ) { el.textContent = orig; }
+			}
+			el.removeAttribute( 'data-original-label' );
 			removeStatusLine();
 		}
+	}
+
+	function acquireInlineGenerationLock( e, source ) {
+		if ( window.bbaiGenerationLock && window.bbaiGenerationLock.active ) {
+			if ( e && typeof e.preventDefault === 'function' ) { e.preventDefault(); }
+			if ( e && typeof e.stopPropagation === 'function' ) { e.stopPropagation(); }
+			if ( e && typeof e.stopImmediatePropagation === 'function' ) { e.stopImmediatePropagation(); }
+			return false;
+		}
+
+		window.bbaiGenerationLock = {
+			active: true,
+			source: source || 'dashboard_generate',
+			startedAt: Date.now(),
+		};
+		window.bbaiGenerationInProgress = true;
+		return true;
+	}
+
+	function releaseInlineGenerationLock() {
+		if ( window.bbaiGenerationLock ) {
+			window.bbaiGenerationLock.active = false;
+			window.bbaiGenerationLock.source = null;
+			window.bbaiGenerationLock.jobId = null;
+			window.bbaiGenerationLock.startedAt = null;
+		}
+		window.bbaiGenerationInProgress = false;
 	}
 
 	function flashSummaryUpdating() {
@@ -3380,6 +3597,33 @@ $bbai_hero_credit_bar_aria = sprintf(
 		syncHeroCreditBlockFromTruth( truth );
 	}
 
+	function syncCountsOnlyFromTruth( truth, context ) {
+		var counts = getTruthCounts( truth );
+		var meta = buildStatusStripMeta( context || '', 'syncCountsOnlyFromTruth' );
+		var stateData = buildStableStateData( truth );
+		var headline = hero.querySelector( '[data-bbai-li-hero-headline="1"]' );
+		var support = hero.querySelector( '[data-bbai-li-hero-support="1"]' );
+		syncDashboardRootFromTruth( truth );
+		if ( stateData && stateData.hero ) {
+			if ( headline && stateData.hero.headline && headline.textContent !== String( stateData.hero.headline ) ) {
+				headline.textContent = String( stateData.hero.headline );
+			}
+			if ( support && stateData.hero.support && support.textContent !== String( stateData.hero.support ) ) {
+				support.textContent = String( stateData.hero.support );
+			}
+			hero.setAttribute( 'data-bbai-li-missing-count', String( Math.max( 0, counts.missing || 0 ) ) );
+			hero.setAttribute( 'data-bbai-li-review-count', String( Math.max( 0, counts.review || 0 ) ) );
+			hero.setAttribute( 'data-bbai-li-optimised-count', String( Math.max( 0, counts.complete || 0 ) ) );
+			hero.setAttribute( 'data-bbai-li-total-count', String( Math.max( 1, counts.total || counts.missing + counts.review + counts.complete + counts.failed || 1 ) ) );
+		}
+		updateInsightCardsFromTruth( truth );
+		updateSummaryValueByLabel( TEXT.missingLabel, formatCount( counts.missing ), counts.missing > 0 ? 'alert' : 'ok' );
+		updateSummaryValueByLabel( TEXT.reviewLabel, formatCount( counts.review ), counts.review > 0 ? 'primary' : 'ok' );
+		renderActivityStripFromTruth( truth, meta );
+		renderImpactLineFromTruth( truth, meta );
+		syncStatusLineForTruth( truth, meta );
+	}
+
 	function syncDashboardRootFromTruth( truth ) {
 		if ( window.BBAI_DASHBOARD_STATE_ENDPOINT_ACTIVE ) {
 			return;
@@ -3551,6 +3795,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 		if ( ! items.length ) {
 			Array.prototype.forEach.call( strips, function ( strip ) {
+				if ( strip.hidden && strip.getAttribute( 'data-bbai-li-activity-signature' ) === 'hidden' ) {
+					return;
+				}
+				strip.setAttribute( 'data-bbai-li-activity-signature', 'hidden' );
 				strip.innerHTML = '';
 				strip.hidden = true;
 				strip.setAttribute( 'aria-hidden', 'true' );
@@ -3560,6 +3808,15 @@ $bbai_hero_credit_bar_aria = sprintf(
 		}
 
 		Array.prototype.forEach.call( strips, function ( strip ) {
+			var nextSignature = JSON.stringify( {
+				tone: tone,
+				items: items,
+				signalIndex: signalIndex,
+			} );
+			if ( strip.getAttribute( 'data-bbai-li-activity-signature' ) === nextSignature ) {
+				return;
+			}
+			strip.setAttribute( 'data-bbai-li-activity-signature', nextSignature );
 			strip.hidden = false;
 			strip.removeAttribute( 'aria-hidden' );
 			renderActivityStripItems( strip, tone, items, signalIndex );
@@ -3614,8 +3871,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 		}
 
 		if ( line ) {
-			line.textContent = nextText;
-			logStatusStrip( 'impact_line_write', buildStatusStripLogContext( truth, stripMeta, nextText, 'impact_line', 'write' ) );
+			if ( line.textContent !== nextText ) {
+				line.textContent = nextText;
+				logStatusStrip( 'impact_line_write', buildStatusStripLogContext( truth, stripMeta, nextText, 'impact_line', 'write' ) );
+			}
 		}
 	}
 
@@ -3978,6 +4237,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		clearOptimisticAction();
 		dashboardPolling.currentTruth = truth;
 		dashboardPolling.currentSignature = buildTruthSignature( truth );
+		rememberDashboardRenderSignature( truth );
 		dashboardPolling.latestState = getStateTruthState( truth );
 		dashboardPolling.failureCount = 0;
 		dashboardPolling.requiresResolvedSync = false;
@@ -4111,16 +4371,15 @@ $bbai_hero_credit_bar_aria = sprintf(
 	function markTruthSeenWithoutUiUpdate( truth ) {
 		dashboardPolling.currentTruth = truth;
 		dashboardPolling.currentSignature = buildTruthSignature( truth );
+		rememberDashboardRenderSignature( truth );
 		dashboardPolling.latestState = getStateTruthState( truth );
 		dashboardPolling.failureCount = 0;
 		dashboardPolling.bootstrapSyncApplied = false;
-		renderActivityStripFromTruth(
-			truth,
-			buildStatusStripMeta( 'truth_seen_no_full_commit', 'markTruthSeenWithoutUiUpdate' )
-		);
 	}
 
 	function shouldSkipTruthUiUpdate( truth, context, forceResolved ) {
+		var nextRenderSignature = buildDashboardRenderSignature( truth );
+		var lastRenderSignature = getLastDashboardRenderSignature();
 		var incomingHash = getTruthCountsHash( truth );
 		var currentHash = getCurrentCountsHash();
 		var incomingCounts = getTruthCounts( truth );
@@ -4133,6 +4392,17 @@ $bbai_hero_credit_bar_aria = sprintf(
 		// Never skip when the resolver state changes (QUEUED→PROCESSING, etc.).
 		if ( incomingState !== currentState ) {
 			return false;
+		}
+		if ( 'QUEUED' === incomingState || 'PROCESSING' === incomingState ) {
+			return false;
+		}
+
+		if ( nextRenderSignature === lastRenderSignature ) {
+			logRender( 'skip_unchanged_poll_render', {
+				context: context || '',
+				signature: nextRenderSignature,
+			} );
+			return true;
 		}
 
 		var domUsed = root ? parseInt( root.getAttribute( 'data-bbai-credits-used' ) || '', 10 ) : NaN;
@@ -4176,6 +4446,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 	function commitTruthPayload( truth, context, forceResolved ) {
 		var previousTruth = dashboardPolling.currentTruth;
+		var previousRenderSignature;
+		var nextRenderSignature;
+		var previousRenderParts;
+		var nextRenderParts;
 		if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated ) {
 			markTruthSeenWithoutUiUpdate( truth );
 			schedulePolling( 'hydration_guard' );
@@ -4184,6 +4458,40 @@ $bbai_hero_credit_bar_aria = sprintf(
 		if ( shouldSkipTruthUiUpdate( truth, context, forceResolved ) ) {
 			markTruthSeenWithoutUiUpdate( truth );
 			schedulePolling( 'counts_unchanged' );
+			return Promise.resolve( truth );
+		}
+		previousRenderSignature = getLastDashboardRenderSignature();
+		nextRenderSignature = buildDashboardRenderSignature( truth );
+		previousRenderParts = parseDashboardRenderSignature( previousRenderSignature );
+		nextRenderParts = parseDashboardRenderSignature( nextRenderSignature );
+		if (
+			renderSignaturesShareStableModeAndCounts( previousRenderParts, nextRenderParts ) &&
+			renderSignatureCreditsChanged( previousRenderParts, nextRenderParts )
+		) {
+			syncCreditsOnlyFromTruth( truth );
+			markTruthSeenWithoutUiUpdate( truth );
+			logRender( 'patch_credits_only_poll_render', {
+				context: context || '',
+				signature: nextRenderSignature,
+			} );
+			schedulePolling( 'credits_changed' );
+			return Promise.resolve( truth );
+		}
+		if (
+			previousRenderParts &&
+			nextRenderParts &&
+			previousRenderParts.mode === nextRenderParts.mode &&
+			! nextRenderParts.generationInProgress &&
+			'QUEUED' !== getStateTruthState( truth ) &&
+			'PROCESSING' !== getStateTruthState( truth )
+		) {
+			syncCountsOnlyFromTruth( truth, context );
+			markTruthSeenWithoutUiUpdate( truth );
+			logRender( 'patch_counts_poll_render', {
+				context: context || '',
+				signature: nextRenderSignature,
+			} );
+			schedulePolling( 'counts_changed' );
 			return Promise.resolve( truth );
 		}
 		if ( forceResolved ) {
@@ -4256,6 +4564,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 				var previousState = previousTruth ? getStateTruthState( previousTruth ) : ( hero.getAttribute( 'data-bbai-li-state' ) || '' );
 				var nextState = getStateTruthState( truth );
 				var nextSignature = buildTruthSignature( truth );
+				var nextRenderSignature = buildDashboardRenderSignature( truth );
 				var forceResolved = dashboardPolling.requiresResolvedSync || shouldUseResolvedDashboard( truth, previousTruth );
 
 				if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated ) {
@@ -4274,6 +4583,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 					var unchangedMeta = buildStatusStripMeta( pollContext, 'runPollingTick_state_unchanged' );
 					dashboardPolling.currentTruth = truth;
 					dashboardPolling.currentSignature = nextSignature;
+					window.bbaiLastDashboardRenderSignature = nextRenderSignature;
+					dashboardPolling.renderSignature = nextRenderSignature;
+					window.bbaiPreviousDashboardMode = getDashboardRenderMode( nextState );
 					dashboardPolling.latestState = nextState;
 					dashboardPolling.failureCount = 0;
 					dashboardPolling.bootstrapSyncApplied = false;
@@ -4294,6 +4606,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 					var signatureMeta = buildStatusStripMeta( pollContext, 'runPollingTick_signature_match' );
 					dashboardPolling.currentTruth = truth;
 					dashboardPolling.latestState = nextState;
+					window.bbaiLastDashboardRenderSignature = nextRenderSignature;
+					dashboardPolling.renderSignature = nextRenderSignature;
+					window.bbaiPreviousDashboardMode = getDashboardRenderMode( nextState );
 					dashboardPolling.failureCount = 0;
 					dashboardPolling.bootstrapSyncApplied = false;
 					syncDashboardRootFromTruth( truth );
@@ -4452,10 +4767,15 @@ $bbai_hero_credit_bar_aria = sprintf(
 			e.stopImmediatePropagation();
 		}
 
+		if ( ! acquireInlineGenerationLock( e, 'dashboard_generate' ) ) {
+			return;
+		}
+
 		if ( ! BBAI_HERO_CFG.ajaxUrl || ! BBAI_HERO_CFG.ajaxNonce ) {
 			if ( runEstablishedGenerateFlow( e ) ) {
 				return;
 			}
+			releaseInlineGenerationLock();
 			showStatusLine( TEXT.startFailed );
 			return;
 		}
@@ -4473,6 +4793,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		fetchMissingAttachmentIds( limit )
 		.then( function ( ids ) {
 			if ( ids.length === 0 ) {
+				releaseInlineGenerationLock();
 				clearOptimisticAction();
 				showStatusLine( TEXT.noMissingFoundRescan );
 				var showMismatch = ( BBAI_HERO_CFG.missingCount || 0 ) > 0;
@@ -4493,6 +4814,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		.then( function ( queueJson ) {
 			if ( ! queueJson ) { return; } // handled above (no images)
 			if ( ! queueJson.success ) {
+				releaseInlineGenerationLock();
 				clearOptimisticAction();
 				var failRaw = queueJson.data && queueJson.data.message ? String( queueJson.data.message ) : '';
 				if ( bbaiHeroLooksLikeSessionOrNonceMessage( failRaw ) ) {
@@ -4525,12 +4847,13 @@ $bbai_hero_credit_bar_aria = sprintf(
 			}
 
 			if ( ! flowOk ) {
+				releaseInlineGenerationLock();
 				clearOptimisticAction();
 				showStatusLine( TEXT.startFailed );
 				return;
 			}
 
-			clearOptimisticAction();
+			dashboardPolling.optimisticAction = '';
 
 			heroGenerationWatchdog = window.setTimeout( function () {
 				heroGenerationWatchdog = null;
@@ -4544,6 +4867,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 					} );
 					showStatusLine( TEXT.startFailed );
 					var cta = getPrimaryCta();
+					releaseInlineGenerationLock();
 					if ( cta ) {
 						setBusy( cta, false );
 					}
@@ -4571,6 +4895,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 				} );
 		} )
 		.catch( function ( err ) {
+			releaseInlineGenerationLock();
 			clearOptimisticAction();
 			var ajaxMsg = err && err.bbaiAjaxMessage ? String( err.bbaiAjaxMessage ) : '';
 			if ( ajaxMsg && bbaiHeroLooksLikeSessionOrNonceMessage( ajaxMsg ) ) {
@@ -4666,6 +4991,16 @@ $bbai_hero_credit_bar_aria = sprintf(
 	document.addEventListener( 'bbai:logged-in-dashboard-state-applied', function ( event ) {
 		var detail = event && event.detail ? event.detail : {};
 		triggerDashboardTransitionFeedback( detail.previousState || '', detail.nextState || '' );
+	} );
+
+	document.addEventListener( 'bbai:generation:finished', function () {
+		var primaryCta = getPrimaryCta();
+		releaseInlineGenerationLock();
+		dashboardPolling.optimisticAction = '';
+		if ( primaryCta && primaryCta.getAttribute( 'aria-busy' ) === 'true' ) {
+			setBusy( primaryCta, false );
+		}
+		if ( safetyTimer ) { clearTimeout( safetyTimer ); safetyTimer = null; }
 	} );
 
 	document.addEventListener( 'bbai:dashboard-approve-all-pending', function () {
@@ -4872,6 +5207,319 @@ $bbai_hero_credit_bar_aria = sprintf(
 		syncBbaiStatusSummaryActive();
 	}
 
+	function bbaiStorageGet( store, key ) {
+		try {
+			return store && store.getItem ? store.getItem( key ) : null;
+		} catch ( err ) {
+			return null;
+		}
+	}
+
+	function bbaiStorageSet( store, key, value ) {
+		try {
+			if ( store && store.setItem ) {
+				store.setItem( key, value );
+			}
+		} catch ( err ) {}
+	}
+
+	function bbaiPromptTrack( eventName, detail ) {
+		detail = detail && typeof detail === 'object' ? detail : {};
+		if ( typeof window.bbaiTrack !== 'function' ) {
+			window.bbaiTrack = function ( name, payload ) {
+				document.dispatchEvent( new CustomEvent( 'bbai:track', {
+					detail: {
+						event: name,
+						payload: payload || {},
+					},
+				} ) );
+				if ( window.BBAI_LOG && typeof window.BBAI_LOG.log === 'function' ) {
+					window.BBAI_LOG.log( '[bbai-track] ' + name, payload || {} );
+				}
+			};
+		}
+		window.bbaiTrack( eventName, detail );
+	}
+
+	function getActivationCounts( detail ) {
+		var truth = detail && detail.stateData ? normalizeStateTruthPayload( detail.stateData ) : dashboardPolling.currentTruth;
+		var counts = truth ? getTruthCounts( truth ) : null;
+		if ( counts ) {
+			return counts;
+		}
+		return {
+			missing: parseInt( hero.getAttribute( 'data-bbai-li-missing-count' ) || '0', 10 ) || 0,
+			review: parseInt( hero.getAttribute( 'data-bbai-li-review-count' ) || '0', 10 ) || 0,
+			complete: parseInt( hero.getAttribute( 'data-bbai-li-optimised-count' ) || '0', 10 ) || 0,
+			failed: 0,
+			total: parseInt( hero.getAttribute( 'data-bbai-li-total-count' ) || '0', 10 ) || 0,
+		};
+	}
+
+	function getActivationCredits( detail ) {
+		var truth = detail && detail.stateData ? normalizeStateTruthPayload( detail.stateData ) : dashboardPolling.currentTruth;
+		var creditNode = hero.querySelector( '[data-bbai-hero-credit-usage]' );
+		var credits = truth ? getTruthCredits( truth ) : null;
+		if ( credits ) {
+			return credits;
+		}
+		if ( creditNode ) {
+			var total = Math.max( 1, parseInt( creditNode.getAttribute( 'data-bbai-hero-credits-limit' ) || '1', 10 ) || 1 );
+			var used = Math.max( 0, parseInt( creditNode.getAttribute( 'data-bbai-hero-credits-used' ) || '0', 10 ) || 0 );
+			var remaining = Math.max( 0, parseInt( creditNode.getAttribute( 'data-bbai-hero-credits-remaining' ) || String( total - used ), 10 ) || 0 );
+			return {
+				used: used,
+				total: total,
+				remaining: remaining,
+				isPro: false,
+				plan: '',
+			};
+		}
+		return { used: 0, total: 1, remaining: 1, isPro: false, plan: '' };
+	}
+
+	function isActivationQuietMoment() {
+		var primaryCta = getPrimaryCta();
+		return ! (
+			( window.bbaiGenerationLock && window.bbaiGenerationLock.active ) ||
+			( primaryCta && primaryCta.getAttribute( 'aria-busy' ) === 'true' ) ||
+			'PROCESSING' === ( hero.getAttribute( 'data-bbai-li-state' ) || '' ) ||
+			'QUEUED' === ( hero.getAttribute( 'data-bbai-li-state' ) || '' )
+		);
+	}
+
+	function buildPromptButton( label, action, isPrimary ) {
+		var button = document.createElement( 'button' );
+		button.type = 'button';
+		button.className = isPrimary ? 'bbai-activation-panel__btn bbai-activation-panel__btn--primary' : 'bbai-activation-panel__btn';
+		button.setAttribute( 'data-bbai-activation-action', action );
+		button.textContent = label;
+		return button;
+	}
+
+	function buildPromptLink( label, href, action, isPrimary ) {
+		var link = document.createElement( 'a' );
+		link.className = isPrimary ? 'bbai-activation-panel__btn bbai-activation-panel__btn--primary' : 'bbai-activation-panel__btn';
+		link.href = href || '#';
+		link.setAttribute( 'data-bbai-activation-action', action );
+		link.textContent = label;
+		return link;
+	}
+
+	function createActivationPanel( options ) {
+		var panel = document.createElement( 'section' );
+		var copy;
+		var title;
+		var actions;
+		panel.className = 'bbai-activation-panel bbai-activation-panel--' + ( options.tone || 'info' );
+		panel.setAttribute( 'data-bbai-activation-panel', options.id || 'panel' );
+		title = document.createElement( 'p' );
+		title.className = 'bbai-activation-panel__title';
+		title.textContent = options.title || '';
+		panel.appendChild( title );
+		if ( options.copy ) {
+			copy = document.createElement( 'p' );
+			copy.className = 'bbai-activation-panel__copy';
+			copy.textContent = options.copy;
+			panel.appendChild( copy );
+		}
+		if ( options.actions && options.actions.length ) {
+			actions = document.createElement( 'div' );
+			actions.className = 'bbai-activation-panel__actions';
+			options.actions.forEach( function ( action ) {
+				actions.appendChild( action.href
+					? buildPromptLink( action.label, action.href, action.action, !! action.primary )
+					: buildPromptButton( action.label, action.action, !! action.primary )
+				);
+			} );
+			panel.appendChild( actions );
+		}
+		if ( options.dismissAction ) {
+			var dismiss = document.createElement( 'button' );
+			dismiss.type = 'button';
+			dismiss.className = 'bbai-activation-panel__dismiss';
+			dismiss.setAttribute( 'aria-label', '<?php echo esc_js( __( 'Dismiss', 'beepbeep-ai-alt-text-generator' ) ); ?>' );
+			dismiss.setAttribute( 'data-bbai-activation-action', options.dismissAction );
+			dismiss.textContent = '×';
+			panel.appendChild( dismiss );
+		}
+		return panel;
+	}
+
+	function renderActivationPrompts( context, detail ) {
+		var host = hero.querySelector( '[data-bbai-activation-host]' );
+		var counts = getActivationCounts( detail );
+		var credits = getActivationCredits( detail );
+		var state = ( detail && detail.nextState ) || ( hero.getAttribute( 'data-bbai-li-state' ) || '' );
+		var usedPct = credits.total > 0 ? Math.round( ( credits.used / credits.total ) * 100 ) : 0;
+		var panels = [];
+		var reviewHref = getReviewLibraryHref();
+		var libraryHref = getLibraryHref();
+
+		if ( ! host || ! isActivationQuietMoment() ) {
+			return;
+		}
+
+		host.textContent = '';
+
+		if ( counts.missing === 0 && counts.review === 0 && counts.complete === 0 ) {
+			panels.push( createActivationPanel( {
+				id: 'empty-library',
+				tone: 'info',
+				title: PROMPT_TEXT.emptyTitle,
+				actions: [
+					{ label: PROMPT_TEXT.openMedia, href: '<?php echo esc_js( admin_url( 'upload.php' ) ); ?>', action: 'open-media-library', primary: true },
+					{ label: PROMPT_TEXT.learnSeo, href: '<?php echo esc_js( admin_url( 'admin.php?page=bbai-guide' ) ); ?>', action: 'learn-seo' },
+				],
+			} ) );
+		}
+
+		if (
+			counts.complete > 0 &&
+			! bbaiStorageGet( window.localStorage, ACTIVATION_PROMPT_KEYS.firstSuccessSeen )
+		) {
+			panels.push( createActivationPanel( {
+				id: 'first-success',
+				tone: 'success',
+				title: PROMPT_TEXT.firstSuccessTitle,
+				copy: PROMPT_TEXT.firstSuccessCopy,
+				actions: [
+					{ label: PROMPT_TEXT.reviewAltText, href: reviewHref, action: 'review-alt-text', primary: true },
+					{ label: PROMPT_TEXT.generateMore, action: 'generate-more' },
+				],
+			} ) );
+			bbaiStorageSet( window.localStorage, ACTIVATION_PROMPT_KEYS.firstSuccessSeen, '1' );
+		}
+
+		if ( context === 'generation_finished' && counts.review > 0 ) {
+			panels.push( createActivationPanel( {
+				id: 'quick-actions',
+				tone: 'success',
+				title: PROMPT_TEXT.nextStepTitle,
+				copy: PROMPT_TEXT.firstSuccessCopy,
+				actions: [
+					{ label: PROMPT_TEXT.approveAll, action: 'approve-all-alt', primary: true },
+					{ label: PROMPT_TEXT.editFew, href: reviewHref, action: 'edit-few' },
+					{ label: PROMPT_TEXT.done, action: 'done' },
+				],
+			} ) );
+		}
+
+		if ( 'NEEDS_REVIEW' === state && counts.review > 0 ) {
+			panels.push( createActivationPanel( {
+				id: 'review-value',
+				tone: 'info',
+				title: PROMPT_TEXT.reviewValueTitle,
+				copy: PROMPT_TEXT.scoreImproved,
+				actions: [
+					{ label: PROMPT_TEXT.reviewAltText, href: reviewHref, action: 'review-alt-text', primary: true },
+				],
+			} ) );
+		}
+
+		if ( usedPct >= 80 ) {
+			if ( ! bbaiStorageGet( window.sessionStorage, ACTIVATION_PROMPT_KEYS.creditWarning80Shown ) ) {
+				panels.push( createActivationPanel( {
+					id: 'credits-low',
+					tone: 'warning',
+					title: PROMPT_TEXT.creditLowTitle,
+					copy: PROMPT_TEXT.creditLowCopy,
+					actions: [
+						{ label: PROMPT_TEXT.upgradePlan, action: 'upgrade-plan', primary: true },
+					],
+				} ) );
+				bbaiStorageSet( window.sessionStorage, ACTIVATION_PROMPT_KEYS.creditWarning80Shown, '1' );
+				bbaiPromptTrack( 'credits_low_warning_shown', { threshold: 80, used: credits.used, total: credits.total } );
+			}
+		} else if ( usedPct >= 60 && ! bbaiStorageGet( window.sessionStorage, ACTIVATION_PROMPT_KEYS.creditWarning60Shown ) ) {
+			panels.push( createActivationPanel( {
+				id: 'credits-aware',
+				tone: 'info',
+				title: replaceTokens( PROMPT_TEXT.creditUsed, {
+					'%1$s': formatCount( credits.used ),
+					'%2$s': formatCount( credits.total ),
+				} ),
+			} ) );
+			bbaiStorageSet( window.sessionStorage, ACTIVATION_PROMPT_KEYS.creditWarning60Shown, '1' );
+			bbaiPromptTrack( 'credits_low_warning_shown', { threshold: 60, used: credits.used, total: credits.total } );
+		}
+
+		if (
+			! credits.isPro &&
+			( counts.complete > 10 || context === 'generation_finished' ) &&
+			! bbaiStorageGet( window.localStorage, ACTIVATION_PROMPT_KEYS.upgradeDismissed ) &&
+			! bbaiStorageGet( window.sessionStorage, ACTIVATION_PROMPT_KEYS.upgradeShown )
+		) {
+			panels.push( createActivationPanel( {
+				id: 'upgrade-automation',
+				tone: 'upgrade',
+				title: replaceTokens( PROMPT_TEXT.upgradeTitle, { '%s': formatCount( counts.complete ) } ),
+				copy: PROMPT_TEXT.upgradeCopy,
+				actions: [
+					{ label: PROMPT_TEXT.enableAutomation, action: 'upgrade-automation', primary: true },
+				],
+				dismissAction: 'dismiss-upgrade',
+			} ) );
+			bbaiStorageSet( window.sessionStorage, ACTIVATION_PROMPT_KEYS.upgradeShown, '1' );
+		}
+
+		panels.forEach( function ( panel ) {
+			host.appendChild( panel );
+		} );
+	}
+
+	function handleActivationPromptAction( e ) {
+		var target = e.target && e.target.closest ? e.target.closest( '[data-bbai-activation-action]' ) : null;
+		var action;
+		var primaryCta;
+		var approveAllCta;
+		if ( ! target || ! hero.contains( target ) ) {
+			return;
+		}
+		action = target.getAttribute( 'data-bbai-activation-action' ) || '';
+		if ( action !== 'review-alt-text' && action !== 'edit-few' && action !== 'open-media-library' && action !== 'learn-seo' ) {
+			e.preventDefault();
+		}
+		if ( action === 'review-alt-text' || action === 'edit-few' ) {
+			bbaiPromptTrack( 'review_started', { source: action } );
+			return;
+		}
+		if ( action === 'generate-more' ) {
+			primaryCta = getPrimaryCta();
+			if ( primaryCta && primaryCta.getAttribute( 'aria-busy' ) !== 'true' ) {
+				primaryCta.click();
+			}
+			return;
+		}
+		if ( action === 'approve-all-alt' ) {
+			approveAllCta = hero.querySelector( '[data-bbai-li-action="approve-all"], [data-action="approve-all"]' );
+			if ( approveAllCta ) {
+				approveAllCta.click();
+			} else {
+				bbaiPromptTrack( 'review_started', { source: action });
+				window.location.assign( getReviewLibraryHref() );
+			}
+			return;
+		}
+		if ( action === 'done' ) {
+			target.closest( '[data-bbai-activation-panel]' ).remove();
+			return;
+		}
+		if ( action === 'dismiss-upgrade' ) {
+			bbaiStorageSet( window.localStorage, ACTIVATION_PROMPT_KEYS.upgradeDismissed, '1' );
+			target.closest( '[data-bbai-activation-panel]' ).remove();
+			return;
+		}
+		if ( action === 'upgrade-plan' || action === 'upgrade-automation' ) {
+			var upgrade = hero.querySelector( '[data-action="show-upgrade-modal"]' );
+			if ( upgrade && typeof upgrade.click === 'function' ) {
+				upgrade.click();
+			} else {
+				bbaiPromptTrack( 'upgrade_clicked', { source: action } );
+			}
+		}
+	}
+
 	function afterDashboardHydration( callback ) {
 		var run = function () {
 			dashboardPolling.hydrated = true;
@@ -4896,8 +5544,44 @@ $bbai_hero_credit_bar_aria = sprintf(
 	} else {
 		initBbaiStatusSummary();
 	}
+	hero.addEventListener( 'click', handleActivationPromptAction );
 	document.addEventListener( 'bbai:logged-in-dashboard-state-applied', function () {
 		window.setTimeout( syncBbaiStatusSummaryActive, 0 );
+		window.setTimeout( function () {
+			renderActivationPrompts( 'state_applied' );
+		}, 0 );
+	} );
+	document.addEventListener( 'bbai:generation:finished', function ( event ) {
+		var detail = event && event.detail ? event.detail : {};
+		if ( detail.successes > 0 ) {
+			bbaiPromptTrack( 'generation_completed', detail );
+			window.setTimeout( function () {
+				renderActivationPrompts( 'generation_finished', {
+					stateData: dashboardPolling.currentTruth,
+					nextState: hero.getAttribute( 'data-bbai-li-state' ) || '',
+				} );
+			}, 0 );
+		}
+	} );
+	document.addEventListener( 'bbai:dashboard-approve-all-success', function ( event ) {
+		var detail = event && event.detail ? event.detail : {};
+		if ( Math.max( 0, parseInt( detail.approvedCount, 10 ) || 0 ) > 0 ) {
+			bbaiPromptTrack( 'review_completed', detail );
+		}
+	} );
+	document.addEventListener( 'click', function ( event ) {
+		var upgradeTrigger = event.target && event.target.closest ? event.target.closest( '[data-action="show-upgrade-modal"], [data-bbai-analytics-upgrade]' ) : null;
+		var reviewTrigger = event.target && event.target.closest ? event.target.closest( '[data-bbai-li-secondary-inline-cta], [data-bbai-li-secondary-cta], [data-bbai-li-donut-review-cta]' ) : null;
+		if ( upgradeTrigger ) {
+			bbaiPromptTrack( 'upgrade_clicked', {
+				source: upgradeTrigger.getAttribute( 'data-bbai-analytics-upgrade' ) || upgradeTrigger.getAttribute( 'data-action' ) || 'upgrade',
+			} );
+		}
+		if ( reviewTrigger && ( reviewTrigger.textContent || '' ).toLowerCase().indexOf( 'review' ) !== -1 ) {
+			bbaiPromptTrack( 'review_started', {
+				source: reviewTrigger.getAttribute( 'data-action' ) || 'review_link',
+			} );
+		}
 	} );
 
 	(function initAllClearHeroFromSsr() {
@@ -4926,6 +5610,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		renderQueuedSignal( buildStatusStripMeta( 'legacy_init_queued', 'initial_hero_variant' ) );
 	}
 	afterDashboardHydration( function () {
+		renderActivationPrompts( 'dashboard_load' );
 		runPollingTick( 'startup' );
 	} );
 

@@ -11903,6 +11903,40 @@ h4.bbai-heading {
     pointer-events: none;
 }
 
+.bbai-button-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #fff;
+    border-radius: 999px;
+    animation: bbai-spin 0.65s linear infinite;
+    flex: 0 0 auto;
+}
+
+.bbai-button-label {
+    display: inline-flex;
+    align-items: center;
+}
+
+.is-busy {
+    cursor: not-allowed;
+}
+
+.bbai-generate-button.is-busy,
+[data-bbai-generation-action].is-busy {
+    pointer-events: none;
+    cursor: not-allowed;
+    opacity: 0.75;
+}
+
+.bbai-btn.is-busy,
+.bbai-btn[aria-busy="true"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
 [aria-busy="true"]::after {
     content: '';
     position: absolute;
@@ -11915,6 +11949,32 @@ h4.bbai-heading {
     border-top-color: var(--bbai-primary);
     border-radius: 50%;
     animation: bbai-spin 0.8s linear infinite;
+}
+
+.bbai-btn[aria-busy="true"]::after,
+.bbai-btn[aria-busy="true"]::before,
+[data-bbai-li-primary-cta][aria-busy="true"]::after,
+[data-bbai-li-primary-cta][aria-busy="true"]::before,
+[data-bbai-generation-action][aria-busy="true"]::after,
+[data-bbai-generation-action][aria-busy="true"]::before,
+[data-action="generate-missing"][aria-busy="true"]::after,
+[data-action="generate-missing"][aria-busy="true"]::before,
+[data-bbai-action="generate_missing"][aria-busy="true"]::after,
+[data-bbai-action="generate_missing"][aria-busy="true"]::before,
+[data-action="generate-selected"][aria-busy="true"]::after,
+[data-action="generate-selected"][aria-busy="true"]::before,
+[data-action="regenerate-selected"][aria-busy="true"]::after,
+[data-action="regenerate-selected"][aria-busy="true"]::before,
+[data-action="regenerate-all"][aria-busy="true"]::after,
+[data-action="regenerate-all"][aria-busy="true"]::before,
+[data-action="regenerate-single"][aria-busy="true"]::after,
+[data-action="regenerate-single"][aria-busy="true"]::before,
+[data-action="phase17-improve-alt"][aria-busy="true"]::after,
+[data-action="phase17-improve-alt"][aria-busy="true"]::before,
+[data-bbai-action="reoptimize_all"][aria-busy="true"]::after,
+[data-bbai-action="reoptimize_all"][aria-busy="true"]::before {
+    content: none !important;
+    display: none !important;
 }
 
 /* Selected state for options */

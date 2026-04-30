@@ -3,6 +3,14 @@
  * Handles upgrade modal, auth buttons, and Stripe integration
  */
 
+// DEV safety flag: warning-only. Does not alter credit/billing behavior.
+try {
+    if (window.bbai_ajax && window.bbai_ajax.dev_mode) {
+        // eslint-disable-next-line no-console
+        console.warn('Using real credits in dev environment');
+    }
+} catch (e) { /* noop */ }
+
 const bbaiRunWithJQuery = (function() {
     let warned = false;
     return function(callback) {

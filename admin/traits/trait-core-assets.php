@@ -487,6 +487,8 @@ JS,
             'anon_cookie_name' => function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name')
                 ? \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name()
                 : 'bbai_anon_id',
+            // DEV safety flag: warning-only, no behavior changes.
+            'dev_mode' => defined('BBAI_DEV_MODE') && (bool) BBAI_DEV_MODE,
         ]);
         wp_localize_script('bbai-admin', 'bbai_env', [
             'ajax_url'  => admin_url('admin-ajax.php'),
