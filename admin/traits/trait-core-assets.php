@@ -1398,6 +1398,9 @@ JS,
         }
         $api_url = esc_url_raw( untrailingslashit( $bbai_canonical_api_base ) );
         $sanitized_user_data = $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data());
+        $bbai_client_is_authenticated = (bool) $this->api_client->is_authenticated();
+        $bbai_client_user_email = $bbai_client_is_authenticated ? sanitize_email((string) ($sanitized_user_data['email'] ?? '')) : '';
+        $bbai_client_user_id = $bbai_client_is_authenticated ? sanitize_text_field((string) ($sanitized_user_data['id'] ?? $sanitized_user_data['_id'] ?? $sanitized_user_data['user_id'] ?? '')) : '';
 
         wp_localize_script('bbai-dashboard', 'bbai_ajax', [
             'ajaxurl' => admin_url('admin-ajax.php'),
@@ -1414,6 +1417,11 @@ JS,
             'is_guest_trial' => $bbai_upgrade_path_guest,
             'use_licensed_bulk_jobs' => method_exists($this, 'should_use_licensed_bulk_jobs_api') && $this->should_use_licensed_bulk_jobs_api(),
             'anon_cookie_name' => $anon_cookie_name,
+        ]);
+        wp_localize_script('bbai-dashboard', 'bbaiUser', [
+            'email' => $bbai_client_user_email,
+            'id' => $bbai_client_user_id,
+            'isGuest' => ! $bbai_client_is_authenticated,
         ]);
         wp_localize_script('bbai-dashboard', 'bbai_env', [
             'ajax_url'  => admin_url('admin-ajax.php'),
@@ -1698,6 +1706,7 @@ JS,
             'assetUrl'      => $asset_url,
             'defaults'      => '2026-01-30',
             'instanceName'  => 'bbaiPosthog',
+            'debug_posthog' => defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG,
             'debug'         => (defined('WP_DEBUG') && WP_DEBUG) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
             'pageViewEvents' => $page_view_events,
             'context'       => array_merge([
@@ -1806,6 +1815,7 @@ JS,
             'ajaxUrl'     => admin_url('admin-ajax.php'),
             'nonce'       => wp_create_nonce('beepbeepai_nonce'),
             'action'      => 'beepbeepai_telemetry',
+            'debug_posthog' => defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG,
             'debug'       => (defined('WP_DEBUG') && WP_DEBUG) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
             'context'     => [
                 'user_id'                  => $uid,

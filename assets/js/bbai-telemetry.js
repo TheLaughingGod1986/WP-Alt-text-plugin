@@ -86,7 +86,29 @@
     };
 
     function isDebugEnabled() {
-        return !!(cfg.debug || window.alttextaiDebug);
+        return !!(
+            window.BBAI_DEBUG_POSTHOG === true ||
+            cfg.debug_posthog === true
+        );
+    }
+
+    window.bbaiTelemetrySeen = window.bbaiTelemetrySeen || new Set();
+    window.bbaiCurrentGenerationRunId = window.bbaiCurrentGenerationRunId || '';
+
+    function bbaiTrackOnce(eventName, props, key) {
+        var seenKey = String(key || eventName || '');
+        if (!seenKey) {
+            return;
+        }
+        try {
+            if (window.bbaiTelemetrySeen.has(seenKey)) {
+                return;
+            }
+            window.bbaiTelemetrySeen.add(seenKey);
+        } catch (e) {
+            // Fail open if Set is unavailable.
+        }
+        track(eventName, props || {});
     }
 
     function getAnalyticsContext() {
@@ -267,8 +289,8 @@
                 window.bbaiTrack(event, props || {});
             }
         } catch (e) {
-            if (window.console && typeof window.console.warn === 'function') {
-                window.console.warn('PostHog tracking failed', e);
+            if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
+                window.console.debug('[BBAI] PostHog tracking failed', e);
             }
         }
     }
@@ -580,8 +602,8 @@
 
         updateLastFeatureUsage(props);
 
-        if (isDebugEnabled() && window.console && typeof window.console.log === 'function') {
-            window.console.log('[BBAI] feature_used send', props);
+        if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
+            window.console.debug('[BBAI] feature_used send', props);
         }
 
         track('feature_used', props);
@@ -651,8 +673,8 @@
 
         storeUpgradeAttribution(enriched);
 
-        if (isDebugEnabled() && window.console && typeof window.console.log === 'function') {
-            window.console.log('[BBAI] ' + eventName + ' attribution', {
+        if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
+            window.console.debug('[BBAI] ' + eventName + ' attribution', {
                 trigger_feature: enriched.trigger_feature,
                 trigger_location: enriched.trigger_location,
                 source_page: enriched.source_page,
@@ -683,8 +705,8 @@
             source: 'app'
         }, overrides || {}));
 
-        if (isDebugEnabled() && window.console && typeof window.console.log === 'function') {
-            window.console.log('[BBAI] checkout request payload', payload);
+        if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
+            window.console.debug('[BBAI] checkout request payload', payload);
         }
 
         return payload;
@@ -695,6 +717,35 @@
             return;
         }
         var props = $.extend({}, baseProps(), properties || {});
+
+        // Generation events: enforce once-per-generation-run.
+        if (eventName === 'generation_started') {
+            if (!window.bbaiCurrentGenerationRunId) {
+                window.bbaiCurrentGenerationRunId = String(Date.now());
+            }
+            props.generation_run_id = props.generation_run_id || window.bbaiCurrentGenerationRunId;
+            try {
+                if (window.bbaiTelemetrySeen.has('generation_started:' + props.generation_run_id)) {
+                    return;
+                }
+                window.bbaiTelemetrySeen.add('generation_started:' + props.generation_run_id);
+            } catch (e) {}
+        }
+        if (eventName === 'generation_completed' || eventName === 'generation_failed') {
+            var runId = props.generation_run_id || window.bbaiCurrentGenerationRunId || '';
+            if (!runId) {
+                return;
+            }
+            props.generation_run_id = runId;
+            try {
+                var runKey = eventName + ':' + runId;
+                if (window.bbaiTelemetrySeen.has(runKey)) {
+                    return;
+                }
+                window.bbaiTelemetrySeen.add(runKey);
+            } catch (e2) {}
+        }
+
         if (eventName === 'feature_used') {
             props = cleanupProps($.extend({}, props, {
                 source_page: getSourcePage(props),
@@ -722,8 +773,8 @@
             upgradeEventDedup.key = dedupeKey;
             upgradeEventDedup.at = now;
         }
-        if (eventName === 'checkout_started' && isDebugEnabled() && window.console && typeof window.console.log === 'function') {
-            window.console.log('[BBAI] checkout_started identity context', {
+        if (eventName === 'checkout_started' && isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
+            window.console.debug('[BBAI] checkout_started identity context', {
                 account_id: props.account_id || '',
                 user_id: props.user_id || '',
                 license_key_present: !!props.license_key,
@@ -793,14 +844,14 @@
         var c = cfg.context || {};
         var pk = c.page || 'unknown';
         var pageVariant = c.page_variant || pk;
-        track('plugin_opened', {
+        bbaiTrackOnce('plugin_opened', {
             navigation: 'direct',
             page: pageVariant
-        });
-        track(mapPageToViewEvent(pk, pageVariant), {
+        }, 'plugin_opened');
+        bbaiTrackOnce(mapPageToViewEvent(pk, pageVariant), {
             navigation: 'direct',
             page: pageVariant
-        });
+        }, 'dashboard_viewed:' + String(pageVariant || pk || 'unknown'));
         if ((c.days_since_last_active || 0) > 0) {
             track('returning_user_session', {
                 days_since_last_active: c.days_since_last_active,
@@ -858,14 +909,16 @@
                 }
                 var variant = getPrimaryBannerState(hero) || 'unknown';
                 var mappedEvent = mapBannerStateToEvent(variant);
-                track('banner_shown', {
+                bbaiTrackOnce('banner_shown', {
                     banner_state: variant,
                     source: getUiSource(hero)
-                });
+                }, 'banner_shown:' + variant);
                 if (mappedEvent) {
-                    track(mappedEvent, {
-                        source: getUiSource(hero)
-                    });
+                    if (mappedEvent === 'needs_attention_banner_shown' || mappedEvent === 'low_credits_banner_shown') {
+                        bbaiTrackOnce(mappedEvent, { source: getUiSource(hero) }, mappedEvent);
+                    } else {
+                        track(mappedEvent, { source: getUiSource(hero) });
+                    }
                 }
                 obs.disconnect();
             });
@@ -1159,8 +1212,8 @@
 
                 var eventName = isCheckoutTarget(match.node) ? 'checkout_started' : 'upgrade_clicked';
 
-                if (isDebugEnabled() && window.console && typeof window.console.log === 'function') {
-                    window.console.log('[BBAI] upgrade click detected via delegated fallback', {
+                if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
+                    window.console.debug('[BBAI] upgrade click detected via delegated fallback', {
                         event: eventName,
                         selector: match.selector,
                         location: props.location,

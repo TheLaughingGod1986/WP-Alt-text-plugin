@@ -147,6 +147,10 @@
         var fn;
         var args;
 
+        if (!isDebugEnabled()) {
+            return;
+        }
+
         if (!window.console || typeof window.console[level] !== 'function') {
             return;
         }
@@ -158,7 +162,10 @@
     }
 
     function isDebugEnabled() {
-        return !!(cfg.debug || window.alttextaiDebug);
+        return !!(
+            window.BBAI_DEBUG_POSTHOG === true ||
+            cfg.debug_posthog === true
+        );
     }
 
     function getClient() {
@@ -515,9 +522,9 @@
 
         payload = extend({}, getContext(), sanitizeProperties(properties || {}));
         whenPosthogReady(function(client) {
-            logToConsole('log', 'bbaiTrack send', safeName, payload);
+            logToConsole('debug', 'bbaiTrack send', safeName, payload);
             if (safeName === 'checkout_started' && isDebugEnabled()) {
-                logToConsole('log', 'checkout_started identity context', {
+                logToConsole('debug', 'checkout_started identity context', {
                     identifier: loaderState.identifyState.id || '',
                     account_id: payload.account_id || '',
                     user_id: payload.user_id || '',
@@ -550,7 +557,7 @@
             }
 
             if (isDebugEnabled()) {
-                logToConsole('log', 'posthog identify called', {
+                logToConsole('debug', 'posthog identify called', {
                     identifier: safeId,
                     properties: safeProperties
                 });

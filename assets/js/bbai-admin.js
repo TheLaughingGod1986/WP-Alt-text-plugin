@@ -2034,6 +2034,26 @@
 
         renderLimitReachedUI(state, !!forcePreviewRefresh);
         purgeLegacyDashboardProgressBars();
+
+        // Telemetry: trial-complete conversion state impression (once per page view/render).
+        try {
+            var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+            if (root && root.getAttribute('data-bbai-auth-mode') === 'guest_logged_out' && root.getAttribute('data-bbai-trial-exhausted') === '1') {
+                window.bbaiTelemetrySeen = window.bbaiTelemetrySeen || new Set();
+                var seenKey = 'trial_complete_state_shown:' + String(root.getAttribute('data-bbai-counts-hash') || 'v1');
+                if (!window.bbaiTelemetrySeen.has(seenKey)) {
+                    window.bbaiTelemetrySeen.add(seenKey);
+                    dispatchAnalyticsEvent('trial_complete_state_shown', {
+                        trial_used: parseInt(root.getAttribute('data-bbai-trial-used') || root.getAttribute('data-bbai-credits-used') || '0', 10) || 0,
+                        trial_limit: parseInt(root.getAttribute('data-bbai-trial-limit') || root.getAttribute('data-bbai-credits-total') || '0', 10) || 0,
+                        missing_count: parseInt(root.getAttribute('data-bbai-missing-count') || '0', 10) || 0,
+                        ready_for_review_count: parseInt(root.getAttribute('data-bbai-weak-count') || '0', 10) || 0,
+                        optimized_count: parseInt(root.getAttribute('data-bbai-optimized-count') || '0', 10) || 0,
+                        auth_mode: 'guest'
+                    });
+                }
+            }
+        } catch (e) {}
     }
 
     function getLockedModalFocusableElements(modalNode) {
@@ -16531,7 +16551,19 @@
     }
 
     function isBulkProgressCompleteState(state) {
-        return !!(state && (state.complete || state.quotaBlocked));
+        if (!state) {
+            return false;
+        }
+
+        var total = Math.max(0, parseInt(state.total, 10) || 0);
+        var current = Math.max(0, parseInt(state.current, 10) || 0);
+        var processed = Math.max(0, parseInt(state.processed, 10) || 0);
+        var failed = Math.max(0, parseInt(state.failed, 10) || 0);
+        var skipped = Math.max(0, parseInt(state.skipped, 10) || 0);
+
+        // Treat "all slots completed" as complete even if the explicit flag lags.
+        var allDone = total > 0 && current >= total && (processed + failed + skipped) >= total;
+        return !!(state.complete || state.quotaBlocked || allDone);
     }
 
     function buildBulkProgressHeaderTitle(state) {
@@ -16829,11 +16861,110 @@
         };
     }
 
+    function getDashboardAuthMode() {
+        var root = getDashboardRootNode && typeof getDashboardRootNode === 'function' ? getDashboardRootNode() : null;
+        var mode = root ? String(root.getAttribute('data-bbai-auth-mode') || '') : '';
+        return mode || String(window.BBAI_AUTH_MODE || '');
+    }
+
+    function readPostGenerationCountsSnapshot() {
+        var root = getDashboardRootNode && typeof getDashboardRootNode === 'function' ? getDashboardRootNode() : null;
+        if (!root) {
+            return {
+                missing: 0,
+                ready_for_review: 0,
+                optimized: 0,
+                total: 0
+            };
+        }
+        var missing = Math.max(0, parseInt(root.getAttribute('data-bbai-missing-count') || '0', 10) || 0);
+        var review = Math.max(0, parseInt(root.getAttribute('data-bbai-weak-count') || '0', 10) || 0);
+        var optimized = Math.max(0, parseInt(root.getAttribute('data-bbai-optimized-count') || '0', 10) || 0);
+        var total = Math.max(0, parseInt(root.getAttribute('data-bbai-total-count') || '0', 10) || (missing + review + optimized));
+        return {
+            missing: missing,
+            ready_for_review: review,
+            optimized: optimized,
+            total: total
+        };
+    }
+
+    function computePostGenerationNextAction(snapshot) {
+        snapshot = snapshot && typeof snapshot === 'object' ? snapshot : {};
+        var missing = Math.max(0, parseInt(snapshot.missing, 10) || 0);
+        var review = Math.max(0, parseInt(snapshot.ready_for_review, 10) || 0);
+        var optimized = Math.max(0, parseInt(snapshot.optimized, 10) || 0);
+        var authMode = String(snapshot.auth_mode || getDashboardAuthMode() || '');
+        var trialExhausted = !!snapshot.trial_exhausted;
+        var creditsRemaining = snapshot.credits_remaining !== undefined && snapshot.credits_remaining !== null && snapshot.credits_remaining !== ''
+            ? Math.max(0, parseInt(snapshot.credits_remaining, 10) || 0)
+            : null;
+
+        if (authMode === 'guest_logged_out' && trialExhausted) {
+            return {
+                headline: __('You’ve used all 5 free generations', 'beepbeep-ai-alt-text-generator'),
+                supporting: __('You fixed your first 5 images. Create a free account to review your results and unlock 50 generations per month.', 'beepbeep-ai-alt-text-generator'),
+                primary: { label: __('Create free account', 'beepbeep-ai-alt-text-generator'), action: 'signup' },
+                secondary: { label: __('Log in', 'beepbeep-ai-alt-text-generator'), action: 'login' }
+            };
+        }
+
+        if (review > 0) {
+            return {
+                headline: __('ALT text generated', 'beepbeep-ai-alt-text-generator'),
+                supporting: __('Your images are ready to review.', 'beepbeep-ai-alt-text-generator'),
+                primary: { label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'), action: 'review-result' },
+                secondary: { label: __('Back to dashboard', 'beepbeep-ai-alt-text-generator'), action: 'dashboard' }
+            };
+        }
+
+        if (missing > 0 && (creditsRemaining === null || creditsRemaining > 0) && authMode !== 'guest_logged_out') {
+            return {
+                headline: __('ALT text generated', 'beepbeep-ai-alt-text-generator'),
+                supporting: sprintf(
+                    _n('You still have %s image missing ALT text.', 'You still have %s images missing ALT text.', missing, 'beepbeep-ai-alt-text-generator'),
+                    formatDashboardNumber(missing)
+                ),
+                primary: { label: __('Fix remaining images', 'beepbeep-ai-alt-text-generator'), action: 'fix-more' },
+                secondary: { label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'), action: 'review-result' }
+            };
+        }
+
+        if (authMode === 'authenticated_free' && creditsRemaining !== null && creditsRemaining <= 0) {
+            return {
+                headline: __('ALT text generated', 'beepbeep-ai-alt-text-generator'),
+                supporting: __('You’re out of credits. Review your results or upgrade to continue.', 'beepbeep-ai-alt-text-generator'),
+                primary: { label: __('Upgrade to continue', 'beepbeep-ai-alt-text-generator'), action: 'upgrade' },
+                secondary: { label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'), action: 'review-result' }
+            };
+        }
+
+        if (missing <= 0 && review <= 0) {
+            return {
+                headline: __('ALT text generated', 'beepbeep-ai-alt-text-generator'),
+                supporting: __('Your library is fully optimised.', 'beepbeep-ai-alt-text-generator'),
+                primary: { label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'), action: 'library' },
+                secondary: { label: __('Upload more images', 'beepbeep-ai-alt-text-generator'), action: 'upload' }
+            };
+        }
+
+        // Default: review first.
+        return {
+            headline: __('ALT text generated', 'beepbeep-ai-alt-text-generator'),
+            supporting: __('Your images are ready to review.', 'beepbeep-ai-alt-text-generator'),
+            primary: { label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'), action: 'review-result' },
+            secondary: { label: __('Back to dashboard', 'beepbeep-ai-alt-text-generator'), action: 'dashboard' }
+        };
+    }
+
     function resolveBulkProgressCompletionCtaConfig(state) {
         var presentation = isBulkProgressCompleteState(state)
             ? getBulkProgressCompletionPresentation(state)
             : null;
 
+        if (state && state.postGen && state.postGen.ctaConfig) {
+            return state.postGen.ctaConfig;
+        }
         return presentation ? presentation.ctaConfig : getBulkProgressCompletionCtaConfig(state);
     }
 
@@ -16988,6 +17119,38 @@
             return;
         }
 
+        if (action === 'login') {
+            minimizeBulkProgress('completion_login');
+            if (typeof openAuthLoginModal === 'function') {
+                openAuthLoginModal();
+                return;
+            }
+            // Fallback: open auth modal in login mode if present.
+            if (typeof window.showAuthModal === 'function') {
+                window.showAuthModal('login', 'login');
+            }
+            return;
+        }
+
+        if (action === 'upgrade') {
+            minimizeBulkProgress('completion_upgrade');
+            if (typeof window.showUpgradeModal === 'function') {
+                window.showUpgradeModal('post_generation');
+                return;
+            }
+            var upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
+            if (upgradeBtn && typeof upgradeBtn.click === 'function') {
+                upgradeBtn.click();
+            }
+            return;
+        }
+
+        if (action === 'upload') {
+            minimizeBulkProgress('completion_upload');
+            window.location.assign('upload.php');
+            return;
+        }
+
         if (action === 'review-result') {
             minimizeBulkProgress('completion_review');
             if (!scrollBulkProgressResultsIntoView() && typeof scrollToAltTable === 'function') {
@@ -17044,16 +17207,72 @@
             return;
         }
 
+        function logRender(eventName, payload) {
+            if (!window.BBAI_LOG || typeof window.BBAI_LOG.info !== 'function') {
+                return;
+            }
+            var out = { event: eventName };
+            if (payload && typeof payload === 'object') {
+                Object.keys(payload).forEach(function(k) {
+                    out[k] = payload[k];
+                });
+            }
+            window.BBAI_LOG.info('[bbai-progress-modal]', out);
+        }
+
+        function mustFind($node, selector) {
+            if ($node && $node.length) {
+                return true;
+            }
+            logRender('progress_modal_missing_element', { selector: selector });
+            return false;
+        }
+
+        // Defensive: if the modal skeleton is missing key nodes, bail without leaving a blank broken state.
+        if (!mustFind($modal.find('.bbai-bulk-progress__title'), '.bbai-bulk-progress__title')) {
+            return;
+        }
+        if (!mustFind($modal.find('[data-bbai-bulk-progress-log]'), '[data-bbai-bulk-progress-log]')) {
+            return;
+        }
+        if (!mustFind($modal.find('[data-bbai-bulk-progress-complete]'), '[data-bbai-bulk-progress-complete]')) {
+            return;
+        }
+
         isComplete = isBulkProgressCompleteState(state);
+        var hasError = !!(state && (state.quotaBlocked || (isComplete && (parseInt(state.failed, 10) || 0) > 0)));
+        var mode = hasError ? 'error' : (isComplete ? 'complete' : 'running');
+
         presentation = isComplete ? getBulkProgressCompletionPresentation(state) : null;
         ctaConfig = presentation ? presentation.ctaConfig : resolveBulkProgressCompletionCtaConfig(state);
 
-        $modal.attr('data-bbai-bulk-progress-mode', isComplete ? 'complete' : 'processing');
-        $modal.find('.bbai-bulk-progress__title').text(buildBulkProgressHeaderTitle(state));
+        // Complete-mode CTAs are computed from the post-generation snapshot (no fixed override).
+
+        var prevMode = String($modal.attr('data-bbai-bulk-progress-mode') || '');
+        if (prevMode !== mode) {
+            logRender('progress_modal_mode_change', { from: prevMode || '(unset)', to: mode });
+        }
+
+        $modal.attr('data-bbai-bulk-progress-mode', mode);
+        if (isComplete && !hasError) {
+            var snap = state && state.postGen ? state.postGen : null;
+            var headline = snap && snap.headline ? String(snap.headline) : __('ALT text generated', 'beepbeep-ai-alt-text-generator');
+            $modal.find('.bbai-bulk-progress__title').text(headline);
+        } else {
+            $modal.find('.bbai-bulk-progress__title').text(
+                hasError && isComplete ? __('Generation failed', 'beepbeep-ai-alt-text-generator') : buildBulkProgressHeaderTitle(state)
+            );
+        }
 
         $subtitle = $modal.find('.bbai-bulk-progress__subtitle');
         if ($subtitle.length) {
-            if (isComplete) {
+            if (isComplete && !hasError) {
+                var snap2 = state && state.postGen ? state.postGen : null;
+                var sub = snap2 && snap2.supporting
+                    ? String(snap2.supporting)
+                    : __('Your images are ready to review.', 'beepbeep-ai-alt-text-generator');
+                $subtitle.text(sub).prop('hidden', false);
+            } else if (isComplete) {
                 $subtitle.text('').prop('hidden', true);
             } else {
                 $subtitle.text(buildBulkProgressHeaderSubtitle(state)).prop('hidden', false);
@@ -17077,16 +17296,50 @@
             }
         }
         if ($barContainer.length) {
+            // Keep bar visible for complete/error (must show 100% in complete mode).
             $barContainer.prop('hidden', false);
         }
 
         $logContainer = $modal.find('[data-bbai-bulk-progress-log-container]');
         if ($logContainer.length) {
-            $logContainer.prop('hidden', isComplete);
+            // Never hide the log; completion should still show the full run history.
+            $logContainer.prop('hidden', false);
         }
         $logCount = $modal.find('[data-bbai-bulk-progress-log-count]');
         if ($logCount.length) {
             $logCount.text(formatBulkProgressLogDoneLabel(state));
+        }
+
+        // Step panel visibility + state.
+        var $steps = $modal.find('[data-bbai-bulk-progress-steps]');
+        if ($steps.length) {
+            $steps.prop('hidden', false);
+            var processed = Math.max(0, parseInt(state.processed, 10) || 0);
+            var current = Math.max(0, parseInt(state.current, 10) || 0);
+            var total = Math.max(0, parseInt(state.total, 10) || 0);
+            $steps.find('[data-bbai-bulk-progress-step]').removeClass('is-done is-active is-error');
+
+            var setStep = function(key, cls) {
+                var node = $steps.find('[data-bbai-bulk-progress-step="' + key + '"]');
+                if (node.length) {
+                    node.addClass(cls);
+                }
+            };
+
+            setStep('prepare', 'is-done');
+            if (!isComplete) {
+                setStep('send', 'is-active');
+                if (current > 0) {
+                    setStep('save', 'is-active');
+                }
+            } else if (mode === 'error') {
+                setStep('send', 'is-error');
+                setStep('save', 'is-error');
+            } else {
+                setStep('send', 'is-done');
+                setStep('save', 'is-done');
+                setStep('review', processed > 0 || total === 0 ? 'is-done' : 'is-active');
+            }
         }
 
         $complete = $modal.find('[data-bbai-bulk-progress-complete]');
@@ -17107,37 +17360,42 @@
         $supportingLine = $complete.find('[data-bbai-bulk-progress-supporting-line]');
 
         if ($completeTitle.length) {
-            $completeTitle.html(presentation && presentation.title ? presentation.title : buildBulkProgressSuccessTitleHtml(state));
+            $completeTitle.text(
+                !hasError
+                    ? __('Generation complete', 'beepbeep-ai-alt-text-generator')
+                    : __('Generation failed', 'beepbeep-ai-alt-text-generator')
+            );
         }
         if ($completeSubtitle.length) {
             $completeSubtitle.text(
-                presentation && presentation.successLine
-                    ? presentation.successLine
-                    : (state.processed > 0
-                        ? __('🎉 Your images are now SEO-ready', 'beepbeep-ai-alt-text-generator')
-                        : __('Review the result and try again.', 'beepbeep-ai-alt-text-generator'))
+                !hasError
+                    ? __('ALT text is ready to review.', 'beepbeep-ai-alt-text-generator')
+                    : __('Some images could not be processed. Please review the log and try again.', 'beepbeep-ai-alt-text-generator')
             );
         }
 
+        function applyActionButton($btn, cfg, which) {
+            if (!$btn || !$btn.length) {
+                logRender('progress_modal_missing_element', { selector: which });
+                return;
+            }
+            var label = cfg && cfg.label ? String(cfg.label) : '';
+            if (!label) {
+                $btn.text('').attr('data-bbai-bulk-progress-action', '').attr('data-bbai-bulk-progress-url', '').prop('hidden', true);
+                return;
+            }
+            $btn
+                .text(label)
+                .attr('data-bbai-bulk-progress-action', cfg.action ? String(cfg.action) : '')
+                .attr('data-bbai-bulk-progress-url', cfg.url ? String(cfg.url) : '')
+                .prop('hidden', false);
+        }
+
         $primaryAction = $complete.find('[data-bbai-bulk-progress-primary]');
-        $primaryAction
-            .text(ctaConfig.primary && ctaConfig.primary.label ? ctaConfig.primary.label : '')
-            .attr('data-bbai-bulk-progress-action', ctaConfig.primary && ctaConfig.primary.action ? ctaConfig.primary.action : '')
-            .attr('data-bbai-bulk-progress-url', ctaConfig.primary && ctaConfig.primary.url ? ctaConfig.primary.url : '')
-            .prop('hidden', !(ctaConfig.primary && ctaConfig.primary.label));
+        applyActionButton($primaryAction, ctaConfig.primary || null, '[data-bbai-bulk-progress-primary]');
 
         $secondaryAction = $complete.find('[data-bbai-bulk-progress-secondary]');
-        if (ctaConfig.secondary && ctaConfig.secondary.label) {
-            $secondaryAction
-                .text(ctaConfig.secondary.label)
-                .attr('data-bbai-bulk-progress-action', ctaConfig.secondary.action || '')
-                .prop('hidden', false);
-        } else {
-            $secondaryAction
-                .text('')
-                .attr('data-bbai-bulk-progress-action', '')
-                .prop('hidden', true);
-        }
+        applyActionButton($secondaryAction, ctaConfig.secondary || null, '[data-bbai-bulk-progress-secondary]');
 
         if ($supportingLine.length) {
             $supportingLine.text(presentation && presentation.supportingLine ? presentation.supportingLine : '');
@@ -17146,6 +17404,7 @@
 
         trackBulkProgressQuotaCtaShown($modal, state, ctaConfig);
         animateBulkProgressCompletion($modal, state);
+        logRender('progress_modal_complete_rendered', { total: state.total, completed: state.current });
     }
 
     function logBulkProgressQuotaSkip(skipCount, quotaCause) {
@@ -17707,6 +17966,17 @@
                 window.bbaiJobState.update({ label: generatingTitle });
             }
 
+            appendBulkProgressLogEntry(
+                $modal,
+                'success',
+                sprintf(
+                    __('Sending image %1$d of %2$d to AI…', 'beepbeep-ai-alt-text-generator'),
+                    ordinal,
+                    total
+                ),
+                { dedupe: true }
+            );
+
             generateAltTextForId(id)
                 .then(function(result) {
                     successes++;
@@ -17730,6 +18000,29 @@
                     if (rowEl && typeof window.bbaiSetRowDone === 'function') {
                         window.bbaiSetRowDone(rowEl);
                     }
+
+                    appendBulkProgressLogEntry(
+                        $modal,
+                        'success',
+                        __('ALT text generated', 'beepbeep-ai-alt-text-generator'),
+                        { dedupe: true }
+                    );
+                    appendBulkProgressLogEntry(
+                        $modal,
+                        'success',
+                        sprintf(
+                            __('Saved image %1$d of %2$d to WordPress', 'beepbeep-ai-alt-text-generator'),
+                            ordinal,
+                            total
+                        ),
+                        { dedupe: true }
+                    );
+                    appendBulkProgressLogEntry(
+                        $modal,
+                        'success',
+                        __('Moved to review', 'beepbeep-ai-alt-text-generator'),
+                        { dedupe: true }
+                    );
                 })
                 .catch(function(error) {
                     if (isLimitReachedError(error)) {
@@ -17801,6 +18094,20 @@
             }
         }
         var prior = getBulkProgressState($modal);
+
+        // Completion UI order:
+        // - append final log rows
+        // - progress to 100%
+        // - set complete mode + title/buttons
+        appendBulkProgressLogEntry(
+            $modal,
+            quotaError || failures > 0 ? 'error' : 'success',
+            quotaError || failures > 0
+                ? __('Generation finished with errors', 'beepbeep-ai-alt-text-generator')
+                : __('Generation complete', 'beepbeep-ai-alt-text-generator'),
+            { dedupe: true }
+        );
+
         var state = syncBulkProgressState($modal, {
             processed: successes,
             failed: failures,
@@ -17808,6 +18115,7 @@
             quotaBlocked: !!quotaError,
             quotaError: quotaError || null,
             complete: true,
+            activeTitle: __('Generation complete', 'beepbeep-ai-alt-text-generator'),
             trialExhaustedAfter: !!prior.trialExhaustedAfter
         });
         var total = state.total;
@@ -17873,6 +18181,102 @@
                 quotaBlocked: !!quotaError
             }
         }));
+
+        // Post-generation retention loop: fetch fresh counts once and update the success UI without reload.
+        (function postGenerationSuccessFlow() {
+            if (!$modal.length || quotaError) {
+                return;
+            }
+            var runId = String(Date.now());
+            window.bbaiCurrentGenerationRunId = window.bbaiCurrentGenerationRunId || runId;
+            var authMode = getDashboardAuthMode();
+            var root = getDashboardRootNode && typeof getDashboardRootNode === 'function' ? getDashboardRootNode() : null;
+            var trialExhausted = !!(root && root.getAttribute('data-bbai-trial-exhausted') === '1');
+            var creditsRemaining = root ? parseInt(root.getAttribute('data-bbai-credits-remaining') || '', 10) : NaN;
+            creditsRemaining = isFinite(creditsRemaining) ? Math.max(0, creditsRemaining) : null;
+
+            function applySnapshot() {
+                var counts = readPostGenerationCountsSnapshot();
+                var snap = {
+                    generated_count: Math.max(0, parseInt(successes, 10) || 0),
+                    missing_count: counts.missing,
+                    ready_for_review_count: counts.ready_for_review,
+                    optimized_count: counts.optimized,
+                    auth_mode: authMode || '',
+                    trial_exhausted: trialExhausted,
+                    credits_remaining: creditsRemaining
+                };
+
+                var nextAction = computePostGenerationNextAction({
+                    missing: snap.missing_count,
+                    ready_for_review: snap.ready_for_review_count,
+                    optimized: snap.optimized_count,
+                    auth_mode: snap.auth_mode,
+                    trial_exhausted: snap.trial_exhausted,
+                    credits_remaining: snap.credits_remaining
+                });
+
+                snap.headline = nextAction.headline;
+                snap.supporting = nextAction.supporting;
+                snap.ctaConfig = { primary: nextAction.primary, secondary: nextAction.secondary };
+                snap.next_action = nextAction && nextAction.primary ? String(nextAction.primary.action || '') : '';
+
+                // Attach to modal state and rerender complete UI.
+                var current = getBulkProgressState($modal);
+                current.postGen = snap;
+                syncBulkProgressState($modal, current);
+                renderBulkProgressState($modal, current);
+
+                // Tracking once per run.
+                try {
+                    window.bbaiTelemetrySeen = window.bbaiTelemetrySeen || new Set();
+                    var baseKey = 'post_generation_success_shown:' + String(window.bbaiCurrentGenerationRunId || runId);
+                    if (!window.bbaiTelemetrySeen.has(baseKey)) {
+                        window.bbaiTelemetrySeen.add(baseKey);
+                        dispatchAnalyticsEvent('post_generation_success_shown', {
+                            generated_count: snap.generated_count,
+                            missing_count: snap.missing_count,
+                            ready_for_review_count: snap.ready_for_review_count,
+                            auth_mode: snap.auth_mode,
+                            trial_exhausted: snap.trial_exhausted,
+                            credits_remaining: snap.credits_remaining
+                        });
+                    }
+                    var naKey = 'next_action_shown:' + String(window.bbaiCurrentGenerationRunId || runId);
+                    if (!window.bbaiTelemetrySeen.has(naKey)) {
+                        window.bbaiTelemetrySeen.add(naKey);
+                        dispatchAnalyticsEvent('next_action_shown', {
+                            next_action: snap.next_action,
+                            generated_count: snap.generated_count,
+                            missing_count: snap.missing_count,
+                            ready_for_review_count: snap.ready_for_review_count,
+                            auth_mode: snap.auth_mode,
+                            trial_exhausted: snap.trial_exhausted,
+                            credits_remaining: snap.credits_remaining
+                        });
+                    }
+                } catch (e) {}
+            }
+
+            // Pause dashboard polling during generation is already handled; now do one canonical refresh after.
+            var refreshPromise = null;
+            if (typeof window.bbaiRequestDashboardStateRefresh === 'function' && authMode !== 'guest_logged_out') {
+                refreshPromise = window.bbaiRequestDashboardStateRefresh('generation_completed');
+            } else if (typeof window.bbaiRefreshLoggedInDashboardTruth === 'function' && authMode !== 'guest_logged_out') {
+                refreshPromise = window.bbaiRefreshLoggedInDashboardTruth('generation_completed');
+            }
+
+            if (refreshPromise && typeof refreshPromise.then === 'function') {
+                refreshPromise.then(function () {
+                    applySnapshot();
+                }).catch(function () {
+                    applySnapshot();
+                });
+            } else {
+                // Guest/logged-out: no authenticated refresh. Use current DOM counters.
+                applySnapshot();
+            }
+        }());
 
         if (
             !quotaError &&
@@ -18273,6 +18677,46 @@
         applyDashboardState(false);
         $(document).trigger('bbai:usage-updated');
 
+        // Guest trial completion: immediately transition the guest funnel into the exhausted state.
+        // Without this, the dashboard can remain in a transient "generation_complete" runtime state until refresh.
+        if (exhausted || rem <= 0) {
+            // Success confirmation (toast-style) without requiring a refresh.
+            notifyLibraryFeedback(
+                'success',
+                __('Done — your free ALT text has been generated.', 'beepbeep-ai-alt-text-generator')
+            );
+
+            // Clear transient runtime state so the baseState (logged_out_trial_exhausted) can render immediately.
+            if (typeof setDashboardRuntimeState === 'function') {
+                setDashboardRuntimeState('idle');
+            }
+            // Re-apply once the runtime state is stable.
+            window.setTimeout(function () {
+                try { applyDashboardState(false); } catch (e) {}
+            }, 180);
+
+            // Locked preview copy: keep preview locked but clarify results are ready.
+            try {
+                var ctx = document.querySelector('[data-bbai-guest-preview-context]');
+                if (ctx) {
+                    ctx.textContent = __('Your generated ALT text is ready. Create a free account to review and manage it.', 'beepbeep-ai-alt-text-generator');
+                }
+            } catch (e2) {}
+
+            // Analytics (once).
+            try {
+                window.bbaiTelemetrySeen = window.bbaiTelemetrySeen || new Set();
+                if (!window.bbaiTelemetrySeen.has('guest_trial_completed')) {
+                    window.bbaiTelemetrySeen.add('guest_trial_completed');
+                    dispatchAnalyticsEvent('guest_trial_completed', { source: 'trial_complete' });
+                }
+                if (!window.bbaiTelemetrySeen.has('signup_prompt_shown:trial_complete')) {
+                    window.bbaiTelemetrySeen.add('signup_prompt_shown:trial_complete');
+                    dispatchAnalyticsEvent('signup_prompt_shown', { source: 'trial_complete' });
+                }
+            } catch (e3) {}
+        }
+
         if (window.BBAI_DASH && window.BBAI_DASH.trial && typeof window.BBAI_DASH.trial === 'object') {
             window.BBAI_DASH.trial.used = used;
             window.BBAI_DASH.trial.limit = lim;
@@ -18344,6 +18788,21 @@
             ctaShownTracked: false
         });
 
+        // Ensure the log is never empty on first paint.
+        var prepTemplate = _n(
+            'Preparing %s image for generation…',
+            'Preparing %s images for generation…',
+            state.total,
+            'beepbeep-ai-alt-text-generator'
+        );
+        appendBulkProgressLogEntry(
+            $modal,
+            'success',
+            sprintf(prepTemplate, formatDashboardNumber(Math.max(1, state.total))),
+            { dedupe: true }
+        );
+        $modal.find('[data-bbai-bulk-progress-log-count]').text(formatBulkProgressLogDoneLabel(state));
+
         // Show modal
         $modal.addClass('active');
         $('body').css('overflow', 'hidden');
@@ -18412,14 +18871,7 @@
             return;
         }
 
-        $log.empty().append(
-            '<div class="bbai-bulk-progress__log-empty" data-bbai-bulk-progress-log-empty>' +
-            escapeHtml(__('Completed images will appear here as they finish.', 'beepbeep-ai-alt-text-generator')) +
-            '</div>'
-        );
-        $modal.find('[data-bbai-bulk-progress-log-count]').text(
-            __('Waiting for images', 'beepbeep-ai-alt-text-generator')
-        );
+        $log.empty();
     }
 
     function appendBulkProgressLogEntry($modal, type, message, options) {
@@ -18491,6 +18943,12 @@
             '                <div class="bbai-bulk-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="' + escapeHtml(__('Generation progress', 'beepbeep-ai-alt-text-generator')) + '">' +
             '                    <div class="bbai-bulk-progress__bar-fill" data-bbai-bulk-progress-bar-fill style="width: 0%"></div>' +
             '                </div>' +
+            '            </div>' +
+            '            <div class="bbai-bulk-progress__steps" data-bbai-bulk-progress-steps role="group" aria-label="' + escapeHtml(__('Generation steps', 'beepbeep-ai-alt-text-generator')) + '">' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="prepare"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">1</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Preparing', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="send"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">2</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Sending to AI', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="save"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">3</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Saving to WordPress', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="review"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">4</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Ready to review', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__log-container" data-bbai-bulk-progress-log-container>' +
             '                <div class="bbai-bulk-progress__log-heading">' +
@@ -18569,16 +19027,12 @@
             percentage = 100;
         }
 
-        if (imageTitle && !isBulkProgressCompleteState(bulkState)) {
-            appendBulkProgressLogEntry(
-                $modal,
-                'success',
-                sprintf(__('Generated: %s', 'beepbeep-ai-alt-text-generator'), imageTitle)
-            );
-            updateBulkProgressStatusNote($modal, '', '');
-        }
+        // Note: detailed row-by-row log messages are appended by the inline generation queue.
+        // Keep this function focused on the meter/bar state to avoid duplicate / missing labels.
 
-        $modal.find('.bbai-bulk-progress__bar-fill, [data-bbai-bulk-progress-bar-fill]').css('width', percentage + '%');
+        var $fill = $modal.find('.bbai-bulk-progress__bar-fill, [data-bbai-bulk-progress-bar-fill]');
+        $fill.css('width', percentage + '%');
+        $fill.toggleClass('is-indeterminate', tot <= 0 && !isBulkProgressCompleteState(bulkState));
         $modal.find('.bbai-bulk-progress__bar[role="progressbar"]').attr('aria-valuenow', String(percentage));
 
         renderBulkProgressState($modal, bulkState);
@@ -20190,6 +20644,19 @@
             if (e && typeof e.stopPropagation === 'function') {
                 e.stopPropagation();
             }
+
+            // Trial-complete conversion CTAs (click tracking).
+            try {
+                var trialCta = trigger.getAttribute('data-bbai-trial-complete-cta');
+                if (trialCta) {
+                    var dashRoot = document.querySelector('[data-bbai-dashboard-root="1"]');
+                    dispatchAnalyticsEvent('trial_complete_cta_clicked', {
+                        cta: String(trialCta),
+                        trial_used: dashRoot ? (parseInt(dashRoot.getAttribute('data-bbai-trial-used') || dashRoot.getAttribute('data-bbai-credits-used') || '0', 10) || 0) : 0,
+                        trial_limit: dashRoot ? (parseInt(dashRoot.getAttribute('data-bbai-trial-limit') || dashRoot.getAttribute('data-bbai-credits-total') || '0', 10) || 0) : 0
+                    });
+                }
+            } catch (e0) {}
 
             if (trigger.getAttribute('data-auth-tab') === 'login') {
                 openAuthLoginModal();

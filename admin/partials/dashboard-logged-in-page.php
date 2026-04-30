@@ -69,6 +69,14 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	</div><?php /* /.bbai-li-hero-shell */ ?>
 
 	<?php
+	// Phase 14 retention/return strip (compact banner below the hero).
+	$bbai_retention_strip_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-retention-strip.php';
+	if ( isset( $bbai_retention_strip ) && is_readable( $bbai_retention_strip_partial ) ) {
+		require $bbai_retention_strip_partial;
+	}
+	?>
+
+	<?php
 	// ── Insight stat cards (display-only; values mirror donut + library totals) ──
 	$bbai_li_seg   = is_array( $bbai_li_state['donut']['segments'] ?? null ) ? $bbai_li_state['donut']['segments'] : [];
 	$bbai_li_opt   = max( 0, (int) ( $bbai_li_seg['optimized'] ?? 0 ) );
@@ -106,6 +114,12 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 				? esc_html__( 'All images have ALT text.', 'beepbeep-ai-alt-text-generator' )
 				: esc_html__( 'Accessibility coverage improving.', 'beepbeep-ai-alt-text-generator' );
 			?></p>
+			<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep this at 100% as you upload', 'beepbeep-ai-alt-text-generator' ); ?></p>
+			<a
+				href="#"
+				class="bbai-li-insight-card__cta"
+				data-action="show-upgrade-modal"
+			><?php esc_html_e( 'Enable auto ALT text', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			</div>
 		</article>
 		<article class="bbai-li-insight-card bbai-stat-card secondary">
@@ -132,6 +146,12 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 				? esc_html__( 'No manual writing needed.', 'beepbeep-ai-alt-text-generator' )
 				: esc_html__( 'Generate ALT in bulk to see time saved here.', 'beepbeep-ai-alt-text-generator' );
 			?></p>
+			<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep saving time automatically', 'beepbeep-ai-alt-text-generator' ); ?></p>
+			<a
+				href="#"
+				class="bbai-li-insight-card__cta"
+				data-action="show-upgrade-modal"
+			><?php esc_html_e( 'Enable auto optimisation', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			</div>
 		</article>
 		<article class="bbai-li-insight-card bbai-stat-card tertiary">
@@ -156,6 +176,12 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 				? esc_html__( 'Helping search engines understand your content.', 'beepbeep-ai-alt-text-generator' )
 				: esc_html__( 'Generate ALT text to start improving rankings.', 'beepbeep-ai-alt-text-generator' );
 			?></p>
+			<p class="bbai-li-insight-card__support"><?php esc_html_e( 'New uploads won’t be optimised automatically', 'beepbeep-ai-alt-text-generator' ); ?></p>
+			<a
+				href="#"
+				class="bbai-li-insight-card__cta"
+				data-action="show-upgrade-modal"
+			><?php esc_html_e( 'Automate future images', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			</div>
 		</article>
 	</section>

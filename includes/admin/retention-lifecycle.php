@@ -444,6 +444,68 @@ function bbai_retention_build_strip_model(array $ctx): ?array {
 }
 
 /**
+ * Phase 14+ Return loop resolver (canonical shape for frontend).
+ *
+ * This is a lightweight wrapper around the retention strip rules: it exposes
+ * stable metrics + a single recommended action without adding expensive queries.
+ *
+ * @param array<string,mixed> $ctx Same context as bbai_retention_build_strip_model plus optional:
+ *                                last_scan_at (string|null), last_generation_at (string|null).
+ * @return array<string,mixed>|null
+ */
+function bbai_return_loop_resolve(array $ctx): ?array {
+    $strip = bbai_retention_build_strip_model($ctx);
+    if (empty($strip) || empty($strip['show'])) {
+        return null;
+    }
+
+    $missing = max(0, (int) ($ctx['missing'] ?? 0));
+    $weak = max(0, (int) ($ctx['weak'] ?? 0));
+    $optimized = max(0, (int) ($ctx['optimized'] ?? 0));
+    $total = max(0, (int) ($ctx['total'] ?? 0));
+    $coverage_pct = max(0, min(100, (int) ($ctx['coverage_pct'] ?? 0)));
+
+    $uid = (int) ($ctx['user_id'] ?? 0);
+    $new_uploads = bbai_retention_new_uploads_estimate($uid, $total);
+
+    $recommended_action = '';
+    $cta_label = '';
+    $cta_action = '';
+    if (!empty($strip['primary']) && is_array($strip['primary'])) {
+        $cta_label = (string) ($strip['primary']['label'] ?? '');
+        $cta_action = (string) (($strip['primary']['action'] ?? '') ?: ($strip['primary']['bbai_action'] ?? ''));
+        $recommended_action = $cta_action ?: 'none';
+    }
+
+    $baseline = null;
+    $delta = null;
+    $hist = $uid > 0 ? bbai_retention_load_history($uid) : [];
+    $baseline = $uid > 0 ? bbai_retention_baseline_percent($hist, 7) : null;
+    if (null !== $baseline) {
+        $delta = $coverage_pct - $baseline;
+    }
+
+    return [
+        'has_new_images_since_last_scan' => $new_uploads > 0,
+        'new_images_count'               => $new_uploads,
+        'missing_count'                  => $missing,
+        'ready_for_review_count'         => $weak,
+        'optimized_count'                => $optimized,
+        'coverage_percent'               => $coverage_pct,
+        'previous_coverage_percent'      => $baseline,
+        'coverage_delta'                 => $delta,
+        'last_scan_at'                   => isset($ctx['last_scan_at']) ? ($ctx['last_scan_at'] ?: null) : null,
+        'last_generation_at'             => isset($ctx['last_generation_at']) ? ($ctx['last_generation_at'] ?: null) : null,
+        'recommended_action'             => $recommended_action ?: 'none',
+        'message'                        => (string) ($strip['headline'] ?? ''),
+        'cta_label'                      => $cta_label,
+        'cta_action'                     => $cta_action,
+        // Include the strip model for SSR banner rendering (same visual style).
+        '_strip'                         => $strip,
+    ];
+}
+
+/**
  * Compact library nudge (subset of triggers). Null = omit row.
  *
  * @param array<string,mixed> $ctx Keys: user_id, missing, weak, total, coverage_pct, missing_library_url,

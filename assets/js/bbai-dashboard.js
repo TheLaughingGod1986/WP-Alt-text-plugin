@@ -1080,6 +1080,7 @@ bbaiRunWithJQuery(function($) {
                             localStorage.removeItem('alttextai_token');
                             localStorage.removeItem('bbai_open_portal_after_login');
                         }
+                        dispatchBbaiLogoutEvent();
                         
                         // Redirect or reload
                         if (response.data && response.data.redirect) {
@@ -2859,6 +2860,7 @@ function handleLogout() {
                 if (typeof localStorage !== 'undefined') {
                     localStorage.removeItem('alttextai_token');
                 }
+            dispatchBbaiLogoutEvent();
             // Redirect to plugin dashboard/sign-up page after logout
             const redirect = (window.bbai_ajax && (window.bbai_ajax.logout_redirect || window.bbai_ajax.ajax_url)) || window.location.href;
             window.location.href = redirect;
@@ -2894,6 +2896,7 @@ function handleLogout() {
             if (typeof localStorage !== 'undefined') {
                 localStorage.removeItem('alttextai_token');
             }
+            dispatchBbaiLogoutEvent();
             const redirect = (window.bbai_ajax && (window.bbai_ajax.logout_redirect || window.bbai_ajax.ajax_url)) || window.location.href;
             window.location.href = redirect;
         })
@@ -2903,9 +2906,24 @@ function handleLogout() {
             if (typeof localStorage !== 'undefined') {
                 localStorage.removeItem('alttextai_token');
             }
+            dispatchBbaiLogoutEvent();
             const redirect = (window.bbai_ajax && (window.bbai_ajax.logout_redirect || window.bbai_ajax.ajax_url)) || window.location.href;
             window.location.href = redirect;
         });
+    }
+}
+
+function dispatchBbaiLogoutEvent() {
+    if (window.bbai_ajax) {
+        window.bbai_ajax.is_authenticated = false;
+        window.bbai_ajax.user_data = {};
+    }
+    window.bbaiUser = {};
+    window.bbaiAuthResolved = true;
+    try {
+        window.dispatchEvent(new CustomEvent('bbai_logout'));
+    } catch (e) {
+        /* ignore */
     }
 }
 

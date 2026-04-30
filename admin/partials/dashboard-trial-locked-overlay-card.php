@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $bbai_locked_ctx = isset( $bbai_locked_preview_context_line ) ? (string) $bbai_locked_preview_context_line : '';
+$bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exhausted : false;
 ?>
 <div
 	class="bbai-dashboard-locked-preview__overlay"
@@ -37,10 +38,11 @@ $bbai_locked_ctx = isset( $bbai_locked_preview_context_line ) ? (string) $bbai_l
 			<button
 				type="button"
 				class="bbai-btn bbai-btn-primary bbai-dashboard-locked-preview__cta bbai-dashboard-locked-preview__cta--primary"
-				data-action="show-dashboard-auth"
-				data-auth-tab="register"
+				data-action="show-auth-modal"
+				data-auth-tab="signup"
 				data-bbai-modal-context="library"
 				data-bbai-analytics-upgrade="library_overlay_create_account"
+				data-bbai-trial-complete-cta="<?php echo esc_attr( $bbai_trial_exhausted ? 'unlock_alt_library' : 'create_account' ); ?>"
 			>
 				<?php esc_html_e( 'Create free account', 'beepbeep-ai-alt-text-generator' ); ?>
 			</button>
@@ -48,39 +50,42 @@ $bbai_locked_ctx = isset( $bbai_locked_preview_context_line ) ? (string) $bbai_l
 				<a
 					href="#"
 					class="bbai-dashboard-locked-preview__signin-link"
-					data-action="show-dashboard-auth"
+					data-action="show-auth-modal"
 					data-auth-tab="login"
 					data-bbai-modal-context="login"
+					data-bbai-trial-complete-cta="login"
 				>
 					<?php esc_html_e( 'Log in', 'beepbeep-ai-alt-text-generator' ); ?>
 				</a>
 			</p>
 		</div>
 
-		<ul class="bbai-dashboard-locked-preview__benefits bbai-dashboard-locked-preview__benefits--conversion" aria-label="<?php esc_attr_e( 'Unlocked value', 'beepbeep-ai-alt-text-generator' ); ?>">
-			<li class="bbai-dashboard-locked-preview__benefit">
-				<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>
-				<span><?php esc_html_e( 'Unlock your full ALT library', 'beepbeep-ai-alt-text-generator' ); ?></span>
-			</li>
-			<li class="bbai-dashboard-locked-preview__benefit">
-				<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>
-				<span><?php esc_html_e( 'Fix all remaining images', 'beepbeep-ai-alt-text-generator' ); ?></span>
-			</li>
-			<li class="bbai-dashboard-locked-preview__benefit">
-				<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>
-				<span>
-					<?php
-					$bbai_monthly = isset( $bbai_locked_preview_monthly_free ) ? (int) $bbai_locked_preview_monthly_free : 50;
-					echo esc_html(
-						sprintf(
-							/* translators: %d: free monthly generations. */
-							__( 'Get %d generations/month', 'beepbeep-ai-alt-text-generator' ),
-							$bbai_monthly
-						)
-					);
-					?>
-				</span>
-			</li>
-		</ul>
+		<?php if ( ! $bbai_trial_exhausted ) : ?>
+			<ul class="bbai-dashboard-locked-preview__benefits bbai-dashboard-locked-preview__benefits--conversion" aria-label="<?php esc_attr_e( 'Unlocked value', 'beepbeep-ai-alt-text-generator' ); ?>">
+				<li class="bbai-dashboard-locked-preview__benefit">
+					<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>
+					<span><?php esc_html_e( 'Unlock your full ALT library', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				</li>
+				<li class="bbai-dashboard-locked-preview__benefit">
+					<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>
+					<span><?php esc_html_e( 'Fix all remaining images', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				</li>
+				<li class="bbai-dashboard-locked-preview__benefit">
+					<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>
+					<span>
+						<?php
+						$bbai_monthly = isset( $bbai_locked_preview_monthly_free ) ? (int) $bbai_locked_preview_monthly_free : 50;
+						echo esc_html(
+							sprintf(
+								/* translators: %d: free monthly generations. */
+								__( 'Get %d generations/month', 'beepbeep-ai-alt-text-generator' ),
+								$bbai_monthly
+							)
+						);
+						?>
+					</span>
+				</li>
+			</ul>
+		<?php endif; ?>
 	</div>
 </div>

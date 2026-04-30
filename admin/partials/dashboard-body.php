@@ -196,7 +196,17 @@ $bbai_is_authenticated = (bool) ($bbai_is_authenticated ?? false);
 $bbai_has_license = (bool) ($bbai_has_license ?? false);
 $bbai_has_registered_user = (bool) ($bbai_has_registered_user ?? false);
 $bbai_has_connected_account = (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user);
+// Canonical auth separation: wp-admin login is NOT BeepBeep auth.
+// Treat any non-authenticated session as guest_logged_out even if stale flags suggest a connection.
+if ( ! $bbai_is_authenticated ) {
+    $bbai_has_connected_account = false;
+    $bbai_has_license = false;
+}
 $bbai_has_no_saas_account     = ! $bbai_has_connected_account;
+
+$bbai_auth_mode = $bbai_has_connected_account
+    ? ( $bbai_has_license ? 'authenticated_paid' : 'authenticated_free' )
+    : 'guest_logged_out';
 
 // Constant override: forces the clean FTUE view regardless of all other flags.
 if ( defined( 'BBAI_FORCE_CLEAN_LOGGED_OUT' ) && BBAI_FORCE_CLEAN_LOGGED_OUT ) {
@@ -211,6 +221,23 @@ $bbai_guest_primary_mode  = '';
 $bbai_guest_trial_status = $bbai_is_guest_trial ? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status() : [];
 
 if ($bbai_has_connected_account || $bbai_is_guest_trial) :
+    $bbai_client_user_data = [];
+    if ( isset( $this ) && is_object( $this ) && isset( $this->api_client ) && is_object( $this->api_client ) && method_exists( $this->api_client, 'get_user_data' ) ) {
+        $bbai_client_user_data = (array) $this->api_client->get_user_data();
+    }
+    $bbai_client_user_email = $bbai_has_connected_account ? sanitize_email( (string) ( $bbai_client_user_data['email'] ?? '' ) ) : '';
+    $bbai_client_user_id    = $bbai_has_connected_account ? sanitize_text_field( (string) ( $bbai_client_user_data['id'] ?? $bbai_client_user_data['_id'] ?? $bbai_client_user_data['user_id'] ?? '' ) ) : '';
+    ?>
+    <script>
+        window.bbaiUser = <?php echo wp_json_encode( [
+            'email'   => $bbai_client_user_email,
+            'id'      => $bbai_client_user_id,
+            'isGuest' => ! $bbai_has_connected_account,
+        ] ); ?>;
+        window.BBAI_AUTH_MODE = <?php echo wp_json_encode( $bbai_auth_mode ); ?>;
+        window.bbaiAuthResolved = true;
+    </script>
+    <?php
     $bbai_plan_data = $bbai_is_guest_trial ? [] : Plan_Helpers::get_plan_data();
     $bbai_plan_slug_ladder = $bbai_has_connected_account
         ? strtolower( (string) ( $bbai_usage_stats['plan'] ?? ( $bbai_plan_data['plan_slug'] ?? 'free' ) ) )
@@ -894,9 +921,11 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     $bbai_plan_card_hide_monetisation = true;
 
     $bbai_retention_strip = null;
-    if ( ! empty( $bbai_has_connected_account ) && $bbai_current_user_id ) {
+    $bbai_return_loop = null;
+    if ( $bbai_current_user_id ) {
+        // Retention tracking uses wp-admin user ID (site-level progress), not BeepBeep auth.
         bbai_retention_schedule_snapshot_update($bbai_current_user_id, $bbai_total_images);
-        $bbai_retention_strip = bbai_retention_build_strip_model(
+        $bbai_return_loop = bbai_return_loop_resolve(
             [
                 'user_id'                  => $bbai_current_user_id,
                 'ftue_show_hero'           => $bbai_ftue_show_hero,
@@ -913,8 +942,16 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
                 'missing_library_url'      => $bbai_missing_library_url,
                 'needs_review_library_url' => $bbai_needs_review_library_url,
                 'library_url'              => $bbai_library_url,
+                'last_scan_at'             => $bbai_last_scan_timestamp > 0 ? gmdate('c', $bbai_last_scan_timestamp) : null,
+                'last_generation_at'       => null,
             ]
         );
+        $bbai_retention_strip = is_array($bbai_return_loop) && isset($bbai_return_loop['_strip']) && is_array($bbai_return_loop['_strip'])
+            ? $bbai_return_loop['_strip']
+            : null;
+        if ( is_array( $bbai_product_state_model ) ) {
+            $bbai_product_state_model['return_loop'] = is_array($bbai_return_loop) ? $bbai_return_loop : null;
+        }
     }
 
     $bbai_primary_action = 'scan';
@@ -1084,6 +1121,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         data-bbai-dashboard-funnel="guest_dashboard"
         data-bbai-dashboard-root="1"
         data-bbai-dashboard-state-root="1"
+        data-bbai-auth-mode="guest_logged_out"
         data-bbai-dashboard-state="<?php echo esc_attr( (string) ( $bbai_product_state_model['state'] ?? '' ) ); ?>"
         data-bbai-dashboard-base-state="<?php echo esc_attr( (string) ( $bbai_product_state_model['base_state'] ?? '' ) ); ?>"
         data-bbai-dashboard-runtime-state="<?php echo esc_attr( (string) ( $bbai_product_state_model['runtime_state'] ?? 'idle' ) ); ?>"
@@ -1140,6 +1178,10 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         if ( is_readable( $bbai_hero_partial ) ) {
             require $bbai_hero_partial;
         }
+        $bbai_retention_strip_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-retention-strip.php';
+        if ( is_readable( $bbai_retention_strip_partial ) ) {
+            require $bbai_retention_strip_partial;
+        }
         $bbai_trial_preview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-library-preview.php';
         // Guest conversion: always show a real ALT Library preview beneath the hero.
         // Overlay CTA handles locked/unlocked expectation; preview rows come from real media.
@@ -1157,6 +1199,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         data-bbai-dashboard-container
         data-bbai-dashboard-root="1"
         data-bbai-dashboard-state-root="1"
+        data-bbai-auth-mode="<?php echo esc_attr( $bbai_auth_mode ); ?>"
         data-bbai-dashboard-state="<?php echo esc_attr((string) ($bbai_product_state_model['state'] ?? '')); ?>"
         data-bbai-dashboard-base-state="<?php echo esc_attr((string) ($bbai_product_state_model['base_state'] ?? '')); ?>"
         data-bbai-dashboard-runtime-state="<?php echo esc_attr((string) ($bbai_product_state_model['runtime_state'] ?? 'idle')); ?>"

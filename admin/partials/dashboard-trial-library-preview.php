@@ -13,6 +13,12 @@ if ( ! empty( $bbai_has_connected_account ) ) {
 	return;
 }
 
+$bbai_trial_src = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
+	? $bbai_product_state_model['trial']
+	: [];
+$bbai_trial_remaining = max( 0, (int) ( $bbai_trial_src['remaining'] ?? 0 ) );
+$bbai_trial_exhausted = ! empty( $bbai_trial_src['exhausted'] ) || $bbai_trial_remaining <= 0;
+
 $bbai_state_m = (int) ( $bbai_state_missing_count ?? 0 );
 $bbai_state_w = (int) ( $bbai_state_weak_count ?? 0 );
 $bbai_guest_preview_actionable = max( $bbai_state_m, $bbai_state_w, $bbai_state_m + $bbai_state_w );
@@ -25,8 +31,10 @@ $bbai_trial_preview_total  = max( 0, (int) ( $bbai_state_total_images ?? count( 
 $bbai_trial_preview_extra  = max( 0, $bbai_trial_preview_total - count( $bbai_trial_preview_rows ) );
 $bbai_trial_preview_generation_locked = true;
 
-// Locked preview copy: keep the preview curious, but make the CTA + benefit list do the work.
-$bbai_locked_preview_overlay_copy   = __( 'Create a free account to review and fix all remaining images.', 'beepbeep-ai-alt-text-generator' );
+// Locked preview copy: trial-complete variant is conversion-first and non-repetitive.
+$bbai_locked_preview_overlay_copy   = $bbai_trial_exhausted
+	? __( 'Create a free account to review, edit, and optimise all your images in one place.', 'beepbeep-ai-alt-text-generator' )
+	: __( 'Create a free account to review and fix all remaining images.', 'beepbeep-ai-alt-text-generator' );
 $bbai_locked_preview_context_line   = '';
 $bbai_locked_preview_waiting_line   = $bbai_guest_preview_actionable > 0
 	? sprintf(
@@ -41,13 +49,13 @@ $bbai_trial_lib_card_row_path = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/compone
 $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-locked-overlay-card.php';
 ?>
 <section
-	class="bbai-dashboard-trial-preview bbai-dashboard-trial-preview--guest-locked"
+	class="bbai-dashboard-trial-preview bbai-dashboard-trial-preview--guest-locked<?php echo $bbai_trial_exhausted ? ' bbai-dashboard-trial-preview--exhausted' : ''; ?>"
 	data-bbai-trial-preview="1"
 	data-bbai-trial-preview-limit="3"
 	aria-labelledby="bbai-dashboard-locked-outer-heading"
 >
-	<h2 id="bbai-dashboard-locked-outer-heading" class="screen-reader-text">
-		<?php esc_html_e( 'ALT Library preview', 'beepbeep-ai-alt-text-generator' ); ?>
+	<h2 id="bbai-dashboard-locked-outer-heading" class="<?php echo $bbai_trial_exhausted ? esc_attr( 'bbai-section-title bbai-dashboard-trial-preview__label' ) : esc_attr( 'screen-reader-text' ); ?>">
+		<?php echo esc_html( $bbai_trial_exhausted ? __( 'Your ALT Library is locked', 'beepbeep-ai-alt-text-generator' ) : __( 'ALT Library preview', 'beepbeep-ai-alt-text-generator' ) ); ?>
 	</h2>
 
 	<div class="bbai-dashboard-locked-preview__shell bbai-dashboard-trial-preview__shell">

@@ -854,6 +854,43 @@ $bbai_hero_credit_bar_aria = sprintf(
 	var hero = document.querySelector( '[data-bbai-li-hero="1"]' );
 	if ( ! hero ) { return; }
 
+	function isUserAuthenticated() {
+		return !! window.bbaiUser && !! window.bbaiUser.email;
+	}
+
+	window.isUserAuthenticated = window.isUserAuthenticated || isUserAuthenticated;
+
+	function renderGuestDashboardFallback() {
+		var root = document.querySelector( '[data-bbai-dashboard-root="1"]' );
+		var loggedIn = document.querySelector( '[data-bbai-logged-in-dashboard]' );
+		if ( typeof window.bbaiResetDashboardStateController === 'function' ) {
+			window.bbaiResetDashboardStateController();
+		}
+		if ( typeof window.bbaiRenderGuestDashboard === 'function' ) {
+			window.bbaiRenderGuestDashboard();
+			return;
+		}
+		if ( loggedIn ) {
+			loggedIn.hidden = true;
+			loggedIn.setAttribute( 'aria-hidden', 'true' );
+		}
+		if ( root ) {
+			root.setAttribute( 'data-bbai-has-connected-account', '0' );
+			root.setAttribute( 'data-bbai-is-guest-trial', '1' );
+			root.setAttribute( 'data-bbai-auth-state', 'anonymous' );
+			root.setAttribute( 'data-bbai-dashboard-funnel', 'guest_dashboard' );
+			// Do not inject a minimal guest UI fallback.
+			// Guests must use the SSR guest funnel/dashboard markup from PHP.
+			root.hidden = false;
+			root.removeAttribute( 'aria-busy' );
+		}
+	}
+
+	if ( window.bbaiAuthResolved === true && ! isUserAuthenticated() ) {
+		renderGuestDashboardFallback();
+		return;
+	}
+
 	var heroVariant = hero.getAttribute( 'data-bbai-li-variant' ) || '';
 	var safetyTimer = null;
 	var heroGenerationWatchdog = null;
@@ -878,6 +915,246 @@ $bbai_hero_credit_bar_aria = sprintf(
 		bootstrapSyncApplied: false,
 		hydrated: false,
 		ssrRendered: true,
+	};
+
+	// ── Dashboard state stabilizer (prevents flicker/regression) ─────────────
+	// Guarded so other scripts can reuse the same controller.
+	window.BBAI_DASHBOARD_STATE_STABILIZER = window.BBAI_DASHBOARD_STATE_STABILIZER || ( function () {
+		var STATE_PRIORITY = {
+			needs_alt: 1,
+			ready_to_generate: 2,
+			queued: 3,
+			review_ready: 4,
+			complete: 5,
+		};
+
+		function prio( key ) {
+			return STATE_PRIORITY[ String( key || '' ) ] || 0;
+		}
+
+		var ctrl = {
+			currentState: '',
+			pendingState: null,
+			lastStateHash: '',
+			stableCount: 0,
+			isGenerating: false,
+			debounceTimer: null,
+		};
+
+		function logDev( msg, detail ) {
+			if ( ! window.BBAI_LOG || typeof window.BBAI_LOG.info !== 'function' || ! window.console || typeof window.console.debug !== 'function' ) {
+				return;
+			}
+			window.console.debug( '[bbai-dashboard-stabilizer]', msg, detail || {} );
+		}
+
+		ctrl.receive = function ( next ) {
+			var n = next && typeof next === 'object' ? next : {};
+			var key = String( n.key || '' );
+			var hash = String( n.hash || '' );
+			var apply = typeof n.apply === 'function' ? n.apply : null;
+			var generating = !! n.generating;
+			var reason = String( n.reason || '' );
+
+			if ( ! key || ! hash || ! apply ) {
+				return false;
+			}
+
+			logDev( 'State received', { key: key, reason: reason } );
+
+			// Freeze during generation: ignore mid-run transitions/updates.
+			if ( ctrl.isGenerating ) {
+				if ( generating ) {
+					logDev( 'State ignored (generating freeze)', { key: key, reason: reason } );
+					return false;
+				}
+				// Generation ended: allow higher-priority completion states.
+				ctrl.isGenerating = false;
+				window.bbaiIsGenerating = false;
+			}
+
+			// Reject regressions.
+			if ( ctrl.currentState && prio( key ) < prio( ctrl.currentState ) ) {
+				logDev( 'State rejected (regression)', { from: ctrl.currentState, to: key, reason: reason } );
+				return false;
+			}
+
+			// Stability: must match twice.
+			if ( ctrl.lastStateHash === hash ) {
+				ctrl.stableCount += 1;
+			} else {
+				ctrl.lastStateHash = hash;
+				ctrl.stableCount = 1;
+			}
+
+			if ( ctrl.stableCount < 2 ) {
+				logDev( 'State ignored (unstable)', { key: key, reason: reason, stableCount: ctrl.stableCount } );
+				return false;
+			}
+
+			// Debounce apply: only latest state renders.
+			ctrl.pendingState = { key: key, hash: hash, apply: apply, generating: generating, reason: reason };
+			if ( ctrl.debounceTimer ) {
+				window.clearTimeout( ctrl.debounceTimer );
+				ctrl.debounceTimer = null;
+			}
+			ctrl.debounceTimer = window.setTimeout( function () {
+				var pending = ctrl.pendingState;
+				ctrl.debounceTimer = null;
+				if ( ! pending || pending.hash !== hash ) {
+					return;
+				}
+				ctrl.pendingState = null;
+				ctrl.currentState = pending.key;
+				if ( pending.generating ) {
+					ctrl.isGenerating = true;
+					window.bbaiIsGenerating = true;
+				}
+				logDev( 'State applied', { key: pending.key, reason: pending.reason } );
+				try { pending.apply(); } catch ( e ) {}
+			}, 650 );
+
+			return true;
+		};
+
+		return ctrl;
+	}() );
+
+	// Global request coordinator for dashboard polling (state-truth owner).
+	window.bbaiDashboardStateRequest = window.bbaiDashboardStateRequest || {
+		inFlight: false,
+		promise: null,
+		controller: null,
+		sequence: 0,
+		latestAppliedSequence: 0,
+		lastStartedAt: 0,
+		lastCompletedAt: 0,
+		lastReason: null,
+		lastSignature: null,
+	};
+
+	function bbaiShouldDedupeDashboardRefresh( reason ) {
+		var r = String( reason || '' );
+		if ( ! window.bbaiDashboardStateRequest.lastCompletedAt ) { return false; }
+		if ( Date.now() - window.bbaiDashboardStateRequest.lastCompletedAt >= 3000 ) { return false; }
+		return ( 'poll' === r || 'focus' === r || 'bootstrap' === r || 'visibility' === r || 'visibility_resume' === r );
+	}
+
+	function bbaiDebugTiming( eventName, detail ) {
+		if ( ! window.BBAI_LOG || typeof window.BBAI_LOG.info !== 'function' || ! window.console || typeof window.console.debug !== 'function' ) {
+			return;
+		}
+		window.console.debug( '[bbai-dashboard-state]', Object.assign( { event: eventName }, detail || {} ) );
+	}
+
+	function bbaiBuildTruthSignature( truth ) {
+		var counts = getTruthCounts( truth );
+		var credits = getTruthCredits( truth );
+		var state = getStateTruthState( truth );
+		var total = counts ? ( counts.total || ( counts.missing + counts.review + counts.complete + counts.failed ) ) : 0;
+		var generationInProgress = ( 'QUEUED' === state || 'PROCESSING' === state );
+		return [
+			counts ? counts.missing : 0,
+			counts ? counts.review : 0,
+			counts ? counts.complete : 0,
+			total,
+			credits ? credits.used : 0,
+			credits ? credits.total : 1,
+			credits ? credits.remaining : 0,
+			getDashboardRenderMode( state ),
+			generationInProgress ? 1 : 0,
+		].join( '|' );
+	}
+
+	window.bbaiRequestDashboardStateRefresh = window.bbaiRequestDashboardStateRefresh || function ( reason ) {
+		var req = window.bbaiDashboardStateRequest;
+		var r = String( reason || 'poll' );
+
+		if ( req.inFlight && req.promise ) {
+			bbaiDebugTiming( 'dashboard_state_fetch_skipped', { reason: r, endpoint: 'state-truth', because: 'in_flight' } );
+			return req.promise;
+		}
+
+		if ( bbaiShouldDedupeDashboardRefresh( r ) ) {
+			bbaiDebugTiming( 'dashboard_state_fetch_skipped', { reason: r, endpoint: 'state-truth', because: 'dedupe_recent' } );
+			return Promise.resolve( dashboardPolling.currentTruth );
+		}
+
+		if ( 'generation_completed' === r || 'manual_rescan' === r || 'user_action' === r ) {
+			req.lastCompletedAt = 0;
+		}
+
+		req.sequence += 1;
+		var sequence = req.sequence;
+		req.inFlight = true;
+		req.lastStartedAt = Date.now();
+		req.lastReason = r;
+
+		var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+		req.controller = controller;
+
+		var stateSnapshot = String( dashboardPolling.latestState || hero.getAttribute( 'data-bbai-li-state' ) || '' ).toUpperCase();
+		var timeoutMs = ( 'QUEUED' === stateSnapshot || 'PROCESSING' === stateSnapshot ) ? 15000 : 8000;
+		var timeoutId = controller
+			? window.setTimeout( function () {
+				try { controller.abort(); } catch ( e ) {}
+			}, timeoutMs )
+			: null;
+
+		bbaiDebugTiming( 'dashboard_state_fetch_start', { reason: r, sequence: sequence, durationMs: 0, endpoint: 'state-truth' } );
+
+		req.promise = fetchStateTruth( r, { logLoaded: 'bootstrap' === r, logFailure: false }, {
+			controller: controller,
+			timeoutMs: timeoutMs,
+			timeoutId: timeoutId,
+		} ).then( function ( truth ) {
+			if ( timeoutId ) { window.clearTimeout( timeoutId ); }
+			req.inFlight = false;
+			req.controller = null;
+			req.lastCompletedAt = Date.now();
+			// Only update "last checked" for explicit actions, never background polling.
+			if ( r !== 'poll' && r !== 'scheduled' && r !== 'visibility' && r !== 'focus' ) {
+				window.bbaiLastSuccessfulDashboardRefreshAt = req.lastCompletedAt;
+				// Ensure any visible "Last checked" signal never reflects an ancient scan timestamp.
+				syncLastCheckedJustNow();
+			}
+
+			bbaiDebugTiming( 'dashboard_state_fetch_complete', {
+				reason: r,
+				sequence: sequence,
+				durationMs: Math.max( 0, req.lastCompletedAt - req.lastStartedAt ),
+				endpoint: 'state-truth',
+			} );
+
+			if ( sequence <= req.latestAppliedSequence ) {
+				bbaiDebugTiming( 'ignore_stale_dashboard_state_response', { reason: r, sequence: sequence, latestAppliedSequence: req.latestAppliedSequence, endpoint: 'state-truth' } );
+				return dashboardPolling.currentTruth;
+			}
+
+			req.latestAppliedSequence = sequence;
+
+			var sig = bbaiBuildTruthSignature( truth );
+			if ( req.lastSignature && req.lastSignature === sig ) {
+				bbaiDebugTiming( 'skip_unchanged_dashboard_render', { reason: r, sequence: sequence, endpoint: 'state-truth' } );
+				return truth;
+			}
+			req.lastSignature = sig;
+
+			return truth;
+		} ).catch( function ( err ) {
+			if ( timeoutId ) { window.clearTimeout( timeoutId ); }
+			req.inFlight = false;
+			req.controller = null;
+			req.lastCompletedAt = Date.now();
+			if ( controller && controller.signal && controller.signal.aborted ) {
+				bbaiDebugTiming( 'dashboard_state_fetch_timeout', { reason: r, sequence: sequence, durationMs: Math.max( 0, req.lastCompletedAt - req.lastStartedAt ), endpoint: 'state-truth' } );
+			}
+			throw err;
+		} ).finally( function () {
+			req.promise = null;
+		} );
+
+		return req.promise;
 	};
 
 	// Inline config from PHP — avoids dependency on missing compiled JS bundles.
@@ -1922,8 +2199,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 		return ! isNaN( parsed ) ? parsed : null;
 	}
 
-	function fetchStateTruth( context, opts ) {
+	function fetchStateTruth( context, opts, requestOptions ) {
 		var options = opts || {};
+		var reqOpts = requestOptions && typeof requestOptions === 'object' ? requestOptions : {};
 		var stateTruthUrl = getStateTruthUrl();
 		if ( ! stateTruthUrl || ! BBAI_HERO_CFG.restNonce ) {
 			var missingConfigError = new Error( 'state_truth_config_missing' );
@@ -1933,20 +2211,47 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return Promise.reject( missingConfigError );
 		}
 
+		var controller = reqOpts.controller || ( typeof AbortController !== 'undefined' ? new AbortController() : null );
+		var startedAt = Date.now();
+		var timeoutMs = reqOpts.timeoutMs || ( function () {
+			var s = String( hero.getAttribute( 'data-bbai-li-state' ) || '' ).toUpperCase();
+			return ( 'QUEUED' === s || 'PROCESSING' === s ) ? 15000 : 8000;
+		}() );
+		var timeoutId = ( reqOpts.timeoutId === 0 || reqOpts.timeoutId )
+			? reqOpts.timeoutId
+			: ( controller
+			? window.setTimeout( function () {
+				try { controller.abort(); } catch ( e ) {}
+			}, timeoutMs )
+			: null );
+
+		if ( window.BBAI_LOG && typeof window.BBAI_LOG.info === 'function' && window.console && typeof window.console.debug === 'function' ) {
+			window.console.debug( '[bbai-dashboard-state]', {
+				event: 'dashboard_state_fetch_start',
+				reason: context || '',
+				sequence: ( window.bbaiDashboardStateRequest && window.bbaiDashboardStateRequest.sequence ) || 0,
+				durationMs: 0,
+				endpoint: 'state-truth',
+			} );
+		}
+
 		return fetch( stateTruthUrl, {
 			method:      'GET',
 			credentials: 'same-origin',
+			signal:      controller ? controller.signal : undefined,
 			headers:     {
 				'X-WP-Nonce': BBAI_HERO_CFG.restNonce,
 			},
 		} )
 		.then( function ( res ) {
+			if ( timeoutId ) { window.clearTimeout( timeoutId ); }
 			if ( ! res.ok ) {
 				throw new Error( 'state_truth ' + res.status );
 			}
 			return res.json();
 		} )
 		.then( function ( payload ) {
+			if ( timeoutId ) { window.clearTimeout( timeoutId ); }
 			var truth = normalizeStateTruthPayload( payload );
 			var truthState = getStateTruthState( truth );
 			if ( ! truth || ! truthState ) {
@@ -1987,6 +2292,18 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return truth;
 		} )
 		.catch( function ( error ) {
+			if ( timeoutId ) { window.clearTimeout( timeoutId ); }
+			if ( controller && controller.signal && controller.signal.aborted ) {
+				if ( window.BBAI_LOG && typeof window.BBAI_LOG.info === 'function' && window.console && typeof window.console.debug === 'function' ) {
+					window.console.debug( '[bbai-dashboard-state]', {
+						event: 'dashboard_state_fetch_timeout',
+						reason: context || '',
+						sequence: ( window.bbaiDashboardStateRequest && window.bbaiDashboardStateRequest.sequence ) || 0,
+						durationMs: Math.max( 0, Date.now() - startedAt ),
+						endpoint: 'state-truth',
+					} );
+				}
+			}
 			if ( options.logFailure !== false ) {
 				logDashboardUiFailure( context, error );
 			}
@@ -2433,15 +2750,14 @@ $bbai_hero_credit_bar_aria = sprintf(
 	}
 
 	function getPollIntervalForState( state ) {
+		// Consolidated dashboard polling: 15s when visible, 3s while generation is active.
+		// (Generation-active is represented by QUEUED/PROCESSING states in truth.)
 		switch ( String( state || '' ).toUpperCase() ) {
 			case 'QUEUED':
 			case 'PROCESSING':
-				return 2500;
-			case 'NEEDS_REVIEW':
-			case 'MIXED_ATTENTION':
-				return 12000;
+				return 3000;
 			default:
-				return 0;
+				return 15000;
 		}
 	}
 
@@ -2634,6 +2950,30 @@ $bbai_hero_credit_bar_aria = sprintf(
 		return TEXT.checkingQueue + ' ' + getQueuedSignalText( seconds );
 	}
 
+	function getLastSuccessfulDashboardRefreshAt() {
+		var raw = window.bbaiLastSuccessfulDashboardRefreshAt;
+		var t = raw ? parseInt( raw, 10 ) : 0;
+		return isNaN( t ) ? 0 : Math.max( 0, t );
+	}
+
+	function pickLastCheckedAt( jobCheckedAt ) {
+		var refreshAt = getLastSuccessfulDashboardRefreshAt();
+		var jobAt = jobCheckedAt ? parseInt( jobCheckedAt, 10 ) : 0;
+		jobAt = isNaN( jobAt ) ? 0 : Math.max( 0, jobAt );
+		// Prefer the most recent successful dashboard refresh to avoid stale server timestamps.
+		return Math.max( refreshAt, jobAt );
+	}
+
+	function syncLastCheckedJustNow() {
+		var nodes = document.querySelectorAll( '[data-bbai-li-queued-signal="1"]' );
+		if ( ! nodes || ! nodes.length ) { return; }
+		Array.prototype.forEach.call( nodes, function ( n ) {
+			if ( n && n.textContent !== TEXT.lastCheckedJustNow ) {
+				n.textContent = TEXT.lastCheckedJustNow;
+			}
+		} );
+	}
+
 	function updateQueuedStripSignal( text ) {
 		var signal = document.querySelector( '[data-bbai-li-queued-signal="1"]' );
 		if ( signal ) {
@@ -2679,7 +3019,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 	function renderQueuedSignal( meta ) {
 		var truth = dashboardPolling.currentTruth;
 		var job = getTruthJob( truth );
-		var lastCheckedAt = job ? job.lastCheckedAt : null;
+		var lastCheckedAt = job ? pickLastCheckedAt( job.lastCheckedAt ) : pickLastCheckedAt( 0 );
 		var stripMeta = meta || buildStatusStripMeta( 'queued_signal', 'renderQueuedSignal' );
 		if ( ! lastCheckedAt ) {
 			lastCheckedAt = Date.now();
@@ -3736,7 +4076,15 @@ $bbai_hero_credit_bar_aria = sprintf(
 				if ( job && job.total > 0 ) {
 					items.push( formatSingularPlural( job.total, TEXT.queuedReadySingular, TEXT.queuedReadyPlural ) );
 				}
-				checkedAge = job && job.lastCheckedAt ? getQueuedSignalText( Math.max( 0, Math.floor( ( Date.now() - job.lastCheckedAt ) / 1000 ) ) ) : TEXT.lastCheckedJustNow;
+				var checkedAt = job ? pickLastCheckedAt( job.lastCheckedAt ) : pickLastCheckedAt( 0 );
+				// If we refreshed within the last minute, always show "just now".
+				if ( checkedAt && ( Date.now() - checkedAt ) < 60000 ) {
+					checkedAge = TEXT.lastCheckedJustNow;
+				} else if ( checkedAt ) {
+					checkedAge = getQueuedSignalText( Math.max( 0, Math.floor( ( Date.now() - checkedAt ) / 1000 ) ) );
+				} else {
+					checkedAge = TEXT.lastCheckedJustNow;
+				}
 				items.push( checkedAge );
 				signalIndex = items.length - 1;
 				break;
@@ -4444,6 +4792,38 @@ $bbai_hero_credit_bar_aria = sprintf(
 		return false;
 	}
 
+	function mapTruthToStabilizedStateKey( truth ) {
+		var s = String( getStateTruthState( truth ) || '' ).toUpperCase();
+		if ( 'QUEUED' === s || 'PROCESSING' === s ) {
+			return 'queued';
+		}
+		if ( 'NEEDS_REVIEW' === s ) {
+			return 'review_ready';
+		}
+		if ( 'ALL_CLEAR' === s ) {
+			return 'complete';
+		}
+		// Covers MISSING_ALT, MIXED_ATTENTION, and any attention-led state.
+		return 'needs_alt';
+	}
+
+	function buildStabilizedTruthHash( truth ) {
+		var counts = getTruthCounts( truth ) || { missing: 0, review: 0, complete: 0, failed: 0, total: 0 };
+		var credits = getTruthCredits( truth ) || { used: 0, total: 1, remaining: 0 };
+		var s = mapTruthToStabilizedStateKey( truth );
+		var total = counts.total || ( counts.missing + counts.review + counts.complete + counts.failed );
+		return [
+			s,
+			Math.max( 0, counts.missing || 0 ),
+			Math.max( 0, counts.review || 0 ),
+			Math.max( 0, counts.complete || 0 ),
+			Math.max( 0, total || 0 ),
+			Math.max( 0, credits.used || 0 ),
+			Math.max( 1, credits.total || 1 ),
+			Math.max( 0, credits.remaining || 0 ),
+		].join( '|' );
+	}
+
 	function commitTruthPayload( truth, context, forceResolved ) {
 		var previousTruth = dashboardPolling.currentTruth;
 		var previousRenderSignature;
@@ -4521,10 +4901,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 	function confirmLatestStateTruth( context, delayMs ) {
 		return new Promise( function ( resolve, reject ) {
 			window.setTimeout( function () {
-				fetchStateTruth( context, {
-					logLoaded: true,
-					logFailure: true,
-				} )
+				window.bbaiRequestDashboardStateRefresh( context )
 				.then( resolve )
 				.catch( reject );
 			}, Math.max( 0, parseInt( delayMs, 10 ) || 0 ) );
@@ -4534,6 +4911,12 @@ $bbai_hero_credit_bar_aria = sprintf(
 	function runPollingTick( context ) {
 		var pollContext = context || 'polling';
 		var currentState = dashboardPolling.latestState || hero.getAttribute( 'data-bbai-li-state' ) || '';
+
+		// Stop background polling and UI churn during generation.
+		if ( window.bbaiIsGenerating === true && pollContext !== 'generation_completed' && pollContext !== 'manual_rescan' && pollContext !== 'user_action' ) {
+			stopPolling( 'generating_freeze' );
+			return;
+		}
 		if ( dashboardPolling.inFlight ) {
 			return;
 		}
@@ -4552,10 +4935,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			state: currentState,
 		} );
 
-		fetchStateTruth( pollContext, {
-			logLoaded: 'startup' === pollContext,
-			logFailure: false,
-		} )
+		window.bbaiRequestDashboardStateRefresh( pollContext )
 			.then( function ( truth ) {
 				return maybeBootstrapTruth( truth, pollContext );
 			} )
@@ -4624,16 +5004,43 @@ $bbai_hero_credit_bar_aria = sprintf(
 					return;
 				}
 
-				return commitTruthPayload( truth, pollContext, forceResolved )
-					.then( function () {
-						dashboardPolling.bootstrapSyncApplied = false;
-						logDashboardUi( 'state_updated', {
-							context: pollContext,
-							from_state: previousState,
-							to_state: nextState,
-							mode: forceResolved ? 'resolved' : 'local',
-						} );
-					} );
+				// Stabilize state transitions to prevent flicker/regressions.
+				var stabilizer = window.BBAI_DASHBOARD_STATE_STABILIZER;
+				var stabilizedKey = mapTruthToStabilizedStateKey( truth );
+				var stabilizedHash = buildStabilizedTruthHash( truth );
+				var isGeneratingNow = stabilizedKey === 'queued';
+
+				var accepted = stabilizer && typeof stabilizer.receive === 'function'
+					? stabilizer.receive( {
+						key: stabilizedKey,
+						hash: stabilizedHash,
+						reason: pollContext,
+						generating: isGeneratingNow,
+						apply: function () {
+							return commitTruthPayload( truth, pollContext, forceResolved )
+								.then( function () {
+									dashboardPolling.bootstrapSyncApplied = false;
+									logDashboardUi( 'state_updated', {
+										context: pollContext,
+										from_state: previousState,
+										to_state: nextState,
+										mode: forceResolved ? 'resolved' : 'local',
+									} );
+								} );
+						}
+					} )
+					: false;
+
+				if ( accepted ) {
+					// Render will happen via debounced apply().
+					schedulePolling( 'stabilized_pending' );
+					return;
+				}
+
+				// Keep internal truth up to date without re-rendering the dashboard UI.
+				markTruthSeenWithoutUiUpdate( truth );
+				schedulePolling( 'stabilized_ignored' );
+				return;
 			} )
 			.catch( function ( error ) {
 				dashboardPolling.failureCount += 1;
@@ -5085,13 +5492,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 	window.bbaiRefreshLoggedInDashboardTruth = function ( context ) {
 		var refreshContext = context || 'approve_all';
-		if ( window.console && typeof window.console.log === 'function' ) {
-			window.console.log( '[BBAI DEBUG] refreshing dashboard truth', refreshContext );
-		}
-		return fetchStateTruth( refreshContext, {
-			logLoaded: true,
-			logFailure: true,
-		} )
+		return window.bbaiRequestDashboardStateRefresh( refreshContext )
 		.then( function ( truth ) {
 			var forceResolved = shouldUseResolvedDashboard( truth, dashboardPolling.currentTruth );
 			return commitTruthPayload( truth, refreshContext, forceResolved )
@@ -5110,9 +5511,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return;
 		}
 
-		if ( shouldPollState( dashboardPolling.latestState ) || dashboardPolling.requiresResolvedSync ) {
-			runPollingTick( 'visibility_resume' );
-		}
+		// Resume with one refresh when visible again.
+		runPollingTick( 'visibility' );
 
 		if ( primaryCta && primaryCta.getAttribute( 'aria-busy' ) === 'true' ) {
 			setTimeout( function () {

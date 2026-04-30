@@ -508,7 +508,7 @@ class Core {
     private function current_user_can_access_library(): bool {
         $auth_state = Auth_State::resolve($this->api_client);
 
-        return ! empty($auth_state['has_connected_account']);
+        return ! empty($auth_state['has_connected_account']) && ! empty($auth_state['is_authenticated']);
     }
 
     /**
@@ -574,7 +574,8 @@ class Core {
         }
 
         $auth_state = Auth_State::resolve( $this->api_client );
-        $has_connected_account = ! empty( $auth_state['has_connected_account'] );
+        // Canonical plugin auth: wp-admin login is not BeepBeep auth.
+        $has_connected_account = ! empty( $auth_state['has_connected_account'] ) && ! empty( $auth_state['is_authenticated'] );
 
         if ( $has_connected_account ) {
             return;
@@ -719,7 +720,7 @@ class Core {
 
         // Usage should be fetched whenever we have any valid backend auth, even if the
         // cached has_connected_account flag is stale (common after session changes).
-        $can_fetch_usage = ! empty( $auth_state['has_connected_account'] );
+        $can_fetch_usage = ! empty( $auth_state['has_connected_account'] ) && ! empty( $auth_state['is_authenticated'] );
         if ( ! $can_fetch_usage && is_object( $this->api_client ) ) {
             $can_fetch_usage = ( method_exists( $this->api_client, 'is_authenticated' ) && $this->api_client->is_authenticated() )
                 || ( method_exists( $this->api_client, 'has_active_license' ) && $this->api_client->has_active_license() );
@@ -1850,7 +1851,7 @@ class Core {
         }
         // Add connected-account modifier so full-width header CSS only fires for authenticated users.
         $bbai_fc_auth = Auth_State::resolve( $this->api_client );
-        if ( ! empty( $bbai_fc_auth['has_connected_account'] ) ) {
+        if ( ! empty( $bbai_fc_auth['has_connected_account'] ) && ! empty( $bbai_fc_auth['is_authenticated'] ) ) {
             $bbai_body .= ' bbai-dashboard--connected';
         }
         return trim( $classes . ' ' . $bbai_body );
@@ -1860,7 +1861,8 @@ class Core {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
 
         $bbai_auth = Auth_State::resolve($this->api_client);
-        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
+        // Canonical plugin auth: require an active BeepBeep session/JWT as well.
+        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']) && !empty($bbai_auth['is_authenticated']);
 
         // Top-level menu uses the brand name; the first submenu is "Dashboard".
         add_menu_page(
@@ -2593,7 +2595,7 @@ class Core {
 	        $bbai_has_stored_token = !empty($bbai_auth['has_stored_token']);
 	        $bbai_has_stored_license = !empty($bbai_auth['has_stored_license']);
 	        $bbai_has_registered_user = !empty($bbai_auth['has_registered_user']);
-	        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
+	        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']) && $bbai_is_authenticated;
             $bbai_is_anonymous_trial = !empty($bbai_auth['is_anonymous_trial']);
             $bbai_auth_state = isset($bbai_auth['auth_state']) ? (string) $bbai_auth['auth_state'] : ($bbai_is_anonymous_trial ? 'anonymous' : 'authenticated');
 		        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
@@ -2610,6 +2612,7 @@ class Core {
         
         $bbai_guest_trial_remaining = 0;
         $bbai_guest_can_access_library = false;
+        $bbai_can_show_full_nav = (bool) ($bbai_has_connected_account || $bbai_has_license);
 
         // Primary nav is limited to the product workflow. Utility routes stay accessible but hidden.
         $bbai_tabs = [];
@@ -2617,8 +2620,9 @@ class Core {
         $bbai_help_is_active = false;
         $bbai_settings_section = 'general';
         
-        // Anonymous / trial users: keep them inside the real product shell with a reduced nav.
-        if ($bbai_is_anonymous_trial) {
+        // Guests: reduce top navigation to prevent unusable routes.
+        // Canonical gating is BeepBeep auth (connected account) OR active license.
+        if (!$bbai_can_show_full_nav || $bbai_is_anonymous_trial) {
             $bbai_guest_usage = Usage_Helper::get_usage($this->api_client, false);
             if (!is_array($bbai_guest_usage)) {
                 $bbai_guest_usage = [];
@@ -2632,13 +2636,17 @@ class Core {
                     ?? 0
                 )
             );
-            $bbai_tabs = [];
+            $bbai_tabs = [
+                'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+            ];
             $bbai_allowed_tabs = [
                 'dashboard' => __('Dashboard', 'beepbeep-ai-alt-text-generator'),
+                'help'      => __('Help', 'beepbeep-ai-alt-text-generator'),
             ];
             $bbai_page_to_tab = [
                 'bbai'           => 'dashboard',
                 'bbai-library'   => 'library',
+                'bbai-guide'     => 'help',
             ];
             $bbai_tab_aliases = [
                 'credit-usage' => 'dashboard',
@@ -2672,7 +2680,7 @@ class Core {
             $bbai_is_agency_for_admin = false;
             $bbai_can_show_debug_tab = false;
             $bbai_active_nav_tab = ('dashboard' === $bbai_tab) ? 'dashboard' : '';
-            $bbai_help_is_active = false;
+            $bbai_help_is_active = ('help' === $bbai_tab) || ($bbai_current_page === 'bbai-guide');
             $bbai_settings_section = 'general';
         } else {
             // Determine if agency license
@@ -2803,7 +2811,7 @@ class Core {
         $bbai_debug_bootstrap = $this->get_debug_bootstrap();
         $bbai_header_trial_credits_line = '';
         $bbai_header_trial_credits_class = '';
-        if ($bbai_is_anonymous_trial) {
+        if (!$bbai_can_show_full_nav || $bbai_is_anonymous_trial) {
             $bbai_header_trial_credits_line = sprintf(
                 /* translators: %s: remaining free generations. */
                 _n('%s free generation left', '%s free generations left', $bbai_guest_trial_remaining, 'beepbeep-ai-alt-text-generator'),
@@ -2820,7 +2828,7 @@ class Core {
         ?>
         <div class="wrap bbai-wrap bbai-modern">
             <!-- Dark Header -->
-            <div class="bbai-header<?php echo $bbai_is_anonymous_trial ? ' bbai-header--trial-funnel' : ''; ?>">
+            <div class="bbai-header<?php echo (!$bbai_can_show_full_nav || $bbai_is_anonymous_trial) ? ' bbai-header--trial-funnel' : ''; ?>">
                 <div class="bbai-header-content">
                     <div class="bbai-logo">
                         <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="bbai-logo-icon">
@@ -2870,7 +2878,6 @@ class Core {
                             </a>
                         <?php endforeach; ?>
                         </div>
-                        <?php if ($bbai_has_connected_account) : ?>
                         <a href="<?php echo esc_url(admin_url('admin.php?page=bbai-guide')); ?>" class="bbai-header-guide-link<?php echo !empty($bbai_help_is_active) ? ' active' : ''; ?>" title="<?php esc_attr_e('Help and troubleshooting', 'beepbeep-ai-alt-text-generator'); ?>"<?php echo !empty($bbai_help_is_active) ? ' aria-current="page"' : ''; ?>>
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                                 <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -2878,7 +2885,6 @@ class Core {
                             </svg>
                             <span class="bbai-header-guide-text"><?php esc_html_e('Help', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </a>
-                        <?php endif; ?>
                     </nav>
                     <?php endif; ?>
                     <!-- Auth & Subscription Actions -->
@@ -2919,7 +2925,7 @@ class Core {
                                 <?php endif; ?>
                             </div>
                         <?php else : ?>
-                                <?php if ($bbai_is_anonymous_trial && '' !== $bbai_header_trial_credits_line) : ?>
+                                <?php if ((!$bbai_can_show_full_nav || $bbai_is_anonymous_trial) && '' !== $bbai_header_trial_credits_line) : ?>
                                 <span class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>">
                                     <?php echo esc_html($bbai_header_trial_credits_line); ?>
                                 </span>

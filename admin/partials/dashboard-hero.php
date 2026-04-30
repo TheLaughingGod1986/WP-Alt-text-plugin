@@ -65,36 +65,52 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	$bbai_donut_tone        = 'neutral';
 	$bbai_donut_center_val  = '✓';
 	$bbai_donut_center_sub  = __( 'Trial complete', 'beepbeep-ai-alt-text-generator' );
-	$bbai_left_helper       = sprintf(
+	$bbai_left_helper       = __( 'Trial complete ✓', 'beepbeep-ai-alt-text-generator' );
+
+	$bbai_left_meta_parts = [];
+	$bbai_left_meta_parts[] = sprintf(
 		/* translators: 1: used generations, 2: trial limit */
 		__( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_gt_used ),
 		number_format_i18n( $bbai_gt_limit )
 	);
+	if ( $bbai_gt_used > 0 ) {
+		$bbai_left_meta_parts[] = sprintf(
+			/* translators: %s: images fixed count */
+			_n( '%s image fixed', '%s images fixed', $bbai_gt_used, 'beepbeep-ai-alt-text-generator' ),
+			number_format_i18n( $bbai_gt_used )
+		);
+	}
+	$bbai_last_scan_ts = isset( $bbai_last_scan_timestamp ) ? max( 0, (int) $bbai_last_scan_timestamp ) : 0;
+	if ( $bbai_last_scan_ts > 0 && $bbai_state_total_images > 0 ) {
+		$bbai_coverage_pct = (int) round( 100 * ( $bbai_state_optimized_count / max( 1, $bbai_state_total_images ) ) );
+		$bbai_left_meta_parts[] = sprintf(
+			/* translators: %s: coverage percent */
+			__( 'Your site is now %s%% optimised', 'beepbeep-ai-alt-text-generator' ),
+			number_format_i18n( max( 0, min( 100, $bbai_coverage_pct ) ) )
+		);
+	}
+	$bbai_left_helper_meta = implode( ' · ', array_filter( $bbai_left_meta_parts ) );
 
-	$bbai_guest_title       = sprintf(
-		/* translators: %d: trial generation limit */
-		__( 'You’ve used all %d free generations', 'beepbeep-ai-alt-text-generator' ),
-		(int) $bbai_gt_limit
-	);
+	$bbai_guest_title       = __( 'Nice — your free trial is complete', 'beepbeep-ai-alt-text-generator' );
 	$bbai_guest_body        = sprintf(
 		/* translators: %d: monthly generation allowance on the free plan */
-		__( 'Create a free account to review your results and unlock %d generations per month.', 'beepbeep-ai-alt-text-generator' ),
+		__( 'You’ve fixed your first images. Create a free account to unlock %d generations per month and review your ALT Library.', 'beepbeep-ai-alt-text-generator' ),
 		(int) $bbai_free_plan_monthly
 	);
 
 	$bbai_primary_register = [
 		'label'       => __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
-		'action'      => 'show-dashboard-auth',
-		'auth_tab'    => 'register',
+		'action'      => 'show-auth-modal',
+		'auth_tab'    => 'signup',
 		'analytics'   => 'guest_hero_primary_register_exhausted',
 		'is_button'   => false,
 	];
 	$bbai_secondary_login = [
 		'label'     => __( 'Already have an account? Log in', 'beepbeep-ai-alt-text-generator' ),
 		'class'     => 'bbai-guest-hero__text-link',
-		'action'   => 'show-dashboard-auth',
+		'action'   => 'show-auth-modal',
 		'auth_tab' => 'login',
 		'is_text'   => true,
 		'is_button' => false,
@@ -138,15 +154,15 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		'class'       => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 )
 			? 'bbai-btn bbai-btn-primary bbai-li-btn-primary'
 			: 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary',
-		'action'      => 'show-dashboard-auth',
-		'auth_tab'    => 'register',
+		'action'      => 'show-auth-modal',
+		'auth_tab'    => 'signup',
 		'analytics'   => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 ) ? 'guest_hero_primary_register_mid' : 'guest_hero_secondary_register',
 		'is_button'   => false,
 	];
 	$bbai_secondary_login = [
 		'label'     => __( 'Already have an account? Log in', 'beepbeep-ai-alt-text-generator' ),
 		'class'     => 'bbai-guest-hero__text-link',
-		'action'    => 'show-dashboard-auth',
+		'action'    => 'show-auth-modal',
 		'auth_tab'  => 'login',
 		'is_text'   => true,
 		'is_button' => false,
@@ -206,15 +222,15 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		'class'     => $bbai_show_generate_primary
 			? 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary'
 			: 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
-		'action'    => 'show-dashboard-auth',
-		'auth_tab'  => 'register',
+		'action'    => 'show-auth-modal',
+		'auth_tab'  => 'signup',
 		'analytics' => 'guest_hero_secondary_register',
 		'is_button' => false,
 	];
 	$bbai_secondary_login = [
 		'label'     => __( 'Already have an account? Log in', 'beepbeep-ai-alt-text-generator' ),
 		'class'     => 'bbai-guest-hero__text-link',
-		'action'    => 'show-dashboard-auth',
+		'action'    => 'show-auth-modal',
 		'auth_tab'  => 'login',
 		'is_text'   => true,
 		'is_button' => false,
@@ -326,6 +342,9 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						<?php if ( ! empty( $bbai_primary_register['auth_tab'] ) ) : ?>
 							data-auth-tab="<?php echo esc_attr( $bbai_primary_register['auth_tab'] ); ?>"
 						<?php endif; ?>
+						<?php if ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
+							data-bbai-trial-complete-cta="create_account"
+						<?php endif; ?>
 						<?php if ( ! empty( $bbai_primary_register['analytics'] ) ) : ?>
 							data-bbai-analytics-upgrade="<?php echo esc_attr( $bbai_primary_register['analytics'] ); ?>"
 						<?php endif; ?>
@@ -342,52 +361,67 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 							data-auth-tab="<?php echo esc_attr( $bbai_secondary_login['auth_tab'] ); ?>"
 							data-bbai-modal-context="login"
 							data-bbai-funnel-hero-secondary=""
+							<?php if ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
+								data-bbai-trial-complete-cta="login"
+							<?php endif; ?>
 						><?php echo esc_html( $bbai_secondary_login['label'] ); ?></a>
 					</p>
 				</div>
 			</div>
 		</div>
 
-		<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
-			<p class="bbai-guest-hero__trial-line">
-				<span class="bbai-guest-hero__trial-line-main">
-					<?php
-					echo esc_html(
-						sprintf(
-							/* translators: %s: number of free generations. */
-							__( '%s free generations included', 'beepbeep-ai-alt-text-generator' ),
-							number_format_i18n( $bbai_gt_limit )
-						)
-					);
-					?>
-				</span>
-				<span class="bbai-guest-hero__trial-line-sub">
-					<?php
-					echo esc_html(
-						sprintf(
-							/* translators: %s: monthly generations after free signup. */
-							__( 'Create a free account to unlock %s/month', 'beepbeep-ai-alt-text-generator' ),
-							number_format_i18n( $bbai_free_plan_monthly )
-						)
-					);
-					?>
-				</span>
-			</p>
-		</div>
+		<?php if ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
+			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
+				<p class="bbai-guest-hero__trial-line">
+					<span class="bbai-guest-hero__trial-line-sub">
+						<?php esc_html_e( 'New uploads won’t be optimised automatically on the free trial.', 'beepbeep-ai-alt-text-generator' ); ?>
+					</span>
+				</p>
+			</div>
+		<?php else : ?>
+			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
+				<p class="bbai-guest-hero__trial-line">
+					<span class="bbai-guest-hero__trial-line-main">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: number of free generations. */
+								__( '%s free generations included', 'beepbeep-ai-alt-text-generator' ),
+								number_format_i18n( $bbai_gt_limit )
+							)
+						);
+						?>
+					</span>
+					<span class="bbai-guest-hero__trial-line-sub">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: %s: monthly generations after free signup. */
+								__( 'Create a free account to unlock %s/month', 'beepbeep-ai-alt-text-generator' ),
+								number_format_i18n( $bbai_free_plan_monthly )
+							)
+						);
+						?>
+					</span>
+				</p>
+			</div>
+		<?php endif; ?>
 	</div>
 </section>
 
-<div class="bbai-guest-value-cards bbai-dashboard-value-strip bbai-dashboard-value-strip--guest-funnel bbai-benefits-row bbai-trust-grid" aria-label="<?php esc_attr_e( 'Why fix ALT text', 'beepbeep-ai-alt-text-generator' ); ?>">
-	<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
-		<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">✓</span>
-		<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Improve image SEO', 'beepbeep-ai-alt-text-generator' ); ?></span>
+<?php if ( 'exhausted' !== $bbai_guest_hero_variant ) : ?>
+	<div class="bbai-guest-value-cards bbai-dashboard-value-strip bbai-dashboard-value-strip--guest-funnel bbai-benefits-row bbai-trust-grid" aria-label="<?php esc_attr_e( 'Why fix ALT text', 'beepbeep-ai-alt-text-generator' ); ?>">
+		<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
+			<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">✓</span>
+			<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Improve image SEO', 'beepbeep-ai-alt-text-generator' ); ?></span>
+		</div>
+		<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
+			<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">✓</span>
+			<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Boost accessibility', 'beepbeep-ai-alt-text-generator' ); ?></span>
+		</div>
+		<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
+			<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">✓</span>
+			<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Save manual writing time', 'beepbeep-ai-alt-text-generator' ); ?></span>
+		</div>
 	</div>
-	<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
-		<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">✓</span>
-		<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Boost accessibility', 'beepbeep-ai-alt-text-generator' ); ?></span>
-	</div>
-	<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
-		<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">✓</span>
-		<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Save manual writing time', 'beepbeep-ai-alt-text-generator' ); ?></span>
-	</div>
-</div>
+<?php endif; ?>
