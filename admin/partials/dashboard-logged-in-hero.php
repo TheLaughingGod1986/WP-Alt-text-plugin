@@ -2931,12 +2931,14 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 			if ( 'QUEUED' === nextState || 'PROCESSING' === nextState ) {
 				return false;
 			}
-			return 'NEEDS_REVIEW' === nextState;
+			// NEEDS_REVIEW and MIXED_ATTENTION both need fresh resolver counts on
+			// first paint — the truth payload alone may carry stale API-cached data.
+			return 'NEEDS_REVIEW' === nextState || 'MIXED_ATTENTION' === nextState;
 		}
 		if ( nextState !== getStateTruthState( previousTruth ) ) {
 			return true;
 		}
-		if ( 'NEEDS_REVIEW' === nextState ) {
+		if ( 'NEEDS_REVIEW' === nextState || 'MIXED_ATTENTION' === nextState ) {
 			return true;
 		}
 		if ( 'PROCESSING' === nextState && isPauseAllowed( truth ) !== isPauseAllowed( previousTruth ) ) {
