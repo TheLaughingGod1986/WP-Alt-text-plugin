@@ -1178,10 +1178,8 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         if ( is_readable( $bbai_hero_partial ) ) {
             require $bbai_hero_partial;
         }
-        $bbai_retention_strip_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-retention-strip.php';
-        if ( is_readable( $bbai_retention_strip_partial ) ) {
-            require $bbai_retention_strip_partial;
-        }
+        // Guest conversion funnel: avoid a competing progress strip between hero and the locked preview.
+        // Keep the user focused on a single "finish" action in the hero + modal.
         $bbai_trial_preview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-library-preview.php';
         // Guest conversion: always show a real ALT Library preview beneath the hero.
         // Overlay CTA handles locked/unlocked expectation; preview rows come from real media.

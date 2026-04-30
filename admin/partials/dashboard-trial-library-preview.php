@@ -54,8 +54,8 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 	data-bbai-trial-preview-limit="3"
 	aria-labelledby="bbai-dashboard-locked-outer-heading"
 >
-	<h2 id="bbai-dashboard-locked-outer-heading" class="<?php echo $bbai_trial_exhausted ? esc_attr( 'bbai-section-title bbai-dashboard-trial-preview__label' ) : esc_attr( 'screen-reader-text' ); ?>">
-		<?php echo esc_html( $bbai_trial_exhausted ? __( 'Your ALT Library is locked', 'beepbeep-ai-alt-text-generator' ) : __( 'ALT Library preview', 'beepbeep-ai-alt-text-generator' ) ); ?>
+	<h2 id="bbai-dashboard-locked-outer-heading" class="screen-reader-text">
+		<?php esc_html_e( 'ALT Library preview', 'beepbeep-ai-alt-text-generator' ); ?>
 	</h2>
 
 	<div class="bbai-dashboard-locked-preview__shell bbai-dashboard-trial-preview__shell">

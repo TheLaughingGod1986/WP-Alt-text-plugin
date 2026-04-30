@@ -48,7 +48,7 @@ body:not(.bbai-dashboard--connected) .bbai-dashboard-shell #bbai-dashboard-main 
 
 .bbai-funnel-hero {
     width: 100%;
-    margin-bottom: var(--bbai-dashboard-section-gap);
+    margin-bottom: 12px;
 }
 
 .bbai-funnel-hero--hero-card {
@@ -934,7 +934,7 @@ body.bbai-guest-conversion-modal-open {
 .bbai-header--trial-funnel .bbai-header-actions {
     margin-left: auto;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .bbai-header--trial-funnel .bbai-header-actions > * {
@@ -947,55 +947,49 @@ body.bbai-guest-conversion-modal-open {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-height: 32px;
-    padding: 0 10px 0 8px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.035);
+    background: rgba(255, 255, 255, 0.06);
     box-shadow: none;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1;
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0;
-    color: rgba(248, 250, 252, 0.72);
+    color: rgba(248, 250, 252, 0.9);
     white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .bbai-header-trial-credits::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: #34d399;
-    box-shadow: none;
-    flex-shrink: 0;
+    content: none;
 }
 
 .bbai-header-trial-credits--default {
-    border-color: rgba(52, 211, 153, 0.14);
-    background: rgba(16, 185, 129, 0.07);
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .bbai-header-trial-credits--low {
-    border-color: rgba(251, 191, 36, 0.16);
-    background: rgba(245, 158, 11, 0.07);
-    color: rgba(255, 251, 235, 0.72);
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(248, 250, 252, 0.9);
 }
 
 .bbai-header-trial-credits--low::before {
-    background: #fbbf24;
-    box-shadow: none;
+    content: none;
 }
 
 .bbai-header-trial-credits--exhausted {
-    border-color: rgba(251, 113, 133, 0.16);
-    background: rgba(251, 113, 133, 0.06);
-    color: rgba(255, 241, 242, 0.68);
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
 }
 
 .bbai-header-trial-credits--exhausted::before {
-    background: #fb7185;
-    box-shadow: none;
+    content: none;
 }
 
 .bbai-header--trial-funnel .bbai-header-upgrade-btn,
@@ -1063,6 +1057,22 @@ body.bbai-guest-conversion-modal-open {
     outline-offset: 2px;
 }
 
+.bbai-header--trial-funnel .bbai-header-trial-credits:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+/* Standardise Help + Credits pills */
+.bbai-header--trial-funnel .bbai-header-guide-link,
+.bbai-header--trial-funnel .bbai-header-trial-credits {
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+}
+
 .bbai-dashboard-trial-preview {
     margin: 0 0 var(--bbai-dashboard-section-gap);
     padding: var(--bbai-dashboard-card-padding);
@@ -1073,7 +1083,7 @@ body.bbai-guest-conversion-modal-open {
 }
 
 .bbai-dashboard-trial-preview--guest-locked {
-    margin-top: 24px;
+    margin-top: 16px;
 }
 
 /* Exhausted guest: real library cards under blur + centered conversion card (design reference). */
@@ -1121,6 +1131,8 @@ body.bbai-guest-conversion-modal-open {
     user-select: none;
     transform: scale(0.992);
     transform-origin: center top;
+    width: 100%;
+    height: 100%;
 }
 
 .bbai-dashboard-trial-preview__blur-header {
@@ -1366,26 +1378,47 @@ body.bbai-guest-conversion-modal-open {
     padding: 24px 22px;
     box-sizing: border-box;
     pointer-events: none;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
 }
 
 .bbai-dashboard-locked-preview__overlay-card {
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
+    margin: 0 auto;
     position: relative;
     z-index: 1;
     display: grid;
     gap: 0;
     justify-items: center;
-    padding: 24px;
-    border-radius: 12px;
+    padding: 28px;
+    border-radius: 16px;
     border: 1px solid rgba(226, 232, 240, 0.95);
     background: #ffffff;
-    box-shadow:
-        0 1px 2px rgba(15, 23, 42, 0.04),
-        0 12px 32px rgba(15, 23, 42, 0.08),
-        0 24px 48px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.18);
     text-align: center;
     pointer-events: auto;
+}
+
+/* Trial-complete: small reassurance line under primary CTA */
+#bbai-dashboard-main .bbai-guest-hero__cta-hint {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #64748b;
+    text-align: left;
+}
+
+/* Subtle donut value animation on load (guest funnel) */
+@keyframes bbaiFunnelDonutEnter {
+    from { opacity: 0; transform: translateY(3px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#bbai-dashboard-main [data-bbai-funnel-hero] [data-bbai-funnel-donut-value] {
+    animation: bbaiFunnelDonutEnter 420ms ease-out both;
 }
 
 .bbai-dashboard-locked-preview__overlay-title {
@@ -1394,7 +1427,15 @@ body.bbai-guest-conversion-modal-open {
     font-weight: 700;
     letter-spacing: -0.01em;
     color: #0f172a;
+    margin: 0 0 8px;
+}
+
+.bbai-dashboard-locked-preview__overlay-subtext {
     margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 600;
+    color: #64748b;
 }
 
 .bbai-dashboard-locked-preview__overlay-copy {
@@ -1402,7 +1443,7 @@ body.bbai-guest-conversion-modal-open {
     font-size: 14px;
     line-height: 1.5;
     color: #475569;
-    margin: 0 0 16px;
+    margin: 0 0 12px;
 }
 
 .bbai-dashboard-locked-preview__actions {
@@ -1411,6 +1452,25 @@ body.bbai-guest-conversion-modal-open {
     gap: 12px;
     width: 100%;
     margin: 0 0 16px;
+}
+
+.bbai-dashboard-locked-preview__subtext {
+    margin: -8px 0 0;
+    font-size: 12px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #64748b;
+    text-align: center;
+}
+
+.bbai-dashboard-locked-preview__microcopy {
+    margin: -8px 0 0;
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: #94a3b8;
+    text-align: center;
+    opacity: 0.7;
 }
 
 .bbai-dashboard-locked-preview__cta {
@@ -1436,6 +1496,10 @@ body.bbai-guest-conversion-modal-open {
     line-height: 1.4;
     font-weight: 400;
     color: #64748b;
+}
+
+.bbai-dashboard-trial-preview--exhausted .bbai-dashboard-locked-preview__signin {
+    margin-top: -6px;
 }
 
 .bbai-dashboard-locked-preview__trust {

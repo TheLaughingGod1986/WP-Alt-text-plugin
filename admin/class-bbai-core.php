@@ -2926,9 +2926,21 @@ class Core {
                             </div>
                         <?php else : ?>
                                 <?php if ((!$bbai_can_show_full_nav || $bbai_is_anonymous_trial) && '' !== $bbai_header_trial_credits_line) : ?>
-                                <span class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>">
-                                    <?php echo esc_html($bbai_header_trial_credits_line); ?>
-                                </span>
+                                <?php
+                                    $bbai_trial_badge_label = $bbai_header_trial_credits_line;
+                                    if ((int) $bbai_guest_trial_remaining <= 0) {
+                                        $bbai_trial_badge_label = __('Unlock more credits', 'beepbeep-ai-alt-text-generator');
+                                    }
+                                ?>
+                                <a
+                                    href="#"
+                                    class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>"
+                                    data-action="show-auth-modal"
+                                    data-auth-tab="signup"
+                                    aria-label="<?php echo esc_attr($bbai_trial_badge_label); ?>"
+                                >
+                                    <?php echo esc_html($bbai_trial_badge_label); ?>
+                                </a>
                             <?php endif; ?>
                         <?php endif; ?>
                 </div>

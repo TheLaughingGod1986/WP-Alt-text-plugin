@@ -1189,6 +1189,16 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-all-clear-state .bbai-all-clear-res
     opacity: 0.72;
 }
 
+.bbai-li-donut__helper-meta--stack {
+    display: grid;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.bbai-li-donut__helper-meta-line {
+    display: block;
+}
+
 /* Review-ready donut: calm label + secondary text CTA (NEEDS_REVIEW) */
 .bbai-li-donut__sub-label--review-ready {
     font-weight: 600;
@@ -3475,7 +3485,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card,
 body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card {
     margin: 0;
-    padding: 24px;
+    padding: 20px;
     border-radius: 16px;
     border: 1px solid rgba(226, 232, 240, 0.98);
     background: linear-gradient(180deg, #fbfcfe 0%, #f8fafc 100%);

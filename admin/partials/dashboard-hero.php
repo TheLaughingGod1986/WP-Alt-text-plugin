@@ -63,9 +63,20 @@ $bbai_free_plan_monthly = max(
 
 if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	$bbai_donut_tone        = 'neutral';
-	$bbai_donut_center_val  = '✓';
-	$bbai_donut_center_sub  = __( 'Trial complete', 'beepbeep-ai-alt-text-generator' );
-	$bbai_left_helper       = __( 'Trial complete ✓', 'beepbeep-ai-alt-text-generator' );
+	// Completion-based conversion: emphasize finishing the remaining work (not "trial complete").
+	$bbai_guest_remaining_images = max( 0, (int) $bbai_state_missing_count );
+	$bbai_guest_fixed_images = $bbai_state_total_images > 0
+		? max( 0, (int) ( $bbai_state_total_images - $bbai_state_missing_count ) )
+		: max( 0, (int) $bbai_state_optimized_count + (int) $bbai_state_weak_count );
+	$bbai_guest_pct = $bbai_state_total_images > 0
+		? (int) max( 0, min( 100, round( 100 * ( ( $bbai_state_total_images - $bbai_state_missing_count ) / max( 1, $bbai_state_total_images ) ) ) ) )
+		: 0;
+
+	$bbai_donut_center_val  = $bbai_guest_pct > 0 ? (string) $bbai_guest_pct . '%' : '✓';
+	$bbai_donut_center_sub  = '';
+	$bbai_left_helper       = $bbai_guest_remaining_images === 1
+		? __( '1 image remaining', 'beepbeep-ai-alt-text-generator' )
+		: __( 'Keep going', 'beepbeep-ai-alt-text-generator' );
 
 	$bbai_left_meta_parts = [];
 	$bbai_left_meta_parts[] = sprintf(
@@ -74,34 +85,39 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		number_format_i18n( $bbai_gt_used ),
 		number_format_i18n( $bbai_gt_limit )
 	);
-	if ( $bbai_gt_used > 0 ) {
-		$bbai_left_meta_parts[] = sprintf(
+	if ( $bbai_guest_fixed_images > 0 ) {
+		$bbai_left_meta_lines = [];
+		$bbai_left_meta_lines[] = sprintf(
 			/* translators: %s: images fixed count */
-			_n( '%s image fixed', '%s images fixed', $bbai_gt_used, 'beepbeep-ai-alt-text-generator' ),
-			number_format_i18n( $bbai_gt_used )
+			__( '%s images fixed', 'beepbeep-ai-alt-text-generator' ),
+			number_format_i18n( $bbai_guest_fixed_images )
 		);
-	}
-	$bbai_last_scan_ts = isset( $bbai_last_scan_timestamp ) ? max( 0, (int) $bbai_last_scan_timestamp ) : 0;
-	if ( $bbai_last_scan_ts > 0 && $bbai_state_total_images > 0 ) {
-		$bbai_coverage_pct = (int) round( 100 * ( $bbai_state_optimized_count / max( 1, $bbai_state_total_images ) ) );
-		$bbai_left_meta_parts[] = sprintf(
-			/* translators: %s: coverage percent */
-			__( 'Your site is now %s%% optimised', 'beepbeep-ai-alt-text-generator' ),
-			number_format_i18n( max( 0, min( 100, $bbai_coverage_pct ) ) )
+		$bbai_left_meta_lines[] = sprintf(
+			/* translators: 1: used generations, 2: trial limit */
+			__( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ),
+			number_format_i18n( $bbai_gt_used ),
+			number_format_i18n( $bbai_gt_limit )
 		);
 	}
 	$bbai_left_helper_meta = implode( ' · ', array_filter( $bbai_left_meta_parts ) );
 
-	$bbai_guest_title       = __( 'Nice — your free trial is complete', 'beepbeep-ai-alt-text-generator' );
-	$bbai_guest_body        = sprintf(
-		/* translators: %d: monthly generation allowance on the free plan */
-		__( 'You’ve fixed your first images. Create a free account to unlock %d generations per month and review your ALT Library.', 'beepbeep-ai-alt-text-generator' ),
-		(int) $bbai_free_plan_monthly
-	);
+	// Avoid a second "98% complete" banner — keep the goal-oriented CTA and let the modal do the conversion work.
+	$bbai_guest_title = $bbai_guest_remaining_images === 1
+		? __( 'Finish your last image', 'beepbeep-ai-alt-text-generator' )
+		: __( 'Keep optimising your library', 'beepbeep-ai-alt-text-generator' );
+	$bbai_guest_body  = ( $bbai_guest_fixed_images > 0 && $bbai_guest_remaining_images > 0 )
+		? sprintf(
+			/* translators: 1: fixed images count, 2: remaining images count */
+			__( 'You’ve fixed %1$s images. Just %2$s left to complete your library.', 'beepbeep-ai-alt-text-generator' ),
+			number_format_i18n( $bbai_guest_fixed_images ),
+			number_format_i18n( $bbai_guest_remaining_images )
+		)
+		: __( 'You’re one step away from a fully optimised site.', 'beepbeep-ai-alt-text-generator' );
 
 	$bbai_primary_register = [
-		'label'       => __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
-		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
+		'label'       => __( 'Continue in library', 'beepbeep-ai-alt-text-generator' ),
+		// Make the hero CTA visually secondary so the modal remains the primary conversion driver.
+		'class'       => 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary',
 		'action'      => 'show-auth-modal',
 		'auth_tab'    => 'signup',
 		'analytics'   => 'guest_hero_primary_register_exhausted',
@@ -307,7 +323,13 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 				<?php else : ?>
 					<span class="bbai-li-donut__helper-main">&nbsp;</span>
 				<?php endif; ?>
-				<?php if ( $bbai_left_helper_meta !== '' ) : ?>
+				<?php if ( isset( $bbai_left_meta_lines ) && is_array( $bbai_left_meta_lines ) && ! empty( $bbai_left_meta_lines ) ) : ?>
+					<span class="bbai-li-donut__helper-meta bbai-li-donut__helper-meta--stack">
+						<?php foreach ( $bbai_left_meta_lines as $bbai_meta_line ) : ?>
+							<span class="bbai-li-donut__helper-meta-line"><?php echo esc_html( (string) $bbai_meta_line ); ?></span>
+						<?php endforeach; ?>
+					</span>
+				<?php elseif ( $bbai_left_helper_meta !== '' ) : ?>
 					<span class="bbai-li-donut__helper-meta"><?php echo esc_html( $bbai_left_helper_meta ); ?></span>
 				<?php endif; ?>
 			</p>
@@ -352,6 +374,9 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						data-bbai-funnel-hero-cta=""
 						<?php echo ! empty( $bbai_show_generate_primary ) && isset( $bbai_primary_generate ) ? 'data-bbai-funnel-hero-secondary=""' : 'data-bbai-funnel-hero-primary=""'; ?>
 					><?php echo esc_html( $bbai_primary_register['label'] ); ?></a>
+					<?php if ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
+						<p class="bbai-guest-hero__cta-hint"><?php esc_html_e( 'Finish your last image to complete your library', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<?php endif; ?>
 
 					<p class="bbai-guest-hero__login">
 						<a
@@ -370,15 +395,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 			</div>
 		</div>
 
-		<?php if ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
-			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
-				<p class="bbai-guest-hero__trial-line">
-					<span class="bbai-guest-hero__trial-line-sub">
-						<?php esc_html_e( 'New uploads won’t be optimised automatically on the free trial.', 'beepbeep-ai-alt-text-generator' ); ?>
-					</span>
-				</p>
-			</div>
-		<?php else : ?>
+		<?php if ( 'exhausted' !== $bbai_guest_hero_variant ) : ?>
 			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
 				<p class="bbai-guest-hero__trial-line">
 					<span class="bbai-guest-hero__trial-line-main">
