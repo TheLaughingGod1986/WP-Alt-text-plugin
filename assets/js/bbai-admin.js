@@ -3225,14 +3225,11 @@
             try {
                 window.bbaiModal.show({
                     type: 'warning',
-                    title: __('Free trial complete', 'beepbeep-ai-alt-text-generator'),
-                    message: sprintf(
-                        __('Create a free account to unlock %d images per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
-                        isNaN(freePlanOffer) ? 50 : Math.max(0, freePlanOffer)
-                    ),
+                    title: __('You're 1 step away from completing your optimisation', 'beepbeep-ai-alt-text-generator'),
+                    message: __('Unlock your full ALT text library and keep optimising automatically.', 'beepbeep-ai-alt-text-generator'),
                     buttons: [
                         {
-                            text: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
+                            text: __('Create free account to finish', 'beepbeep-ai-alt-text-generator'),
                             primary: true,
                             action: function() {
                                 window.bbaiModal.close();
@@ -3240,13 +3237,11 @@
                             }
                         },
                         {
-                            text: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                            text: __('Already have an account? Log in', 'beepbeep-ai-alt-text-generator'),
                             primary: false,
                             action: function() {
                                 window.bbaiModal.close();
-                                if (libraryUrl) {
-                                    window.location.href = libraryUrl;
-                                }
+                                openAuthLoginModal();
                             }
                         }
                     ]
@@ -16617,12 +16612,12 @@
 
             return {
                 primary: {
-                    label: __('Fix your remaining images', 'beepbeep-ai-alt-text-generator'),
+                    label: __('Create free account to finish', 'beepbeep-ai-alt-text-generator'),
                     action: 'signup'
                 },
                 secondary: {
-                    label: __('Continue reviewing', 'beepbeep-ai-alt-text-generator'),
-                    action: 'review-result'
+                    label: __('Already have an account? Log in', 'beepbeep-ai-alt-text-generator'),
+                    action: 'login'
                 }
             };
         }
@@ -16702,38 +16697,42 @@
         }
 
         if (ctaConfig.primary && ctaConfig.primary.action === 'signup') {
-            var rootOffer = getDashboardRootNode();
-            var limOffer = rootOffer ? parseInt(rootOffer.getAttribute('data-bbai-free-plan-offer'), 10) : NaN;
-            if (!isFinite(limOffer) || limOffer <= 0) {
-                limOffer = getFreeAccountMonthlyLimit();
-            }
-            limOffer = Math.max(1, limOffer);
-            supportingLine = sprintf(
-                __('Unlock full library access and %s images per month', 'beepbeep-ai-alt-text-generator'),
-                formatDashboardNumber(limOffer)
-            );
+            title = escapeHtml(__('You’re 1 step away from completing your optimisation', 'beepbeep-ai-alt-text-generator'));
+            successLine = processedN > 0
+                ? sprintf(
+                    _n(
+                        'You’ve already optimised %s image',
+                        'You’ve already optimised %s images',
+                        processedN,
+                        'beepbeep-ai-alt-text-generator'
+                    ),
+                    formatDashboardNumber(processedN)
+                )
+                : '';
+            supportingLine = __('No credit card • Takes 10 seconds', 'beepbeep-ai-alt-text-generator');
         } else if (ctaConfig.secondary && ctaConfig.secondary.action === 'review-result') {
             supportingLine = __('Continue reviewing your generated ALT text from the dashboard.', 'beepbeep-ai-alt-text-generator');
         } else if (ctaConfig.primary && ctaConfig.primary.action === 'library') {
             supportingLine = __('Open your results and keep improving your image SEO.', 'beepbeep-ai-alt-text-generator');
         }
 
-        if (processedN > 0 && root && root.getAttribute('data-bbai-is-premium') !== '1') {
+        if (processedN > 0 && root && root.getAttribute(‘data-bbai-is-premium’) !== ‘1’ &&
+                !(ctaConfig.primary && ctaConfig.primary.action === ‘signup’)) {
             var uSnap = getUsageSnapshot(state && state.quotaError && state.quotaError.usage ? state.quotaError.usage : null);
             var uUsed = uSnap ? Math.max(0, parseInt(uSnap.used, 10) || 0) : NaN;
             var uLim = uSnap ? Math.max(1, parseInt(uSnap.limit, 10) || 0) : NaN;
             if (!isFinite(uUsed) || !isFinite(uLim) || uLim <= 0) {
-                uUsed = Math.max(0, parseInt(root.getAttribute('data-bbai-credits-used'), 10) || 0);
-                uLim = Math.max(1, parseInt(root.getAttribute('data-bbai-credits-total'), 10) || 1);
+                uUsed = Math.max(0, parseInt(root.getAttribute(‘data-bbai-credits-used’), 10) || 0);
+                uLim = Math.max(1, parseInt(root.getAttribute(‘data-bbai-credits-total’), 10) || 1);
             }
             if (isFinite(uUsed) && isFinite(uLim) && uLim > 0) {
                 var creditNote = sprintf(
-                    __('You’ve used %1$s of %2$s credits this month.', 'beepbeep-ai-alt-text-generator'),
+                    __(‘You’ve used %1$s of %2$s credits this month.’, ‘beepbeep-ai-alt-text-generator’),
                     formatDashboardNumber(uUsed),
                     formatDashboardNumber(uLim)
                 );
-                var autoNote = __('Enable automatic optimisation →', 'beepbeep-ai-alt-text-generator');
-                supportingLine = [creditNote, supportingLine, autoNote].filter(function(s) { return !!s; }).join(' ');
+                var autoNote = __(‘Enable automatic optimisation →’, ‘beepbeep-ai-alt-text-generator’);
+                supportingLine = [creditNote, supportingLine, autoNote].filter(function(s) { return !!s; }).join(‘ ‘);
             }
         }
 
@@ -16901,6 +16900,12 @@
         if (action === 'signup') {
             minimizeBulkProgress('completion_signup');
             openAuthSignupModal();
+            return;
+        }
+
+        if (action === 'login') {
+            minimizeBulkProgress('completion_login');
+            openAuthLoginModal();
             return;
         }
 
