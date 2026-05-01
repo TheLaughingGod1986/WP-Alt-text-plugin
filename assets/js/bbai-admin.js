@@ -1343,6 +1343,35 @@
         }
     }
 
+    // ── Trial-completion funnel telemetry helpers ─────────────────────────────
+
+    window.bbaiTelemetrySeen = window.bbaiTelemetrySeen || {};
+
+    function bbaiTrackOnce(eventName, props, key) {
+        var dedupeKey = String(key || eventName);
+        if (window.bbaiTelemetrySeen[dedupeKey]) { return; }
+        window.bbaiTelemetrySeen[dedupeKey] = 1;
+        if (typeof window.bbaiTrack === 'function') {
+            window.bbaiTrack(eventName, props || {});
+        }
+    }
+
+    function bbaiReadTrialContext(root) {
+        var r = root || getDashboardRootNode();
+        return {
+            auth_mode: 'guest',
+            trial_used:     Math.max(0, parseInt(r && r.getAttribute('data-bbai-trial-used'), 10) || 0),
+            trial_limit:    getTrialLimit() || Math.max(0, parseInt(r && r.getAttribute('data-bbai-credits-total'), 10) || 0),
+            trial_remaining: Math.max(0, parseInt(r && r.getAttribute('data-bbai-trial-remaining'), 10) || 0),
+            optimised_count: Math.max(0, parseInt(r && r.getAttribute('data-bbai-optimized-count'), 10) || 0),
+            missing_count:  Math.max(0, parseInt(r && r.getAttribute('data-bbai-missing-count'), 10) || 0),
+            ready_for_review_count: Math.max(0, parseInt(r && r.getAttribute('data-bbai-weak-count'), 10) || 0),
+            page: 'dashboard'
+        };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     function getLibraryAnalyticsStatus(row) {
         if (!row || !row.getAttribute) {
             return 'unknown';
@@ -3219,6 +3248,10 @@
             dispatchAnalyticsEvent('trial_exhausted', {
                 source: analyticsSource
             });
+            bbaiTrackOnce('trial_completion_modal_shown',
+                $.extend(bbaiReadTrialContext(), { source: 'final_image_gate' }),
+                'trial_completion_modal_shown'
+            );
         }
 
         if (isTrialExhausted && canManageAccount() && window.bbaiModal && typeof window.bbaiModal.show === 'function') {
@@ -3233,6 +3266,14 @@
                             primary: true,
                             action: function() {
                                 window.bbaiModal.close();
+                                bbaiTrackOnce('trial_completion_primary_cta_clicked',
+                                    $.extend(bbaiReadTrialContext(), { cta: 'create_free_account_to_finish', source: 'final_image_gate' }),
+                                    'trial_completion_primary_cta_clicked'
+                                );
+                                if (typeof window.bbaiTrack === 'function') {
+                                    window.bbaiTrack('signup_modal_opened', { source: 'trial_completion_modal', auth_tab: 'signup' });
+                                }
+                                window._bbaiTrialCompletionSignupPending = true;
                                 openAuthSignupModal();
                             }
                         },
@@ -3241,6 +3282,9 @@
                             primary: false,
                             action: function() {
                                 window.bbaiModal.close();
+                                if (typeof window.bbaiTrack === 'function') {
+                                    window.bbaiTrack('trial_completion_login_clicked', { source: 'trial_completion_modal' });
+                                }
                                 openAuthLoginModal();
                             }
                         }
@@ -16898,12 +16942,31 @@
         }
 
         if (action === 'signup') {
+            (function() {
+                var ctx = bbaiReadTrialContext();
+                bbaiTrackOnce('trial_completion_primary_cta_clicked',
+                    $.extend({}, ctx, { cta: 'create_free_account_to_finish', source: 'guest_trial_complete' }),
+                    'trial_completion_primary_cta_clicked'
+                );
+                if (typeof window.bbaiTrack === 'function') {
+                    window.bbaiTrack('signup_modal_opened', {
+                        source: 'trial_completion_modal',
+                        auth_tab: 'signup'
+                    });
+                }
+                window._bbaiTrialCompletionSignupPending = true;
+            }());
             minimizeBulkProgress('completion_signup');
             openAuthSignupModal();
             return;
         }
 
         if (action === 'login') {
+            if (typeof window.bbaiTrack === 'function') {
+                window.bbaiTrack('trial_completion_login_clicked', {
+                    source: 'trial_completion_modal'
+                });
+            }
             minimizeBulkProgress('completion_login');
             openAuthLoginModal();
             return;
@@ -17023,6 +17086,18 @@
 
         updateBulkProgressStatusNote($modal, '', '');
         $complete.prop('hidden', false);
+
+        // Fire modal impression once for the trial-completion signup gate.
+        if (ctaConfig && ctaConfig.primary && ctaConfig.primary.action === 'signup') {
+            bbaiTrackOnce('trial_completion_modal_shown',
+                $.extend(bbaiReadTrialContext(), {
+                    source: 'guest_trial_complete',
+                    optimised_count: Math.max(0, parseInt(state.processed, 10) || 0)
+                }),
+                'trial_completion_modal_shown'
+            );
+        }
+
         $completeTitle = $complete.find('[data-bbai-bulk-progress-complete-title]');
         $completeSubtitle = $complete.find('[data-bbai-bulk-progress-complete-subtitle]');
         $supportingLine = $complete.find('[data-bbai-bulk-progress-supporting-line]');
@@ -21387,5 +21462,47 @@
         }, 10000);
 
     }, true /* capture */);
+
+    // ── Trial-completion funnel: signup-completed + flow-continued ────────────
+
+    (function() {
+        // Fire trial_completion_flow_continued on page load if set by a
+        // prior signup that originated from the trial-completion modal.
+        try {
+            if (sessionStorage.getItem('bbai_trial_completion_pending') === '1') {
+                sessionStorage.removeItem('bbai_trial_completion_pending');
+                if (typeof window.bbaiTrack === 'function') {
+                    window.bbaiTrack('trial_completion_flow_continued', {
+                        action: 'dashboard_return',
+                        source: 'trial_completion_modal'
+                    });
+                }
+            }
+        } catch (e) { /* sessionStorage blocked */ }
+
+        document.addEventListener('alttext:auth-success', function(event) {
+            if (!window._bbaiTrialCompletionSignupPending) { return; }
+            window._bbaiTrialCompletionSignupPending = false;
+
+            var detail = (event && event.detail) ? event.detail : {};
+            var root = typeof getDashboardRootNode === 'function' ? getDashboardRootNode() : null;
+            var ctx = (typeof bbaiReadTrialContext === 'function') ? bbaiReadTrialContext(root) : {};
+
+            if (typeof window.bbaiTrack === 'function') {
+                window.bbaiTrack('trial_completion_signup_completed', $.extend({}, ctx, {
+                    source: 'trial_completion_modal',
+                    user_id: (detail.user && detail.user.id) ? String(detail.user.id) : '',
+                    site_hash: (detail.user && detail.user.site_hash) ? String(detail.user.site_hash) : ''
+                }));
+            }
+
+            // Persist flag so the next page load fires flow_continued.
+            try {
+                sessionStorage.setItem('bbai_trial_completion_pending', '1');
+            } catch (e) { /* sessionStorage blocked */ }
+        });
+    }());
+
+    // ─────────────────────────────────────────────────────────────────────────
 
 })(jQuery);

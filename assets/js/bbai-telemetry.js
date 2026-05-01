@@ -82,7 +82,13 @@
         needs_attention_banner_shown: true,
         milestone_banner_shown: true,
         trial_complete_state_shown: true,
-        logged_out_conversion_state_shown: true
+        logged_out_conversion_state_shown: true,
+        trial_completion_modal_shown: true,
+        trial_completion_primary_cta_clicked: true,
+        signup_modal_opened: true,
+        trial_completion_login_clicked: true,
+        trial_completion_signup_completed: true,
+        trial_completion_flow_continued: true
     };
 
     function isDebugEnabled() {
