@@ -1201,29 +1201,36 @@
 .bbai-dashboard-locked-preview__overlay {
     position: absolute;
     inset: 0;
-    z-index: 2;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 22px;
-    pointer-events: none;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.58);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+    filter: none;
 }
 
 .bbai-dashboard-locked-preview__overlay-card {
     width: 100%;
-    max-width: 440px;
+    max-width: 420px;
     position: relative;
-    z-index: 1;
-    display: grid;
-    gap: 0;
-    justify-items: center;
-    padding: 24px 26px;
-    border-radius: 8px;
+    z-index: 30;
+    display: block;
+    padding: 26px;
+    border-radius: 18px;
     border: 1px solid rgba(226, 232, 240, 0.92);
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.06);
+    background: #ffffff;
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18);
     text-align: center;
     pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+    filter: none;
 }
 
 .bbai-dashboard-locked-preview__overlay-title {
@@ -1253,6 +1260,24 @@
 
 .bbai-dashboard-locked-preview__cta {
     min-width: min(100%, var(--bbai-dashboard-action-cta-min-width));
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+}
+
+.bbai-dashboard-locked-preview__overlay-card .bbai-dashboard-locked-preview__cta {
+    width: 100%;
+    max-width: 340px;
+    min-height: 48px;
+    background: #10b981;
+    color: #fff;
+    border-radius: 12px;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    visibility: visible;
 }
 
 .bbai-dashboard-locked-preview__cta--primary {

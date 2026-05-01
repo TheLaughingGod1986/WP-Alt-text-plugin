@@ -1457,16 +1457,19 @@ body.bbai-guest-conversion-modal-open {
 .bbai-dashboard-locked-preview__overlay {
     position: absolute;
     inset: 0;
-    z-index: 5;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 24px;
     box-sizing: border-box;
-    pointer-events: none;
-    background: rgba(255, 255, 255, 0.6);
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.58);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+    opacity: 1;
+    visibility: visible;
+    filter: none;
 }
 
 .bbai-dashboard-locked-preview__overlay-card {
@@ -1474,15 +1477,18 @@ body.bbai-guest-conversion-modal-open {
     max-width: 420px;
     margin: 0 auto;
     position: relative;
-    z-index: 10;
+    z-index: 30;
     display: block;
-    padding: 24px;
-    border-radius: 16px;
+    padding: 26px;
+    border-radius: 18px;
     border: 1px solid rgba(226, 232, 240, 0.95);
     background: #ffffff;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18);
     text-align: center;
     pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+    filter: none;
 }
 
 /* Premium modal entry */
@@ -1651,6 +1657,21 @@ body.bbai-guest-conversion-modal-open {
     display: block;
     width: 100%;
     margin-top: 16px;
+}
+
+.bbai-dashboard-locked-preview__overlay-card .bbai-dashboard-locked-preview__cta {
+    width: 100%;
+    max-width: 340px;
+    min-height: 48px;
+    background: #10b981;
+    color: #fff;
+    border-radius: 12px;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    visibility: visible;
 }
 
 .bbai-dashboard-locked-preview__cta--primary {
