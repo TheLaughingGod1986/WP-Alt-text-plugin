@@ -236,12 +236,11 @@
 
         if (window.authModal && typeof window.authModal.show === 'function') {
             try {
+                window.authModal.show({ context: ctx });
                 if (mode === 'register' && typeof window.authModal.showRegisterForm === 'function') {
                     window.authModal.showRegisterForm(ctx);
                 } else if (mode === 'login' && typeof window.authModal.showLoginForm === 'function') {
                     window.authModal.showLoginForm('login');
-                } else {
-                    window.authModal.show({ context: ctx });
                 }
                 return;
             } catch (e) { /* fall through */ }
