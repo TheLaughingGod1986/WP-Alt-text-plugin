@@ -309,8 +309,19 @@
                     return d.innerHTML;
                 };
 
-                var titleText = 'Done — your free ALT text has been generated.';
-                var bodyText  = 'Create a free account to review your results and keep improving your library.';
+                // Dynamic optimised count: prefer total library count, fall back to trial used.
+                var optimisedCount = Math.max(
+                    0,
+                    parseInt(dashRoot.getAttribute('data-bbai-optimized-count'), 10) || 0,
+                    trialUsed
+                );
+
+                var titleText   = 'You’re 1 step away from completing your optimisation';
+                var progressText = optimisedCount > 0
+                    ? 'You’ve already optimised ' + optimisedCount + ' image' + (optimisedCount !== 1 ? 's' : '')
+                    : '';
+                var bodyText    = 'Unlock your full ALT text library and keep optimising automatically.';
+                var microcopy   = 'No credit card • Takes 10 seconds';
 
                 var completionHtml =
                     '<div class="bbai-bulk-progress__complete bbai-bulk-progress__complete--trial-done">' +
@@ -321,21 +332,23 @@
                     '    </svg>' +
                     '  </div>' +
                     '  <p class="bbai-bulk-progress__complete-title">' + escapeHtml(titleText) + '</p>' +
+                    (progressText ? '  <p class="bbai-bulk-progress__complete-progress">' + escapeHtml(progressText) + '</p>' : '') +
                     '  <p class="bbai-bulk-progress__complete-message">' + escapeHtml(bodyText) + '</p>' +
-                    '  <div class="bbai-bulk-progress__complete-actions">' +
-                    '    <button type="button" class="button button-primary bbai-bulk-progress__complete-review bbai-trial-cta-register">' +
-                    '      Create free account' +
-                    '    </button>' +
-                    '    <button type="button" class="button bbai-bulk-progress__complete-library bbai-trial-cta-login">' +
-                    '      Log in' +
+                    '  <div class="bbai-bulk-progress__complete-actions" style="margin-top:20px;">' +
+                    '    <button type="button" class="button button-primary bbai-bulk-progress__complete-review bbai-trial-cta-register"' +
+                    '      data-action="show-auth-modal" data-auth-tab="register">' +
+                    '      Create free account to finish' +
                     '    </button>' +
                     '  </div>' +
-                    '  <p class="bbai-bulk-progress__complete-note">' +
-                    '    Unlock ' + escapeHtml(String(freePlanOffer)) + ' generations/month on the free plan' +
+                    '  <p class="bbai-bulk-progress__complete-note">' + escapeHtml(microcopy) + '</p>' +
+                    '  <p class="bbai-bulk-progress__complete-login">' +
+                    '    <button type="button" class="bbai-link bbai-trial-cta-login">' +
+                    '      Already have an account? Log in' +
+                    '    </button>' +
                     '  </p>' +
                     '</div>';
 
-                $modal.find('.bbai-bulk-progress__title').text(titleText);
+                $modal.find('.bbai-bulk-progress__title').text('Trial complete');
                 $modal.find('.bbai-bulk-progress__helper').prop('hidden', true);
 
                 var $body = $modal.find('.bbai-bulk-progress__body');
