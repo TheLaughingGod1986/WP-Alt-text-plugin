@@ -50,6 +50,7 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 ?>
 <section
 	class="bbai-dashboard-trial-preview bbai-dashboard-trial-preview--guest-locked<?php echo $bbai_trial_exhausted ? ' bbai-dashboard-trial-preview--exhausted' : ''; ?>"
+	id="library"
 	data-bbai-trial-preview="1"
 	data-bbai-trial-preview-limit="3"
 	aria-labelledby="bbai-dashboard-locked-outer-heading"

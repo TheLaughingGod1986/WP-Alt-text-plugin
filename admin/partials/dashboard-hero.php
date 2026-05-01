@@ -73,7 +73,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		: 0;
 
 	$bbai_donut_center_val  = $bbai_guest_pct > 0 ? (string) $bbai_guest_pct . '%' : '✓';
-	$bbai_donut_center_sub  = '';
+	$bbai_donut_center_sub  = __( 'Almost done', 'beepbeep-ai-alt-text-generator' );
 	$bbai_left_helper       = $bbai_guest_remaining_images === 1
 		? __( '1 image remaining', 'beepbeep-ai-alt-text-generator' )
 		: __( 'Keep going', 'beepbeep-ai-alt-text-generator' );
@@ -117,9 +117,9 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	$bbai_primary_register = [
 		'label'       => __( 'Continue in library →', 'beepbeep-ai-alt-text-generator' ),
 		// Make the hero CTA visually secondary so the modal remains the primary conversion driver.
-		'class'       => 'bbai-guest-hero__text-link bbai-guest-hero__secondary-cta',
-		'action'      => 'show-auth-modal',
-		'auth_tab'    => 'signup',
+		'class'       => 'bbai-secondary-link',
+		'action'      => '',
+		'href'        => '#library',
 		'analytics'   => 'guest_hero_primary_register_exhausted',
 		'is_button'   => false,
 	];
@@ -358,9 +358,11 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 				<?php endif; ?>
 
 					<a
-						href="#"
+						href="<?php echo esc_attr( (string) ( $bbai_primary_register['href'] ?? '#' ) ); ?>"
 						class="<?php echo esc_attr( $bbai_primary_register['class'] ); ?>"
-						data-action="<?php echo esc_attr( $bbai_primary_register['action'] ); ?>"
+						<?php if ( ! empty( $bbai_primary_register['action'] ) ) : ?>
+							data-action="<?php echo esc_attr( $bbai_primary_register['action'] ); ?>"
+						<?php endif; ?>
 						<?php if ( ! empty( $bbai_primary_register['auth_tab'] ) ) : ?>
 							data-auth-tab="<?php echo esc_attr( $bbai_primary_register['auth_tab'] ); ?>"
 						<?php endif; ?>
@@ -375,7 +377,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						<?php echo ! empty( $bbai_show_generate_primary ) && isset( $bbai_primary_generate ) ? 'data-bbai-funnel-hero-secondary=""' : 'data-bbai-funnel-hero-primary=""'; ?>
 					><?php echo esc_html( $bbai_primary_register['label'] ); ?></a>
 					<?php if ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
-						<p class="bbai-guest-hero__cta-hint"><?php esc_html_e( 'Finish your last image to complete your library', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-guest-hero__cta-hint"><?php esc_html_e( 'You’ve fixed 51 images. Just 1 more to go.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					<?php endif; ?>
 
 					<p class="bbai-guest-hero__login">

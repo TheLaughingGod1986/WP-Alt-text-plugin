@@ -17,13 +17,13 @@ $bbai_locked_ctx = isset( $bbai_locked_preview_context_line ) ? (string) $bbai_l
 $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exhausted : false;
 ?>
 <div
-	class="bbai-dashboard-locked-preview__overlay"
+	class="bbai-dashboard-locked-preview__overlay bbai-modal-overlay"
 	role="region"
 	aria-labelledby="bbai-locked-preview-conversion-title"
 >
-	<div class="bbai-dashboard-locked-preview__overlay-card">
+	<div class="bbai-dashboard-locked-preview__overlay-card bbai-modal-card">
 		<h3 id="bbai-locked-preview-conversion-title" class="bbai-dashboard-locked-preview__overlay-title">
-			<?php echo esc_html( $bbai_trial_exhausted ? __( 'Finish the last image', 'beepbeep-ai-alt-text-generator' ) : __( 'Unlock your ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>
+			<?php echo esc_html( $bbai_trial_exhausted ? __( 'Complete your last image', 'beepbeep-ai-alt-text-generator' ) : __( 'Unlock your ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>
 		</h3>
 		<?php if ( $bbai_trial_exhausted ) : ?>
 			<p class="bbai-dashboard-locked-preview__overlay-subtext"><?php esc_html_e( 'You\'re 1 step away from completing your library', 'beepbeep-ai-alt-text-generator' ); ?></p>
@@ -46,20 +46,20 @@ $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exha
 		<div class="bbai-dashboard-locked-preview__actions">
 			<button
 				type="button"
-				class="bbai-btn bbai-btn-primary bbai-dashboard-locked-preview__cta bbai-dashboard-locked-preview__cta--primary"
+				class="bbai-btn bbai-btn-primary bbai-dashboard-locked-preview__cta bbai-dashboard-locked-preview__cta--primary bbai-modal-primary"
 				data-action="show-auth-modal"
 				data-auth-tab="signup"
 				data-bbai-modal-context="library"
 				data-bbai-analytics-upgrade="library_overlay_create_account"
 				data-bbai-trial-complete-cta="<?php echo esc_attr( $bbai_trial_exhausted ? 'unlock_alt_library' : 'create_account' ); ?>"
 			>
-				<?php echo esc_html( $bbai_trial_exhausted ? __( 'Finish the last image', 'beepbeep-ai-alt-text-generator' ) : __( 'Create free account', 'beepbeep-ai-alt-text-generator' ) ); ?>
+				<?php echo esc_html( $bbai_trial_exhausted ? __( 'Complete your last image', 'beepbeep-ai-alt-text-generator' ) : __( 'Create free account', 'beepbeep-ai-alt-text-generator' ) ); ?>
 			</button>
 			<?php if ( $bbai_trial_exhausted ) : ?>
-				<p class="bbai-dashboard-locked-preview__subtext"><?php esc_html_e( 'Create a free account to continue', 'beepbeep-ai-alt-text-generator' ); ?></p>
-				<p class="bbai-dashboard-locked-preview__microcopy"><?php esc_html_e( 'Takes less than 10 seconds', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<p class="bbai-dashboard-locked-preview__subtext bbai-modal-secondary"><?php esc_html_e( 'Create a free account to continue', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<p class="bbai-dashboard-locked-preview__microcopy bbai-modal-meta"><?php esc_html_e( '⚡ Takes under 10 seconds', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			<?php endif; ?>
-			<p class="bbai-dashboard-locked-preview__signin">
+			<p class="bbai-dashboard-locked-preview__signin bbai-modal-login">
 				<a
 					href="#"
 					class="bbai-dashboard-locked-preview__signin-link"
