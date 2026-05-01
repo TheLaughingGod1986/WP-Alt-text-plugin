@@ -935,6 +935,8 @@ body.bbai-guest-conversion-modal-open {
     margin-left: auto;
     align-items: center;
     gap: 12px;
+    display: flex;
+    flex-wrap: nowrap;
 }
 
 .bbai-header--trial-funnel .bbai-header-actions > * {
@@ -1083,14 +1085,76 @@ body.bbai-guest-conversion-modal-open {
     color: #ffffff;
 }
 
-/* Standardise Help + Credits pills */
+/* ── Top navbar actions: premium contrast + hierarchy ────────────────────── */
 .bbai-header--trial-funnel .bbai-header-guide-link,
 .bbai-header--trial-funnel .bbai-header-trial-credits {
-    min-height: 36px;
-    padding: 0 14px;
+    height: 40px;
+    min-height: 40px;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    gap: 8px;
+    line-height: 1;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+/* Help = ghost secondary */
+.bbai-header--trial-funnel .bbai-header-guide-link {
+    padding: 8px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.bbai-header--trial-funnel .bbai-header-guide-link svg,
+.bbai-header--trial-funnel .bbai-header-guide-link .bbai-header-guide-text {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.bbai-header--trial-funnel .bbai-header-guide-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.34);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.bbai-header--trial-funnel .bbai-header-guide-link:hover svg,
+.bbai-header--trial-funnel .bbai-header-guide-link:hover .bbai-header-guide-text {
+    color: #ffffff;
+}
+
+/* Credits pill (trial exhausted) = primary monetisation CTA */
+.bbai-header--trial-funnel .bbai-header-trial-credits {
+    padding: 8px 18px;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    background: #10b981;
+    color: #ffffff;
+    font-weight: 700;
+    transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.bbai-header--trial-funnel .bbai-header-trial-credits:hover {
+    background: #059669;
+    border-color: rgba(16, 185, 129, 0.65);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.24);
+}
+
+.bbai-header--trial-funnel .bbai-header-trial-credits:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18);
+}
+
+.bbai-header--trial-funnel .bbai-header-guide-link:focus-visible,
+.bbai-header--trial-funnel .bbai-header-trial-credits:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.75);
+    outline-offset: 2px;
 }
 
 .bbai-dashboard-trial-preview {
@@ -1199,10 +1263,12 @@ body.bbai-guest-conversion-modal-open {
     margin: 0;
     padding: 24px;
     border: 1px solid var(--bbai-dashboard-card-border);
-    border-radius: var(--bbai-dashboard-card-radius);
+    border-radius: inherit;
     background: var(--bbai-dashboard-surface-bg);
     box-shadow: var(--bbai-dashboard-card-shadow-soft);
     isolation: isolate;
+    position: relative;
+    overflow: hidden;
 }
 
 .bbai-dashboard-locked-preview__header {
@@ -1391,16 +1457,16 @@ body.bbai-guest-conversion-modal-open {
 .bbai-dashboard-locked-preview__overlay {
     position: absolute;
     inset: 0;
-    z-index: 3;
+    z-index: 5;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px 22px;
+    padding: 24px;
     box-sizing: border-box;
     pointer-events: none;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .bbai-dashboard-locked-preview__overlay-card {
@@ -1408,15 +1474,13 @@ body.bbai-guest-conversion-modal-open {
     max-width: 420px;
     margin: 0 auto;
     position: relative;
-    z-index: 1;
-    display: grid;
-    gap: 0;
-    justify-items: center;
+    z-index: 10;
+    display: block;
     padding: 24px;
     border-radius: 16px;
     border: 1px solid rgba(226, 232, 240, 0.95);
     background: #ffffff;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
     text-align: center;
     pointer-events: auto;
 }
@@ -1584,6 +1648,9 @@ body.bbai-guest-conversion-modal-open {
 
 .bbai-dashboard-locked-preview__cta {
     min-width: min(100%, var(--bbai-dashboard-action-cta-min-width));
+    display: block;
+    width: 100%;
+    margin-top: 16px;
 }
 
 .bbai-dashboard-locked-preview__cta--primary {
@@ -1597,6 +1664,9 @@ body.bbai-guest-conversion-modal-open {
     border-radius: 10px;
     font-size: 15px;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .bbai-dashboard-locked-preview__signin {
