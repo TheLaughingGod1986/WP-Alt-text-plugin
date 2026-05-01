@@ -116,13 +116,29 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
 		>
 			<header class="bbai-logged-out__header">
 				<h1 id="bbai-logged-out-title-conversion" class="bbai-logged-out__title">
-					<?php esc_html_e( 'You’ve used all your free generations', 'beepbeep-ai-alt-text-generator' ); ?>
+					<?php esc_html_e( 'You’re 1 step away from completing your image optimisation', 'beepbeep-ai-alt-text-generator' ); ?>
 				</h1>
+				<?php if ( $bbai_lo_trial_used > 0 ) : ?>
+				<p class="bbai-ftue-progress-line">
+					<?php
+					echo esc_html( sprintf(
+						/* translators: %s: number of images already optimised. */
+						_n(
+							'You’ve already optimised %s image',
+							'You’ve already optimised %s images',
+							$bbai_lo_trial_used,
+							'beepbeep-ai-alt-text-generator'
+						),
+						number_format_i18n( $bbai_lo_trial_used )
+					) );
+					?>
+				</p>
+				<?php endif; ?>
 				<p class="bbai-logged-out__subtitle">
-					<?php esc_html_e( 'Create a free account to review your results and unlock your full ALT library.', 'beepbeep-ai-alt-text-generator' ); ?>
+					<?php esc_html_e( 'Unlock your full ALT text library and keep optimising images automatically.', 'beepbeep-ai-alt-text-generator' ); ?>
 				</p>
 			</header>
-			<div class="bbai-logged-out__actions">
+			<div class="bbai-logged-out__actions" style="margin-top:20px;">
 				<a
 					id="bbai-conversion-register-btn"
 					class="button button-primary button-large bbai-btn bbai-btn-primary"
@@ -130,9 +146,12 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
 					data-action="show-auth-modal"
 					data-auth-tab="register"
 				>
-					<?php esc_html_e( 'Create free account', 'beepbeep-ai-alt-text-generator' ); ?>
+					<?php esc_html_e( 'Create free account to finish', 'beepbeep-ai-alt-text-generator' ); ?>
 				</a>
 			</div>
+			<p class="bbai-ftue-proof" style="margin-top:8px;">
+				<?php esc_html_e( 'No credit card • Takes 10 seconds', 'beepbeep-ai-alt-text-generator' ); ?>
+			</p>
 			<p class="bbai-logged-out__login-link">
 				<a
 					id="bbai-conversion-login-btn"
@@ -173,22 +192,41 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
 			</button>
 			<header class="bbai-logged-out__header bbai-ftue-conversion-modal__header">
 				<h1 id="bbai-conversion-dialog-title" class="bbai-logged-out__title">
-					<?php esc_html_e( 'You’ve used all your free generations', 'beepbeep-ai-alt-text-generator' ); ?>
+				<?php esc_html_e( 'You’re 1 step away from completing your image optimisation', 'beepbeep-ai-alt-text-generator' ); ?>
 				</h1>
+				<?php if ( $bbai_lo_trial_used > 0 ) : ?>
+				<p class="bbai-ftue-progress-line">
+					<?php
+					echo esc_html( sprintf(
+						/* translators: %s: number of images already optimised. */
+						_n(
+							'You’ve already optimised %s image',
+							'You’ve already optimised %s images',
+							$bbai_lo_trial_used,
+							'beepbeep-ai-alt-text-generator'
+						),
+						number_format_i18n( $bbai_lo_trial_used )
+					) );
+					?>
+				</p>
+				<?php endif; ?>
 				<p class="bbai-logged-out__subtitle">
-					<?php esc_html_e( 'Create a free account to review your results and unlock your full ALT library.', 'beepbeep-ai-alt-text-generator' ); ?>
+					<?php esc_html_e( 'Unlock your full ALT text library and keep optimising images automatically.', 'beepbeep-ai-alt-text-generator' ); ?>
 				</p>
 			</header>
-			<div class="bbai-logged-out__actions">
+			<div class="bbai-logged-out__actions" style="margin-top:20px;">
 				<a
 					class="button button-primary button-large bbai-btn bbai-btn-primary"
 					href="<?php echo esc_url( $bbai_lo_fallback_url ); ?>"
 					data-action="show-auth-modal"
 					data-auth-tab="register"
 				>
-					<?php esc_html_e( 'Create free account', 'beepbeep-ai-alt-text-generator' ); ?>
+					<?php esc_html_e( 'Create free account to finish', 'beepbeep-ai-alt-text-generator' ); ?>
 				</a>
 			</div>
+			<p class="bbai-ftue-proof" style="margin-top:8px;">
+				<?php esc_html_e( 'No credit card • Takes 10 seconds', 'beepbeep-ai-alt-text-generator' ); ?>
+			</p>
 			<p class="bbai-logged-out__login-link">
 				<a
 					href="<?php echo esc_url( $bbai_lo_fallback_url ); ?>"
