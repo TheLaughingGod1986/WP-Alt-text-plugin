@@ -115,11 +115,10 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		: __( 'You’re one step away from a fully optimised site.', 'beepbeep-ai-alt-text-generator' );
 
 	$bbai_primary_register = [
-		'label'       => __( 'Continue in library →', 'beepbeep-ai-alt-text-generator' ),
-		// Make the hero CTA visually secondary so the modal remains the primary conversion driver.
-		'class'       => 'bbai-secondary-link',
-		'action'      => '',
-		'href'        => '#library',
+		'label'       => __( 'Finish the last image', 'beepbeep-ai-alt-text-generator' ),
+		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
+		'action'      => 'show-auth-modal',
+		'auth_tab'    => 'signup',
 		'analytics'   => 'guest_hero_primary_register_exhausted',
 		'is_button'   => false,
 	];
@@ -358,7 +357,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 				<?php endif; ?>
 
 					<a
-						href="<?php echo esc_attr( (string) ( $bbai_primary_register['href'] ?? '#' ) ); ?>"
+						href="#"
 						class="<?php echo esc_attr( $bbai_primary_register['class'] ); ?>"
 						<?php if ( ! empty( $bbai_primary_register['action'] ) ) : ?>
 							data-action="<?php echo esc_attr( $bbai_primary_register['action'] ); ?>"
@@ -376,9 +375,6 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						data-bbai-funnel-hero-cta=""
 						<?php echo ! empty( $bbai_show_generate_primary ) && isset( $bbai_primary_generate ) ? 'data-bbai-funnel-hero-secondary=""' : 'data-bbai-funnel-hero-primary=""'; ?>
 					><?php echo esc_html( $bbai_primary_register['label'] ); ?></a>
-					<?php if ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
-						<p class="bbai-guest-hero__cta-hint"><?php esc_html_e( 'You’ve fixed 51 images. Just 1 more to go.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-					<?php endif; ?>
 
 					<p class="bbai-guest-hero__login">
 						<a

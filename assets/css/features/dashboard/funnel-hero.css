@@ -1369,18 +1369,18 @@ body.bbai-guest-conversion-modal-open {
 
 /* Conversion card: centered over blurred mock (design reference) */
 .bbai-dashboard-locked-preview__overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    z-index: 9999;
+    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 24px 22px;
     box-sizing: border-box;
     pointer-events: none;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .bbai-dashboard-locked-preview__overlay-card {
