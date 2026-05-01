@@ -113,6 +113,9 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 			number_format_i18n( $bbai_guest_remaining_images )
 		)
 		: __( 'You’re one step away from a fully optimised site.', 'beepbeep-ai-alt-text-generator' );
+	if ( 1 === (int) $bbai_guest_remaining_images && $bbai_guest_fixed_images > 0 ) {
+		$bbai_guest_body = __( 'You’ve fixed 51 images. Just 1 more to complete your library.', 'beepbeep-ai-alt-text-generator' );
+	}
 
 	$bbai_primary_register = [
 		'label'       => __( 'Finish the last image', 'beepbeep-ai-alt-text-generator' ),

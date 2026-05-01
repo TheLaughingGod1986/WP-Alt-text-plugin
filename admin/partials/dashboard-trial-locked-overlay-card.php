@@ -32,7 +32,7 @@ $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exha
 			<?php
 			echo esc_html(
 				$bbai_trial_exhausted
-					? __( 'Complete your library to continue optimising.', 'beepbeep-ai-alt-text-generator' )
+					? __( 'Complete your library to continue optimising new images.', 'beepbeep-ai-alt-text-generator' )
 					: $bbai_locked_preview_overlay_copy
 			);
 			?>
@@ -57,7 +57,7 @@ $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exha
 			</button>
 			<?php if ( $bbai_trial_exhausted ) : ?>
 				<p class="bbai-dashboard-locked-preview__subtext bbai-modal-secondary"><?php esc_html_e( 'Create a free account to continue', 'beepbeep-ai-alt-text-generator' ); ?></p>
-				<p class="bbai-dashboard-locked-preview__microcopy bbai-modal-meta"><?php esc_html_e( '⚡ Takes under 10 seconds', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<p class="bbai-dashboard-locked-preview__microcopy bbai-modal-meta"><?php esc_html_e( 'Takes less than 10 seconds', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			<?php endif; ?>
 			<p class="bbai-dashboard-locked-preview__signin bbai-modal-login">
 				<a

@@ -59,6 +59,14 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 		<?php esc_html_e( 'ALT Library preview', 'beepbeep-ai-alt-text-generator' ); ?>
 	</h2>
 
+	<?php if ( $bbai_trial_exhausted ) : ?>
+		<div class="bbai-dashboard-trial-preview__header" aria-hidden="true">
+			<div class="bbai-dashboard-trial-preview__copy">
+				<h3 class="bbai-dashboard-trial-preview__title"><?php esc_html_e( 'Your final image', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			</div>
+		</div>
+	<?php endif; ?>
+
 	<div class="bbai-dashboard-locked-preview__shell bbai-dashboard-trial-preview__shell">
 		<div class="bbai-dashboard-trial-preview__blur-wrap" aria-hidden="true" inert>
 			<?php if ( ! empty( $bbai_trial_preview_rows ) && is_readable( $bbai_trial_lib_card_row_path ) ) : ?>

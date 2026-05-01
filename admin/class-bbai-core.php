@@ -2928,7 +2928,8 @@ class Core {
                                 <?php if ((!$bbai_can_show_full_nav || $bbai_is_anonymous_trial) && '' !== $bbai_header_trial_credits_line) : ?>
                                 <?php
                                     $bbai_trial_badge_label = $bbai_header_trial_credits_line;
-                                    if ((int) $bbai_guest_trial_remaining <= 0) {
+                                    $bbai_trial_badge_is_exhausted = ((int) $bbai_guest_trial_remaining <= 0);
+                                    if ( $bbai_trial_badge_is_exhausted ) {
                                         $bbai_trial_badge_label = __('Unlock more credits', 'beepbeep-ai-alt-text-generator');
                                     }
                                 ?>
@@ -2939,7 +2940,12 @@ class Core {
                                     data-auth-tab="signup"
                                     aria-label="<?php echo esc_attr($bbai_trial_badge_label); ?>"
                                 >
-                                    <?php echo esc_html($bbai_trial_badge_label); ?>
+                                    <?php if ( $bbai_trial_badge_is_exhausted ) : ?>
+                                        <span class="bbai-header-trial-credits__value"><?php esc_html_e( '0 credits left', 'beepbeep-ai-alt-text-generator' ); ?></span>
+                                        <span class="bbai-header-trial-credits__cta"><?php esc_html_e( 'Unlock more credits', 'beepbeep-ai-alt-text-generator' ); ?></span>
+                                    <?php else : ?>
+                                        <?php echo esc_html($bbai_trial_badge_label); ?>
+                                    <?php endif; ?>
                                 </a>
                             <?php endif; ?>
                         <?php endif; ?>
