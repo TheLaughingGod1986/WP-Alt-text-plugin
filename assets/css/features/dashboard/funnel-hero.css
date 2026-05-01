@@ -1455,16 +1455,16 @@ body.bbai-guest-conversion-modal-open {
 
 /* Conversion card: centered over blurred mock (design reference) */
 .bbai-dashboard-locked-preview__overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    z-index: 20;
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 24px;
     box-sizing: border-box;
     pointer-events: auto;
-    background: rgba(255, 255, 255, 0.58);
+    background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     opacity: 1;
@@ -1479,16 +1479,22 @@ body.bbai-guest-conversion-modal-open {
     position: relative;
     z-index: 30;
     display: block;
-    padding: 26px;
-    border-radius: 18px;
+    padding: 28px;
+    border-radius: 16px;
     border: 1px solid rgba(226, 232, 240, 0.95);
     background: #ffffff;
-    box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
     text-align: center;
     pointer-events: auto;
     opacity: 1;
     visibility: visible;
     filter: none;
+    animation: bbaiModalIn 180ms ease-out;
+}
+
+#bbai-dashboard-main,
+.bbai-dashboard-body {
+    transform: none !important;
 }
 
 /* Premium modal entry */
