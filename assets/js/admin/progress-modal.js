@@ -227,6 +227,41 @@
     };
 
     /**
+     * Open the auth modal for a given tab ('register' | 'login') and context.
+     * Mirrors the logic in funnel-state.js without duplicating its internals.
+     */
+    function openAuthModalForGuest(tab, context) {
+        var mode = tab === 'login' ? 'login' : 'register';
+        var ctx  = context || (mode === 'login' ? 'login' : 'register_exhausted');
+
+        if (window.authModal && typeof window.authModal.show === 'function') {
+            try {
+                if (mode === 'register' && typeof window.authModal.showRegisterForm === 'function') {
+                    window.authModal.showRegisterForm(ctx);
+                } else if (mode === 'login' && typeof window.authModal.showLoginForm === 'function') {
+                    window.authModal.showLoginForm('login');
+                } else {
+                    window.authModal.show({ context: ctx });
+                }
+                return;
+            } catch (e) { /* fall through */ }
+        }
+
+        if (typeof window.showAuthModal === 'function') {
+            try {
+                window.showAuthModal(mode, ctx);
+                return;
+            } catch (e) { /* fall through */ }
+        }
+
+        window.location.assign(
+            mode === 'login'
+                ? 'https://app.beepbeep.ai/login'
+                : 'https://app.beepbeep.ai/register'
+        );
+    }
+
+    /**
      * Show completion state inside the progress modal.
      * Replaces the live-progress body with a success summary and CTAs.
      * All messaging derives from the canonical window.bbaiGenerationResult object.
@@ -243,6 +278,82 @@
         $modal.data('bbaiComplete', true);
 
         total = total || (successes + failures);
+
+        // ── Guest trial: show trial-complete success confirmation ────────────
+        var dashRoot = document.querySelector('[data-bbai-dashboard-root="1"]');
+        var isGuestTrial = !!(
+            dashRoot &&
+            dashRoot.getAttribute('data-bbai-is-guest-trial') === '1' &&
+            dashRoot.getAttribute('data-bbai-has-connected-account') !== '1'
+        );
+
+        if (isGuestTrial && successes > 0) {
+            // Check DOM for exhaustion (applyGuestTrialExhaustedToDom already ran
+            // by the time this is called, so remaining should be 0).
+            var trialRemaining = parseInt(
+                (dashRoot.getAttribute('data-bbai-trial-remaining') ||
+                 dashRoot.getAttribute('data-bbai-credits-remaining') || '0'),
+                10
+            );
+            var trialLimit  = Math.max(1, parseInt(dashRoot.getAttribute('data-bbai-trial-limit'), 10) || 5);
+            var trialUsed   = Math.max(0, parseInt(dashRoot.getAttribute('data-bbai-trial-used'), 10) || 0);
+            var freePlanOffer = Math.max(1, parseInt(dashRoot.getAttribute('data-bbai-free-account-monthly-limit'), 10) || 50);
+
+            // Exhausted when the server / DOM confirms 0 remaining, or when our
+            // local estimate says the batch consumed the last slot.
+            var isExhausted = trialRemaining <= 0 || (trialUsed >= trialLimit);
+
+            if (isExhausted) {
+                var escapeHtml = window.bbaiEscapeHtml || function (t) {
+                    var d = document.createElement('div');
+                    d.textContent = t;
+                    return d.innerHTML;
+                };
+
+                var titleText = 'Done — your free ALT text has been generated.';
+                var bodyText  = 'Create a free account to review your results and keep improving your library.';
+
+                var completionHtml =
+                    '<div class="bbai-bulk-progress__complete bbai-bulk-progress__complete--trial-done">' +
+                    '  <div class="bbai-bulk-progress__complete-check bbai-trial-complete-pulse" aria-hidden="true">' +
+                    '    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+                    '      <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.5"/>' +
+                    '      <path d="M7 12.5l3.5 3.5 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                    '    </svg>' +
+                    '  </div>' +
+                    '  <p class="bbai-bulk-progress__complete-title">' + escapeHtml(titleText) + '</p>' +
+                    '  <p class="bbai-bulk-progress__complete-message">' + escapeHtml(bodyText) + '</p>' +
+                    '  <div class="bbai-bulk-progress__complete-actions">' +
+                    '    <button type="button" class="button button-primary bbai-bulk-progress__complete-review bbai-trial-cta-register">' +
+                    '      Create free account' +
+                    '    </button>' +
+                    '    <button type="button" class="button bbai-bulk-progress__complete-library bbai-trial-cta-login">' +
+                    '      Log in' +
+                    '    </button>' +
+                    '  </div>' +
+                    '  <p class="bbai-bulk-progress__complete-note">' +
+                    '    Unlock ' + escapeHtml(String(freePlanOffer)) + ' generations/month on the free plan' +
+                    '  </p>' +
+                    '</div>';
+
+                $modal.find('.bbai-bulk-progress__title').text(titleText);
+                $modal.find('.bbai-bulk-progress__helper').prop('hidden', true);
+
+                var $body = $modal.find('.bbai-bulk-progress__body');
+                $body.html(completionHtml);
+
+                $body.find('.bbai-trial-cta-register').on('click', function () {
+                    openAuthModalForGuest('register', 'register_exhausted');
+                });
+                $body.find('.bbai-trial-cta-login').on('click', function () {
+                    openAuthModalForGuest('login', 'login');
+                });
+
+                return;
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         var result = window.bbaiGenerationResult || {
             status:    failures > 0 ? (successes > 0 ? 'partial' : 'error') : (successes > 0 ? 'success' : 'no_changes'),
             attempted: total,

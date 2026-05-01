@@ -301,8 +301,8 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 	<div class="bbai-li-card bbai-li-card--content">
 
 		<div class="bbai-li-card-section bbai-li-card-section--intro">
-			<h1 id="bbai-guest-hero-heading" class="bbai-li-headline"><?php echo esc_html( $bbai_guest_title ); ?></h1>
-			<p class="bbai-li-support"><?php echo esc_html( $bbai_guest_body ); ?></p>
+			<h1 id="bbai-guest-hero-heading" class="bbai-li-headline" data-bbai-funnel-hero-title><?php echo esc_html( $bbai_guest_title ); ?></h1>
+			<p class="bbai-li-support" data-bbai-funnel-hero-desc><?php echo esc_html( $bbai_guest_body ); ?></p>
 		</div>
 
 		<div class="bbai-li-card-section bbai-li-card-section--actions bbai-guest-hero__cta-block">

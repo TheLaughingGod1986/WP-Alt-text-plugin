@@ -150,6 +150,22 @@
         setAttrIfChanged(root, 'data-bbai-generation-in-progress', gen.in_progress ? '1' : '0');
         setAttrIfChanged(root, 'data-bbai-generation-queue-total', clampNonNeg(gen.queue_total));
         setAttrIfChanged(root, 'data-bbai-generation-queue-remaining', clampNonNeg(gen.queue_remaining));
+
+        // For logged-out guest trials: mirror credits into trial-specific attrs
+        // so that funnel-state.js reads a consistent remaining count regardless
+        // of which attribute it checks.
+        var isGuestTrial = root.getAttribute('data-bbai-is-guest-trial') === '1' &&
+            root.getAttribute('data-bbai-has-connected-account') !== '1';
+        if (isGuestTrial) {
+            var guestRemaining = clampNonNeg(credits.remaining);
+            setAttrIfChanged(root, 'data-bbai-trial-remaining', guestRemaining);
+            setAttrIfChanged(root, 'data-bbai-trial-used', clampNonNeg(credits.used));
+            if (guestRemaining <= 0) {
+                setAttrIfChanged(root, 'data-bbai-trial-exhausted', '1');
+                setAttrIfChanged(root, 'data-bbai-quota-state', 'exhausted');
+                setAttrIfChanged(root, 'data-bbai-signup-required', '1');
+            }
+        }
     }
 
     function applyStateToLibraryFilters(state) {

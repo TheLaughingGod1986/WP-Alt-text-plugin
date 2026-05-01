@@ -946,25 +946,21 @@
     function buildExhaustedTrialHeroModel(root, counts) {
         var nextCounts = counts || getCounts(root);
         var credits = getCreditsModel(root);
-        var actionable = getGuestActionableCount(nextCounts);
-        var sublabel = '';
-
-        if (actionable > 0) {
-            sublabel = actionable === 1 ? 'image to finish' : 'images to finish';
-        }
+        var trialLimit = Math.max(1, parseCount(root && root.getAttribute('data-bbai-trial-limit')) || 5);
+        var freePlanOffer = Math.max(1, parseCount(root && root.getAttribute('data-bbai-free-account-monthly-limit')) || 50);
 
         return {
             statusLabel: '',
             statusDetail: '',
-            donutValue: formatCount(actionable),
-            donutLabel: sublabel,
-            donutTone: actionable > 0 ? 'problem' : 'neutral',
-            donutBackground: buildDonutGradient(nextCounts),
-            title: 'Unlock your full ALT library',
-            description: 'You\u2019ve fixed your first images. Create a free account to review, edit, and finish optimising your library.',
+            donutValue: '\u2713',
+            donutLabel: 'Trial complete',
+            donutTone: 'neutral',
+            donutBackground: 'conic-gradient(#cbd5e1 0deg 360deg)',
+            title: 'You\u2019ve used all ' + formatCount(trialLimit) + ' free generations',
+            description: 'Create a free account to review your results and unlock ' + formatCount(freePlanOffer) + ' generations per month.',
             primaryAction: buildUnlockAction(root),
             secondaryAction: buildLoginAction(),
-            ctaContext: getLockedTrialCtaContext(root, actionable),
+            ctaContext: '',
             supportLine: '',
             showCredits: false,
             showConversionPrompt: false,

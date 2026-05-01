@@ -123,6 +123,136 @@
         processNext();
     }
 
+    // Fired at most once per page load to avoid duplicate analytics on polling.
+    var _guestTrialCompletedAnalyticsFired = false;
+
+    /**
+     * Return true when the current dashboard root belongs to a logged-out guest.
+     */
+    function isGuestTrialDashboard() {
+        var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+        return !!root &&
+            root.getAttribute('data-bbai-is-guest-trial') === '1' &&
+            root.getAttribute('data-bbai-has-connected-account') !== '1';
+    }
+
+    /**
+     * Update dashboard root data-attributes and hero immediately when the trial
+     * has just been exhausted so that the page reflects the new state without a
+     * full reload.
+     */
+    function applyGuestTrialExhaustedToDom() {
+        var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+        if (!root) {
+            return;
+        }
+
+        var trialLimit = Math.max(1, parseInt(root.getAttribute('data-bbai-trial-limit'), 10) || 5);
+
+        root.setAttribute('data-bbai-trial-exhausted', '1');
+        root.setAttribute('data-bbai-trial-remaining', '0');
+        root.setAttribute('data-bbai-trial-used', String(trialLimit));
+        root.setAttribute('data-bbai-credits-remaining', '0');
+        root.setAttribute('data-bbai-quota-state', 'exhausted');
+        root.setAttribute('data-bbai-signup-required', '1');
+
+        // Lift the "static" guard on the SSR hero so funnel-state.js can take
+        // over and render the exhausted-state copy + CTAs.
+        var hero = document.querySelector('[data-bbai-funnel-hero="1"]');
+        if (hero) {
+            hero.removeAttribute('data-bbai-guest-hero-static');
+
+            // Hide trial-meter elements that only apply to the in_progress variant.
+            var hideSels = [
+                '.bbai-guest-trial-meter',
+                '.bbai-guest-hero__trial-meter-intro',
+                '.bbai-guest-hero__trial-meter-caption',
+            ];
+            hideSels.forEach(function (sel) {
+                var el = hero.querySelector(sel);
+                if (el) {
+                    el.hidden = true;
+                }
+            });
+
+            // Add a subtle fade-in class so the new state appears with a light
+            // transition rather than a jarring instant swap.
+            hero.classList.add('bbai-guest-hero--trial-complete');
+        }
+
+        // Kick funnel-state.js refresh (hero sync + trial-preview surface sync).
+        if (typeof window.bbaiSyncDashboardStateRoot === 'function') {
+            window.bbaiSyncDashboardStateRoot({});
+        }
+    }
+
+    /**
+     * Fire the one-time analytics events for trial completion.
+     * Guards against duplicate fires from polling or multiple renders.
+     */
+    function fireGuestTrialCompletedAnalytics() {
+        if (_guestTrialCompletedAnalyticsFired) {
+            return;
+        }
+        _guestTrialCompletedAnalyticsFired = true;
+
+        if (typeof window.bbaiTrack === 'function') {
+            window.bbaiTrack('guest_trial_completed');
+            window.bbaiTrack('signup_prompt_shown', { source: 'trial_complete' });
+        }
+    }
+
+    /**
+     * After a successful guest generation batch, check whether the trial is now
+     * exhausted.  Uses the dashboard-state store for a fresh server read; falls
+     * back to a DOM estimate when the store is unavailable.
+     *
+     * @param {number}   successes   Images just successfully generated.
+     * @param {Function} callback    Called when the check + any DOM update is done.
+     */
+    function maybeHandleGuestTrialComplete(successes, callback) {
+        if (!isGuestTrialDashboard()) {
+            if (typeof callback === 'function') {
+                callback(false);
+            }
+            return;
+        }
+
+        var root = document.querySelector('[data-bbai-dashboard-root="1"]');
+        var trialLimit = Math.max(1, parseInt(root && root.getAttribute('data-bbai-trial-limit'), 10) || 5);
+        var trialUsed  = Math.max(0, parseInt(root && root.getAttribute('data-bbai-trial-used'), 10) || 0);
+        var preGenRemaining = Math.max(0, parseInt(
+            (root && (root.getAttribute('data-bbai-trial-remaining') || root.getAttribute('data-bbai-credits-remaining'))) || String(Math.max(0, trialLimit - trialUsed)),
+            10
+        ) || 0);
+        // Locally estimate whether the trial just became exhausted.
+        var estimatedExhausted = preGenRemaining - successes <= 0;
+
+        function conclude(exhausted) {
+            if (exhausted) {
+                applyGuestTrialExhaustedToDom();
+                fireGuestTrialCompletedAnalytics();
+            }
+            if (typeof callback === 'function') {
+                callback(exhausted);
+            }
+        }
+
+        // Try a fresh server read for authoritative remaining count.
+        var store = window.BBAI_DASHBOARD_STATE_STORE;
+        if (store && typeof store.refresh === 'function') {
+            store.refresh().then(function (state) {
+                var serverRemaining = state && state.credits ? parseInt(state.credits.remaining, 10) : NaN;
+                var isExhausted = isNaN(serverRemaining) ? estimatedExhausted : serverRemaining <= 0;
+                conclude(isExhausted);
+            }).catch(function () {
+                conclude(estimatedExhausted);
+            });
+        } else {
+            conclude(estimatedExhausted);
+        }
+    }
+
     /**
      * Finalize inline generation: build the canonical result object, store it
      * globally, then hand off to the completion UI.
@@ -165,6 +295,19 @@
 
         if (typeof window.bbaiRefreshDashboardCoverage === 'function') {
             window.bbaiRefreshDashboardCoverage();
+        }
+
+        // For guest trials with at least one success: check exhaustion first so
+        // that the progress-modal completion view can show the right messaging.
+        if (successes > 0 && isGuestTrialDashboard()) {
+            maybeHandleGuestTrialComplete(successes, function () {
+                if (typeof window.showBulkProgressComplete === 'function') {
+                    window.showBulkProgressComplete(successes, failures, total);
+                } else {
+                    window.location.reload();
+                }
+            });
+            return;
         }
 
         if (typeof window.showBulkProgressComplete === 'function') {
