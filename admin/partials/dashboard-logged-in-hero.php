@@ -3787,6 +3787,22 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return;
 		}
 		var credits = getTruthCredits( truth );
+
+		// When bbai-dashboard-state.js owns credit state, its root DOM attrs are
+		// the authoritative source. Prefer those over the potentially stale hero
+		// truth-endpoint payload so the credit block never flashes incorrect values.
+		if ( window.BBAI_DASHBOARD_STATE_ENDPOINT_ACTIVE ) {
+			var creditRoot = getDashboardRoot();
+			if ( creditRoot ) {
+				var rootUsed  = parseInt( creditRoot.getAttribute( 'data-bbai-credits-used' )      || '', 10 );
+				var rootTotal = parseInt( creditRoot.getAttribute( 'data-bbai-credits-total' )     || '', 10 );
+				var rootRem   = parseInt( creditRoot.getAttribute( 'data-bbai-credits-remaining' ) || '', 10 );
+				if ( ! isNaN( rootUsed ) && ! isNaN( rootTotal ) && rootTotal > 0 && ! isNaN( rootRem ) ) {
+					credits = { used: rootUsed, total: rootTotal, remaining: rootRem, isPro: credits.isPro, plan: credits.plan };
+				}
+			}
+		}
+
 		var used = Math.max( 0, credits.used );
 		var total = Math.max( 1, credits.total );
 		var remaining = Math.max( 0, credits.remaining );
@@ -3962,7 +3978,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var root = getDashboardRoot();
 		var credits = getTruthCredits( truth );
 
-		if ( root ) {
+		// When bbai-dashboard-state.js owns credit state, it manages root attrs.
+		// Writing from the hero truth endpoint would stomp the authoritative values.
+		if ( root && ! window.BBAI_DASHBOARD_STATE_ENDPOINT_ACTIVE ) {
 			root.setAttribute( 'data-bbai-credits-used', String( credits.used ) );
 			root.setAttribute( 'data-bbai-credits-total', String( credits.total ) );
 			root.setAttribute( 'data-bbai-credits-remaining', String( credits.remaining ) );
@@ -5466,6 +5484,12 @@ $bbai_hero_credit_bar_aria = sprintf(
 			if ( ! isNaN( curRemaining ) && ! isNaN( curUsed ) && ! isNaN( curTotal ) ) {
 				var newRemaining = Math.max( 0, curRemaining - successes );
 				var newUsed = Math.min( curTotal, curUsed + successes );
+				// Write deducted values to root so syncHeroCreditBlockFromTruth
+				// (which now reads from root when ENDPOINT_ACTIVE) picks them up.
+				if ( root ) {
+					root.setAttribute( 'data-bbai-credits-used', String( newUsed ) );
+					root.setAttribute( 'data-bbai-credits-remaining', String( newRemaining ) );
+				}
 				// Flag that the next backend poll may still carry the pre-generation count.
 				window.bbaiOptimisticCreditPending = true;
 				syncHeroCreditBlockFromTruth( {
