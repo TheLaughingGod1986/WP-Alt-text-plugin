@@ -1,8 +1,118 @@
+/* --------------------------------------------------------------------------
+ * Bulk generation modal — high-feedback UX upgrade
+ * Tasks 1, 3, 5, 6 (layout-and-feedback-only; no logic changes)
+ * -------------------------------------------------------------------------- */
+
+/* Task 1 — Step states: green active, dimmed done/pending, pulse on active */
+.bbai-bulk-progress__step {
+    opacity: 0.4;
+    transition: opacity 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.bbai-bulk-progress__step.is-active {
+    border-left: 3px solid #10b981;
+    background: rgba(16, 185, 129, 0.05);
+    opacity: 1;
+    animation: bbai-step-pulse 1.2s ease-in-out infinite;
+}
+
+.bbai-bulk-progress__step.is-active .bbai-bulk-progress__step-icon {
+    background: rgba(16, 185, 129, 0.16);
+    color: #065f46;
+}
+
+.bbai-bulk-progress__step.is-done {
+    border-left: 3px solid rgba(34, 197, 94, 0.9);
+    opacity: 0.6;
+    animation: none;
+}
+
+.bbai-bulk-progress__step.is-error {
+    opacity: 1;
+    animation: none;
+}
+
+@keyframes bbai-step-pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Task 2 — Progress bar transition (already smooth; reinforce) */
+.bbai-bulk-progress__bar-fill {
+    transition: width 300ms ease;
+}
+
+/* Task 3 — Live feed: compact entries, fa subtle */
+.bbai-bulk-progress__log-entry {
+    font-size: 13px;
+}
+
+.bbai-bulk-progress__log-text {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.bbai-bulk-progress__log-entry--processing {
+    border-left: 3px solid rgba(245, 158, 11, 0.8);
+}
+
+.bbai-bulk-progress__log-entry--processing .bbai-bulk-progress__log-icon {
+    background: rgba(245, 158, 11, 0.14);
+    color: #92400e;
+}
+
+/* Task 5 — Footer CTA area during running state */
+.bbai-bulk-progress__footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    padding: 0 28px 20px;
+    border-top: 1px solid rgba(148, 163, 184, 0.16);
+    padding-top: 16px;
+}
+
+.bbai-bulk-progress-modal[data-bbai-bulk-progress-mode="complete"] .bbai-bulk-progress__footer {
+    display: none;
+}
+
+.bbai-bulk-progress__run-in-bg {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Task 6 — Completion moment: subtle pop-in on the content panel */
+.bbai-bulk-progress-modal[data-bbai-bulk-progress-mode="complete"] .bbai-bulk-progress-modal__content {
+    animation: bbai-modal-success 300ms ease-out;
+}
+
+@keyframes bbai-modal-success {
+    0%   { transform: scale(0.98); }
+    100% { transform: scale(1); }
+}
+
+/* Suppress completion animation when reduced-motion is preferred */
+@media (prefers-reduced-motion: reduce) {
+    .bbai-bulk-progress__step,
+    .bbai-bulk-progress__step.is-active {
+        animation: none;
+        transition: none;
+    }
+
+    .bbai-bulk-progress-modal[data-bbai-bulk-progress-mode="complete"] .bbai-bulk-progress-modal__content {
+        animation: none;
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+
 .bbai-bulk-progress__subtitle {
     margin: 0 0 var(--bbai-space-1) 0;
     font-size: var(--bbai-text-sm);
     color: var(--bbai-text-muted);
 }
+
 
 .bbai-bulk-progress__summary {
     display: flex;

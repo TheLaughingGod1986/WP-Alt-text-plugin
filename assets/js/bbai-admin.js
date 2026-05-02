@@ -16684,7 +16684,7 @@
         }
 
         return sprintf(
-            __('Completed %1$s of %2$s images', 'beepbeep-ai-alt-text-generator'),
+            __('Processing %1$s of %2$s images…', 'beepbeep-ai-alt-text-generator'),
             formatDashboardNumber(safeCurrent),
             formatDashboardNumber(safeTotal)
         );
@@ -17362,7 +17362,7 @@
         if ($completeTitle.length) {
             $completeTitle.text(
                 !hasError
-                    ? __('Generation complete', 'beepbeep-ai-alt-text-generator')
+                    ? __('All images processed 🎉', 'beepbeep-ai-alt-text-generator')
                     : __('Generation failed', 'beepbeep-ai-alt-text-generator')
             );
         }
@@ -17968,13 +17968,12 @@
 
             appendBulkProgressLogEntry(
                 $modal,
-                'success',
+                'processing',
                 sprintf(
-                    __('Sending image %1$d of %2$d to AI…', 'beepbeep-ai-alt-text-generator'),
+                    __('Processing image %1$d of %2$d…', 'beepbeep-ai-alt-text-generator'),
                     ordinal,
                     total
-                ),
-                { dedupe: true }
+                )
             );
 
             generateAltTextForId(id)
@@ -18894,7 +18893,7 @@
             return;
         }
 
-        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success');
+        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : (type === 'processing' ? 'processing' : 'success'));
         if (options.dedupe) {
             key = tone + ':' + String(message);
             seen = $modal.data('bbaiBulkLogSeen') || {};
@@ -18905,7 +18904,7 @@
             $modal.data('bbaiBulkLogSeen', seen);
         }
 
-        icon = tone === 'error' ? '!' : '✓';
+        icon = tone === 'error' ? '!' : (tone === 'processing' ? '⏳' : '✓');
         timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         entryHtml =
             '<div class="bbai-bulk-progress__log-entry bbai-bulk-progress__log-entry--' + tone + '" role="listitem">' +
@@ -18916,6 +18915,13 @@
 
         $log.find('[data-bbai-bulk-progress-log-empty]').remove();
         $log.append(entryHtml);
+
+        // Keep only the last 5 entries so the log stays readable.
+        var $entries = $log.find('.bbai-bulk-progress__log-entry');
+        if ($entries.length > 5) {
+            $entries.slice(0, $entries.length - 5).remove();
+        }
+
         $log.scrollTop($log.prop('scrollHeight'));
     }
 
@@ -18945,14 +18951,14 @@
             '                </div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__steps" data-bbai-bulk-progress-steps role="group" aria-label="' + escapeHtml(__('Generation steps', 'beepbeep-ai-alt-text-generator')) + '">' +
-            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="prepare"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">1</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Preparing', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
-            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="send"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">2</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Sending to AI', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
-            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="save"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">3</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Saving to WordPress', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="prepare"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">1</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Processing your images', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="send"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">2</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Generating ALT text', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="save"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">3</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Saving results', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
             '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="review"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">4</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Ready to review', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__log-container" data-bbai-bulk-progress-log-container>' +
             '                <div class="bbai-bulk-progress__log-heading">' +
-            '                    <h3 class="bbai-bulk-progress__log-title">' + escapeHtml(__('Running log', 'beepbeep-ai-alt-text-generator')) + '</h3>' +
+            '                    <h3 class="bbai-bulk-progress__log-title">' + escapeHtml(__('Live feed', 'beepbeep-ai-alt-text-generator')) + '</h3>' +
             '                    <span class="bbai-bulk-progress__log-count" data-bbai-bulk-progress-log-count>' + escapeHtml(__('Waiting for images', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '                </div>' +
             '                <div class="bbai-bulk-progress__log" data-bbai-bulk-progress-log role="list" aria-live="polite"></div>' +
@@ -18971,6 +18977,9 @@
             '                <p class="bbai-bulk-progress__supporting-line" data-bbai-bulk-progress-supporting-line hidden></p>' +
             '            </div>' +
             '        </div>' +
+            '        <div class="bbai-bulk-progress__footer" data-bbai-bulk-progress-footer>' +
+            '            <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-bulk-progress__run-in-bg" data-bbai-bulk-progress-run-bg>' + escapeHtml(__('Run in background', 'beepbeep-ai-alt-text-generator')) + '</button>' +
+            '        </div>' +
             '    </div>' +
             '</div>';
 
@@ -18985,6 +18994,11 @@
         // Overlay click closes the modal while background work continues.
         $modal.find('.bbai-bulk-progress-modal__overlay').on('click', function() {
             minimizeBulkProgress('overlay');
+        });
+
+        // "Run in background" footer button — same as closing, job keeps running.
+        $modal.on('click', '[data-bbai-bulk-progress-run-bg]', function() {
+            minimizeBulkProgress('run_in_background');
         });
 
         $modal.on('click', '[data-bbai-bulk-progress-primary], [data-bbai-bulk-progress-secondary]', function() {
