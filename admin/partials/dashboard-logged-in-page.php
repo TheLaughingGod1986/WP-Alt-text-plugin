@@ -115,11 +115,6 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 				: esc_html__( 'Accessibility coverage improving.', 'beepbeep-ai-alt-text-generator' );
 			?></p>
 			<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep this at 100% as you upload', 'beepbeep-ai-alt-text-generator' ); ?></p>
-			<a
-				href="#"
-				class="bbai-li-insight-card__cta"
-				data-action="show-upgrade-modal"
-			><?php esc_html_e( 'Enable auto ALT text', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			</div>
 		</article>
 		<article class="bbai-li-insight-card bbai-stat-card secondary">
@@ -147,11 +142,6 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 				: esc_html__( 'Generate ALT in bulk to see time saved here.', 'beepbeep-ai-alt-text-generator' );
 			?></p>
 			<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep saving time automatically', 'beepbeep-ai-alt-text-generator' ); ?></p>
-			<a
-				href="#"
-				class="bbai-li-insight-card__cta"
-				data-action="show-upgrade-modal"
-			><?php esc_html_e( 'Enable auto optimisation', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			</div>
 		</article>
 		<article class="bbai-li-insight-card bbai-stat-card tertiary">
@@ -176,12 +166,7 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 				? esc_html__( 'Helping search engines understand your content.', 'beepbeep-ai-alt-text-generator' )
 				: esc_html__( 'Generate ALT text to start improving rankings.', 'beepbeep-ai-alt-text-generator' );
 			?></p>
-			<p class="bbai-li-insight-card__support"><?php esc_html_e( 'New uploads won’t be optimised automatically', 'beepbeep-ai-alt-text-generator' ); ?></p>
-			<a
-				href="#"
-				class="bbai-li-insight-card__cta"
-				data-action="show-upgrade-modal"
-			><?php esc_html_e( 'Automate future images', 'beepbeep-ai-alt-text-generator' ); ?></a>
+			<p class="bbai-li-insight-card__support"><?php esc_html_e( ‘New uploads won’t be optimised automatically’, ‘beepbeep-ai-alt-text-generator’ ); ?></p>
 			</div>
 		</article>
 	</section>

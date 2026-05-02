@@ -940,7 +940,7 @@ class Logged_In_Dashboard_Resolver {
 
 				return [
 					'badge'         => [ 'text' => __( 'All optimised', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'green' ],
-					'headline'      => __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' ),
+					'headline'      => __( 'Your media library is fully optimised 🎉', 'beepbeep-ai-alt-text-generator' ),
 					'support'       => $all_clear_support,
 					'variant'       => 'success',
 					'primary_cta'   => [
