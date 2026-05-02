@@ -820,7 +820,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 					aria-label="<?php echo esc_attr( $bbai_hero_credit_bar_aria ); ?>"
 					data-bbai-hero-credit-bar="1"
 				>
-					<div class="bbai-credit-fill" data-bbai-hero-credit-fill="1" style="--bbai-credit-percent: <?php echo esc_attr( (string) $bbai_hero_c_pct ); ?>%;"></div>
+					<div class="bbai-credit-fill" data-bbai-hero-credit-fill="1" data-bbai-credit-animated="0" style="--bbai-credit-percent: <?php echo esc_attr( (string) $bbai_hero_c_pct ); ?>%;"></div>
 				</div>
 				<p
 					class="bbai-credit-context<?php echo $bbai_hero_c_rem < 10 ? ' bbai-credit-context--warning' : ''; ?>"
@@ -3808,6 +3808,21 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return;
 		}
 
+		// Staleness guard: when an optimistic deduction is pending, ignore a backend
+		// response that reports MORE remaining than we've already displayed — that
+		// response predates the generation and would flash the bar upward before the
+		// real confirmation arrives.
+		if ( window.bbaiOptimisticCreditPending && prev.remaining !== null && remaining > prev.remaining ) {
+			if ( creditsDebug ) {
+				logCredits( 'staleness guard skipped', { stale_remaining: remaining, optimistic_remaining: prev.remaining } );
+			}
+			return;
+		}
+		// Clear the optimistic pending flag once the backend confirms equal or lower remaining.
+		if ( window.bbaiOptimisticCreditPending && remaining <= prev.remaining ) {
+			window.bbaiOptimisticCreditPending = false;
+		}
+
 		window.bbaiLastRenderedCredits = { used: used, limit: total, remaining: remaining, pct: pct };
 		if ( creditsDebug ) {
 			logCredits( 'updated', { previous: prev, next: window.bbaiLastRenderedCredits } );
@@ -3868,9 +3883,20 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var fill = wrap.querySelector( '[data-bbai-hero-credit-fill="1"]' );
 		if ( fill ) {
 			var nextPct = String( pct ) + '%';
-			// Only update when different to avoid restarting CSS transitions.
+			var isFirstPaint = fill.getAttribute( 'data-bbai-credit-animated' ) === '0';
 			if ( fill.style.getPropertyValue( '--bbai-credit-percent' ) !== nextPct ) {
 				fill.style.setProperty( '--bbai-credit-percent', nextPct );
+				if ( ! isFirstPaint ) {
+					// Micro-feedback glow: briefly highlight the bar on update.
+					fill.classList.add( 'bbai-credit-fill--updated' );
+					window.setTimeout( function () {
+						fill.classList.remove( 'bbai-credit-fill--updated' );
+					}, 500 );
+				}
+			}
+			// Allow CSS transitions after the first real update.
+			if ( isFirstPaint ) {
+				fill.setAttribute( 'data-bbai-credit-animated', '1' );
 			}
 		}
 
@@ -5419,7 +5445,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		triggerDashboardTransitionFeedback( detail.previousState || '', detail.nextState || '' );
 	} );
 
-	document.addEventListener( 'bbai:generation:finished', function () {
+	document.addEventListener( 'bbai:generation:finished', function ( event ) {
 		var primaryCta = getPrimaryCta();
 		releaseInlineGenerationLock();
 		dashboardPolling.optimisticAction = '';
@@ -5427,6 +5453,33 @@ $bbai_hero_credit_bar_aria = sprintf(
 			setBusy( primaryCta, false );
 		}
 		if ( safetyTimer ) { clearTimeout( safetyTimer ); safetyTimer = null; }
+
+		// Optimistic credit deduction: immediately reflect the cost of this batch
+		// so the credit bar updates before the next poll (up to 15 s later).
+		var detail = event && event.detail ? event.detail : {};
+		var successes = Math.max( 0, parseInt( detail.successes, 10 ) || 0 );
+		if ( successes > 0 ) {
+			var root = getDashboardRoot();
+			var curUsed = root ? parseInt( root.getAttribute( 'data-bbai-credits-used' ) || '', 10 ) : NaN;
+			var curTotal = root ? parseInt( root.getAttribute( 'data-bbai-credits-total' ) || '', 10 ) : NaN;
+			var curRemaining = root ? parseInt( root.getAttribute( 'data-bbai-credits-remaining' ) || '', 10 ) : NaN;
+			if ( ! isNaN( curRemaining ) && ! isNaN( curUsed ) && ! isNaN( curTotal ) ) {
+				var newRemaining = Math.max( 0, curRemaining - successes );
+				var newUsed = Math.min( curTotal, curUsed + successes );
+				// Flag that the next backend poll may still carry the pre-generation count.
+				window.bbaiOptimisticCreditPending = true;
+				syncHeroCreditBlockFromTruth( {
+					credits: {
+						used: newUsed,
+						total: curTotal,
+						remaining: newRemaining,
+					},
+				} );
+			}
+		}
+
+		// Kick off an immediate poll so the backend value reconciles quickly.
+		schedulePolling( 'generation_completed', 0 );
 	} );
 
 	document.addEventListener( 'bbai:dashboard-approve-all-pending', function () {

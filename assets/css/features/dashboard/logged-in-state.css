@@ -4285,6 +4285,17 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-fill 
     transition: width 0.3s ease;
 }
 
+/* Suppress 0→N animation on first paint; JS sets attribute to "1" after first real update. */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-fill[data-bbai-credit-animated="0"] {
+    transition: none !important;
+}
+
+/* Micro-feedback glow after an optimistic or polled credit update. */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-fill--updated {
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+    transition: box-shadow 0.5s ease, width 0.3s ease;
+}
+
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-usage[data-credit-state="low"] .bbai-credit-fill {
     background: #f59e0b;
 }
