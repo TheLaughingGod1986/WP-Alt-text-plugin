@@ -8606,3 +8606,67 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
         animation: none !important;
     }
 }
+
+/* ─── Dashboard Banner Layout Refinement ─────────────────────────────────── */
+
+/* Task 1: Center and rebalance — grid layout (content left, CTA right) */
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 2px 20px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight > * {
+    grid-column: 1;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight .bbai-status-insight__header {
+    justify-content: flex-start;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight .bbai-status-insight__text {
+    text-align: left;
+}
+
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight .bbai-status-insight__actions {
+    grid-column: 2;
+    grid-row: 1 / span 10;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 0;
+}
+
+/* Task 3: Reduce dead space below banner and above stats */
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight {
+    margin-bottom: 16px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-row--3 .bbai-dashboard-stats-wrap {
+    margin-top: 12px;
+}
+
+/* Task 4: Anchor the banner visually with subtle border + gradient */
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight:not(.bbai-status-insight--warning):not(.bbai-status-insight--danger):not(.bbai-status-insight--success) {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(248, 250, 252, 1) 100%
+    ) !important;
+}
+
+/* Task 5: Ensure CTA button is perfectly vertically centred at 40px */
+#bbai-dashboard-main .bbai-status-card .bbai-status-insight .bbai-status-insight__action--button {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
