@@ -228,7 +228,9 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         $bbai_auth_state = 'anonymous';
         $bbai_quota_type = 'trial';
     }
-    $bbai_is_anonymous_trial = ('anonymous' === $bbai_auth_state) || ('trial' === $bbai_quota_type) || !empty($bbai_usage_stats['is_trial']) || $bbai_is_guest_trial;
+    $bbai_is_anonymous_trial = !$bbai_has_connected_account && (
+        ('anonymous' === $bbai_auth_state) || ('trial' === $bbai_quota_type) || !empty($bbai_usage_stats['is_trial']) || $bbai_is_guest_trial
+    );
 
     if ($bbai_is_anonymous_trial) {
         $bbai_auth_state = 'anonymous';

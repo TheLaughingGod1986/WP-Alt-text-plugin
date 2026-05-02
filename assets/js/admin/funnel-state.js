@@ -215,11 +215,15 @@
         if (!root) {
             return 0;
         }
-
-        return parseCount(
-            root.getAttribute('data-bbai-trial-remaining') ||
-            root.getAttribute('data-bbai-credits-remaining')
-        );
+        var trialAttr = root.getAttribute('data-bbai-trial-remaining');
+        if (trialAttr !== null && trialAttr !== '') {
+            return parseCount(trialAttr);
+        }
+        if (root.getAttribute('data-bbai-is-guest-trial') === '1' &&
+                root.getAttribute('data-bbai-auth-state') !== 'authenticated') {
+            return parseCount(root.getAttribute('data-bbai-credits-remaining'));
+        }
+        return 0;
     }
 
     function isPremiumUser(root) {
@@ -231,13 +235,16 @@
     }
 
     function isGuestTrialUser(root) {
-        return !!root &&
-            root.getAttribute('data-bbai-is-guest-trial') === '1' &&
+        if (!root) { return false; }
+        if (root.getAttribute('data-bbai-auth-state') === 'authenticated') { return false; }
+        return root.getAttribute('data-bbai-is-guest-trial') === '1' &&
             root.getAttribute('data-bbai-has-connected-account') !== '1';
     }
 
     function isDashboardGuest(root) {
-        return !!root && root.getAttribute('data-bbai-has-connected-account') !== '1';
+        if (!root) { return false; }
+        if (root.getAttribute('data-bbai-auth-state') === 'authenticated') { return false; }
+        return root.getAttribute('data-bbai-has-connected-account') !== '1';
     }
 
     function hasRecentSuccess(root) {
@@ -972,9 +979,11 @@
 
     function buildHeroModel(root, state) {
         var counts = getCounts(root);
+        var isAuthenticatedUser = root.getAttribute('data-bbai-auth-state') === 'authenticated';
         var funnelModeRoot = root.getAttribute('data-bbai-dashboard-funnel');
         var guestExhaustedRoot = root.getAttribute('data-bbai-trial-exhausted') === '1';
-        if (funnelModeRoot === 'trial_exhausted_guest' || (funnelModeRoot === 'guest_dashboard' && guestExhaustedRoot)) {
+        if (!isAuthenticatedUser &&
+                (funnelModeRoot === 'trial_exhausted_guest' || (funnelModeRoot === 'guest_dashboard' && guestExhaustedRoot))) {
             return buildExhaustedTrialHeroModel(root, counts);
         }
         var actionable = getActionableState(root, counts);
@@ -984,7 +993,7 @@
         var reviewAction = buildReviewPrimaryAction(root);
         var defaultDescription = 'Automatically generate SEO-friendly ALT text';
         var reviewDescription = 'Quickly review generated ALT text before publishing.';
-        var guestMidTrial = isDashboardGuest(root) && getTrialCreditsRemaining(root) > 0;
+        var guestMidTrial = !isAuthenticatedUser && isDashboardGuest(root) && getTrialCreditsRemaining(root) > 0;
         var donutValue = actionable.key === ACTIONABLE_STATES.MISSING
             ? formatCount(actionable.actionableCount)
             : (actionable.key === ACTIONABLE_STATES.REVIEW ? formatCount(actionable.reviewCount) : '100%');
@@ -1057,7 +1066,7 @@
             });
         }
 
-        if (isDashboardGuest(root) && getTrialCreditsRemaining(root) <= 0) {
+        if (!isAuthenticatedUser && isDashboardGuest(root) && getTrialCreditsRemaining(root) <= 0) {
             return buildExhaustedTrialHeroModel(root, counts);
         }
 

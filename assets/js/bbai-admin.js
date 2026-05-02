@@ -2002,6 +2002,28 @@
     }
 
     function applyDashboardState(forcePreviewRefresh) {
+        if (window.BBAI_DEBUG_DASHBOARD_STATE) {
+            (function() {
+                var r = getDashboardRootNode();
+                console.debug('[BBAI dashboard state]', {
+                    authState: r ? r.getAttribute('data-bbai-auth-state') : '',
+                    isGuestTrial: r ? r.getAttribute('data-bbai-is-guest-trial') : '',
+                    hasConnectedAccount: r ? r.getAttribute('data-bbai-has-connected-account') : '',
+                    planLabel: r ? r.getAttribute('data-bbai-plan-label') : '',
+                    isPremium: r ? r.getAttribute('data-bbai-is-premium') : '',
+                    primaryAction: r ? r.getAttribute('data-bbai-primary-action') : '',
+                    funnelState: r ? r.getAttribute('data-bbai-funnel-state') : '',
+                    missingCount: r ? r.getAttribute('data-bbai-missing-count') : '',
+                    weakCount: r ? r.getAttribute('data-bbai-weak-count') : '',
+                    optimizedCount: r ? r.getAttribute('data-bbai-optimized-count') : '',
+                    totalCount: r ? r.getAttribute('data-bbai-total-count') : '',
+                    creditsRemaining: r ? r.getAttribute('data-bbai-credits-remaining') : '',
+                    trialRemaining: r ? r.getAttribute('data-bbai-trial-remaining') : '',
+                    trialExhausted: r ? r.getAttribute('data-bbai-trial-exhausted') : '',
+                    lockedCtaMode: r ? r.getAttribute('data-bbai-locked-cta-mode') : ''
+                });
+            }());
+        }
         var state = getDashboardState();
         var generationLocked = isOutOfCreditsFromUsage();
         var selector = [
