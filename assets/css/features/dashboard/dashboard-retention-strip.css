@@ -2,6 +2,64 @@
  * Phase 14 — Retention strip + library nudge (scoped; no design-system refactor).
  */
 
+/* --------------------------------------------------------------------------
+ * Bottom banner — layout, spacing, and visual anchor
+ * (Tasks 1–5 from the Dashboard Layout Fix spec)
+ * -------------------------------------------------------------------------- */
+
+/* Tasks 3 & 4 — Anchor the banner visually; reduce dead space below */
+.bbai-bottom-banner {
+    margin-bottom: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(248, 250, 252, 1) 100%
+    );
+}
+
+/* Task 1 — Center the inner grid (content + CTA as one balanced unit) */
+.bbai-bottom-banner__inner {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+}
+
+.bbai-bottom-banner__content {
+    text-align: left;
+}
+
+.bbai-bottom-banner__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Task 2 — Improve progress bar weight */
+.bbai-bottom-banner__progress {
+    max-width: 420px;
+    margin-top: 6px;
+    height: 6px;
+    border-radius: 999px;
+}
+
+/* Task 5 — Align CTA button height perfectly */
+.bbai-bottom-banner__actions .bbai-btn {
+    height: 40px;
+    display: flex;
+    align-items: center;
+}
+
+/* Task 3 — Reduce dead space between banner and stat cards below */
+.bbai-dashboard-stats {
+    margin-top: 12px;
+}
+
+/* -------------------------------------------------------------------------- */
+
 .bbai-retention-strip {
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr) auto;
