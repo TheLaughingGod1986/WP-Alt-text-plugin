@@ -4126,8 +4126,18 @@ $bbai_hero_credit_bar_aria = sprintf(
 			case 'ALL_CLEAR':
 				tone = 'ok';
 				items.push( TEXT.readyForNewUploads );
-				if ( credits.remaining > 0 ) {
-					items.push( formatSingularPlural( credits.remaining, TEXT.creditLeftSingular, TEXT.creditLeftPlural ) );
+				/* Prefer the reconciled root-attribute value when the new state endpoint owns
+				   credits (avoids a stale truth payload showing the wrong count). */
+				var allClearRoot = getDashboardRoot();
+				var allClearRem = credits.remaining;
+				if ( window.BBAI_DASHBOARD_STATE_ENDPOINT_ACTIVE && allClearRoot ) {
+					var rootRem = parseInt( allClearRoot.getAttribute( 'data-bbai-credits-remaining' ) || '', 10 );
+					if ( ! isNaN( rootRem ) ) {
+						allClearRem = rootRem;
+					}
+				}
+				if ( allClearRem > 0 ) {
+					items.push( formatSingularPlural( allClearRem, TEXT.creditLeftSingular, TEXT.creditLeftPlural ) );
 				}
 				if ( lastRunAt ) {
 					items.push( replaceTokens( TEXT.lastRun, { '%s': formatRelativeAge( lastRunAt ) } ) );
