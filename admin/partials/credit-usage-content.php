@@ -444,7 +444,24 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
                 <a href="<?php echo esc_url($bbai_usage_billing_portal); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Customer portal & invoices', 'beepbeep-ai-alt-text-generator'); ?></a>
             <?php endif; ?>
             <?php if (!$bbai_is_pro_plan) : ?>
-                <a href="<?php echo esc_url($bbai_plan_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('Plans & pricing', 'beepbeep-ai-alt-text-generator'); ?></a>
+                <?php
+                $bbai_pricing_plan_slug = strtolower($bbai_surf_plan_label ?: 'free');
+                $bbai_pricing_url = add_query_arg([
+                    'source'  => 'plugin_dashboard',
+                    'plan'    => $bbai_pricing_plan_slug,
+                    'context' => 'billing',
+                ], 'https://oppti.dev/plugins/alt-text');
+                $bbai_pricing_cta_label = ( 'free' === $bbai_pricing_plan_slug )
+                    ? __('Upgrade plan', 'beepbeep-ai-alt-text-generator')
+                    : __('View plans', 'beepbeep-ai-alt-text-generator');
+                ?>
+                <a
+                    href="<?php echo esc_url($bbai_pricing_url); ?>"
+                    class="bbai-btn bbai-btn-secondary bbai-btn-sm"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-bbai-track="plans_pricing_click"
+                ><?php echo esc_html($bbai_pricing_cta_label); ?></a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

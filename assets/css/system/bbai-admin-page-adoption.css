@@ -191,6 +191,16 @@ body.bbai-dashboard .bbai-usage-billing__links a:hover {
     text-decoration: underline;
 }
 
+body.bbai-dashboard .bbai-usage-billing__links a.bbai-btn {
+    color: #344054;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+body.bbai-dashboard .bbai-usage-billing__links a.bbai-btn:hover {
+    text-decoration: none;
+}
+
 body.bbai-dashboard .bbai-usage-billing__note {
     margin: var(--bbai-admin-space-3) 0 0;
     font-size: var(--bbai-admin-type-caption);

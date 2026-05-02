@@ -1365,6 +1365,16 @@
         });
     }
 
+    function bindPricingCta() {
+        $(document).on('click', '[data-bbai-track="plans_pricing_click"]', function () {
+            track('plans_pricing_clicked', {
+                source: 'dashboard_billing',
+                plan: getCurrentPlan(),
+                credits_remaining: getRemainingCredits(),
+            });
+        });
+    }
+
     function bindCustomEvents() {
         document.addEventListener('bbai:analytics', function (e) {
             var d = e.detail || {};
@@ -1409,6 +1419,7 @@
         bindManualEditSignal();
         bindAnalyticsUsage();
         bindWooCommerceUsage();
+        bindPricingCta();
         bindCustomEvents();
     });
 
