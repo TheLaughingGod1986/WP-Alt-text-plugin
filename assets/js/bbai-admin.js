@@ -9483,7 +9483,12 @@
             insightIcon = '<span class="bbai-status-insight__icon" aria-hidden="true">⚠</span>';
             primaryAction = 'generate-missing';
             primaryBbaiAction = 'generate_missing';
-            primaryLabel = __('Generate ALT text', 'beepbeep-ai-alt-text-generator');
+            if (stats.images_missing_alt === 1) {
+                primaryLabel = __('Finish the last image', 'beepbeep-ai-alt-text-generator');
+                insightGuidance = __('Continue from where you left off.', 'beepbeep-ai-alt-text-generator');
+            } else {
+                primaryLabel = __('Generate ALT text', 'beepbeep-ai-alt-text-generator');
+            }
             secondaryHref = missingLibraryUrl || libraryUrl || '#';
             secondaryLabel = __('Open ALT Library', 'beepbeep-ai-alt-text-generator');
         } else {
