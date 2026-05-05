@@ -74,6 +74,6 @@ body.bbai-dashboard .bbai-first-win-strip .bbai-btn {
 
 /* Retention: same vertical rhythm as other strips, lighter than a second banner */
 body.bbai-dashboard .bbai-retention-strip {
-    margin-bottom: var(--card-gap, var(--bbai-space-4));
+    margin-bottom: 16px;
     box-shadow: none;
 }

@@ -1235,6 +1235,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		pause: '<?php echo esc_js( __( 'Pause', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		pausing: '<?php echo esc_js( __( 'Pausing…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		openAltLibrary: '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		uploadMoreImages: '<?php echo esc_js( __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveAll: '<?php echo esc_js( __( 'Approve all', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		openReviewQueue: '<?php echo esc_js( __( 'Open review queue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewIndividually: '<?php echo esc_js( __( 'Review individually →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1650,11 +1651,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 	function normalizeCounts( counts ) {
 		var source = counts && typeof counts === 'object' ? counts : {};
-		var missing = parseInt( firstDefined( source.missing, source.missing_alt, source.missingAlt, 0 ), 10 );
-		var review = parseInt( firstDefined( source.review, source.to_review, source.toReview, source.needs_review, source.needsReview, source.weak, 0 ), 10 );
-		var complete = parseInt( firstDefined( source.optimized, source.complete, source.optimised, 0 ), 10 );
+		var missing = parseInt( firstDefined( source.missing, source.missing_alt, source.missingAlt, source.images_missing_alt, source.imagesMissingAlt, source.missing_count, source.missingCount, 0 ), 10 );
+		var review = parseInt( firstDefined( source.review, source.to_review, source.toReview, source.needs_review, source.needsReview, source.needs_review_count, source.needsReviewCount, source.ready_for_review, source.readyForReview, source.ready_for_review_count, source.readyForReviewCount, source.weak, source.weak_count, source.weakCount, 0 ), 10 );
+		var complete = parseInt( firstDefined( source.optimized, source.complete, source.optimised, source.optimized_count, source.optimizedCount, source.optimised_count, source.optimisedCount, 0 ), 10 );
 		var failed = parseInt( firstDefined( source.failed, 0 ), 10 );
-		var total = parseInt( firstDefined( source.total, source.total_images, source.totalImages, missing + review + complete + failed ), 10 );
+		var total = parseInt( firstDefined( source.total, source.total_images, source.totalImages, source.total_count, source.totalCount, missing + review + complete + failed ), 10 );
 
 		missing = Math.max( 0, isNaN( missing ) ? 0 : missing );
 		review = Math.max( 0, isNaN( review ) ? 0 : review );
@@ -2113,11 +2114,34 @@ $bbai_hero_credit_bar_aria = sprintf(
 	function getTruthCredits( payload ) {
 		var direct = payload && payload.credits && typeof payload.credits === 'object' ? payload.credits : null;
 		var embedded = null;
+		var hasCredits;
+		var fallbackRoot;
+		var fallbackHero;
+		var fallbackSource;
+		var fallbackUsed;
+		var fallbackTotal;
+		var fallbackRemaining;
 		if ( payload && payload.meta && payload.meta.state_truth ) {
 			var stx = normalizeStateTruthPayload( payload.meta.state_truth );
 			embedded = stx && stx.credits && typeof stx.credits === 'object' ? stx.credits : null;
 		}
 		var credits = ( direct && Object.keys( direct ).length > 0 ) ? direct : ( embedded || {} );
+		hasCredits = credits && Object.keys( credits ).length > 0;
+		if ( ! hasCredits ) {
+			fallbackRoot = getDashboardRoot();
+			fallbackHero = hero ? hero.querySelector( '[data-bbai-hero-credit-usage]' ) : null;
+			fallbackSource = fallbackRoot || fallbackHero;
+			fallbackUsed = fallbackSource ? parseInt( fallbackSource.getAttribute( fallbackRoot ? 'data-bbai-credits-used' : 'data-bbai-hero-credits-used' ) || '0', 10 ) : 0;
+			fallbackTotal = fallbackSource ? parseInt( fallbackSource.getAttribute( fallbackRoot ? 'data-bbai-credits-total' : 'data-bbai-hero-credits-limit' ) || '1', 10 ) : 1;
+			fallbackRemaining = fallbackSource ? parseInt( fallbackSource.getAttribute( fallbackRoot ? 'data-bbai-credits-remaining' : 'data-bbai-hero-credits-remaining' ) || String( fallbackTotal - fallbackUsed ), 10 ) : Math.max( 0, fallbackTotal - fallbackUsed );
+			return {
+				used: Math.max( 0, isNaN( fallbackUsed ) ? 0 : fallbackUsed ),
+				total: Math.max( 1, isNaN( fallbackTotal ) ? 1 : fallbackTotal ),
+				remaining: Math.max( 0, isNaN( fallbackRemaining ) ? 0 : fallbackRemaining ),
+				isPro: fallbackRoot ? fallbackRoot.getAttribute( 'data-bbai-is-premium' ) === '1' : false,
+				plan: '',
+			};
+		}
 		var usedExplicit = credits.used != null || credits.credits_used != null || credits.creditsUsed != null;
 		var usedRaw = parseInt( firstDefined( credits.used, credits.credits_used, credits.creditsUsed, '' ), 10 );
 		var totalRaw = parseInt( firstDefined( credits.total, credits.limit, credits.credits_total, credits.creditsTotal, 1 ), 10 );
@@ -3640,9 +3664,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 				}
 				badge = badge || { text: TEXT.allOptimisedBadge, mod: 'green' };
 				primaryCta = primaryCta || {
-					label: TEXT.openAltLibrary,
+					label: TEXT.uploadMoreImages,
 					action: 'navigate',
-					href: getLibraryHref(),
+					href: '<?php echo esc_js( admin_url( 'upload.php' ) ); ?>',
 				};
 				secondaryCta = secondaryCta || {
 					label: TEXT.rescanLibrary,
@@ -3667,6 +3691,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 				variant: variant,
 				primary_cta: primaryCta,
 				secondary_cta: secondaryCta,
+				library_cta: 'ALL_CLEAR' === state ? {
+					label: TEXT.openAltLibrary,
+					action: 'navigate',
+					href: getLibraryHref(),
+				} : null,
 				summary: summary,
 			},
 			donut: buildStableDonutFromTruth( state, truth ),
@@ -3959,6 +3988,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		updateInsightCardsFromTruth( truth );
 		updateSummaryValueByLabel( TEXT.missingLabel, formatCount( counts.missing ), counts.missing > 0 ? 'alert' : 'ok' );
 		updateSummaryValueByLabel( TEXT.reviewLabel, formatCount( counts.review ), counts.review > 0 ? 'primary' : 'ok' );
+		syncRetentionStripFromTruth( truth );
 		renderActivityStripFromTruth( truth, meta );
 		renderImpactLineFromTruth( truth, meta );
 		syncStatusLineForTruth( truth, meta );
@@ -3974,13 +4004,16 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var countsHash = getTruthCountsHash( truth );
 		var credits = getTruthCredits( truth );
 		var state = getStateTruthState( truth );
+		var rawCounts = getTruthRawCounts( truth );
+		var hasAuthoritativeCounts = hasCountValues( rawCounts ) || !! countsHash || 'ALL_CLEAR' === state || 'NEEDS_REVIEW' === state;
 		var preserveLocalCounts = false;
 
 		if ( root ) {
 			// Dashboard and ALT Library must agree on coverage counts.
 			// The backend "truth" payload (jobs/ledger) can lag behind the local Media Library scan,
-			// so never overwrite the root coverage counts when we already have scan results.
-			preserveLocalCounts = root.getAttribute( 'data-bbai-has-scan-results' ) === '1';
+			// so only preserve local scan counts when the truth payload does not include
+			// authoritative count fields. Otherwise stale scan counts leak into the strip.
+			preserveLocalCounts = root.getAttribute( 'data-bbai-has-scan-results' ) === '1' && ! hasAuthoritativeCounts;
 			if ( ! preserveLocalCounts ) {
 				root.setAttribute( 'data-bbai-missing-count', String( counts.missing ) );
 				root.setAttribute( 'data-bbai-weak-count', String( counts.review ) );
@@ -4014,6 +4047,162 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 		if ( root && typeof window.jQuery !== 'undefined' ) {
 			window.jQuery( document ).trigger( 'bbai:usage-updated' );
+		}
+	}
+
+	function syncRetentionStripAction( link, label, href, action, bbaiAction ) {
+		if ( ! link ) {
+			return;
+		}
+		if ( link.textContent !== label ) {
+			link.textContent = label;
+		}
+		link.setAttribute( 'href', href || '#' );
+		if ( action ) {
+			link.setAttribute( 'data-action', action );
+		} else {
+			link.removeAttribute( 'data-action' );
+		}
+		if ( bbaiAction ) {
+			link.setAttribute( 'data-bbai-action', bbaiAction );
+		} else {
+			link.removeAttribute( 'data-bbai-action' );
+		}
+	}
+
+	function syncRetentionStripFromTruth( truth ) {
+		var strip = document.querySelector( '[data-bbai-retention-strip="1"].bbai-retention-strip' );
+		var counts;
+		var missing;
+		var review;
+		var complete;
+		var total;
+		var attention;
+		var pct;
+		var headline;
+		var supporting;
+		var processed;
+		var primaryLabel;
+		var primaryHref;
+		var primaryAction;
+		var primaryBbaiAction;
+		var secondaryLabel;
+		var secondaryHref;
+		var secondaryAction;
+		var secondaryBbaiAction;
+		var headlineNode;
+		var supportingNode;
+		var deltaNode;
+		var bar;
+		var fill;
+		var processedNode;
+		var actions;
+		var primary;
+		var secondary;
+		var hint;
+
+		if ( ! strip ) {
+			return;
+		}
+
+		counts = getTruthCounts( truth );
+		missing = Math.max( 0, counts.missing || 0 );
+		review = Math.max( 0, counts.review || 0 );
+		complete = Math.max( 0, counts.complete || 0 );
+		total = Math.max( missing + review + complete, counts.total || 0 );
+		attention = missing + review;
+		pct = total > 0 ? Math.max( 0, Math.min( 100, Math.round( 100 * complete / total ) ) ) : 0;
+
+		if ( attention <= 0 ) {
+			pct = 100;
+			headline = '<?php echo esc_js( __( 'You’re 100% optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			supporting = '<?php echo esc_js( __( 'All images are done.', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			processed = formatCount( total ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryLabel = TEXT.uploadMoreImages || '<?php echo esc_js( __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryHref = '<?php echo esc_js( admin_url( 'upload.php' ) ); ?>';
+			primaryAction = 'navigate';
+			primaryBbaiAction = '';
+			secondaryLabel = TEXT.openAltLibrary || '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			secondaryHref = getLibraryHref();
+			secondaryAction = 'navigate';
+			secondaryBbaiAction = '';
+			strip.setAttribute( 'data-bbai-retention-trigger', 'all_clear' );
+		} else if ( missing > 0 ) {
+			headline = '<?php echo esc_js( __( 'You’re %1$s% optimised — finish the last %2$s%', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+				.replace( '%1$s', String( pct ) )
+				.replace( '%2$s', String( Math.max( 1, 100 - pct ) ) );
+			supporting = formatSingularPlural(
+				attention,
+				'<?php echo esc_js( __( '%s image still needs attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				'<?php echo esc_js( __( '%s images still need attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+			);
+			processed = formatCount( complete ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryLabel = TEXT.generateMissingAlt || '<?php echo esc_js( __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryHref = '#';
+			primaryAction = 'generate-missing';
+			primaryBbaiAction = 'generate_missing';
+			secondaryLabel = TEXT.openAltLibrary || '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			secondaryHref = getLibraryHref();
+			secondaryAction = 'navigate';
+			secondaryBbaiAction = '';
+			strip.setAttribute( 'data-bbai-retention-trigger', 'missing_alt' );
+		} else {
+			headline = formatSingularPlural(
+				review,
+				'<?php echo esc_js( __( '%s image needs review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				'<?php echo esc_js( __( '%s images need review', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+			);
+			supporting = formatSingularPlural(
+				review,
+				'<?php echo esc_js( __( '%s image still needs attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				'<?php echo esc_js( __( '%s images still need attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+			);
+			processed = formatCount( complete ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryLabel = '<?php echo esc_js( __( 'Review now', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryHref = getReviewLibraryHref();
+			primaryAction = 'navigate';
+			primaryBbaiAction = '';
+			secondaryLabel = '<?php echo esc_js( __( 'Review ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			secondaryHref = getReviewLibraryHref();
+			secondaryAction = 'navigate';
+			secondaryBbaiAction = '';
+			strip.setAttribute( 'data-bbai-retention-trigger', 'needs_review' );
+		}
+
+		headlineNode = strip.querySelector( '.bbai-retention-strip__headline' );
+		supportingNode = strip.querySelector( '.bbai-retention-strip__supporting' );
+		deltaNode = strip.querySelector( '.bbai-retention-strip__delta' );
+		bar = strip.querySelector( '.bbai-retention-strip__bar' );
+		fill = strip.querySelector( '.bbai-retention-strip__bar-fill' );
+		processedNode = strip.querySelector( '.bbai-retention-strip__processed' );
+		actions = strip.querySelector( '.bbai-retention-strip__actions' );
+		primary = actions ? actions.querySelector( '.bbai-btn-primary' ) : null;
+		secondary = actions ? actions.querySelector( '.bbai-btn-secondary' ) : null;
+		hint = strip.querySelector( '.bbai-retention-strip__upgrade-hint' );
+
+		if ( headlineNode && headlineNode.textContent !== headline ) {
+			headlineNode.textContent = headline;
+		}
+		if ( supportingNode && supportingNode.textContent !== supporting ) {
+			supportingNode.textContent = supporting;
+		}
+		if ( deltaNode ) {
+			deltaNode.textContent = '';
+			deltaNode.hidden = true;
+		}
+		if ( bar ) {
+			bar.setAttribute( 'aria-valuenow', String( pct ) );
+		}
+		if ( fill ) {
+			fill.style.width = String( pct ) + '%';
+		}
+		if ( processedNode && processedNode.textContent !== processed ) {
+			processedNode.textContent = processed;
+		}
+		syncRetentionStripAction( primary, primaryLabel, primaryHref, primaryAction, primaryBbaiAction );
+		syncRetentionStripAction( secondary, secondaryLabel, secondaryHref, secondaryAction, secondaryBbaiAction );
+		if ( hint && attention <= 0 ) {
+			hint.textContent = '<?php echo esc_js( __( 'Keep every new upload optimised with Growth.', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 		}
 	}
 
@@ -4592,6 +4781,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		dashboardPolling.bootstrapSyncApplied = false;
 		syncDashboardRootFromTruth( truth );
 		updateInsightCardsFromTruth( truth );
+		syncRetentionStripFromTruth( truth );
 		if ( ! opts.skipActivityStrip ) {
 			renderActivityStripFromTruth( truth, statusStripMeta );
 		}
@@ -4830,12 +5020,16 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var nextRenderSignature;
 		var previousRenderParts;
 		var nextRenderParts;
-		if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated ) {
+		if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated && ! domTruthMismatch( truth ) ) {
+			syncDashboardRootFromTruth( truth );
+			syncRetentionStripFromTruth( truth );
 			markTruthSeenWithoutUiUpdate( truth );
 			schedulePolling( 'hydration_guard' );
 			return Promise.resolve( truth );
 		}
 		if ( shouldSkipTruthUiUpdate( truth, context, forceResolved ) ) {
+			syncDashboardRootFromTruth( truth );
+			syncRetentionStripFromTruth( truth );
 			markTruthSeenWithoutUiUpdate( truth );
 			schedulePolling( 'counts_unchanged' );
 			return Promise.resolve( truth );
@@ -4908,6 +5102,126 @@ $bbai_hero_credit_bar_aria = sprintf(
 		} );
 	}
 
+	function hasStartupDashboardDomMismatch() {
+		var root = getDashboardRoot();
+		var state = String( hero.getAttribute( 'data-bbai-li-state' ) || '' ).toUpperCase();
+		var missing;
+		var review;
+		if ( ! root ) {
+			return false;
+		}
+		missing = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-missing-count' ) || '0', 10 ) || 0 );
+		review = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-weak-count' ) || '0', 10 ) || 0 );
+		if ( ( 'QUEUED' === state || 'PROCESSING' === state || 'MISSING_ALT' === state ) && 0 === missing && review > 0 ) {
+			return true;
+		}
+		if ( 'NEEDS_REVIEW' === state && 0 === review && missing > 0 ) {
+			return true;
+		}
+		if ( 'NEEDS_REVIEW' === state && 0 === review && 0 === missing ) {
+			return true;
+		}
+		if ( ( 'DONE' === state || 'ALL_CLEAR' === state ) && ( missing > 0 || review > 0 ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	function buildStartupTruthFromDashboardRoot() {
+		var root = getDashboardRoot();
+		var missing;
+		var review;
+		var complete;
+		var failed;
+		var total;
+		var used;
+		var limit;
+		var remaining;
+		var state;
+		if ( ! root ) {
+			return null;
+		}
+		missing = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-missing-count' ) || '0', 10 ) || 0 );
+		review = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-weak-count' ) || '0', 10 ) || 0 );
+		complete = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-optimized-count' ) || '0', 10 ) || 0 );
+		failed = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-failed-count' ) || '0', 10 ) || 0 );
+		total = Math.max( missing + review + complete + failed, parseInt( root.getAttribute( 'data-bbai-total-count' ) || '0', 10 ) || 0 );
+		used = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-credits-used' ) || '0', 10 ) || 0 );
+		limit = Math.max( 1, parseInt( root.getAttribute( 'data-bbai-credits-total' ) || '1', 10 ) || 1 );
+		remaining = Math.max( 0, parseInt( root.getAttribute( 'data-bbai-credits-remaining' ) || String( limit - used ), 10 ) || 0 );
+		if ( missing > 0 && review > 0 ) {
+			state = 'MIXED_ATTENTION';
+		} else if ( missing > 0 ) {
+			state = 'MISSING_ALT';
+		} else if ( review > 0 ) {
+			state = 'NEEDS_REVIEW';
+		} else {
+			state = 'ALL_CLEAR';
+		}
+		return {
+			state: state,
+			counts: {
+				missing: missing,
+				review: review,
+				complete: complete,
+				failed: failed,
+				total: total,
+			},
+			credits: {
+				used: used,
+				total: limit,
+				limit: limit,
+				remaining: Math.min( limit, remaining ),
+				is_pro: root.getAttribute( 'data-bbai-is-premium' ) === '1',
+			},
+			job: {
+				status: 'idle',
+				active: false,
+				pausable: false,
+				done: 0,
+				total: 0,
+			},
+			site: {
+				site_hash: root.getAttribute( 'data-bbai-site-hash' ) || '',
+			},
+		};
+	}
+
+	function applyStartupDashboardRootTruth() {
+		var truth;
+		if ( ! hasStartupDashboardDomMismatch() || 'function' !== typeof window.bbaiApplyLoggedInDashboardStatePayload ) {
+			return false;
+		}
+		truth = buildStartupTruthFromDashboardRoot();
+		if ( ! truth ) {
+			return false;
+		}
+		if ( applyLocalActiveTruthState( truth, 'startup_dom_snapshot' ) ) {
+			markDashboardStartupTruthResolved();
+			return true;
+		}
+		return false;
+	}
+
+	function markDashboardStartupTruthResolved() {
+		var root;
+		if ( hasStartupDashboardDomMismatch() ) {
+			logRender( 'startup_hydration_waiting_for_consistent_dom', {
+				state: hero.getAttribute( 'data-bbai-li-state' ) || '',
+			} );
+			return false;
+		}
+		root = document.getElementById( 'bbai-dashboard-main' );
+		if ( root ) {
+			root.setAttribute( 'data-bbai-startup-truth-resolved', '1' );
+		}
+		dashboardPolling.hydrated = true;
+		if ( typeof window.bbaiMarkDashboardMainHydrated === 'function' ) {
+			window.bbaiMarkDashboardMainHydrated();
+		}
+		return true;
+	}
+
 	function runPollingTick( context ) {
 		var pollContext = context || 'polling';
 		var currentState = dashboardPolling.latestState || hero.getAttribute( 'data-bbai-li-state' ) || '';
@@ -4947,7 +5261,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 				var nextRenderSignature = buildDashboardRenderSignature( truth );
 				var forceResolved = dashboardPolling.requiresResolvedSync || shouldUseResolvedDashboard( truth, previousTruth );
 
-				if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated ) {
+				if ( dashboardPolling.ssrRendered && ! dashboardPolling.hydrated && ! domTruthMismatch( truth ) ) {
 					markTruthSeenWithoutUiUpdate( truth );
 					schedulePolling( 'hydration_guard' );
 					return;
@@ -5063,16 +5377,12 @@ $bbai_hero_credit_bar_aria = sprintf(
 					if ( typeof window.requestAnimationFrame === 'function' ) {
 						window.requestAnimationFrame( function () {
 							window.requestAnimationFrame( function () {
-								if ( typeof window.bbaiMarkDashboardMainHydrated === 'function' ) {
-									window.bbaiMarkDashboardMainHydrated();
-								}
+								markDashboardStartupTruthResolved();
 							} );
 						} );
 					} else {
 						window.setTimeout( function () {
-							if ( typeof window.bbaiMarkDashboardMainHydrated === 'function' ) {
-								window.bbaiMarkDashboardMainHydrated();
-							}
+							markDashboardStartupTruthResolved();
 						}, 0 );
 					}
 				}
@@ -5480,6 +5790,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 		}
 
 		updateSummaryValueByLabel( TEXT.reviewLabel, formatCount( nextReview ), nextReview > 0 ? 'primary' : 'ok' );
+
+		if ( 0 === nextReview && root && ( parseInt( root.getAttribute( 'data-bbai-missing-count' ) || '0', 10 ) || 0 ) <= 0 ) {
+			applyStartupDashboardRootTruth();
+		}
 	} );
 
 	document.addEventListener( 'bbai:dashboard-approve-all-failed', function ( event ) {
@@ -5922,10 +6236,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 	function afterDashboardHydration( callback ) {
 		var run = function () {
-			dashboardPolling.hydrated = true;
-			if ( typeof window.bbaiMarkDashboardMainHydrated === 'function' ) {
-				window.bbaiMarkDashboardMainHydrated();
-			}
+			markDashboardStartupTruthResolved();
 			callback();
 		};
 
@@ -5946,6 +6257,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 	}
 	hero.addEventListener( 'click', handleActivationPromptAction );
 	document.addEventListener( 'bbai:logged-in-dashboard-state-applied', function () {
+		if ( ! dashboardPolling.hydrated ) {
+			window.setTimeout( markDashboardStartupTruthResolved, 0 );
+		}
 		window.setTimeout( syncBbaiStatusSummaryActive, 0 );
 		window.setTimeout( function () {
 			renderActivationPrompts( 'state_applied' );
@@ -6009,10 +6323,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 	} else if ( heroVariant === 'queued' ) {
 		renderQueuedSignal( buildStatusStripMeta( 'legacy_init_queued', 'initial_hero_variant' ) );
 	}
-	afterDashboardHydration( function () {
-		renderActivationPrompts( 'dashboard_load' );
-		runPollingTick( 'startup' );
-	} );
+	applyStartupDashboardRootTruth();
+	renderActivationPrompts( 'dashboard_load' );
+	runPollingTick( 'startup' );
 
 }());
 </script>

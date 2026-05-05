@@ -1515,6 +1515,10 @@ class API_Client_V2 {
 
             // Update usage cache
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            $newer_generation_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_newer_generation_success_snapshot($usage);
+            if (is_array($newer_generation_usage)) {
+                return $newer_generation_usage;
+            }
             \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
 
             return $usage;
@@ -1523,6 +1527,14 @@ class API_Client_V2 {
         // Handle legacy/mock API response format (wrapped in success/data/usage)
         if (isset($response['success']) && $response['success'] && isset($backend_response['usage'])) {
             $usage = $backend_response['usage'];
+
+            if (is_array($usage)) {
+                require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+                $newer_generation_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_newer_generation_success_snapshot($usage);
+                if (is_array($newer_generation_usage)) {
+                    return $newer_generation_usage;
+                }
+            }
 
             if ($has_license && is_array($usage)) {
                 $this->sync_license_usage_snapshot(
@@ -2583,7 +2595,124 @@ class API_Client_V2 {
             );
         }
 
+        $success_data = isset($response['data']) && is_array($response['data']) ? $response['data'] : [];
+        $this->sync_usage_after_successful_generation($success_data, $has_license);
+
         return $response['data'];
+    }
+
+    /**
+     * Keep local usage display in sync after a successful generation.
+     *
+     * Backend quota remains authoritative. When the generation response includes
+     * refreshed usage, cache it. When it does not, advance the local dashboard
+     * snapshot by one successful generation so the UI does not stay at stale
+     * 0/limit until the usage endpoint catches up.
+     *
+     * @param array<string,mixed> $response_data Successful generation response.
+     * @param bool                $has_license   Whether a license is active.
+     * @return void
+     */
+    private function sync_usage_after_successful_generation(array $response_data, bool $has_license = false): void {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+
+        $usage = $this->extract_usage_from_generation_response($response_data);
+        $has_alt_text = $this->generation_response_has_alt_text($response_data);
+        if (is_array($usage) && !empty($usage)) {
+            $current_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
+            $current_used = is_array($current_usage)
+                ? max(0, (int) ($current_usage['used'] ?? $current_usage['credits_used'] ?? $current_usage['creditsUsed'] ?? 0))
+                : 0;
+            $response_used = max(0, (int) ($usage['used'] ?? $usage['credits_used'] ?? $usage['creditsUsed'] ?? 0));
+
+            if ($has_alt_text && $response_used <= $current_used) {
+                \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
+                return;
+            }
+
+            if ($has_license) {
+                $this->sync_license_usage_snapshot(
+                    $usage,
+                    is_array($response_data['organization'] ?? null) ? $response_data['organization'] : [],
+                    is_array($response_data['site'] ?? null) ? $response_data['site'] : []
+                );
+            }
+
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($usage);
+            return;
+        }
+
+        if (!$has_alt_text) {
+            return;
+        }
+
+        \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
+    }
+
+    /**
+     * Extract a normalized usage payload from the generation response shape.
+     *
+     * @param array<string,mixed> $response_data Successful generation response.
+     * @return array<string,mixed>|null Usage payload, when present.
+     */
+    private function extract_usage_from_generation_response(array $response_data): ?array {
+        $candidates = [];
+
+        if (isset($response_data['usage']) && is_array($response_data['usage'])) {
+            $candidates[] = array_merge($response_data, $response_data['usage']);
+        }
+
+        if (isset($response_data['quota']) && is_array($response_data['quota'])) {
+            $candidates[] = array_merge($response_data, $response_data['quota']);
+        }
+
+        if (isset($response_data['data']) && is_array($response_data['data'])) {
+            $nested = $response_data['data'];
+            if (isset($nested['usage']) && is_array($nested['usage'])) {
+                $candidates[] = array_merge($nested, $nested['usage']);
+            }
+            if (isset($nested['quota']) && is_array($nested['quota'])) {
+                $candidates[] = array_merge($nested, $nested['quota']);
+            }
+            $candidates[] = $nested;
+        }
+
+        $candidates[] = $response_data;
+
+        foreach ($candidates as $candidate) {
+            if (!is_array($candidate)) {
+                continue;
+            }
+
+            $has_used = isset($candidate['used']) || isset($candidate['credits_used']) || isset($candidate['creditsUsed']);
+            if (!$has_used) {
+                continue;
+            }
+
+            return $candidate;
+        }
+
+        return null;
+    }
+
+    /**
+     * Determine whether a successful generation payload contains generated ALT text.
+     *
+     * @param array<string,mixed> $response_data Successful generation response.
+     * @return bool
+     */
+    private function generation_response_has_alt_text(array $response_data): bool {
+        foreach (['altText', 'alt_text', 'alt'] as $key) {
+            if (isset($response_data[$key]) && is_string($response_data[$key]) && '' !== trim($response_data[$key])) {
+                return true;
+            }
+        }
+
+        if (isset($response_data['data']) && is_array($response_data['data'])) {
+            return $this->generation_response_has_alt_text($response_data['data']);
+        }
+
+        return false;
     }
     
     /**

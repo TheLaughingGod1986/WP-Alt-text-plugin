@@ -7016,7 +7016,7 @@
             var initialTotal = initialActionable && initialActionable.missingCount > 0
                 ? initialActionable.missingCount
                 : 1;
-            showBulkProgress(__('Preparing image list...', 'beepbeep-ai-alt-text-generator'), initialTotal, 0);
+            showBulkProgress(__('Processing your images', 'beepbeep-ai-alt-text-generator'), initialTotal, 0);
             setBulkProgressHelperText(__('Finding images that need ALT text...', 'beepbeep-ai-alt-text-generator'));
 
             // Get list of images missing alt text (REST with admin-ajax fallback)
@@ -7155,7 +7155,7 @@
 	                        source: 'generate-missing',
 	                        entry: 'handleGenerateMissing',
 	                        responseData: responseData,
-	                        progressLabel: __('Preparing bulk run...', 'beepbeep-ai-alt-text-generator'),
+	                        progressLabel: __('Processing your images', 'beepbeep-ai-alt-text-generator'),
 	                        queued: queued
 	                    });
 
@@ -7177,7 +7177,7 @@
 	                        source: 'generate-missing',
 	                        entry: 'handleGenerateMissing_zero',
 	                        responseData: responseData,
-	                        progressLabel: __('Preparing bulk run...', 'beepbeep-ai-alt-text-generator'),
+	                        progressLabel: __('Processing your images', 'beepbeep-ai-alt-text-generator'),
 	                        queued: 0
 	                    });
 
@@ -14988,10 +14988,10 @@
         var fallbackReview = root ? parseInt(root.getAttribute('data-bbai-weak-count') || '0', 10) || 0 : 0;
         var fallbackComplete = root ? parseInt(root.getAttribute('data-bbai-optimized-count') || '0', 10) || 0 : 0;
         var fallbackTotal = root ? parseInt(root.getAttribute('data-bbai-total-count') || '0', 10) || 0 : 0;
-        var missing = readLoggedInStateNumber(source, ['missing', 'missing_alt', 'missingAlt'], fallbackMissing);
-        var review = readLoggedInStateNumber(source, ['review', 'to_review', 'toReview', 'needs_review', 'needsReview', 'weak'], fallbackReview);
-        var complete = readLoggedInStateNumber(source, ['complete', 'optimized', 'optimised'], fallbackComplete);
-        var total = readLoggedInStateNumber(source, ['total', 'total_images', 'totalImages'], fallbackTotal || (missing + review + complete));
+        var missing = readLoggedInStateNumber(source, ['missing', 'missing_alt', 'missingAlt', 'images_missing_alt', 'imagesMissingAlt', 'missing_count', 'missingCount'], fallbackMissing);
+        var review = readLoggedInStateNumber(source, ['review', 'to_review', 'toReview', 'needs_review', 'needsReview', 'needs_review_count', 'needsReviewCount', 'ready_for_review', 'readyForReview', 'ready_for_review_count', 'readyForReviewCount', 'weak', 'weak_count', 'weakCount'], fallbackReview);
+        var complete = readLoggedInStateNumber(source, ['complete', 'optimized', 'optimised', 'optimized_count', 'optimizedCount', 'optimised_count', 'optimisedCount'], fallbackComplete);
+        var total = readLoggedInStateNumber(source, ['total', 'total_images', 'totalImages', 'total_count', 'totalCount'], fallbackTotal || (missing + review + complete));
 
         return {
             missing: missing,
@@ -15006,16 +15006,16 @@
         var missing = Math.max(0, parseInt(counts && counts.missing, 10) || 0);
         var review = Math.max(0, parseInt(counts && counts.review, 10) || 0);
 
-        if (state !== 'ALL_CLEAR' || (missing <= 0 && review <= 0)) {
-            return state;
-        }
         if (missing > 0 && review > 0) {
             return 'MIXED_ATTENTION';
         }
         if (missing > 0) {
             return 'MISSING_ALT';
         }
-        return 'NEEDS_REVIEW';
+        if (review > 0) {
+            return 'NEEDS_REVIEW';
+        }
+        return state;
     }
 
     function getDashboardLibraryHref() {
@@ -15051,8 +15051,91 @@
             donut.animated = false;
             donut.center_label = String(formatDashboardNumber(counts.review));
             donut.center_sub_label = 'to review';
+        } else if (stateId === 'ALL_CLEAR') {
+            donut.pct = 100;
+            donut.color = 'green';
+            donut.animated = false;
+            donut.center_label = '✓';
+            donut.center_sub_label = '';
+            donut.segments = {
+                optimized: Math.max(total, counts.complete),
+                weak: 0,
+                missing: 0,
+                total: Math.max(total, counts.complete, 1)
+            };
         }
         return donut;
+    }
+
+    function isLoggedInAllClearPayload(stateData) {
+        var state = String(stateData && stateData.state ? stateData.state : '').toUpperCase();
+        var donut = stateData && stateData.donut && typeof stateData.donut === 'object' ? stateData.donut : {};
+        var segments = donut && donut.segments && typeof donut.segments === 'object' ? donut.segments : {};
+        var missing = Math.max(0, parseInt(segments.missing, 10) || 0);
+        var weak = Math.max(0, parseInt(segments.weak, 10) || 0);
+        var optimized = Math.max(0, parseInt(segments.optimized, 10) || 0);
+        var total = Math.max(0, parseInt(segments.total, 10) || 0);
+
+        return state === 'ALL_CLEAR' ||
+            String(donut.center_label || '') === '✓' ||
+            (missing === 0 && weak === 0 && optimized > 0 && total > 0 && optimized >= total);
+    }
+
+    function buildLoggedInAllClearStateData(stateData, counts) {
+        var nextData = Object.assign({}, stateData || {});
+        var safeCounts = counts && typeof counts === 'object' ? counts : {};
+        var complete = Math.max(
+            0,
+            parseInt(safeCounts.complete, 10) ||
+            parseInt(safeCounts.total, 10) ||
+            0
+        );
+        var total = Math.max(complete, parseInt(safeCounts.total, 10) || complete || 1);
+
+        nextData.state = 'ALL_CLEAR';
+        nextData.counts = Object.assign({}, nextData.counts || {}, {
+            missing: 0,
+            review: 0,
+            needs_review: 0,
+            needsReview: 0,
+            weak: 0,
+            to_review: 0,
+            toReview: 0,
+            complete: Math.max(complete, total),
+            optimized: Math.max(complete, total),
+            optimised: Math.max(complete, total),
+            total: total
+        });
+        nextData.hero = Object.assign({}, nextData.hero || {}, {
+            badge: { text: __('All optimised', 'beepbeep-ai-alt-text-generator'), mod: 'green' },
+            headline: __('Your media library is fully optimised', 'beepbeep-ai-alt-text-generator'),
+            support: __('Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator'),
+            variant: 'success',
+            primary_cta: {
+                label: __('Upload more images →', 'beepbeep-ai-alt-text-generator'),
+                action: 'navigate',
+                href: 'upload.php'
+            },
+            secondary_cta: {
+                label: __('Re-scan library →', 'beepbeep-ai-alt-text-generator'),
+                busy_label: __('Scanning library…', 'beepbeep-ai-alt-text-generator'),
+                action: 'rescan-media-library',
+                href: '#'
+            },
+            library_cta: {
+                label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'),
+                action: 'navigate',
+                href: getDashboardLibraryHref()
+            }
+        });
+        nextData.donut = buildLoggedInDonutForCounts('ALL_CLEAR', {
+            missing: 0,
+            review: 0,
+            complete: total,
+            total: total
+        }, nextData.donut || {});
+
+        return nextData;
     }
 
     function coerceLoggedInDashboardStateData(stateData) {
@@ -15061,6 +15144,10 @@
         var nextState = resolveLoggedInStateFromCounts(requestedState, counts);
         var heroData;
         var nextData;
+
+        if (counts.missing <= 0 && counts.review <= 0 && isLoggedInAllClearPayload(stateData)) {
+            return buildLoggedInAllClearStateData(stateData, counts);
+        }
 
         if (nextState === requestedState) {
             return stateData;
@@ -15348,6 +15435,67 @@
         badge.textContent = String(badgeData.text);
     }
 
+    function updateLoggedInDonutContextAction(hero, stateId, missingN, weakN, primary, secondary) {
+        var donutArea = hero ? hero.querySelector('.bbai-li-donut-area') : null;
+        var actionWrap = hero ? hero.querySelector('.bbai-li-donut__action-wrap') : null;
+        var actionNode = hero ? hero.querySelector('.bbai-li-donut__action-cm') : null;
+        var reviewBlock = hero ? hero.querySelector('[data-bbai-li-donut-review-block="1"]') : null;
+        var cfg = null;
+
+        if ((stateId === 'MISSING_ALT' || stateId === 'MIXED_ATTENTION') && missingN > 0 && primary && primary.href) {
+            cfg = {
+                href: primary.href,
+                action: primary.action || 'generate-missing',
+                label: __('Generate ALT text →', 'beepbeep-ai-alt-text-generator')
+            };
+        } else if (stateId === 'MIXED_ATTENTION' && missingN === 0 && weakN > 0 && secondary && secondary.href) {
+            cfg = {
+                href: secondary.href,
+                action: secondary.action || 'navigate',
+                label: __('Review images →', 'beepbeep-ai-alt-text-generator')
+            };
+        } else if (stateId === 'ALL_CLEAR' && primary && primary.href) {
+            cfg = {
+                href: primary.href,
+                action: primary.action || 'navigate',
+                label: __('Upload more images →', 'beepbeep-ai-alt-text-generator')
+            };
+        }
+
+        if (!cfg) {
+            if (actionWrap) {
+                actionWrap.hidden = true;
+            }
+            return;
+        }
+
+        if (!actionWrap && donutArea) {
+            actionWrap = document.createElement('p');
+            actionWrap.className = 'bbai-li-donut__action-wrap';
+            if (reviewBlock && reviewBlock.parentNode === donutArea) {
+                donutArea.insertBefore(actionWrap, reviewBlock);
+            } else {
+                donutArea.appendChild(actionWrap);
+            }
+        }
+
+        if (!actionWrap) {
+            return;
+        }
+
+        if (!actionNode || actionNode.parentNode !== actionWrap) {
+            actionWrap.innerHTML = '';
+            actionNode = document.createElement('a');
+            actionNode.className = 'bbai-li-donut__action-cm';
+            actionWrap.appendChild(actionNode);
+        }
+
+        actionWrap.hidden = false;
+        actionNode.setAttribute('href', cfg.href);
+        actionNode.setAttribute('data-action', cfg.action);
+        actionNode.textContent = cfg.label;
+    }
+
     function updateLoggedInHeroDonut(hero, stateData) {
         var stateId = String(stateData && stateData.state ? stateData.state : '');
         var donut = stateData && stateData.donut && typeof stateData.donut === 'object' ? stateData.donut : {};
@@ -15472,6 +15620,8 @@
                 reviewBlock.hidden = true;
             }
         }
+
+        updateLoggedInDonutContextAction(hero, stateId, missingN, weakN, primary, secondary);
 
         if (donutCard) {
             donutCard.classList.toggle('bbai-li-card--donut-clickable', !!clickable);
@@ -15609,6 +15759,7 @@
         var heroData = stateData && stateData.hero && typeof stateData.hero === 'object' ? stateData.hero : {};
         var headlineNode;
         var supportNode;
+        var hintNode;
         var primaryCta;
         var secondaryCta;
         var previousState;
@@ -15646,6 +15797,27 @@
         supportNode = hero.querySelector('[data-bbai-li-hero-support="1"]');
         if (supportNode && heroData.support) {
             supportNode.textContent = String(heroData.support);
+        }
+
+        hintNode = hero.querySelector('[data-bbai-hero-cta-hint="1"]');
+        if (hintNode) {
+            if (stateId === 'ALL_CLEAR') {
+                hintNode.textContent = '';
+                hintNode.hidden = true;
+                hintNode.setAttribute('aria-hidden', 'true');
+            } else if (stateId === 'NEEDS_REVIEW') {
+                hintNode.textContent = __('Complete your optimisation', 'beepbeep-ai-alt-text-generator');
+                hintNode.hidden = false;
+                hintNode.removeAttribute('aria-hidden');
+            } else if (stateId === 'MISSING_ALT' || stateId === 'MIXED_ATTENTION' || stateId === 'QUEUED') {
+                hintNode.textContent = __('Generate ALT text to move to review.', 'beepbeep-ai-alt-text-generator');
+                hintNode.hidden = false;
+                hintNode.removeAttribute('aria-hidden');
+            } else {
+                hintNode.textContent = '';
+                hintNode.hidden = true;
+                hintNode.setAttribute('aria-hidden', 'true');
+            }
         }
 
         if (stateId === 'ALL_CLEAR') {
@@ -15713,6 +15885,11 @@
                     configureLoggedInHeroCta(inlineSecondary, heroData.secondary_cta || null, false);
                 }
             } else if (stateId === 'ALL_CLEAR') {
+                if (inlineSecondary) {
+                    inlineSecondary.hidden = true;
+                    inlineSecondary.setAttribute('aria-hidden', 'true');
+                    inlineSecondary.setAttribute('aria-disabled', 'true');
+                }
                 if (rowSecondary) {
                     rowSecondary.hidden = true;
                     rowSecondary.setAttribute('aria-hidden', 'true');
@@ -16571,9 +16748,7 @@
             return buildBulkProgressSuccessTitleText(state);
         }
 
-        return state && state.activeTitle
-            ? state.activeTitle
-            : getBulkProgressDefaultTitle(state && state.source ? state.source : 'generate-missing');
+        return __('Processing your images', 'beepbeep-ai-alt-text-generator');
     }
 
     function buildBulkProgressHeaderSubtitle(state) {
@@ -16684,7 +16859,7 @@
         }
 
         return sprintf(
-            __('Completed %1$s of %2$s images', 'beepbeep-ai-alt-text-generator'),
+            __('Processing %1$s of %2$s images…', 'beepbeep-ai-alt-text-generator'),
             formatDashboardNumber(safeCurrent),
             formatDashboardNumber(safeTotal)
         );
@@ -16848,8 +17023,7 @@
                     formatDashboardNumber(uUsed),
                     formatDashboardNumber(uLim)
                 );
-                var autoNote = __('Enable automatic optimisation →', 'beepbeep-ai-alt-text-generator');
-                supportingLine = [creditNote, supportingLine, autoNote].filter(function(s) { return !!s; }).join(' ');
+                supportingLine = [creditNote, supportingLine].filter(function(s) { return !!s; }).join(' ');
             }
         }
 
@@ -16857,7 +17031,8 @@
             title: title,
             successLine: successLine,
             ctaConfig: ctaConfig,
-            supportingLine: supportingLine
+            supportingLine: supportingLine,
+            automationCta: processedN > 0 && root && root.getAttribute('data-bbai-is-premium') !== '1'
         };
     }
 
@@ -17196,6 +17371,7 @@
         var $complete;
         var $completeTitle;
         var $completeSubtitle;
+        var $runningActions;
         var $primaryAction;
         var $secondaryAction;
         var $supportingLine;
@@ -17245,8 +17421,17 @@
 
         presentation = isComplete ? getBulkProgressCompletionPresentation(state) : null;
         ctaConfig = presentation ? presentation.ctaConfig : resolveBulkProgressCompletionCtaConfig(state);
+        if (isComplete && !hasError) {
+            ctaConfig = {
+                primary: {
+                    label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                    action: 'review-result'
+                },
+                secondary: getBulkProgressDismissSecondaryCta()
+            };
+        }
 
-        // Complete-mode CTAs are computed from the post-generation snapshot (no fixed override).
+        // Complete-mode CTAs stay focused on review; the modal close path preserves existing background handling.
 
         var prevMode = String($modal.attr('data-bbai-bulk-progress-mode') || '');
         if (prevMode !== mode) {
@@ -17254,10 +17439,9 @@
         }
 
         $modal.attr('data-bbai-bulk-progress-mode', mode);
+        $modal.toggleClass('bbai-modal--complete', isComplete && !hasError);
         if (isComplete && !hasError) {
-            var snap = state && state.postGen ? state.postGen : null;
-            var headline = snap && snap.headline ? String(snap.headline) : __('ALT text generated', 'beepbeep-ai-alt-text-generator');
-            $modal.find('.bbai-bulk-progress__title').text(headline);
+            $modal.find('.bbai-bulk-progress__title').text(__('All images processed 🎉', 'beepbeep-ai-alt-text-generator'));
         } else {
             $modal.find('.bbai-bulk-progress__title').text(
                 hasError && isComplete ? __('Generation failed', 'beepbeep-ai-alt-text-generator') : buildBulkProgressHeaderTitle(state)
@@ -17304,6 +17488,14 @@
         if ($logContainer.length) {
             // Never hide the log; completion should still show the full run history.
             $logContainer.prop('hidden', false);
+            var $log = $modal.find('[data-bbai-bulk-progress-log]');
+            if ($log.length && !$log.children().length && !isComplete) {
+                $log.html(
+                    '<div class="bbai-bulk-progress__log-empty" data-bbai-bulk-progress-log-empty>' +
+                    escapeHtml(__('Preparing the first image…', 'beepbeep-ai-alt-text-generator')) +
+                    '</div>'
+                );
+            }
         }
         $logCount = $modal.find('[data-bbai-bulk-progress-log-count]');
         if ($logCount.length) {
@@ -17317,12 +17509,17 @@
             var processed = Math.max(0, parseInt(state.processed, 10) || 0);
             var current = Math.max(0, parseInt(state.current, 10) || 0);
             var total = Math.max(0, parseInt(state.total, 10) || 0);
-            $steps.find('[data-bbai-bulk-progress-step]').removeClass('is-done is-active is-error');
+            $steps.find('[data-bbai-bulk-progress-step]')
+                .removeClass('is-done is-active is-error bbai-step--complete bbai-step--active bbai-step--pending')
+                .addClass('bbai-step--pending');
 
             var setStep = function(key, cls) {
                 var node = $steps.find('[data-bbai-bulk-progress-step="' + key + '"]');
+                var alias = cls === 'is-done'
+                    ? 'bbai-step--complete'
+                    : (cls === 'is-active' ? 'bbai-step--active' : '');
                 if (node.length) {
-                    node.addClass(cls);
+                    node.removeClass('bbai-step--pending').addClass(cls + (alias ? ' ' + alias : ''));
                 }
             };
 
@@ -17347,6 +17544,11 @@
             return;
         }
 
+        $runningActions = $modal.find('[data-bbai-bulk-progress-running-actions]');
+        if ($runningActions.length) {
+            $runningActions.prop('hidden', isComplete);
+        }
+
         if (!isComplete) {
             $complete.find('[data-bbai-bulk-progress-success-check]').removeClass('is-visible');
             $complete.prop('hidden', true);
@@ -17362,7 +17564,7 @@
         if ($completeTitle.length) {
             $completeTitle.text(
                 !hasError
-                    ? __('Generation complete', 'beepbeep-ai-alt-text-generator')
+                    ? __('All images processed 🎉', 'beepbeep-ai-alt-text-generator')
                     : __('Generation failed', 'beepbeep-ai-alt-text-generator')
             );
         }
@@ -17398,8 +17600,21 @@
         applyActionButton($secondaryAction, ctaConfig.secondary || null, '[data-bbai-bulk-progress-secondary]');
 
         if ($supportingLine.length) {
-            $supportingLine.text(presentation && presentation.supportingLine ? presentation.supportingLine : '');
-            $supportingLine.prop('hidden', !(presentation && presentation.supportingLine));
+            $supportingLine.empty();
+            if (presentation && presentation.supportingLine) {
+                $supportingLine.append(document.createTextNode(presentation.supportingLine));
+            }
+            if (presentation && presentation.automationCta) {
+                if (presentation.supportingLine) {
+                    $supportingLine.append(document.createTextNode(' '));
+                }
+                $supportingLine.append(
+                    '<button type="button" class="bbai-link-button" data-action="show-upgrade-modal" data-upgrade-trigger="auto_optimisation_prompt" data-bbai-context="generation_complete">' +
+                    escapeHtml(__('Automatically optimise every new image →', 'beepbeep-ai-alt-text-generator')) +
+                    '</button>'
+                );
+            }
+            $supportingLine.prop('hidden', !(presentation && (presentation.supportingLine || presentation.automationCta)));
         }
 
         trackBulkProgressQuotaCtaShown($modal, state, ctaConfig);
@@ -17588,7 +17803,7 @@
                 if (terminal) {
                     titleMsg = __('Finishing up…', 'beepbeep-ai-alt-text-generator');
                 } else if (jobState.successes + failedN === 0) {
-                    titleMsg = __('Preparing images…', 'beepbeep-ai-alt-text-generator');
+                    titleMsg = __('Processing your images', 'beepbeep-ai-alt-text-generator');
                 } else {
                     var activeIdx = Math.min(totalN, jobState.successes + failedN + 1);
                     titleMsg = sprintf(
@@ -17669,13 +17884,13 @@
 
         markBulkLibraryRowsQueued(normalized);
 
-        var progressTitle = __('Preparing images…', 'beepbeep-ai-alt-text-generator');
+        var progressTitle = __('Processing your images', 'beepbeep-ai-alt-text-generator');
         var modalState;
         var intro = source === 'fix-all-issues'
             ? sprintf(
                 _n(
-                    'Preparing automatic optimisation for %d image…',
-                    'Preparing automatic optimisation for %d images…',
+                    'Processing %d image…',
+                    'Processing %d images…',
                     normalized.length,
                     'beepbeep-ai-alt-text-generator'
                 ),
@@ -17683,8 +17898,8 @@
             )
             : sprintf(
                 _n(
-                    'Preparing %d image for generation…',
-                    'Preparing %d images for generation…',
+                    'Processing %d image…',
+                    'Processing %d images…',
                     normalized.length,
                     'beepbeep-ai-alt-text-generator'
                 ),
@@ -17784,7 +17999,7 @@
             syncDashboardRuntimeStateFromBackendJob(options.responseData);
         }
 
-        var label = options.progressLabel || __('Preparing bulk run...', 'beepbeep-ai-alt-text-generator');
+        var label = options.progressLabel || __('Processing your images', 'beepbeep-ai-alt-text-generator');
         var count = idList.length;
 
         showBulkProgress(label, count, 0);
@@ -17968,9 +18183,9 @@
 
             appendBulkProgressLogEntry(
                 $modal,
-                'success',
+                'processing',
                 sprintf(
-                    __('Sending image %1$d of %2$d to AI…', 'beepbeep-ai-alt-text-generator'),
+                    __('Processing image %1$d of %2$d…', 'beepbeep-ai-alt-text-generator'),
                     ordinal,
                     total
                 ),
@@ -18001,28 +18216,6 @@
                         window.bbaiSetRowDone(rowEl);
                     }
 
-                    appendBulkProgressLogEntry(
-                        $modal,
-                        'success',
-                        __('ALT text generated', 'beepbeep-ai-alt-text-generator'),
-                        { dedupe: true }
-                    );
-                    appendBulkProgressLogEntry(
-                        $modal,
-                        'success',
-                        sprintf(
-                            __('Saved image %1$d of %2$d to WordPress', 'beepbeep-ai-alt-text-generator'),
-                            ordinal,
-                            total
-                        ),
-                        { dedupe: true }
-                    );
-                    appendBulkProgressLogEntry(
-                        $modal,
-                        'success',
-                        __('Moved to review', 'beepbeep-ai-alt-text-generator'),
-                        { dedupe: true }
-                    );
                 })
                 .catch(function(error) {
                     if (isLimitReachedError(error)) {
@@ -18771,6 +18964,8 @@
         // Initialize progress tracking
         $modal.data('startTime', Date.now());
         $modal.removeData('bbaiBulkCompleteAnimationKey');
+        $modal.removeData('bbaiBulkLastCompletedForLiveFeed');
+        $modal.removeData('bbaiBulkLastProcessingForLiveFeed');
         resetBulkProgressLog($modal);
 
         // Update initial state
@@ -18781,26 +18976,23 @@
             failed: 0,
             skipped: 0,
             source: String($modal.data('source') || 'generate-missing'),
-            activeTitle: label || getBulkProgressDefaultTitle(String($modal.data('source') || 'generate-missing')),
+            activeTitle: __('Processing your images', 'beepbeep-ai-alt-text-generator'),
             quotaBlocked: false,
             quotaError: null,
             complete: false,
             ctaShownTracked: false
         });
 
-        // Ensure the log is never empty on first paint.
-        var prepTemplate = _n(
-            'Preparing %s image for generation…',
-            'Preparing %s images for generation…',
-            state.total,
-            'beepbeep-ai-alt-text-generator'
-        );
-        appendBulkProgressLogEntry(
-            $modal,
-            'success',
-            sprintf(prepTemplate, formatDashboardNumber(Math.max(1, state.total))),
-            { dedupe: true }
-        );
+        // Ensure the live feed is never empty on first paint.
+        appendBulkProgressLogEntry($modal, 'success', __('Image list ready', 'beepbeep-ai-alt-text-generator'), { dedupe: true });
+        if (state.total > 0) {
+            appendBulkProgressLogEntry(
+                $modal,
+                'processing',
+                sprintf(__('Processing image %1$s of %2$s…', 'beepbeep-ai-alt-text-generator'), formatDashboardNumber(1), formatDashboardNumber(state.total)),
+                { dedupe: true }
+            );
+        }
         $modal.find('[data-bbai-bulk-progress-log-count]').text(formatBulkProgressLogDoneLabel(state));
 
         // Show modal
@@ -18894,7 +19086,7 @@
             return;
         }
 
-        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success');
+        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : (type === 'processing' ? 'processing' : 'success'));
         if (options.dedupe) {
             key = tone + ':' + String(message);
             seen = $modal.data('bbaiBulkLogSeen') || {};
@@ -18905,10 +19097,10 @@
             $modal.data('bbaiBulkLogSeen', seen);
         }
 
-        icon = tone === 'error' ? '!' : '✓';
+        icon = tone === 'error' ? '!' : (tone === 'processing' ? '⏳' : '✓');
         timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         entryHtml =
-            '<div class="bbai-bulk-progress__log-entry bbai-bulk-progress__log-entry--' + tone + '" role="listitem">' +
+            '<div class="bbai-bulk-progress__log-entry bbai-log-item bbai-bulk-progress__log-entry--' + tone + '" role="listitem">' +
             '    <span class="bbai-bulk-progress__log-icon" aria-hidden="true">' + escapeHtml(icon) + '</span>' +
             '    <span class="bbai-bulk-progress__log-text">' + escapeHtml(message) + '</span>' +
             '    <span class="bbai-bulk-progress__log-time">' + escapeHtml(timestamp) + '</span>' +
@@ -18916,6 +19108,7 @@
 
         $log.find('[data-bbai-bulk-progress-log-empty]').remove();
         $log.append(entryHtml);
+        $log.children('.bbai-bulk-progress__log-entry').slice(0, -5).remove();
         $log.scrollTop($log.prop('scrollHeight'));
     }
 
@@ -18945,19 +19138,24 @@
             '                </div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__steps" data-bbai-bulk-progress-steps role="group" aria-label="' + escapeHtml(__('Generation steps', 'beepbeep-ai-alt-text-generator')) + '">' +
-            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="prepare"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">1</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Preparing', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
-            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="send"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">2</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Sending to AI', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
-            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="save"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">3</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Saving to WordPress', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="prepare"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">1</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Processing your images', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="send"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">2</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Generating ALT text', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
+            '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="save"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">3</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Saving results', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
             '                <div class="bbai-bulk-progress__step" data-bbai-bulk-progress-step="review"><span class="bbai-bulk-progress__step-icon" aria-hidden="true">4</span><span class="bbai-bulk-progress__step-label">' + escapeHtml(__('Ready to review', 'beepbeep-ai-alt-text-generator')) + '</span></div>' +
             '            </div>' +
             '            <div class="bbai-bulk-progress__log-container" data-bbai-bulk-progress-log-container>' +
             '                <div class="bbai-bulk-progress__log-heading">' +
-            '                    <h3 class="bbai-bulk-progress__log-title">' + escapeHtml(__('Running log', 'beepbeep-ai-alt-text-generator')) + '</h3>' +
+            '                    <h3 class="bbai-bulk-progress__log-title">' + escapeHtml(__('Live feed', 'beepbeep-ai-alt-text-generator')) + '</h3>' +
             '                    <span class="bbai-bulk-progress__log-count" data-bbai-bulk-progress-log-count>' + escapeHtml(__('Waiting for images', 'beepbeep-ai-alt-text-generator')) + '</span>' +
             '                </div>' +
-            '                <div class="bbai-bulk-progress__log" data-bbai-bulk-progress-log role="list" aria-live="polite"></div>' +
+            '                <div class="bbai-bulk-progress__log" data-bbai-bulk-progress-log role="list" aria-live="polite">' +
+            '                    <div class="bbai-bulk-progress__log-empty" data-bbai-bulk-progress-log-empty>' + escapeHtml(__('Preparing the first image…', 'beepbeep-ai-alt-text-generator')) + '</div>' +
+            '                </div>' +
             '            </div>' +
             '            <p class="bbai-bulk-progress__status-note" data-bbai-bulk-progress-note hidden></p>' +
+            '            <div class="bbai-modal-footer bbai-bulk-progress__running-actions" data-bbai-bulk-progress-running-actions>' +
+            '                <button type="button" class="bbai-btn bbai-btn-primary bbai-bulk-progress__action bbai-bulk-progress__action--primary" data-bbai-bulk-progress-background>' + escapeHtml(__('Run in background', 'beepbeep-ai-alt-text-generator')) + '</button>' +
+            '            </div>' +
             '            <div class="bbai-bulk-progress__complete" data-bbai-bulk-progress-complete hidden>' +
             '                <div class="bbai-bulk-progress__success-check" data-bbai-bulk-progress-success-check aria-hidden="true">' +
             '                    <span class="bbai-bulk-progress__success-checkmark">✓</span>' +
@@ -18985,6 +19183,18 @@
         // Overlay click closes the modal while background work continues.
         $modal.find('.bbai-bulk-progress-modal__overlay').on('click', function() {
             minimizeBulkProgress('overlay');
+        });
+
+        $modal.on('click', '[data-bbai-bulk-progress-background]', function() {
+            minimizeBulkProgress('run_background');
+        });
+
+        $modal.on('click', '[data-bbai-bulk-progress-stop]', function() {
+            updateBulkProgressStatusNote(
+                $modal,
+                __('Generation is already running and will continue in the background.', 'beepbeep-ai-alt-text-generator'),
+                'warning'
+            );
         });
 
         $modal.on('click', '[data-bbai-bulk-progress-primary], [data-bbai-bulk-progress-secondary]', function() {
@@ -19023,17 +19233,46 @@
         var fromArg = Math.max(0, parseInt(current, 10) || 0);
         var completed = tot > 0 ? Math.min(tot, Math.max(fromState, fromArg)) : Math.max(fromState, fromArg);
         var percentage = tot > 0 ? Math.min(100, Math.round((completed / tot) * 100)) : 0;
+        var visualPercentage;
+        var lastCompleted = Math.max(0, parseInt($modal.data('bbaiBulkLastCompletedForLiveFeed'), 10) || 0);
+        var nextProcessing = tot > 0 ? Math.min(tot, completed + 1) : 0;
         if (isBulkProgressCompleteState(bulkState)) {
             percentage = 100;
         }
+        visualPercentage = (!isBulkProgressCompleteState(bulkState) && tot > 0)
+            ? Math.max(percentage, 8)
+            : percentage;
 
-        // Note: detailed row-by-row log messages are appended by the inline generation queue.
-        // Keep this function focused on the meter/bar state to avoid duplicate / missing labels.
+        if (completed > lastCompleted) {
+            for (var i = lastCompleted + 1; i <= completed; i++) {
+                appendBulkProgressLogEntry(
+                    $modal,
+                    'success',
+                    sprintf(__('Image %s processed', 'beepbeep-ai-alt-text-generator'), formatDashboardNumber(i)),
+                    { dedupe: true }
+                );
+            }
+            $modal.data('bbaiBulkLastCompletedForLiveFeed', completed);
+        }
+
+        if (!isBulkProgressCompleteState(bulkState) && nextProcessing > 0 && nextProcessing <= tot) {
+            if (parseInt($modal.data('bbaiBulkLastProcessingForLiveFeed'), 10) !== nextProcessing) {
+                appendBulkProgressLogEntry(
+                    $modal,
+                    'processing',
+                    sprintf(__('Processing image %1$s of %2$s…', 'beepbeep-ai-alt-text-generator'), formatDashboardNumber(nextProcessing), formatDashboardNumber(tot)),
+                    { dedupe: true }
+                );
+                $modal.data('bbaiBulkLastProcessingForLiveFeed', nextProcessing);
+            }
+        }
 
         var $fill = $modal.find('.bbai-bulk-progress__bar-fill, [data-bbai-bulk-progress-bar-fill]');
-        $fill.css('width', percentage + '%');
+        $fill.css('width', visualPercentage + '%');
         $fill.toggleClass('is-indeterminate', tot <= 0 && !isBulkProgressCompleteState(bulkState));
-        $modal.find('.bbai-bulk-progress__bar[role="progressbar"]').attr('aria-valuenow', String(percentage));
+        $modal.find('.bbai-bulk-progress__bar[role="progressbar"]')
+            .attr('aria-valuenow', String(percentage))
+            .attr('aria-label', buildBulkProgressMeterLabel(completed, tot));
 
         renderBulkProgressState($modal, bulkState);
     }
@@ -21179,7 +21418,11 @@
         } else if (hasLoggedInTruth) {
             window.setTimeout(function() {
                 var root = document.getElementById('bbai-dashboard-main');
-                if (root && root.getAttribute('data-hydrated') === 'false') {
+                if (
+                    root &&
+                    root.getAttribute('data-hydrated') === 'false' &&
+                    root.getAttribute('data-bbai-startup-truth-resolved') === '1'
+                ) {
                     markDashboardMainHydrated();
                 }
             }, 4000);

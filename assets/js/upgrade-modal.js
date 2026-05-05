@@ -1212,6 +1212,15 @@
         document.addEventListener('click', function(e) {
             var target = e.target.closest('[data-action="show-upgrade-modal"]');
             if (target) {
+                if (
+                    target.getAttribute('data-upgrade-trigger') === 'auto_optimisation_prompt' &&
+                    typeof window.bbaiTrack === 'function'
+                ) {
+                    window.bbaiTrack('upgrade_cta_clicked', {
+                        trigger: 'auto_optimisation_prompt',
+                        context: target.getAttribute('data-bbai-context') || 'generation_complete'
+                    });
+                }
                 var bannerNode = typeof target.closest === 'function'
                     ? target.closest('[data-bbai-primary-banner-state], [data-bbai-banner-state], .bbai-command-hero, .bbai-status-banner')
                     : null;

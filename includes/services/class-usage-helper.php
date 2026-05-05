@@ -247,8 +247,42 @@ class Usage_Helper {
                 $live_usage = $api_client->get_usage();
                 if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
                     $source = strtolower(trim((string) ($live_usage['source'] ?? 'remote_usage')));
+                    if ('generation_success' === $source) {
+                        return self::normalize_usage($usage_stats, $live_usage);
+                    }
                     $has_backend_usage = !in_array($source, ['local_snapshot', 'local_trial_snapshot'], true);
                     if ($has_backend_usage) {
+                        $local_source = strtolower(trim((string) ($usage_stats['source'] ?? '')));
+                        $local_used = max(0, (int) ($usage_stats['used'] ?? $usage_stats['credits_used'] ?? $usage_stats['creditsUsed'] ?? 0));
+                        $live_used = max(0, (int) ($live_usage['used'] ?? $live_usage['credits_used'] ?? $live_usage['creditsUsed'] ?? 0));
+                        $local_limit = max(1, (int) ($usage_stats['limit'] ?? $usage_stats['credits_total'] ?? $usage_stats['creditsTotal'] ?? 1));
+                        $live_limit = max(1, (int) ($live_usage['limit'] ?? $live_usage['credits_total'] ?? $live_usage['creditsTotal'] ?? $live_usage['creditsLimit'] ?? $local_limit));
+
+                        // Successful generation can be reflected locally before the backend usage
+                        // endpoint catches up. Do not let a stale lower backend count erase that
+                        // post-generation dashboard state; backend wins again once it reaches it.
+                        if ('generation_success' === $local_source && $local_used > $live_used && $local_limit === $live_limit) {
+                            self::debug_log('keeping_generation_success_usage', [
+                                'local_used' => $local_used,
+                                'live_used' => $live_used,
+                                'limit' => $local_limit,
+                            ]);
+                            return $usage_stats;
+                        }
+
+                        $local_history_used = Usage_Tracker::get_local_successful_generations_this_month();
+                        if ($local_history_used > $live_used && $local_limit === $live_limit) {
+                            $history_usage = Usage_Tracker::record_local_generation_history_usage($local_history_used, $live_usage);
+                            if (is_array($history_usage)) {
+                                self::debug_log('using_local_generation_history_usage', [
+                                    'local_history_used' => $local_history_used,
+                                    'live_used' => $live_used,
+                                    'limit' => $local_limit,
+                                ]);
+                                return self::normalize_usage($usage_stats, $history_usage);
+                            }
+                        }
+
                         Usage_Tracker::update_usage($live_usage);
                     }
                 }

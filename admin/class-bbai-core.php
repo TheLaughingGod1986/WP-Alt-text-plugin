@@ -1001,6 +1001,11 @@ class Core {
             return;
         }
 
+        $newer_generation_usage = Usage_Tracker::get_newer_generation_success_snapshot($latest_usage);
+        if (is_array($newer_generation_usage)) {
+            return;
+        }
+
         Usage_Tracker::update_usage($latest_usage);
         set_transient($cache_key, time(), MINUTE_IN_SECONDS);
     }
@@ -6390,20 +6395,22 @@ class Core {
                 ], 'generation');
             }
 
-            // Clear the cached usage to force a fresh fetch
-            Usage_Tracker::clear_cache();
+            $fresh_usage = Usage_Tracker::get_local_usage_snapshot();
+            $fresh_source = is_array($fresh_usage) ? strtolower((string) ($fresh_usage['source'] ?? '')) : '';
 
-            // Fetch fresh usage from the API
-            $fresh_usage = $this->api_client->get_usage();
-            if (!is_wp_error($fresh_usage) && is_array($fresh_usage)) {
-                Usage_Tracker::update_usage($fresh_usage);
+            if ( 'generation_success' !== $fresh_source ) {
+                $fresh_usage = Usage_Tracker::record_generation_success(1);
+            }
+
+            if (is_array($fresh_usage)) {
                 $bbai_usage_data = $fresh_usage;
 
                 if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                    Debug_Log::log('info', 'Fresh usage fetched and cached after generation', [
+                    Debug_Log::log('info', 'Successful generation reflected in local usage cache', [
                         'used' => $fresh_usage['used'] ?? 'not set',
                         'remaining' => $fresh_usage['remaining'] ?? 'not set',
                         'limit' => $fresh_usage['limit'] ?? 'not set',
+                        'source' => $fresh_usage['source'] ?? 'not set',
                     ], 'generation');
                 }
             }
@@ -8270,7 +8277,7 @@ class Core {
             }
         }
 
-        Usage_Tracker::clear_cache();
+        delete_transient('bbai_quota_cache');
         $this->invalidate_stats_cache();
         $bbai_stats = Queue::get_stats();
         if (!empty($bbai_stats['pending']) && !$bbai_trial_blocked) {
@@ -9857,7 +9864,7 @@ class Core {
             $updated_license['updated_at'] = current_time('mysql');
             $this->api_client->set_license_data($updated_license);
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-            \BeepBeepAI\AltTextGenerator\Usage_Tracker::clear_cache();
+            delete_transient('bbai_quota_cache');
         }
 
         $bbai_usage_data = [];
@@ -9888,6 +9895,9 @@ class Core {
         if (! empty($bbai_usage_data) && (isset($bbai_usage_data['used']) || isset($bbai_usage_data['remaining']))) {
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
             \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_usage_data);
+        } else {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
         }
 
         if ($bbai_has_license && ! empty($bbai_usage_data)) {
@@ -10283,7 +10293,7 @@ class Core {
             }
         }
 
-        Usage_Tracker::clear_cache();
+        delete_transient('bbai_quota_cache');
         $this->invalidate_stats_cache();
 
         if ( $this->is_api_job_status_terminal( $job ) ) {

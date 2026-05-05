@@ -301,6 +301,173 @@ class Usage_Tracker {
 
         return self::get_local_usage_snapshot();
     }
+
+    /**
+     * Record a successful generation when the backend response does not include
+     * a refreshed usage payload yet.
+     *
+     * This keeps the dashboard usage card responsive after successful work while
+     * preserving backend quota as the eventual source of truth. A later backend
+     * usage payload with the same or greater used count will replace this cache.
+     *
+     * @param int $count Successful generation count.
+     * @return array<string,mixed>|null Updated usage payload or null when not applicable.
+     */
+    public static function record_generation_success(int $count = 1): ?array {
+        $count = max(1, (int) $count);
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( class_exists('\BeepBeepAI\AltTextGenerator\Trial_Quota') && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            return null;
+        }
+
+        $usage = self::get_local_usage_snapshot();
+        if ( ! is_array($usage) || empty($usage) ) {
+            return null;
+        }
+
+        $plan = self::normalize_plan_slug($usage['plan_type'] ?? $usage['plan'] ?? 'free');
+        if ( in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) && empty($usage['limit']) ) {
+            return null;
+        }
+
+        $used = max(0, (int) ($usage['used'] ?? 0));
+        $limit = max(1, (int) ($usage['limit'] ?? 50));
+
+        $new_used = min($limit, $used + $count);
+        $new_remaining = max(0, $limit - $new_used);
+
+        $next = array_merge($usage, [
+            'used' => $new_used,
+            'remaining' => $new_remaining,
+            'limit' => $limit,
+            'credits_used' => $new_used,
+            'credits_remaining' => $new_remaining,
+            'credits_total' => $limit,
+            'creditsUsed' => $new_used,
+            'creditsRemaining' => $new_remaining,
+            'creditsTotal' => $limit,
+            'creditsLimit' => $limit,
+            'source' => 'generation_success',
+            'generation_success_recorded_at' => current_time('mysql'),
+        ]);
+
+        set_transient(self::CACHE_KEY, self::normalize_usage_payload($next), self::CACHE_EXPIRY);
+        delete_transient('bbai_quota_cache');
+
+        return self::get_local_usage_snapshot();
+    }
+
+    /**
+     * Return a locally recorded generation-success snapshot when a live usage
+     * response is older than the successful generation already shown locally.
+     *
+     * @param array<string,mixed> $live_usage Live/backend usage payload.
+     * @return array<string,mixed>|null Newer local generation-success usage, or null.
+     */
+    public static function get_newer_generation_success_snapshot(array $live_usage): ?array {
+        $cached = get_transient(self::CACHE_KEY);
+        if (!is_array($cached)) {
+            return null;
+        }
+
+        $cached = self::normalize_usage_payload($cached);
+        $source = strtolower((string) ($cached['source'] ?? ''));
+        if ('generation_success' !== $source) {
+            return null;
+        }
+
+        $cached_used = max(0, (int) ($cached['used'] ?? $cached['credits_used'] ?? $cached['creditsUsed'] ?? 0));
+        $live_used = max(0, (int) ($live_usage['used'] ?? $live_usage['credits_used'] ?? $live_usage['creditsUsed'] ?? 0));
+        $cached_limit = max(1, (int) ($cached['limit'] ?? $cached['credits_total'] ?? $cached['creditsTotal'] ?? 1));
+        $live_limit = max(1, (int) ($live_usage['limit'] ?? $live_usage['credits_total'] ?? $live_usage['creditsTotal'] ?? $live_usage['creditsLimit'] ?? $cached_limit));
+
+        if ($cached_used > $live_used && $cached_limit === $live_limit) {
+            return $cached;
+        }
+
+        return null;
+    }
+
+    /**
+     * Count successful local generation records for the current calendar month.
+     *
+     * @return int Local successful generation count.
+     */
+    public static function get_local_successful_generations_this_month(): int {
+        $month_start = wp_date('Y-m-01 00:00:00');
+        $month_end = wp_date('Y-m-t 23:59:59');
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-credit-usage-logger.php';
+        if (class_exists('\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger')) {
+            $site_usage = \BeepBeepAI\AltTextGenerator\Credit_Usage_Logger::get_site_usage([
+                'date_from' => $month_start,
+                'date_to' => $month_end,
+            ]);
+            $logged_credits = is_array($site_usage) ? max(0, (int) ($site_usage['total_credits'] ?? 0)) : 0;
+            if ($logged_credits > 0) {
+                return $logged_credits;
+            }
+        }
+
+        global $wpdb;
+        $postmeta = $wpdb->postmeta;
+        $generated_count = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(DISTINCT post_id) FROM {$postmeta} WHERE meta_key = %s AND meta_value >= %s AND meta_value <= %s",
+                '_bbai_generated_at',
+                $month_start,
+                $month_end
+            )
+        );
+
+        return max(0, (int) $generated_count);
+    }
+
+    /**
+     * Persist a usage snapshot from successful local generation history.
+     *
+     * @param int                  $used Successful local generations this month.
+     * @param array<string,mixed>  $base Existing usage payload to preserve plan/limit data.
+     * @return array<string,mixed>|null Updated usage payload or null when not applicable.
+     */
+    public static function record_local_generation_history_usage(int $used, array $base = []): ?array {
+        $used = max(0, (int) $used);
+        if ($used <= 0) {
+            return null;
+        }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        if ( class_exists('\BeepBeepAI\AltTextGenerator\Trial_Quota') && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() ) {
+            return null;
+        }
+
+        $current = self::get_local_usage_snapshot();
+        $usage = array_merge(is_array($current) ? $current : [], $base);
+        $limit = max(1, (int) ($usage['limit'] ?? $usage['credits_total'] ?? $usage['creditsTotal'] ?? $usage['creditsLimit'] ?? 50));
+        $used = min($limit, $used);
+        $remaining = max(0, $limit - $used);
+
+        $next = array_merge($usage, [
+            'used' => $used,
+            'remaining' => $remaining,
+            'limit' => $limit,
+            'credits_used' => $used,
+            'credits_remaining' => $remaining,
+            'credits_total' => $limit,
+            'creditsUsed' => $used,
+            'creditsRemaining' => $remaining,
+            'creditsTotal' => $limit,
+            'creditsLimit' => $limit,
+            'source' => 'local_generation_history',
+            'local_generation_history_recorded_at' => current_time('mysql'),
+        ]);
+
+        set_transient(self::CACHE_KEY, self::normalize_usage_payload($next), self::CACHE_EXPIRY);
+        delete_transient('bbai_quota_cache');
+
+        return self::get_local_usage_snapshot();
+    }
     
     /**
      * Get cached usage data

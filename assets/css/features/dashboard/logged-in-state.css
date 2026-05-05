@@ -3506,6 +3506,11 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-bottom {
     margin-top: auto;
     min-width: 0;
 }
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-stats {
+    margin-top: 12px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
     body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card:hover,
     body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card:hover {
@@ -4149,10 +4154,11 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-header-actions {
 }
 
 /* Account pill: breathing room, lighter FREE badge, readable logout */
-/* Dashboard SSR stays visible; hydration only toggles attr for analytics / future use */
+/* Keep the dashboard visible while the startup script corrects stale SSR state. */
 #bbai-dashboard-main[data-hydrated="false"] {
-    opacity: 0.98;
+    opacity: 1;
     pointer-events: auto;
+    visibility: visible;
     filter: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -4160,6 +4166,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-header-actions {
 
 #bbai-dashboard-main[data-hydrated="true"] {
     opacity: 1;
+    visibility: visible;
     transition: opacity 0.2s ease;
 }
 
@@ -4202,12 +4209,17 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-header-account-bar {
     gap: 12px;
     padding: 7px 10px 7px 16px;
     border-radius: 999px;
+    max-width: min(34vw, 360px);
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-header-account-email {
     font-size: 12px;
     padding-right: 2px;
     color: rgba(255, 255, 255, 0.95);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-header-plan-badge {
@@ -5193,5 +5205,124 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-status-line {
         width: 100% !important;
         min-height: 46px !important;
         height: auto !important;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DASHBOARD GRID ALIGNMENT POLISH
+   One dashboard grid owns section width, gaps, and card alignment.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-container,
+body.toplevel_page_bbai.bbai-dashboard #bbai-dashboard-main {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px;
+    padding-right: 24px;
+    box-sizing: border-box;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-grid,
+body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 24px;
+    row-gap: 24px;
+    align-items: stretch;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-section {
+    margin-top: 32px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-section:first-child {
+    margin-top: 0;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-shell {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-grid--top,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 24px !important;
+    align-items: stretch;
+    width: 100%;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-cta,
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 24px !important;
+    box-sizing: border-box;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-stats {
+    margin-top: 12px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-card,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card,
+body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card {
+    padding: 24px !important;
+    border-radius: 16px !important;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-cta,
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip {
+    background: linear-gradient(180deg, #f9fafb, #ffffff);
+    border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 900px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-grid,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-grid--top,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-cta,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip {
+        grid-column: 1;
+    }
+}
+
+@media (max-width: 760px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-container,
+    body.toplevel_page_bbai.bbai-dashboard #bbai-dashboard-main {
+        padding-left: 16px;
+        padding-right: 16px;
     }
 }
