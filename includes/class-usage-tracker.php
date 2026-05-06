@@ -410,16 +410,32 @@ class Usage_Tracker {
             }
         }
 
-        global $wpdb;
-        $postmeta = $wpdb->postmeta;
-        $generated_count = $wpdb->get_var(
-            $wpdb->prepare(
-                "SELECT COUNT(DISTINCT post_id) FROM {$postmeta} WHERE meta_key = %s AND meta_value >= %s AND meta_value <= %s",
-                '_bbai_generated_at',
-                $month_start,
-                $month_end
-            )
-        );
+        $cache_key = 'bbai_local_generated_count_' . md5($month_start . '|' . $month_end);
+        $cached_count = wp_cache_get($cache_key, 'bbai_usage');
+        if (false !== $cached_count) {
+            return max(0, (int) $cached_count);
+        }
+
+        $generated_query = new \WP_Query([
+            'post_type'              => 'attachment',
+            'post_status'            => 'inherit',
+            'fields'                 => 'ids',
+            'posts_per_page'         => -1,
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => true,
+            'update_post_term_cache' => false,
+        ]);
+
+        $generated_count = 0;
+        if (is_array($generated_query->posts)) {
+            foreach ($generated_query->posts as $attachment_id) {
+                $generated_at = (string) get_post_meta((int) $attachment_id, '_bbai_generated_at', true);
+                if ($generated_at >= $month_start && $generated_at <= $month_end) {
+                    ++$generated_count;
+                }
+            }
+        }
+        wp_cache_set($cache_key, $generated_count, 'bbai_usage', MINUTE_IN_SECONDS);
 
         return max(0, (int) $generated_count);
     }

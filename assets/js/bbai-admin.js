@@ -3840,6 +3840,115 @@
         return buildScanFeedbackPresentation(payload, context).announcement;
     }
 
+    var dashboardScanInlineFeedbackReattachTimers = [];
+
+    function removeDashboardScanInlineFeedbackNodes() {
+        Array.prototype.slice.call(document.querySelectorAll('[data-bbai-dashboard-scan-inline-feedback]')).forEach(function(node) {
+            try {
+                node.remove();
+            } catch (error) {
+                if (node && node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+            }
+        });
+    }
+
+    function hideDashboardScanInlineFeedback() {
+        removeDashboardScanInlineFeedbackNodes();
+        dashboardScanInlineFeedbackReattachTimers.forEach(function(timer) {
+            window.clearTimeout(timer);
+        });
+        dashboardScanInlineFeedbackReattachTimers = [];
+        try {
+            delete window.bbaiDashboardScanInlineFeedback;
+        } catch (error) {
+            window.bbaiDashboardScanInlineFeedback = null;
+        }
+    }
+
+    function renderDashboardScanInlineFeedback(type, message, trigger) {
+        var anchor = trigger && trigger.nodeType === 1
+            ? trigger
+            : document.querySelector('[data-bbai-li-all-clear-rescan="1"], [data-action="rescan-media-library"]');
+        var status;
+        var parent;
+
+        if (!anchor || !message) {
+            return false;
+        }
+
+        removeDashboardScanInlineFeedbackNodes();
+
+        status = document.createElement('span');
+        status.className = 'bbai-dashboard-scan-inline-feedback bbai-dashboard-scan-inline-feedback--' + (type || 'success');
+        status.setAttribute('data-bbai-dashboard-scan-inline-feedback', '1');
+        status.setAttribute('role', 'status');
+        status.setAttribute('aria-live', 'polite');
+        status.textContent = message;
+
+        parent = anchor.parentNode;
+        if (!parent) {
+            return false;
+        }
+
+        if (anchor.nextSibling) {
+            parent.insertBefore(status, anchor.nextSibling);
+        } else {
+            parent.appendChild(status);
+        }
+
+        return true;
+    }
+
+    function scheduleDashboardScanInlineFeedbackReattach() {
+        dashboardScanInlineFeedbackReattachTimers.forEach(function(timer) {
+            window.clearTimeout(timer);
+        });
+        dashboardScanInlineFeedbackReattachTimers = [300, 900, 1800, 3200, 6000, 10000, 15000].map(function(delay) {
+            return window.setTimeout(function() {
+                var stored = window.bbaiDashboardScanInlineFeedback;
+                if (!stored || !stored.message) {
+                    return;
+                }
+                if (stored.expiresAt && Date.now() > stored.expiresAt) {
+                    return;
+                }
+                renderDashboardScanInlineFeedback(stored.type, stored.message);
+            }, delay);
+        });
+    }
+
+    function showDashboardScanInlineFeedback(type, message, trigger, options) {
+        var opts = options || {};
+        if (!message) {
+            return false;
+        }
+
+        window.bbaiDashboardScanInlineFeedback = {
+            type: type || 'success',
+            message: message,
+            expiresAt: Date.now() + (parseInt(opts.persistMs, 10) || 18000)
+        };
+
+        renderDashboardScanInlineFeedback(type, message, trigger);
+        scheduleDashboardScanInlineFeedbackReattach();
+
+        return true;
+    }
+
+    function buildDashboardScanInlineMessage(presentation) {
+        if (!presentation || !presentation.body) {
+            return __('Scan complete.', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if (presentation.hasIssues) {
+            return presentation.title + ' — ' + presentation.body;
+        }
+
+        return __('Scan complete — your library is up to date.', 'beepbeep-ai-alt-text-generator');
+    }
+
     function buildDashboardGenerationMessage(source, successes, failures) {
         var successCount = Math.max(0, parseInt(successes, 10) || 0);
         var failureCount = Math.max(0, parseInt(failures, 10) || 0);
@@ -9979,6 +10088,16 @@
 
         if (context.isAltLibraryPage) {
             hideLibraryScanFeedback();
+        } else {
+            hideDashboardScanInlineFeedback();
+            if (!useModal) {
+                showDashboardScanInlineFeedback(
+                    'pending',
+                    __('Scanning media library…', 'beepbeep-ai-alt-text-generator'),
+                    trigger,
+                    { persistMs: 30000 }
+                );
+            }
         }
 
         if (typeof window.bbaiRefreshDashboardCoverage !== 'function') {
@@ -10043,6 +10162,13 @@
                     }
                     if (context.isAltLibraryPage) {
                         showLibraryScanFeedback(presentation, context);
+                    } else if (!modal) {
+                        showDashboardScanInlineFeedback(
+                            presentation.hasIssues ? 'attention' : 'success',
+                            buildDashboardScanInlineMessage(presentation),
+                            trigger,
+                            { persistMs: 30000 }
+                        );
                     }
 
                     try {
@@ -10077,6 +10203,13 @@
                         setDashboardScanModalMode('error', {
                             message: message
                         });
+                    } else if (!context.isAltLibraryPage) {
+                        showDashboardScanInlineFeedback(
+                            'error',
+                            __('Scan failed — please try again.', 'beepbeep-ai-alt-text-generator'),
+                            trigger,
+                            { persistMs: 30000 }
+                        );
                     }
                     try {
                         document.dispatchEvent(new CustomEvent('bbai:scan:failed', { detail: { message: message } }));
@@ -17609,7 +17742,7 @@
                     $supportingLine.append(document.createTextNode(' '));
                 }
                 $supportingLine.append(
-                    '<button type="button" class="bbai-link-button" data-action="show-upgrade-modal" data-upgrade-trigger="auto_optimisation_prompt" data-bbai-context="generation_complete">' +
+                    '<button type="button" class="bbai-link-button" data-bbai-bulk-progress-upgrade data-upgrade-trigger="auto_optimisation_prompt" data-bbai-context="generation_complete">' +
                     escapeHtml(__('Automatically optimise every new image →', 'beepbeep-ai-alt-text-generator')) +
                     '</button>'
                 );
@@ -19214,6 +19347,52 @@
         });
 
         return $modal;
+    }
+
+    if (!document.__bbaiBulkProgressUpgradeBound) {
+        document.__bbaiBulkProgressUpgradeBound = true;
+        $(document).on('click', '[data-bbai-bulk-progress-upgrade]', function(event) {
+            var $modal = $(this).closest('#bbai-bulk-progress-modal');
+            var trigger = this.getAttribute('data-upgrade-trigger') || 'auto_optimisation_prompt';
+            var context = this.getAttribute('data-bbai-context') || 'generation_complete';
+
+            if (!$modal.length) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.stopImmediatePropagation) {
+                event.stopImmediatePropagation();
+            }
+
+            if (typeof window.bbaiTrack === 'function') {
+                window.bbaiTrack('upgrade_cta_clicked', {
+                    trigger: trigger,
+                    context: context
+                });
+            }
+
+            minimizeBulkProgress('upgrade_cta');
+
+            window.setTimeout(function() {
+                if (typeof window.openPricingModal === 'function') {
+                    window.openPricingModal('growth');
+                    return;
+                }
+                if (typeof window.bbaiOpenUpgradeModal === 'function') {
+                    window.bbaiOpenUpgradeModal(trigger, {
+                        source: context,
+                        triggerKey: trigger,
+                        force: true
+                    });
+                    return;
+                }
+                if (typeof window.alttextaiShowModal === 'function') {
+                    window.alttextaiShowModal();
+                }
+            }, 60);
+        });
     }
 
     /**

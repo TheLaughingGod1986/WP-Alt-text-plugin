@@ -1333,6 +1333,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 		insightAccessibleSuffix: '<?php echo esc_js( __( 'of images accessible', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		insightMinsSaved: '<?php echo esc_js( __( '~%s mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		insightMinsSavedZero: '<?php echo esc_js( __( '~0 mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightCoverageMeta: '<?php echo esc_js( __( '%1$s of %2$s images covered', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightCoverageMetaZero: '<?php echo esc_js( __( 'Run a scan to measure coverage.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightSeoMetaSingular: '<?php echo esc_js( __( '%s search-ready image', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightSeoMetaPlural: '<?php echo esc_js( __( '%s search-ready images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 	};
 
 	var PROMPT_TEXT = {
@@ -1909,6 +1913,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var elOpt = document.querySelector( '[data-bbai-li-insight-optimized]' );
 		var elCov = document.querySelector( '[data-bbai-li-insight-coverage]' );
 		var elMins = document.querySelector( '[data-bbai-li-insight-mins]' );
+		var elCovMeta = document.querySelector( '[data-bbai-li-insight-coverage-meta]' );
+		var elSeoMeta = document.querySelector( '[data-bbai-li-insight-seo-meta]' );
 
 		if ( elOpt ) {
 			elOpt.textContent = formatSingularPlural( opt, TEXT.insightImagesOptimisedSingular, TEXT.insightImagesOptimisedPlural );
@@ -1916,12 +1922,20 @@ $bbai_hero_credit_bar_aria = sprintf(
 		if ( elCov ) {
 			elCov.textContent = String( cov ) + '% ' + TEXT.insightAccessibleSuffix;
 		}
+		if ( elCovMeta ) {
+			elCovMeta.textContent = total > 0
+				? replaceTokens( TEXT.insightCoverageMeta, { '%1$s': formatCount( withAlt ), '%2$s': formatCount( total ) } )
+				: TEXT.insightCoverageMetaZero;
+		}
 		if ( elMins ) {
 			if ( mins <= 0 ) {
 				elMins.textContent = TEXT.insightMinsSavedZero;
 			} else {
 				elMins.textContent = replaceTokens( TEXT.insightMinsSaved, { '%s': formatCount( mins ) } );
 			}
+		}
+		if ( elSeoMeta ) {
+			elSeoMeta.textContent = formatSingularPlural( opt, TEXT.insightSeoMetaSingular, TEXT.insightSeoMetaPlural );
 		}
 	}
 

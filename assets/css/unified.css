@@ -18414,3 +18414,51 @@ button[disabled][data-bbai-tooltip] {
 .bbai-link-button:hover {
     text-decoration: underline;
 }
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-top: 8px;
+    padding: 4px 9px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback--pending {
+    border-color: rgba(37, 99, 235, 0.18);
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback--success {
+    border-color: rgba(16, 185, 129, 0.22);
+    background: #ecfdf5;
+    color: #047857;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback--attention {
+    border-color: rgba(180, 83, 9, 0.2);
+    background: #fffbeb;
+    color: #b45309;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback--error {
+    border-color: rgba(185, 28, 28, 0.2);
+    background: #fef2f2;
+    color: #b91c1c;
+}
