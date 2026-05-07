@@ -512,6 +512,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		<?php endif; ?>
 	>
 
+		<div class="bbai-li-donut-col">
 		<div class="bbai-li-donut-area">
 			<div
 				class="bbai-li-donut bbai-command-donut--<?php echo esc_attr( $bbai_li_donut_tone ); ?><?php echo esc_attr( $bbai_li_donut_animated ? ' bbai-li-donut--animated' : '' ); ?>"
@@ -572,9 +573,6 @@ $bbai_hero_credit_bar_aria = sprintf(
 		} elseif ( 'MIXED_ATTENTION' === $bbai_li_state_id && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
 			$bbai_li_donut_cm_href   = $bbai_needs_review_library_url;
 			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( 'ALL_CLEAR' === $bbai_li_state_id ) {
-			$bbai_li_donut_cm_href   = admin_url( 'upload.php' );
-			$bbai_li_donut_cm_label = __( 'Add new images →', 'beepbeep-ai-alt-text-generator' );
 		}
 		?>
 		<?php if ( $bbai_li_donut_cm_href && $bbai_li_donut_cm_label ) : ?>
@@ -618,72 +616,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 		<p class="bbai-li-donut__meta" data-bbai-li-donut-meta="1"><?php echo esc_html( $bbai_li_donut_meta ); ?></p>
 		<?php endif; ?>
 		</div>
+		</div><!-- /.bbai-li-donut-col -->
 
-		<div class="bbai-li-donut-context" data-bbai-li-donut-context="1">
-			<div class="bbai-status-summary" role="group" aria-label="<?php esc_attr_e( 'Status summary', 'beepbeep-ai-alt-text-generator' ); ?>">
-			<button type="button" class="bbai-status-item bbai-status-item--readout is-missing" data-bbai-dashboard-status-filter="missing" data-filter="missing" aria-label="<?php echo esc_attr( 'QUEUED' === $bbai_li_state_id ? __( 'Preview images ready to generate', 'beepbeep-ai-alt-text-generator' ) : __( 'Show images that need alt text', 'beepbeep-ai-alt-text-generator' ) ); ?>">
-				<span class="bbai-dot <?php echo esc_attr( 'QUEUED' === $bbai_li_state_id ? 'blue' : 'red' ); ?>" aria-hidden="true"></span>
-				<span class="bbai-status-text">
-					<strong class="bbai-count" data-bbai-status-metric="missing"><?php echo esc_html( (string) number_format_i18n( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ? $bbai_li_queued_total : $bbai_li_missing_count ) ); ?></strong>
-					<?php
-					$bbai_li_ready_label_count = ( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ) ? $bbai_li_queued_total : $bbai_li_missing_count;
-					echo esc_html( 'QUEUED' === $bbai_li_state_id
-						? ' ' . _n( 'ready to generate', 'ready to generate', $bbai_li_ready_label_count, 'beepbeep-ai-alt-text-generator' )
-						: ' ' . _n( 'image needs ALT text', 'images need ALT text', $bbai_li_missing_count, 'beepbeep-ai-alt-text-generator' )
-					);
-					?>
-				</span>
-			</button>
-			<button type="button" class="bbai-status-item bbai-status-item--readout is-review" data-bbai-dashboard-status-filter="weak" data-filter="review" title="<?php esc_attr_e( 'Review improves accuracy before publishing', 'beepbeep-ai-alt-text-generator' ); ?>" aria-label="<?php esc_attr_e( 'Show images ready for review', 'beepbeep-ai-alt-text-generator' ); ?>">
-				<span class="bbai-dot orange" aria-hidden="true"></span>
-				<span class="bbai-status-text">
-					<strong class="bbai-count" data-bbai-status-metric="review"><?php echo esc_html( (string) number_format_i18n( $bbai_li_review_count ) ); ?></strong>
-					<?php
-					echo esc_html(
-						' ' . _n( 'ready for review', 'ready for review', $bbai_li_review_count, 'beepbeep-ai-alt-text-generator' )
-					);
-					?>
-				</span>
-			</button>
-			</div>
-
-			<?php
-			// Step indicator: one clear "current" step, prior steps marked done.
-			$bbai_li_active_step = ( $bbai_li_missing_count > 0 )
-				? 'generate'
-				: ( $bbai_li_review_count > 0 ? 'review' : 'done' );
-			$bbai_li_gen_class  = ( 'generate' === $bbai_li_active_step ) ? 'is-active' : 'is-done';
-			$bbai_li_rev_class  = ( 'review' === $bbai_li_active_step ) ? 'is-active' : ( 'done' === $bbai_li_active_step ? 'is-done' : 'is-inactive' );
-			$bbai_li_done_class = ( 'done' === $bbai_li_active_step ) ? 'is-active' : 'is-inactive';
-			?>
-			<div
-				class="bbai-progress-flow"
-				data-bbai-li-flow="1"
-				<?php echo $bbai_li_flow_hidden ? 'hidden' : ''; ?>
-				role="group"
-				aria-label="<?php esc_attr_e( 'Workflow: Generate, Review, Done', 'beepbeep-ai-alt-text-generator' ); ?>"
-			>
-				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?></span>
-				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
-				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_rev_class ); ?>" data-bbai-flow-step="review"><?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?></span>
-				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
-				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_done_class ); ?>" data-bbai-flow-step="done"><?php esc_html_e( 'Done', 'beepbeep-ai-alt-text-generator' ); ?></span>
-			</div>
-		</div>
-
-		<div class="bbai-card-meta-row">
-			<div
-				class="bbai-li-activity-strip"
-				data-bbai-li-activity-strip="1"
-				hidden="hidden"
-				aria-hidden="true"
-			></div>
-		</div>
-
-	</div>
-
-	<?php /* ── RIGHT CARD: badge + headline + support + CTAs + credits ────── */ ?>
-	<div class="bbai-li-card bbai-li-card--content">
+		<div class="bbai-li-hero-content-col">
 
 		<div class="bbai-li-card-section bbai-li-card-section--intro">
 		<?php if ( $bbai_li_badge ) : ?>
@@ -792,6 +727,74 @@ $bbai_hero_credit_bar_aria = sprintf(
 			</div>
 		</div>
 		</div>
+
+		<div class="bbai-li-donut-context" data-bbai-li-donut-context="1">
+			<div class="bbai-status-summary" role="group" aria-label="<?php esc_attr_e( 'Status summary', 'beepbeep-ai-alt-text-generator' ); ?>">
+			<button type="button" class="bbai-status-item bbai-status-item--readout is-missing" data-bbai-dashboard-status-filter="missing" data-filter="missing" aria-label="<?php echo esc_attr( 'QUEUED' === $bbai_li_state_id ? __( 'Preview images ready to generate', 'beepbeep-ai-alt-text-generator' ) : __( 'Show images that need alt text', 'beepbeep-ai-alt-text-generator' ) ); ?>">
+				<span class="bbai-dot <?php echo esc_attr( 'QUEUED' === $bbai_li_state_id ? 'blue' : 'red' ); ?>" aria-hidden="true"></span>
+				<span class="bbai-status-text">
+					<strong class="bbai-count" data-bbai-status-metric="missing"><?php echo esc_html( (string) number_format_i18n( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ? $bbai_li_queued_total : $bbai_li_missing_count ) ); ?></strong>
+					<?php
+					$bbai_li_ready_label_count = ( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ) ? $bbai_li_queued_total : $bbai_li_missing_count;
+					echo esc_html( 'QUEUED' === $bbai_li_state_id
+						? ' ' . _n( 'ready to generate', 'ready to generate', $bbai_li_ready_label_count, 'beepbeep-ai-alt-text-generator' )
+						: ' ' . _n( 'image needs ALT text', 'images need ALT text', $bbai_li_missing_count, 'beepbeep-ai-alt-text-generator' )
+					);
+					?>
+				</span>
+			</button>
+			<button type="button" class="bbai-status-item bbai-status-item--readout is-review" data-bbai-dashboard-status-filter="weak" data-filter="review" title="<?php esc_attr_e( 'Review improves accuracy before publishing', 'beepbeep-ai-alt-text-generator' ); ?>" aria-label="<?php esc_attr_e( 'Show images ready for review', 'beepbeep-ai-alt-text-generator' ); ?>">
+				<span class="bbai-dot orange" aria-hidden="true"></span>
+				<span class="bbai-status-text">
+					<strong class="bbai-count" data-bbai-status-metric="review"><?php echo esc_html( (string) number_format_i18n( $bbai_li_review_count ) ); ?></strong>
+					<?php
+					echo esc_html(
+						' ' . _n( 'ready for review', 'ready for review', $bbai_li_review_count, 'beepbeep-ai-alt-text-generator' )
+					);
+					?>
+				</span>
+			</button>
+			</div>
+
+			<?php
+			// Step indicator: one clear "current" step, prior steps marked done.
+			$bbai_li_active_step = ( $bbai_li_missing_count > 0 )
+				? 'generate'
+				: ( $bbai_li_review_count > 0 ? 'review' : 'done' );
+			$bbai_li_gen_class  = ( 'generate' === $bbai_li_active_step ) ? 'is-active' : 'is-done';
+			$bbai_li_rev_class  = ( 'review' === $bbai_li_active_step ) ? 'is-active' : ( 'done' === $bbai_li_active_step ? 'is-done' : 'is-inactive' );
+			$bbai_li_done_class = ( 'done' === $bbai_li_active_step ) ? 'is-active' : 'is-inactive';
+			?>
+			<div
+				class="bbai-progress-flow"
+				data-bbai-li-flow="1"
+				<?php echo $bbai_li_flow_hidden ? 'hidden' : ''; ?>
+				role="group"
+				aria-label="<?php esc_attr_e( 'Workflow: Generate, Review, Done', 'beepbeep-ai-alt-text-generator' ); ?>"
+			>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_rev_class ); ?>" data-bbai-flow-step="review"><?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_done_class ); ?>" data-bbai-flow-step="done"><?php esc_html_e( 'Done', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			</div>
+		</div>
+
+		<div class="bbai-card-meta-row">
+			<div
+				class="bbai-li-activity-strip"
+				data-bbai-li-activity-strip="1"
+				hidden="hidden"
+				aria-hidden="true"
+			></div>
+		</div>
+
+		</div><!-- /.bbai-li-hero-content-col -->
+
+	</div>
+
+	<?php /* ── RIGHT CARD: usage + automation ─────────────────────────────── */ ?>
+	<div class="bbai-li-card bbai-li-card--content">
 
 		<div class="bbai-li-card-section bbai-li-card-section--activation" data-bbai-activation-host="1" aria-live="polite"></div>
 

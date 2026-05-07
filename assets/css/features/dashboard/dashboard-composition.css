@@ -25,6 +25,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
     gap: 20px;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -38,12 +39,41 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   LEFT DONUT CARD
-   Tighter vertical padding + ~9% smaller donut → reduces hollow dead space.
+   LEFT CARD — HORIZONTAL LAYOUT
+   Converts the donut card from a narrow stacked card to a wide two-column card:
+   left column = donut ring, right column = title + CTAs + status counts.
 ───────────────────────────────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
-    padding: 18px 18px 14px;
+    display: grid !important;
+    grid-template-columns: 192px minmax(0, 1fr);
+    column-gap: 24px;
+    row-gap: 0;
+    align-items: start;
+    padding: 20px 24px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 0;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col .bbai-li-card-section--intro {
+    padding: 0;
+    margin-bottom: 12px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col .bbai-li-card-section--actions {
+    padding: 0;
+    margin-bottom: 12px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
@@ -164,6 +194,15 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   ALL_CLEAR STATE — SUPPRESS RETENTION STRIP
+   The retention strip adds no value when every image is already optimised.
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-logged-in-dashboard[data-state="ALL_CLEAR"] .bbai-retention-strip {
+    display: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    RESPONSIVE PRESERVATION
    These match breakpoints already in logged-in-state.css — ensure overrides
    don't accidentally break the mobile collapse.
@@ -172,6 +211,18 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
 @media (max-width: 900px) {
     body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
         gap: 14px !important;
+    }
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-col {
+        align-items: flex-start;
     }
 }
 
