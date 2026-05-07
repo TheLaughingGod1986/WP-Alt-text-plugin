@@ -54,6 +54,14 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	aria-label="<?php echo esc_attr__( 'Logged-in dashboard', 'beepbeep-ai-alt-text-generator' ); ?>"
 >
 
+	<?php /* Dashboard page header — greeting + status pill */ ?>
+	<?php
+	$bbai_dashboard_header_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-header.php';
+	if ( is_readable( $bbai_dashboard_header_partial ) ) {
+		require $bbai_dashboard_header_partial;
+	}
+	?>
+
 	<?php /* Intentionally no top marketing banner on dashboard — copy lives in the hero. */ ?>
 	<?php /* Hero grid — primary action surface */ ?>
 	<div class="bbai-li-hero-shell">

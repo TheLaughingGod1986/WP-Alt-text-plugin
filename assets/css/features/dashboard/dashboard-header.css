@@ -1,0 +1,138 @@
+/**
+ * Dashboard Page Header
+ *
+ * Premium SaaS-style greeting row above the main dashboard cards.
+ * Layout: heading + subtitle on the left, status pill on the right.
+ * Collapses to a vertical stack on tablet/mobile.
+ *
+ * Design tokens fall back to literal values so this file works even if the
+ * unified token sheet hasn't loaded yet (same contract as logged-in-state.css).
+ *
+ * @package BeepBeep_AI
+ * @since   5.3.0
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   WRAPPER
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    padding-bottom: 28px;
+    /* No background, no border — plain dashboard surface */
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LEFT — heading + subtitle
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-dashboard-header__left {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.bbai-dashboard-header__heading {
+    margin: 0;
+    padding: 0;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+    border: none;
+    box-shadow: none;
+    background: none;
+}
+
+.bbai-dashboard-header__subtitle {
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RIGHT — status pill
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-dashboard-header__right {
+    flex-shrink: 0;
+}
+
+.bbai-dashboard-header__status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 52px;
+    padding-inline: 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    white-space: nowrap;
+}
+
+.bbai-dashboard-header__status-text {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1;
+    color: #0f172a;
+}
+
+/* Green status dot — soft glow, not neon */
+.bbai-dashboard-header__status-dot {
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+    box-shadow:
+        0 0 0 3px rgba(34, 197, 94, 0.14),
+        0 0 6px rgba(34, 197, 94, 0.20);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 1023px) {
+    .bbai-dashboard-header__heading {
+        font-size: 32px;
+    }
+}
+
+/* Mobile — stack vertically, align left */
+@media (max-width: 767px) {
+    .bbai-dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        padding-bottom: 20px;
+    }
+
+    .bbai-dashboard-header__heading {
+        font-size: 26px;
+    }
+
+    .bbai-dashboard-header__subtitle {
+        font-size: 16px;
+    }
+
+    .bbai-dashboard-header__right {
+        width: 100%;
+    }
+
+    .bbai-dashboard-header__status-pill {
+        width: auto;
+    }
+}
