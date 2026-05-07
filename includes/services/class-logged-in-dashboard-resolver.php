@@ -940,16 +940,18 @@ class Logged_In_Dashboard_Resolver {
 
 				return [
 					'badge'         => [ 'text' => __( 'All optimised', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'green' ],
-					'headline'      => __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' ),
+					'headline'      => __( 'Library fully protected', 'beepbeep-ai-alt-text-generator' ),
 					'support'       => $all_clear_support,
 					'variant'       => 'success',
 					'primary_cta'   => [
-						'label'  => __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' ),
+						'label'  => $is_pro
+							? __( 'Stay fully optimised', 'beepbeep-ai-alt-text-generator' )
+							: __( 'Keep optimising automatically', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'navigate',
 						'href'   => admin_url( 'upload.php' ),
 					],
 					'secondary_cta' => [
-						'label'       => __( 'Re-scan library →', 'beepbeep-ai-alt-text-generator' ),
+						'label'       => __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ),
 						'busy_label'  => __( 'Scanning…', 'beepbeep-ai-alt-text-generator' ),
 						'action'      => 'rescan-media-library',
 						'href'        => '#',
