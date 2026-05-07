@@ -1,0 +1,30 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="20" y1="20" x2="236" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="0.55" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#24149C"/>
+    </linearGradient>
+    <linearGradient id="card" x1="55" y1="48" x2="175" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EDE9FE"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="13" flood-color="#160B54" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="54" fill="url(#bg)"/>
+  <circle cx="130" cy="88" r="76" fill="#FFFFFF" opacity="0.08"/>
+  <path d="M202 31L208 49L226 55L208 62L202 80L196 62L178 55L196 49L202 31Z" fill="#FFFFFF"/>
+  <path d="M224 82L228 94L240 98L228 103L224 116L219 103L207 98L219 94L224 82Z" fill="#FFFFFF" opacity="0.9"/>
+  <g filter="url(#shadow)">
+    <rect x="45" y="55" width="132" height="116" rx="20" fill="url(#card)"/>
+    <rect x="62" y="73" width="98" height="76" rx="13" fill="#F8FAFC" stroke="#FFFFFF" stroke-width="5"/>
+    <circle cx="87" cy="94" r="12" fill="#7C3AED"/>
+    <path d="M63 143L91 114L112 133L139 99L160 124V149H63V143Z" fill="#7C3AED" opacity="0.95"/>
+    <path d="M63 137L96 108L122 132L160 91V149H63V137Z" fill="#A78BFA" opacity="0.72"/>
+    <rect x="126" y="128" width="76" height="47" rx="15" fill="#FFFFFF"/>
+    <text x="143" y="160" font-family="Inter, Arial, Helvetica, sans-serif" font-size="30" font-weight="900" fill="#4F46E5">ALT</text>
+  </g>
+  <text x="128" y="213" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="25" font-weight="900" letter-spacing="1.5" fill="#FFFFFF">BEEP BEEP AI</text>
+</svg>
