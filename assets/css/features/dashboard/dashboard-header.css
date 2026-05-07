@@ -33,27 +33,28 @@
 .bbai-dashboard-header__left {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 4px;
     min-width: 0;
 }
 
 .bbai-dashboard-header__heading {
     margin: 0;
     padding: 0;
-    font-size: 40px;
+    font-size: 26px;
     font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
     color: #0f172a;
     border: none;
     box-shadow: none;
     background: none;
+    white-space: nowrap;
 }
 
 .bbai-dashboard-header__subtitle {
     margin: 0;
     padding: 0;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 400;
     line-height: 1.5;
     color: #64748b;
@@ -104,28 +105,22 @@
    RESPONSIVE
 ───────────────────────────────────────────────────────────────────────────── */
 
-/* Tablet */
-@media (max-width: 1023px) {
-    .bbai-dashboard-header__heading {
-        font-size: 32px;
-    }
-}
-
-/* Mobile — stack vertically, align left */
+/* Mobile — stack vertically, allow wrap */
 @media (max-width: 767px) {
     .bbai-dashboard-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 16px;
-        padding-bottom: 20px;
+        gap: 12px;
+        padding-bottom: 16px;
     }
 
     .bbai-dashboard-header__heading {
-        font-size: 26px;
+        font-size: 22px;
+        white-space: normal;
     }
 
     .bbai-dashboard-header__subtitle {
-        font-size: 16px;
+        font-size: 13px;
     }
 
     .bbai-dashboard-header__right {
