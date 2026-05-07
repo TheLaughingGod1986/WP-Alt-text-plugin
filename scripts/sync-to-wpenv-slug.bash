@@ -12,6 +12,7 @@ set -euo pipefail
 #   "BeepBeep AI – Alt Text Generator" (folder: beepbeep-ai-alt-text-generator)
 
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CLEAN_SRC_DIR="${SRC_DIR}/build/wpenv-plugin/beepbeep-ai-alt-text-generator/"
 
 # wp-env project hash for this repo (matches current docker container names).
 WP_ENV_HASH="06fe8883b07a5e21412cec8c726b075e"
@@ -26,11 +27,16 @@ if [[ ! -d "${HOME}/.wp-env/${WP_ENV_HASH}/WordPress" ]]; then
   exit 1
 fi
 
-mkdir -p "${DEST_DIR}"
+mkdir -p "${CLEAN_SRC_DIR}" "${DEST_DIR}"
 
 rsync -av --delete \
   --exclude=".git" \
+  --exclude=".gitattributes" \
+  --exclude=".gitignore" \
   --exclude=".wp-env.json" \
+  --exclude=".vscode" \
+  --exclude="AGENTS.md" \
+  --exclude="build" \
   --exclude="node_modules" \
   --exclude=".playwright-cli" \
   --exclude=".playwright-mcp" \
@@ -45,25 +51,53 @@ rsync -av --delete \
   --exclude="package-lock.json" \
   --exclude="tests/e2e/test-results" \
   --exclude="test-results" \
+  --exclude="login-helper.js" \
+  --exclude="wp-login.js" \
+  --exclude="playwright.config.ts" \
+  --exclude="jest.config.js" \
+  --exclude="output-dashboard-after.png" \
+  --exclude="output-dashboard-before.png" \
+  --exclude="output-dashboard-final.png" \
+  --exclude="rescan-complete-feedback.png" \
+  --exclude="sync-to-wpenv.bash" \
   --exclude=".cursor" \
   --exclude=".claude" \
-  "${SRC_DIR}/" "${DEST_DIR}"
+  "${SRC_DIR}/" "${CLEAN_SRC_DIR}"
 
-# Excluded paths are not removed by rsync --delete; strip dev-only / artifact dirs from the destination.
+# Excluded paths are not removed by rsync --delete; strip dev-only / artifact dirs from the clean mirror.
 rm -rf \
-  "${DEST_DIR}/playwright-report" \
-  "${DEST_DIR}/.playwright-mcp" \
-  "${DEST_DIR}/docs" \
-  "${DEST_DIR}/scripts" \
-  "${DEST_DIR}/tests" \
-  "${DEST_DIR}/.wporg-svn" \
-  "${DEST_DIR}/test-results" \
-  "${DEST_DIR}/.wp-env.json" \
-  "${DEST_DIR}/package.json" \
-  "${DEST_DIR}/package-lock.json" \
-  "${DEST_DIR}/.cursor" \
-  "${DEST_DIR}/.claude"
+  "${CLEAN_SRC_DIR}/playwright-report" \
+  "${CLEAN_SRC_DIR}/.playwright-mcp" \
+  "${CLEAN_SRC_DIR}/build" \
+  "${CLEAN_SRC_DIR}/dist" \
+  "${CLEAN_SRC_DIR}/docs" \
+  "${CLEAN_SRC_DIR}/output" \
+  "${CLEAN_SRC_DIR}/scripts" \
+  "${CLEAN_SRC_DIR}/tests" \
+  "${CLEAN_SRC_DIR}/.wporg-svn" \
+  "${CLEAN_SRC_DIR}/.gitignore" \
+  "${CLEAN_SRC_DIR}/test-results" \
+  "${CLEAN_SRC_DIR}/.wp-env.json" \
+  "${CLEAN_SRC_DIR}/.vscode" \
+  "${CLEAN_SRC_DIR}/AGENTS.md" \
+  "${CLEAN_SRC_DIR}/package.json" \
+  "${CLEAN_SRC_DIR}/package-lock.json" \
+  "${CLEAN_SRC_DIR}/login-helper.js" \
+  "${CLEAN_SRC_DIR}/wp-login.js" \
+  "${CLEAN_SRC_DIR}/playwright.config.ts" \
+  "${CLEAN_SRC_DIR}/jest.config.js" \
+  "${CLEAN_SRC_DIR}/output-dashboard-after.png" \
+  "${CLEAN_SRC_DIR}/output-dashboard-before.png" \
+  "${CLEAN_SRC_DIR}/output-dashboard-final.png" \
+  "${CLEAN_SRC_DIR}/rescan-complete-feedback.png" \
+  "${CLEAN_SRC_DIR}/sync-to-wpenv.bash" \
+  "${CLEAN_SRC_DIR}/.cursor" \
+  "${CLEAN_SRC_DIR}/.claude"
+
+rsync -a --delete "${CLEAN_SRC_DIR}/" "${DEST_DIR}"
 
 echo ""
-echo "Synced to:"
+echo "Clean source:"
+echo "  ${CLEAN_SRC_DIR}"
+echo "Synced to wp-env fallback path:"
 echo "  ${DEST_DIR}"

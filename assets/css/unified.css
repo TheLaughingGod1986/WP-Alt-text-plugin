@@ -18416,11 +18416,16 @@ button[disabled][data-bbai-tooltip] {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback {
+    position: static !important;
     display: inline-flex;
     align-items: center;
     width: fit-content;
+    height: auto !important;
     margin-top: 8px;
     padding: 4px 9px;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
     border: 1px solid rgba(148, 163, 184, 0.22);
     border-radius: 999px;
     background: #f8fafc;
@@ -18428,6 +18433,10 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback {
     font-size: 13px;
     font-weight: 600;
     line-height: 1.35;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback[hidden] {
+    display: none !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback::before {
@@ -18461,4 +18470,89 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-scan-inline-feedback--err
     border-color: rgba(185, 28, 28, 0.2);
     background: #fef2f2;
     color: #b91c1c;
+}
+
+/* Premium hierarchy pass: neutral surfaces, semantic accents only. */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card::before,
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip::before,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card::before {
+    display: none !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card,
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card.primary,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card.secondary,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card.tertiary {
+    border-color: rgba(226, 232, 240, 0.92) !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.055) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card:hover {
+    border-color: rgba(203, 213, 225, 0.95) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.045), 0 14px 34px rgba(15, 23, 42, 0.065) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid.bbai-li-hero--needs-review .bbai-li-card--donut,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid[data-bbai-li-live-progress="1"] .bbai-li-card--donut {
+    border-color: rgba(226, 232, 240, 0.92) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.055) !important;
+}
+
+@keyframes bbai-li-success-highlight {
+    0% {
+        border-color: rgba(187, 247, 208, 0.8);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.055);
+    }
+    100% {
+        border-color: rgba(226, 232, 240, 0.92);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.055);
+    }
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.primary .bbai-li-insight-card__meta,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.secondary .bbai-li-insight-card__meta,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.tertiary .bbai-li-insight-card__meta {
+    border-color: rgba(226, 232, 240, 0.95) !important;
+    background: #f8fafc !important;
+    color: #64748b !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-pill--success {
+    border-color: rgba(134, 239, 172, 0.72) !important;
+    background: #f0fdf4 !important;
+    color: #166534 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-primary:hover:not([disabled]):not([aria-busy="true"]),
+body.toplevel_page_bbai.bbai-dashboard #bbai-dashboard-main .bbai-li-btn-primary.bbai-btn-primary:hover:not([disabled]):not([aria-busy="true"]) {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 10px 24px rgba(15, 23, 42, 0.1) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-credit-bar,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-bar__track,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-usage__track,
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__progress {
+    background: #e5e7eb !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-credit-fill,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-bar__fill,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-usage__fill,
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__progress-fill {
+    box-shadow: none !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-progress-steps__step--active .bbai-li-progress-steps__dot {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-progress-steps__step--done .bbai-li-progress-steps__dot,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-progress-steps__step--active.bbai-li-progress-steps__step--done .bbai-li-progress-steps__dot {
+    box-shadow: none !important;
 }

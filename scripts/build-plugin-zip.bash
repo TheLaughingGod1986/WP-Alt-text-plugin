@@ -21,17 +21,34 @@ rm -f "$OUTPUT_ZIP"
 rsync -a \
     --exclude '.git/' \
     --exclude '.gitattributes' \
+    --exclude '.gitignore' \
     --exclude '.claude/' \
     --exclude '.cursor/' \
     --exclude '.playwright-cli/' \
+    --exclude '.playwright-mcp/' \
     --exclude '.vscode/' \
     --exclude 'build/' \
+    --exclude 'dist/' \
     --exclude 'docs/' \
     --exclude 'output/' \
+    --exclude 'playwright-report/' \
     --exclude 'scripts/' \
     --exclude 'sync-to-wpenv.bash' \
     --exclude 'gitignore' \
     --exclude 'tests/' \
+    --exclude 'test-results/' \
+    --exclude '.wp-env.json' \
+    --exclude '.wporg-svn/' \
+    --exclude 'AGENTS.md' \
+    --exclude 'node_modules/' \
+    --exclude 'package.json' \
+    --exclude 'package-lock.json' \
+    --exclude 'jest.config.js' \
+    --exclude 'playwright.config.ts' \
+    --exclude 'output-dashboard-after.png' \
+    --exclude 'output-dashboard-before.png' \
+    --exclude 'output-dashboard-final.png' \
+    --exclude 'rescan-complete-feedback.png' \
     --exclude 'login-helper.js' \
     --exclude 'wp-login.js' \
     --exclude '.DS_Store' \

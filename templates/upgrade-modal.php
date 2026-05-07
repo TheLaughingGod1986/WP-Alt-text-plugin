@@ -166,7 +166,7 @@ $bbai_primary_price = $bbai_on_authenticated_free
     )
     : __('Subscription settings', 'beepbeep-ai-alt-text-generator');
 
-$bbai_decision_eyebrow = __('Recommended', 'beepbeep-ai-alt-text-generator');
+$bbai_decision_eyebrow = __('Most popular', 'beepbeep-ai-alt-text-generator');
 $bbai_decision_title = $bbai_on_authenticated_free
     ? __('Keep your images optimised automatically', 'beepbeep-ai-alt-text-generator')
     : __('Manage billing', 'beepbeep-ai-alt-text-generator');
@@ -184,7 +184,7 @@ $bbai_limit_label = $bbai_on_authenticated_free
     : __('Usage limit reached', 'beepbeep-ai-alt-text-generator');
 
 $bbai_default_decision_note = $bbai_credit_pack_description;
-$bbai_locked_decision_eyebrow = __('Recommended', 'beepbeep-ai-alt-text-generator');
+$bbai_locked_decision_eyebrow = __('Most popular', 'beepbeep-ai-alt-text-generator');
 $bbai_locked_decision_title = $bbai_decision_title;
 $bbai_locked_decision_copy = $bbai_decision_copy;
 $bbai_locked_decision_note = $bbai_credit_pack_description;
@@ -260,6 +260,13 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                     <p class="bbai-upgrade-modal__section-label bbai-upgrade-modal__section-label--muted"><?php echo esc_html($bbai_limit_label); ?></p>
                     <h2 id="bbai-upgrade-modal-title" data-bbai-upgrade-title><?php echo esc_html($bbai_modal_title); ?></h2>
                     <p id="bbai-upgrade-modal-description" class="bbai-upgrade-modal__subtitle" data-bbai-upgrade-subtitle><?php echo esc_html($bbai_modal_subtitle); ?></p>
+                    <button type="button"
+                            class="bbai-upgrade-modal__footer-link bbai-upgrade-modal__compare-inline"
+                            data-bbai-upgrade-toggle-plans="1"
+                            aria-expanded="false"
+                            aria-controls="bbai-upgrade-plan-comparison">
+                        <?php esc_html_e('Compare plan details', 'beepbeep-ai-alt-text-generator'); ?>
+                    </button>
                 </div>
 
                 <div class="bbai-upgrade-modal__action-card bbai-upgrade-modal__action-card--primary">
@@ -319,19 +326,6 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                     </div>
                 </div>
                 <?php endif; ?>
-
-                <div class="bbai-upgrade-modal__footer-links">
-                    <button type="button"
-                            class="bbai-upgrade-modal__footer-link"
-                            data-bbai-upgrade-toggle-plans="1"
-                            aria-expanded="false"
-                            aria-controls="bbai-upgrade-plan-comparison">
-                        <?php echo esc_html($bbai_compare_plans_label); ?>
-                    </button>
-                    <button type="button" class="bbai-upgrade-modal__footer-link bbai-upgrade-modal__footer-link--muted" data-bbai-upgrade-close="1">
-                        <?php esc_html_e('Not now', 'beepbeep-ai-alt-text-generator'); ?>
-                    </button>
-                </div>
             </section>
 
             <section id="bbai-upgrade-plan-comparison" class="bbai-upgrade-modal__view bbai-upgrade-modal__view--compare" data-bbai-upgrade-view-panel="compare" data-bbai-upgrade-plan-comparison hidden>
@@ -407,7 +401,7 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
 
                     <div class="bbai-pricing-card bbai-pricing-card--growth">
                         <div class="bbai-pricing-card__badges">
-                            <span class="bbai-pricing-card__badge bbai-pricing-card__badge--growth"><?php esc_html_e('Recommended', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-pricing-card__badge bbai-pricing-card__badge--growth"><?php esc_html_e('Most popular', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <?php if ($bbai_is_growth_plan) : ?>
                                 <span class="bbai-pricing-card__status"><?php esc_html_e('Current plan', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <?php endif; ?>
@@ -571,9 +565,6 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                 </div>
 
                 <div class="bbai-upgrade-modal__footer-links bbai-upgrade-modal__footer-links--compare">
-                    <button type="button" class="bbai-upgrade-modal__footer-link" data-bbai-upgrade-back="1">
-                        <?php echo esc_html($bbai_compare_back_label); ?>
-                    </button>
                     <button type="button" class="bbai-upgrade-modal__footer-link bbai-upgrade-modal__footer-link--muted" data-bbai-upgrade-close="1">
                         <?php esc_html_e('Not now', 'beepbeep-ai-alt-text-generator'); ?>
                     </button>

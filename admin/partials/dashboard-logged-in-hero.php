@@ -256,6 +256,36 @@ if ( $bbai_li_missing_count > 0 ) {
 $bbai_li_primary_cta   = is_array( $bbai_li_hero['primary_cta'] ?? null ) ? $bbai_li_hero['primary_cta'] : [];
 $bbai_li_secondary_cta = is_array( $bbai_li_hero['secondary_cta'] ?? null ) ? $bbai_li_hero['secondary_cta'] : null;
 
+if ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count && in_array( $bbai_li_state_id, [ 'ALL_CLEAR', 'DONE' ], true ) ) {
+	$bbai_li_state_id = 'ALL_CLEAR';
+	$bbai_li_title    = __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_description = __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_primary_cta = [
+		'label'  => __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ),
+		'action' => 'navigate',
+		'href'   => admin_url( 'upload.php' ),
+	];
+	$bbai_li_secondary_cta = [
+		'label'      => __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ),
+		'busy_label' => __( 'Scanning library…', 'beepbeep-ai-alt-text-generator' ),
+		'action'     => 'rescan-media-library',
+		'href'       => '#',
+	];
+	if ( is_array( $bbai_li_hero ) ) {
+		$bbai_li_hero['primary_cta']   = $bbai_li_primary_cta;
+		$bbai_li_hero['secondary_cta'] = $bbai_li_secondary_cta;
+		$bbai_li_hero['library_cta']   = [
+			'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
+			'action' => 'navigate',
+			'href'   => admin_url( 'admin.php?page=bbai-library' ),
+		];
+		$bbai_li_hero['badge'] = [
+			'text' => __( 'All optimised', 'beepbeep-ai-alt-text-generator' ),
+			'mod'  => 'green',
+		];
+	}
+}
+
 // ── Badge ─────────────────────────────────────────────────────────────────────
 $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['badge'] : null;
 
@@ -544,7 +574,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'ALL_CLEAR' === $bbai_li_state_id ) {
 			$bbai_li_donut_cm_href   = admin_url( 'upload.php' );
-			$bbai_li_donut_cm_label = __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' );
+			$bbai_li_donut_cm_label = __( 'Add new images →', 'beepbeep-ai-alt-text-generator' );
 		}
 		?>
 		<?php if ( $bbai_li_donut_cm_href && $bbai_li_donut_cm_label ) : ?>
@@ -724,7 +754,15 @@ $bbai_hero_credit_bar_aria = sprintf(
 						data-busy-label="<?php echo esc_attr( $bbai_li_all_clear_rescan_busy ); ?>"
 						<?php endif; ?>
 						<?php echo ( 'ALL_CLEAR' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) ) ? '' : 'hidden'; ?>
-					><?php echo esc_html( ( 'ALL_CLEAR' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) ) ? $bbai_li_secondary_cta['label'] : __( 'Re-scan library →', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+					><?php echo esc_html( ( 'ALL_CLEAR' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) ) ? $bbai_li_secondary_cta['label'] : __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+					<span
+						class="bbai-dashboard-scan-inline-feedback"
+						data-bbai-dashboard-scan-inline-feedback="1"
+						data-bbai-dashboard-scan-inline-feedback-slot="1"
+						role="status"
+						aria-live="polite"
+						hidden
+					></span>
 					<?php
 					$bbai_li_library_cta = is_array( $bbai_li_hero['library_cta'] ?? null ) ? $bbai_li_hero['library_cta'] : null;
 					?>
@@ -764,14 +802,20 @@ $bbai_hero_credit_bar_aria = sprintf(
 			<div class="bbai-all-clear-upgrade" data-bbai-all-clear-upgrade="1">
 				<p class="bbai-li-free-plan-upsell__note" data-bbai-li-free-upsell="1"><?php esc_html_e( 'New uploads won’t be optimised automatically.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 				<div class="bbai-all-clear-upgrade__panel">
-					<p class="bbai-all-clear-upgrade__title"><?php esc_html_e( '⚡ Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
-					<p class="bbai-all-clear-upgrade__desc"><?php esc_html_e( 'Automatically generate ALT text for every new image you upload.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<span class="bbai-all-clear-upgrade__icon" aria-hidden="true">⚡</span>
+					<div class="bbai-all-clear-upgrade__copy">
+						<p class="bbai-all-clear-upgrade__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-all-clear-upgrade__desc"><?php esc_html_e( 'Automatically generate ALT text for new media uploads.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					</div>
 					<button
 						type="button"
-						class="bbai-all-clear-upgrade__cta"
+						class="bbai-all-clear-upgrade__cta bbai-automation-toggle"
 						data-action="show-upgrade-modal"
 						data-bbai-analytics-upgrade="all_clear_automate_uploads"
-					><?php esc_html_e( 'Upgrade plan', 'beepbeep-ai-alt-text-generator' ); ?></button>
+						aria-label="<?php esc_attr_e( 'Upgrade to enable automatic ALT text for future uploads', 'beepbeep-ai-alt-text-generator' ); ?>"
+						aria-pressed="false"
+						aria-disabled="true"
+					><span aria-hidden="true"></span></button>
 				</div>
 				<p class="bbai-all-clear-upgrade__nudge"><?php esc_html_e( 'Keep your library optimised as you upload new images.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			</div>
@@ -825,8 +869,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 				><?php echo esc_html( $bbai_hero_credit_helper ); ?></a></p>
 				<?php if ( $bbai_hero_is_free_plan && 'ALL_CLEAR' !== $bbai_li_state_id ) : ?>
 				<div class="bbai-credit-upgrade-panel" data-bbai-credit-upgrade-panel="1">
-					<p class="bbai-credit-upgrade-panel__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
-					<p class="bbai-credit-upgrade-panel__sub"><?php esc_html_e( 'Upgrade to generate ALT text automatically when new images are added.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<div class="bbai-credit-upgrade-panel__copy">
+						<p class="bbai-credit-upgrade-panel__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-credit-upgrade-panel__sub"><?php esc_html_e( 'Upgrade to generate ALT text automatically when new images are added.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					</div>
 					<span
 						class="bbai-credit-upgrade-panel__cta"
 						role="button"
@@ -1235,7 +1281,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		pause: '<?php echo esc_js( __( 'Pause', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		pausing: '<?php echo esc_js( __( 'Pausing…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		openAltLibrary: '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		uploadMoreImages: '<?php echo esc_js( __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		uploadMoreImages: '<?php echo esc_js( __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveAll: '<?php echo esc_js( __( 'Approve all', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		openReviewQueue: '<?php echo esc_js( __( 'Open review queue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewIndividually: '<?php echo esc_js( __( 'Review individually →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1243,7 +1289,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		generateAltForSingular: '<?php echo esc_js( _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		generateAltForPlural: '<?php echo esc_js( _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		addCredits: '<?php echo esc_js( __( 'Add credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		rescanLibrary: '<?php echo esc_js( __( 'Re-scan library →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		rescanLibrary: '<?php echo esc_js( __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingLabel: '<?php echo esc_js( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewLabel: '<?php echo esc_js( __( 'To review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsLabel: '<?php echo esc_js( __( 'Credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -4132,7 +4178,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			headline = '<?php echo esc_js( __( 'You’re 100% optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			supporting = '<?php echo esc_js( __( 'All images are done.', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			processed = formatCount( total ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
-			primaryLabel = TEXT.uploadMoreImages || '<?php echo esc_js( __( 'Upload more images →', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryLabel = TEXT.uploadMoreImages || '<?php echo esc_js( __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			primaryHref = '<?php echo esc_js( admin_url( 'upload.php' ) ); ?>';
 			primaryAction = 'navigate';
 			primaryBbaiAction = '';

@@ -139,6 +139,19 @@ body.modal-open #wpbody-content {
     padding-right: 44px;
 }
 
+#bbai-upgrade-modal .bbai-upgrade-modal__compare-inline {
+    justify-self: start;
+    width: auto;
+    margin-top: 2px;
+    color: #475569;
+    font-size: 12px;
+    text-decoration: none;
+}
+
+#bbai-upgrade-modal .bbai-upgrade-modal__compare-inline:hover {
+    color: #1d4ed8;
+}
+
 #bbai-upgrade-modal .bbai-upgrade-modal__section-label {
     margin: 0;
     font-size: 11px;
@@ -333,7 +346,7 @@ body.modal-open #wpbody-content {
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__footer-links--compare {
-    justify-content: space-between;
+    justify-content: flex-end;
 }
 
 #bbai-upgrade-modal .bbai-upgrade-modal__footer-link {
@@ -419,12 +432,13 @@ body.modal-open #wpbody-content {
     border: 2px solid #bfdbfe;
     background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
     box-shadow: 0 14px 30px rgba(37, 99, 235, 0.12);
-    transform: translateY(-4px);
+    transform: none;
 }
 
 #bbai-upgrade-modal .bbai-pricing-card--growth:hover {
     border-color: #93c5fd;
     box-shadow: 0 18px 36px rgba(37, 99, 235, 0.14);
+    transform: translateY(-2px);
 }
 
 #bbai-upgrade-modal .bbai-pricing-card--free {
@@ -505,7 +519,7 @@ body.modal-open #wpbody-content {
     display: grid;
     gap: 12px;
     margin-top: auto;
-    padding-top: 20px;
+    padding-top: 16px;
     border-top: 1px solid #eef2f7;
 }
 
@@ -552,12 +566,20 @@ body.modal-open #wpbody-content {
     color: #0f172a;
 }
 
+#bbai-upgrade-modal .bbai-pricing-card__limit-sub {
+    margin: -2px 0 0;
+    font-size: 13px;
+    line-height: 1.35;
+    color: #64748b;
+}
+
 #bbai-upgrade-modal .bbai-pricing-card__features {
     display: grid;
-    gap: 10px;
+    align-content: start;
+    gap: 7px;
     list-style: none;
     padding: 0;
-    margin: 16px 0 0;
+    margin: 14px 0 0;
     flex: 1 1 auto;
 }
 
@@ -576,6 +598,11 @@ body.modal-open #wpbody-content {
     margin-top: 2px;
     color: #22c55e;
     flex: 0 0 15px;
+}
+
+#bbai-upgrade-modal .bbai-pricing-card--growth .bbai-pricing-card__btn--growth {
+    margin-top: 8px;
+    margin-bottom: 4px;
 }
 
 #bbai-upgrade-modal .bbai-feature-coming-soon {
@@ -607,7 +634,7 @@ body.modal-open #wpbody-content {
     }
 
     #bbai-upgrade-modal .bbai-pricing-card--growth {
-        transform: translateY(-2px);
+        transform: none;
     }
 }
 
@@ -656,7 +683,7 @@ body.modal-open #wpbody-content {
 
     #bbai-upgrade-modal .bbai-upgrade-modal__footer-links,
     #bbai-upgrade-modal .bbai-upgrade-modal__footer-links--compare {
-        justify-content: space-between;
+        justify-content: flex-end;
     }
 
     #bbai-upgrade-modal .bbai-pricing-card__amount {

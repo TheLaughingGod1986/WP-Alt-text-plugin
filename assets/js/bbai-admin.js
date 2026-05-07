@@ -3844,6 +3844,13 @@
 
     function removeDashboardScanInlineFeedbackNodes() {
         Array.prototype.slice.call(document.querySelectorAll('[data-bbai-dashboard-scan-inline-feedback]')).forEach(function(node) {
+            if (node && node.hasAttribute('data-bbai-dashboard-scan-inline-feedback-slot')) {
+                node.hidden = true;
+                node.textContent = '';
+                node.className = 'bbai-dashboard-scan-inline-feedback';
+                return;
+            }
+
             try {
                 node.remove();
             } catch (error) {
@@ -3873,19 +3880,34 @@
             : document.querySelector('[data-bbai-li-all-clear-rescan="1"], [data-action="rescan-media-library"]');
         var status;
         var parent;
+        var slot;
 
         if (!anchor || !message) {
             return false;
         }
 
+        parent = anchor.parentNode;
+        if (parent) {
+            slot = parent.querySelector('[data-bbai-dashboard-scan-inline-feedback-slot]');
+        }
+
+        if (!slot) {
+            slot = document.querySelector('[data-bbai-dashboard-scan-inline-feedback-slot]');
+        }
+
         removeDashboardScanInlineFeedbackNodes();
 
-        status = document.createElement('span');
+        status = slot || document.createElement('span');
         status.className = 'bbai-dashboard-scan-inline-feedback bbai-dashboard-scan-inline-feedback--' + (type || 'success');
         status.setAttribute('data-bbai-dashboard-scan-inline-feedback', '1');
         status.setAttribute('role', 'status');
         status.setAttribute('aria-live', 'polite');
         status.textContent = message;
+        status.hidden = false;
+
+        if (slot) {
+            return true;
+        }
 
         parent = anchor.parentNode;
         if (!parent) {
@@ -15148,6 +15170,9 @@
         if (review > 0) {
             return 'NEEDS_REVIEW';
         }
+        if (state === 'DONE' || state === 'ALL_CLEAR') {
+            return 'ALL_CLEAR';
+        }
         return state;
     }
 
@@ -15210,6 +15235,7 @@
         var total = Math.max(0, parseInt(segments.total, 10) || 0);
 
         return state === 'ALL_CLEAR' ||
+            state === 'DONE' ||
             String(donut.center_label || '') === '✓' ||
             (missing === 0 && weak === 0 && optimized > 0 && total > 0 && optimized >= total);
     }
@@ -15245,12 +15271,12 @@
             support: __('Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator'),
             variant: 'success',
             primary_cta: {
-                label: __('Upload more images →', 'beepbeep-ai-alt-text-generator'),
+                label: __('Add new images →', 'beepbeep-ai-alt-text-generator'),
                 action: 'navigate',
                 href: 'upload.php'
             },
             secondary_cta: {
-                label: __('Re-scan library →', 'beepbeep-ai-alt-text-generator'),
+                label: __('Re-scan', 'beepbeep-ai-alt-text-generator'),
                 busy_label: __('Scanning library…', 'beepbeep-ai-alt-text-generator'),
                 action: 'rescan-media-library',
                 href: '#'
@@ -15278,7 +15304,7 @@
         var heroData;
         var nextData;
 
-        if (counts.missing <= 0 && counts.review <= 0 && isLoggedInAllClearPayload(stateData)) {
+        if (counts.missing <= 0 && counts.review <= 0 && (nextState === 'ALL_CLEAR' || isLoggedInAllClearPayload(stateData))) {
             return buildLoggedInAllClearStateData(stateData, counts);
         }
 
@@ -15591,7 +15617,7 @@
             cfg = {
                 href: primary.href,
                 action: primary.action || 'navigate',
-                label: __('Upload more images →', 'beepbeep-ai-alt-text-generator')
+                label: __('Add new images →', 'beepbeep-ai-alt-text-generator')
             };
         }
 
@@ -15842,14 +15868,18 @@
                 escapeHtml(__('New uploads won’t be optimised automatically.', 'beepbeep-ai-alt-text-generator')) +
                 '</p>' +
                 '<div class="bbai-all-clear-upgrade__panel">' +
+                '<span class="bbai-all-clear-upgrade__icon" aria-hidden="true">⚡</span>' +
+                '<div class="bbai-all-clear-upgrade__copy">' +
                 '<p class="bbai-all-clear-upgrade__title">' +
-                escapeHtml(__('⚡ Automate future uploads', 'beepbeep-ai-alt-text-generator')) +
+                escapeHtml(__('Automate future uploads', 'beepbeep-ai-alt-text-generator')) +
                 '</p>' +
                 '<p class="bbai-all-clear-upgrade__desc">' +
-                escapeHtml(__('Automatically generate ALT text for every new image you upload.', 'beepbeep-ai-alt-text-generator')) +
+                escapeHtml(__('Automatically generate ALT text for new media uploads.', 'beepbeep-ai-alt-text-generator')) +
                 '</p>' +
-                '<button type="button" class="bbai-all-clear-upgrade__cta" data-action="show-upgrade-modal" data-bbai-analytics-upgrade="all_clear_automate_uploads">' +
-                escapeHtml(__('Upgrade plan', 'beepbeep-ai-alt-text-generator')) +
+                '</div>' +
+                '<button type="button" class="bbai-all-clear-upgrade__cta bbai-automation-toggle" data-action="show-upgrade-modal" data-bbai-analytics-upgrade="all_clear_automate_uploads" aria-label="' +
+                escapeHtml(__('Upgrade to enable automatic ALT text for future uploads', 'beepbeep-ai-alt-text-generator')) +
+                '" aria-pressed="false" aria-disabled="true"><span aria-hidden="true"></span>' +
                 '</button>' +
                 '</div>' +
                 '<p class="bbai-all-clear-upgrade__nudge">' +
