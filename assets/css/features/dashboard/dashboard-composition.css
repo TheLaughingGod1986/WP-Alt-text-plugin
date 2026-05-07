@@ -194,15 +194,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   ALL_CLEAR STATE — SUPPRESS RETENTION STRIP
-   The retention strip adds no value when every image is already optimised.
-───────────────────────────────────────────────────────────────────────────── */
-
-.bbai-logged-in-dashboard[data-state="ALL_CLEAR"] .bbai-retention-strip {
-    display: none !important;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
    RESPONSIVE PRESERVATION
    These match breakpoints already in logged-in-state.css — ensure overrides
    don't accidentally break the mobile collapse.
