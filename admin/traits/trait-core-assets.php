@@ -1243,6 +1243,17 @@ JS,
             );
         }
 
+        // Dashboard composition rebalance — loads after logged-in-state to win cascade.
+        $bbai_composition_css = 'assets/css/features/dashboard/dashboard-composition.css';
+        if ( file_exists( $base_path . $bbai_composition_css ) ) {
+            wp_enqueue_style(
+                'bbai-dashboard-composition',
+                $base_url . $bbai_composition_css,
+                [ 'bbai-logged-in-state', 'bbai-dashboard-header' ],
+                $asset_version( $bbai_composition_css, '1.0.0' )
+            );
+        }
+
         // Inline CTA fallback handler — runs when the full modal JS bundle is absent.
         // Handles show-dashboard-auth and show-upgrade-modal with graceful navigation fallbacks.
         $bbai_signup_url  = esc_url_raw( 'https://app.beepbeep.ai/register' );

@@ -1,0 +1,183 @@
+/**
+ * Dashboard Composition Rebalance
+ *
+ * Reduces dead vertical space, tightens spacing rhythm, and improves density
+ * across the logged-in dashboard (hero cards, CTA strip, insight cards).
+ *
+ * Rules mirror the scope of the highest-priority block in logged-in-state.css
+ * (body.toplevel_page_bbai.bbai-dashboard) so specificity is equal; load-order
+ * (this file is registered after bbai-logged-in-state) wins the cascade.
+ * !important is used only where the source rule already uses it.
+ *
+ * @package BeepBeep_AI
+ * @since   5.3.0
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECTION GAP RHYTHM
+   Reduces the 30px gap between the header, hero shell, and insight cards to a
+   tighter 20px.  This removes the "random stacked blocks" feeling.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
+    gap: 20px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
+    gap: 20px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HERO CARD BORDERS + SHADOWS
+   Slightly softer — cards feel integrated, not floating.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+    border-color: rgba(226, 232, 240, 0.88);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LEFT DONUT CARD
+   Tighter vertical padding + ~9% smaller donut → reduces hollow dead space.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
+    padding: 18px 18px 14px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
+    width: 168px;
+    height: 168px;
+    margin-bottom: 3px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner {
+    inset: 18px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
+    gap: 5px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-card-meta-row {
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RIGHT CONTENT CARD
+   Reduce internal vertical rhythm so content feels grouped, not drifting.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
+    padding: 18px 22px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-state-badge {
+    margin-bottom: 7px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-support {
+    margin-top: 7px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-action-block {
+    margin-top: 12px;
+    max-width: 500px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card-section--spaced {
+    margin-top: 12px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HERO CTA BUTTONS
+   42px height instead of 48px — tighter, still comfortable.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-primary,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary,
+#bbai-dashboard-main .bbai-li-btn-primary.bbai-btn-primary,
+#bbai-dashboard-main .bbai-li-btn-secondary.bbai-btn-secondary {
+    height: 42px !important;
+    min-height: 42px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   AUTOMATION TOGGLE CARD
+   Tighten inner padding so toggle row reads as an intentional inline unit.
+───────────────────────────────────────────────────────────────────────────── */
+
+#bbai-dashboard-main .bbai-automation-card__toggle-row {
+    padding: 10px 14px;
+    gap: 14px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RETENTION / CTA STRIP
+   ~25% height reduction: less padding, smaller title.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip {
+    padding: 13px 20px !important;
+    gap: 16px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__title {
+    font-size: 15px !important;
+    margin-bottom: 2px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   INSIGHT / STAT CARDS
+   Tighter padding, remove forced min-height, lighter shadow, closer spacing.
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
+    gap: 18px !important;
+    margin-top: 18px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card {
+    min-height: 0 !important;
+    padding: 18px 20px !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03) !important;
+    border-color: rgba(226, 232, 240, 0.82) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__value {
+    margin-top: 10px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__desc {
+    margin-top: 10px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__support {
+    margin: 7px 0 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
+    margin: 8px 0 0 !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESPONSIVE PRESERVATION
+   These match breakpoints already in logged-in-state.css — ensure overrides
+   don't accidentally break the mobile collapse.
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
+        gap: 14px !important;
+    }
+}
+
+@media (max-width: 680px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
+        padding: 16px !important;
+    }
+}
