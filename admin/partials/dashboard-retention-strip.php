@@ -49,13 +49,18 @@ $bbai_rs_pp = (int) ($bbai_rs['progress_pct'] ?? 0);
     aria-label="<?php esc_attr_e('Optimisation status and next steps', 'beepbeep-ai-alt-text-generator'); ?>"
 >
     <div class="bbai-retention-strip__main">
-        <p class="bbai-retention-strip__headline"><?php echo esc_html((string) ($bbai_rs['headline'] ?? '')); ?></p>
-        <?php if (!empty($bbai_rs['supporting'])) : ?>
-            <p class="bbai-retention-strip__supporting"><?php echo esc_html((string) $bbai_rs['supporting']); ?></p>
-        <?php endif; ?>
-        <?php if (!empty($bbai_rs['delta_line'])) : ?>
-            <p class="bbai-retention-strip__delta"><?php echo esc_html((string) $bbai_rs['delta_line']); ?></p>
-        <?php endif; ?>
+        <span class="bbai-retention-strip__check-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#22c55e"/><path d="M7 12l4 4 6-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <div class="bbai-retention-strip__text">
+            <p class="bbai-retention-strip__headline"><?php echo esc_html((string) ($bbai_rs['headline'] ?? '')); ?></p>
+            <?php if (!empty($bbai_rs['supporting'])) : ?>
+                <p class="bbai-retention-strip__supporting"><?php echo esc_html((string) $bbai_rs['supporting']); ?></p>
+            <?php endif; ?>
+            <?php if (!empty($bbai_rs['delta_line'])) : ?>
+                <p class="bbai-retention-strip__delta"><?php echo esc_html((string) $bbai_rs['delta_line']); ?></p>
+            <?php endif; ?>
+        </div>
     </div>
 
     <div class="bbai-retention-strip__progress" role="group" aria-label="<?php esc_attr_e('Coverage progress', 'beepbeep-ai-alt-text-generator'); ?>">

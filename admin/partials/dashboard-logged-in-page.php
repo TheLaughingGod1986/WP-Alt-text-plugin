@@ -101,7 +101,12 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	>
 		<article class="bbai-li-insight-card bbai-stat-card primary">
 			<div class="bbai-stat-card-top">
-			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Accessibility', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			<div class="bbai-li-insight-card__icon-row">
+				<span class="bbai-li-insight-card__icon bbai-li-insight-card__icon--accessibility" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="5" r="2" fill="currentColor"/><path d="M12 9c-2.2 0-4 1.3-5 3l-2 4h3l1-2v7h2v-4h2v4h2v-7l1 2h3l-2-4c-1-2.2-2.8-3-5-3z" fill="currentColor"/></svg>
+				</span>
+				<h3 class="bbai-li-insight-card__label"><?php esc_html_e( 'ACCESSIBILITY', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			</div>
 			<?php if ( 100 === $bbai_li_cov && $bbai_li_lib_n > 0 ) : ?>
 				<span class="bbai-li-insight-pill bbai-li-insight-pill--success"><?php esc_html_e( 'All images optimised 🎉', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			<?php endif; ?>
@@ -142,7 +147,12 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 			</article>
 		<article class="bbai-li-insight-card bbai-stat-card secondary">
 			<div class="bbai-stat-card-top">
-			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Time saved', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			<div class="bbai-li-insight-card__icon-row">
+				<span class="bbai-li-insight-card__icon bbai-li-insight-card__icon--time" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</span>
+				<h3 class="bbai-li-insight-card__label"><?php esc_html_e( 'TIME SAVED', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			</div>
 			<p
 				class="bbai-li-insight-card__value"
 				data-bbai-li-insight-mins
@@ -175,7 +185,12 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 			</article>
 		<article class="bbai-li-insight-card bbai-stat-card tertiary">
 			<div class="bbai-stat-card-top">
-			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'SEO', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			<div class="bbai-li-insight-card__icon-row">
+				<span class="bbai-li-insight-card__icon bbai-li-insight-card__icon--seo" aria-hidden="true">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h4v-6H3v6zm6 0h4V6H9v12zm6 0h4v-9h-4v9z" fill="currentColor"/></svg>
+				</span>
+				<h3 class="bbai-li-insight-card__label"><?php esc_html_e( 'SEO', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+			</div>
 			<p
 				class="bbai-li-insight-card__value"
 				data-bbai-li-insight-optimized
@@ -211,5 +226,15 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 					</div>
 			</article>
 	</section>
+
+	<footer class="bbai-dashboard-footer" aria-label="<?php esc_attr_e( 'Dashboard footer', 'beepbeep-ai-alt-text-generator' ); ?>">
+		<p class="bbai-dashboard-footer__text">
+			<?php esc_html_e( 'Thank you for choosing BeepBeep AI.', 'beepbeep-ai-alt-text-generator' ); ?> &#10084;
+			<?php esc_html_e( 'Need help? Check our', 'beepbeep-ai-alt-text-generator' ); ?>
+			<a href="https://beepbeep.ai/docs" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'documentation', 'beepbeep-ai-alt-text-generator' ); ?></a>
+			<?php esc_html_e( 'or contact', 'beepbeep-ai-alt-text-generator' ); ?>
+			<a href="#" data-action="show-contact-modal"><?php esc_html_e( 'support', 'beepbeep-ai-alt-text-generator' ); ?></a>.
+		</p>
+	</footer>
 
 </section>
