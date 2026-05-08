@@ -848,7 +848,7 @@ class API_Client_V2 {
             $backend_error_message = '';
             
             if (is_array($data)) {
-                $backend_error_code = is_string($data['code'] ?? '') ? $data['code'] : '';
+                $backend_error_code = is_string($data['code'] ?? '') ? ($data['code'] ?? '') : '';
                 $backend_error_message = is_string($data['message'] ?? $data['error'] ?? '') ? ($data['message'] ?? $data['error'] ?? '') : '';
             }
             

@@ -766,6 +766,14 @@ JS,
             $asset_version($section_header_css, '1.0.4')
         );
 
+        $dashboard_header_css = 'assets/css/features/dashboard/dashboard-header.css';
+        wp_enqueue_style(
+            'bbai-dashboard-header',
+            $base_url . $dashboard_header_css,
+            [ 'bbai-section-header' ],
+            $asset_version( $dashboard_header_css, '1.0.0' )
+        );
+
         $admin_controls_css = 'assets/css/system/bbai-admin-controls.css';
         $admin_interactions_css = 'assets/css/system/bbai-admin-interactions.css';
         if ( file_exists( $base_path . $admin_controls_css ) ) {
@@ -1232,6 +1240,17 @@ JS,
                 $base_url . $bbai_li_css,
                 [ 'bbai-section-header' ],
                 $asset_version( $bbai_li_css, '1.0.0' )
+            );
+        }
+
+        // Dashboard composition rebalance — loads after logged-in-state to win cascade.
+        $bbai_composition_css = 'assets/css/features/dashboard/dashboard-composition.css';
+        if ( file_exists( $base_path . $bbai_composition_css ) ) {
+            wp_enqueue_style(
+                'bbai-dashboard-composition',
+                $base_url . $bbai_composition_css,
+                [ 'bbai-logged-in-state', 'bbai-dashboard-header' ],
+                $asset_version( $bbai_composition_css, '1.0.0' )
             );
         }
 
