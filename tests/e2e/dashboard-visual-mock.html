@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Visual Mock</title>
+<style>
+/* WordPress admin reset approximation */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; font-size: 13px; background: #f0f0f1; color: #1d2327; }
+a { color: #2271b1; text-decoration: none; }
+h1, h2, h3, p { margin: 0; padding: 0; }
+
+/* Simulate WP admin page wrap */
+.wp-admin-wrap { padding: 20px 20px 20px 0; }
+#bbai-dashboard-main { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+</style>
+<!-- Simulate body classes for CSS selectors -->
+<script>document.addEventListener('DOMContentLoaded', () => { document.body.className = 'wp-admin toplevel_page_bbai bbai-dashboard'; });</script>
+</head>
+<body class="wp-admin toplevel_page_bbai bbai-dashboard">
+
+<!-- Load the dashboard CSS files via inline links -->
+<link rel="stylesheet" href="../../assets/css/features/dashboard/logged-in-state.css">
+<link rel="stylesheet" href="../../assets/css/features/dashboard/dashboard-header.css">
+<link rel="stylesheet" href="../../assets/css/features/dashboard/hero.css">
+<link rel="stylesheet" href="../../assets/css/features/dashboard/usage-card.css">
+<link rel="stylesheet" href="../../assets/css/features/dashboard/dashboard-retention-strip.css">
+<link rel="stylesheet" href="../../assets/css/features/dashboard/dashboard-composition.css">
+<link rel="stylesheet" href="../../assets/css/bbai-dashboard.css">
+
+<div class="wp-admin-wrap">
+<div id="bbai-dashboard-main">
+
+<!-- Dashboard logged-in section -->
+<section
+  class="bbai-logged-in-dashboard bbai-logged-in-dashboard--ssr"
+  data-bbai-logged-in-dashboard
+  data-bbai-li-ssr="1"
+  data-state="ALL_CLEAR"
+  aria-label="Logged-in dashboard"
+>
+
+  <!-- Dashboard Header -->
+  <div class="bbai-dashboard-header">
+    <div class="bbai-dashboard-header__left">
+      <h1 class="bbai-dashboard-header__heading">Welcome back, Admin 👋</h1>
+      <p class="bbai-dashboard-header__subtitle">Your media library is well-optimised.</p>
+    </div>
+    <div class="bbai-dashboard-header__right">
+      <div class="bbai-dashboard-header__status-pill">
+        <span class="bbai-dashboard-header__status-dot"></span>
+        <span class="bbai-dashboard-header__status-text">All images optimised</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Shell -->
+  <div class="bbai-li-hero-shell">
+    <div
+      class="bbai-li-hero-grid bbai-all-clear-state"
+      data-bbai-li-hero="1"
+      data-bbai-li-state="ALL_CLEAR"
+      data-bbai-li-variant="default"
+      data-bbai-li-missing-count="0"
+      data-bbai-li-review-count="0"
+      data-bbai-li-optimised-count="42"
+      data-bbai-li-total-count="42"
+    >
+
+      <!-- LEFT CARD: vertical layout -->
+      <div class="bbai-li-card bbai-li-card--donut bbai-li-card--donut-vertical">
+
+        <!-- Intro: badge + headline + support -->
+        <div class="bbai-li-card-section bbai-li-card-section--intro">
+          <span class="bbai-li-state-badge bbai-li-state-badge--success" aria-hidden="true">All Clear</span>
+          <h1 id="bbai-li-hero-title" class="bbai-li-headline" data-bbai-li-hero-headline="1">
+            Your media library is fully optimised
+          </h1>
+          <p class="bbai-li-support" data-bbai-li-hero-support="1">
+            Every image has useful ALT text — great for accessibility and SEO.
+          </p>
+        </div>
+
+        <!-- Donut ring -->
+        <div class="bbai-li-donut-col">
+          <div class="bbai-li-donut-area">
+            <div
+              class="bbai-li-donut bbai-command-donut--success"
+              data-bbai-li-donut="1"
+              data-bbai-li-donut-pct="100"
+              data-bbai-li-donut-color="#22c55e"
+              style="background: conic-gradient(#22c55e 360deg, #e2e8f0 0deg);"
+              aria-label="100% of images optimised"
+            >
+              <span class="bbai-li-donut__inner"></span>
+              <span class="bbai-li-donut__center">
+                <span class="bbai-li-donut__value bbai-li-donut__value--success" data-bbai-li-donut-label="1">
+                  100%
+                </span>
+              </span>
+            </div>
+            <p class="bbai-li-donut__meta" data-bbai-li-donut-meta="1">Everything is optimised and SEO-ready</p>
+          </div>
+        </div>
+
+        <!-- Inline stats -->
+        <div class="bbai-li-hero-inline-stats" aria-label="Library at a glance">
+          <div class="bbai-li-hero-stat">
+            <span class="bbai-li-hero-stat__icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <strong class="bbai-li-hero-stat__value" data-bbai-li-insight-optimized>42</strong>
+            <span class="bbai-li-hero-stat__label">Images optimised</span>
+          </div>
+          <span class="bbai-li-hero-stat-divider" aria-hidden="true"></span>
+          <div class="bbai-li-hero-stat">
+            <span class="bbai-li-hero-stat__icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="5" r="2" fill="currentColor"/><path d="M12 9c-2.2 0-4 1.3-5 3l-2 4h3l1-2v7h2v-4h2v4h2v-7l1 2h3l-2-4c-1-2.2-2.8-3-5-3z" fill="currentColor"/></svg>
+            </span>
+            <strong class="bbai-li-hero-stat__value" data-bbai-li-inline-cov>100%</strong>
+            <span class="bbai-li-hero-stat__label">Accessible</span>
+          </div>
+        </div>
+
+        <!-- CTAs -->
+        <div class="bbai-li-card-section bbai-li-card-section--actions">
+          <div class="bbai-action-block">
+            <div class="bbai-li-cta-row bbai-li-cta-group bbai-cta-group">
+              <div class="bbai-li-cta-primary-col">
+                <a class="bbai-li-btn-primary bbai-btn bbai-btn-primary" href="#">Open ALT Library</a>
+                <a class="bbai-all-clear-rescan-link" href="#" data-action="rescan-media-library" data-bbai-li-all-clear-rescan="1">Re-scan library</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status chips + flow -->
+        <div class="bbai-li-donut-context" data-bbai-li-donut-context="1">
+          <div class="bbai-status-summary" role="group" aria-label="Status summary">
+            <button type="button" class="bbai-status-item bbai-status-item--readout is-missing">
+              <span class="bbai-dot red" aria-hidden="true"></span>
+              <span class="bbai-status-text"><strong class="bbai-count" data-bbai-status-metric="missing">0</strong> images need ALT text</span>
+            </button>
+            <button type="button" class="bbai-status-item bbai-status-item--readout is-review">
+              <span class="bbai-dot orange" aria-hidden="true"></span>
+              <span class="bbai-status-text"><strong class="bbai-count" data-bbai-status-metric="review">0</strong> ready for review</span>
+            </button>
+          </div>
+          <div class="bbai-progress-flow" data-bbai-li-flow="1" role="group" aria-label="Workflow">
+            <span class="bbai-progress-step is-done" data-bbai-flow-step="generate">Generate</span>
+            <span class="bbai-progress-flow__arrow" aria-hidden="true">→</span>
+            <span class="bbai-progress-step is-done" data-bbai-flow-step="review">Review</span>
+            <span class="bbai-progress-flow__arrow" aria-hidden="true">→</span>
+            <span class="bbai-progress-step is-active" data-bbai-flow-step="done">Done</span>
+          </div>
+        </div>
+
+        <div class="bbai-card-meta-row">
+          <div class="bbai-li-activity-strip" data-bbai-li-activity-strip="1" hidden aria-hidden="true"></div>
+        </div>
+
+      </div><!-- /.bbai-li-card--donut -->
+
+      <!-- RIGHT CARD: usage this month -->
+      <div class="bbai-li-card bbai-li-card--content bbai-li-usage-card">
+
+        <div class="bbai-li-card-section bbai-li-card-section--activation" data-bbai-activation-host="1" aria-live="polite"></div>
+
+        <p class="bbai-usage-card-month-label">USAGE THIS MONTH</p>
+
+        <!-- Credits section -->
+        <div class="bbai-credit-usage bbai-credit-usage--all-clear-muted"
+          data-bbai-hero-credit-usage="1"
+          data-credit-state="ok"
+          data-bbai-hero-credits-used="31"
+          data-bbai-hero-credits-remaining="19"
+          data-bbai-hero-credits-limit="50"
+        >
+          <div class="bbai-credit-head">
+            <div class="bbai-credit-big-label" data-bbai-hero-credit-label="1">31 / 50 used</div>
+            <div class="bbai-credit-meta-row">
+              <span class="bbai-credit-clarity" data-bbai-hero-credit-clarity="1">Resets monthly</span>
+              <span class="bbai-credit-rem-label">19 remaining</span>
+            </div>
+          </div>
+          <div class="bbai-credit-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="62" aria-label="62% of credits used" data-bbai-hero-credit-bar="1">
+            <div class="bbai-credit-fill" data-bbai-hero-credit-fill="1" style="--bbai-credit-percent: 62%;"></div>
+          </div>
+        </div>
+
+        <hr class="bbai-usage-divider" aria-hidden="true" />
+
+        <!-- Automate toggle -->
+        <div class="bbai-all-clear-upgrade" data-bbai-all-clear-upgrade="1">
+          <div class="bbai-all-clear-upgrade__panel">
+            <span class="bbai-all-clear-upgrade__icon" aria-hidden="true">⚡</span>
+            <div class="bbai-all-clear-upgrade__copy">
+              <p class="bbai-all-clear-upgrade__title">Automate future uploads</p>
+              <p class="bbai-all-clear-upgrade__desc">Automatically generate ALT text for new media uploads.</p>
+            </div>
+            <button
+              type="button"
+              class="bbai-all-clear-upgrade__cta bbai-automation-toggle"
+              data-action="show-upgrade-modal"
+              aria-label="Upgrade to enable automatic ALT text for future uploads"
+              aria-pressed="false"
+              aria-disabled="true"
+            ><span aria-hidden="true"></span></button>
+          </div>
+        </div>
+
+        <hr class="bbai-usage-divider" aria-hidden="true" />
+
+        <!-- Re-scan + Upgrade buttons -->
+        <div class="bbai-usage-action-row">
+          <a class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-usage-rescan-btn" href="#" data-action="rescan-media-library">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M1 4v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 .49-4.87L1 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Re-scan library
+          </a>
+          <a class="bbai-btn bbai-btn-secondary bbai-btn-sm bbai-usage-upgrade-btn" href="#" data-action="show-upgrade-modal">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            Upgrade plan
+          </a>
+        </div>
+
+        <!-- Warning/helper section -->
+        <div class="bbai-usage-warning-section">
+          <p class="bbai-credit-context" data-bbai-hero-credit-context="1">19 credits remaining this month</p>
+          <p class="bbai-credit-helper" data-bbai-hero-credit-helper="1">
+            <a class="bbai-credit-growth-link" href="#" data-action="show-upgrade-modal">Upgrade to automate new uploads and remove monthly limits</a>
+          </p>
+        </div>
+
+      </div><!-- /.bbai-li-usage-card -->
+
+    </div><!-- /.bbai-li-hero-grid -->
+  </div><!-- /.bbai-li-hero-shell -->
+
+  <!-- Retention Strip -->
+  <section
+    class="bbai-status-strip bbai-retention-strip"
+    data-bbai-retention-strip="1"
+    aria-label="Optimisation status and next steps"
+  >
+    <div class="bbai-retention-strip__main">
+      <span class="bbai-retention-strip__check-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="#22c55e"/><path d="M7 12l4 4 6-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="bbai-retention-strip__text">
+        <p class="bbai-retention-strip__headline">You've optimised 42 images this month — great work!</p>
+        <p class="bbai-retention-strip__supporting">Keep your media library growing with automated ALT text.</p>
+        <p class="bbai-retention-strip__delta">+42 images covered since last visit</p>
+      </div>
+    </div>
+    <div class="bbai-retention-strip__progress" role="group" aria-label="Coverage progress">
+      <div class="bbai-retention-strip__bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+        <span class="bbai-retention-strip__bar-fill" style="width: 100%;"></span>
+      </div>
+      <p class="bbai-retention-strip__processed">42 of 42 images processed</p>
+    </div>
+    <div class="bbai-retention-strip__actions">
+      <a class="bbai-btn bbai-btn-primary bbai-btn-sm" href="#">View library</a>
+      <a class="bbai-btn bbai-btn-secondary bbai-btn-sm" href="#">Upgrade plan</a>
+    </div>
+  </section>
+
+  <!-- Insight Stat Cards -->
+  <section class="bbai-li-insights" aria-label="Library insights">
+    <article class="bbai-li-insight-card bbai-stat-card primary">
+      <div class="bbai-stat-card-top">
+        <div class="bbai-li-insight-card__icon-row">
+          <span class="bbai-li-insight-card__icon bbai-li-insight-card__icon--accessibility" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="5" r="2" fill="currentColor"/><path d="M12 9c-2.2 0-4 1.3-5 3l-2 4h3l1-2v7h2v-4h2v4h2v-7l1 2h3l-2-4c-1-2.2-2.8-3-5-3z" fill="currentColor"/></svg>
+          </span>
+          <h3 class="bbai-li-insight-card__label">ACCESSIBILITY</h3>
+        </div>
+        <span class="bbai-li-insight-pill bbai-li-insight-pill--success">All images optimised 🎉</span>
+        <p class="bbai-li-insight-card__value" data-bbai-li-insight-coverage>100% of images accessible</p>
+      </div>
+      <div class="bbai-stat-card-bottom">
+        <p class="bbai-li-insight-card__desc">Every image has useful ALT text.</p>
+        <p class="bbai-li-insight-card__meta" data-bbai-li-insight-coverage-meta>42 of 42 images covered</p>
+        <p class="bbai-li-insight-card__support">Keep coverage at 100% as you upload.</p>
+        <a href="#" class="bbai-li-insight-card__cta" data-action="show-upgrade-modal">Automate new uploads</a>
+      </div>
+    </article>
+
+    <article class="bbai-li-insight-card bbai-stat-card secondary">
+      <div class="bbai-stat-card-top">
+        <div class="bbai-li-insight-card__icon-row">
+          <span class="bbai-li-insight-card__icon bbai-li-insight-card__icon--time" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <h3 class="bbai-li-insight-card__label">TIME SAVED</h3>
+        </div>
+        <p class="bbai-li-insight-card__value" data-bbai-li-insight-mins>84 mins saved</p>
+      </div>
+      <div class="bbai-stat-card-bottom">
+        <p class="bbai-li-insight-card__desc">Manual ALT writing avoided.</p>
+        <p class="bbai-li-insight-card__meta">Estimated from 2 mins per image.</p>
+        <p class="bbai-li-insight-card__support">Turn on automation to keep saving time.</p>
+        <a href="#" class="bbai-li-insight-card__cta" data-action="show-upgrade-modal">Enable automation</a>
+      </div>
+    </article>
+
+    <article class="bbai-li-insight-card bbai-stat-card tertiary">
+      <div class="bbai-stat-card-top">
+        <div class="bbai-li-insight-card__icon-row">
+          <span class="bbai-li-insight-card__icon bbai-li-insight-card__icon--seo" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h4v-6H3v6zm6 0h4V6H9v12zm6 0h4v-9h-4v9z" fill="currentColor"/></svg>
+          </span>
+          <h3 class="bbai-li-insight-card__label">SEO</h3>
+        </div>
+        <p class="bbai-li-insight-card__value" data-bbai-li-insight-optimized>42 images optimised</p>
+      </div>
+      <div class="bbai-stat-card-bottom">
+        <p class="bbai-li-insight-card__desc">Search engines can understand more of your media.</p>
+        <p class="bbai-li-insight-card__meta" data-bbai-li-insight-seo-meta>42 search-ready images</p>
+        <p class="bbai-li-insight-card__support">Keep future uploads SEO-ready automatically.</p>
+        <a href="#" class="bbai-li-insight-card__cta" data-action="show-upgrade-modal">Automate future images</a>
+      </div>
+    </article>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bbai-dashboard-footer" aria-label="Dashboard footer">
+    <p class="bbai-dashboard-footer__text">
+      Thank you for choosing BeepBeep AI. ❤️
+      Need help? Check our <a href="https://beepbeep.ai/docs" target="_blank" rel="noopener noreferrer">documentation</a>
+      or contact <a href="#" data-action="show-contact-modal">support</a>.
+    </p>
+  </footer>
+
+</section>
+</div>
+</div>
+</body>
+</html>
