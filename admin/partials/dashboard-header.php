@@ -36,7 +36,7 @@ $bbai_display_name    = ( $bbai_current_user instanceof WP_User && '' !== $bbai_
 		</p>
 	</div>
 
-	<div class="bbai-dashboard-header__right" style="flex-shrink:0;">
+	<div class="bbai-dashboard-header__right" style="display:block;flex-shrink:0;">
 		<div class="bbai-dashboard-header__status-pill" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:20px;border:1.5px solid #16a34a;background:#f0fdf4;white-space:nowrap;">
 			<span class="bbai-dashboard-header__status-dot" aria-hidden="true" style="display:block;width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;"></span>
 			<span class="bbai-dashboard-header__status-text" style="font-size:13px;font-weight:600;color:#15803d;line-height:1;">
