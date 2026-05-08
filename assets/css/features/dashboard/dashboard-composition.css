@@ -1,22 +1,17 @@
 /**
- * Dashboard Composition Rebalance
+ * Dashboard Composition — Premium Unified Hero
  *
- * Reduces dead vertical space, tightens spacing rhythm, and improves density
- * across the logged-in dashboard (hero cards, CTA strip, insight cards).
- *
- * Rules mirror the scope of the highest-priority block in logged-in-state.css
- * (body.toplevel_page_bbai.bbai-dashboard) so specificity is equal; load-order
- * (this file is registered after bbai-logged-in-state) wins the cascade.
- * !important is used only where the source rule already uses it.
+ * Replaces the dual-card layout with a single unified hero surface.
+ * Scoped to body.toplevel_page_bbai.bbai-dashboard for high specificity.
+ * Load order (registered after bbai-logged-in-state) wins the cascade.
+ * !important used only where source rules already use it.
  *
  * @package BeepBeep_AI
- * @since   5.3.0
+ * @since   5.4.0
  */
 
 /* ─────────────────────────────────────────────────────────────────────────────
    DASHBOARD PAGE HEADER
-   High-specificity overrides for the greeting row so WordPress admin CSS
-   cannot suppress the flex layout or the status pill appearance.
 ───────────────────────────────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header {
@@ -90,315 +85,479 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__status-dot {
 
 /* ─────────────────────────────────────────────────────────────────────────────
    SECTION GAP RHYTHM
-   Reduces the 30px gap between the header, hero shell, and insight cards to a
-   tighter 20px.  This removes the "random stacked blocks" feeling.
 ───────────────────────────────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
     gap: 20px;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
-    gap: 20px;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
-   HERO CARD BORDERS + SHADOWS
-   Slightly softer — cards feel integrated, not floating.
+   UNIFIED HERO SURFACE
 ───────────────────────────────────────────────────────────────────────────── */
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
-    border-color: rgba(226, 232, 240, 0.88);
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified {
+    background: #ffffff !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.04) !important;
+    overflow: hidden !important;
+    position: relative !important;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   LEFT CARD — VERTICAL LAYOUT
-   Single-column flex: badge → headline → donut → inline stats → CTAs → status.
-───────────────────────────────────────────────────────────────────────────── */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified__activation {
+    min-height: 0;
+}
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut-vertical {
-    display: flex !important;
-    flex-direction: column !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified__activation:empty {
+    display: none !important;
+}
+
+/* ── Hero body: coverage (left) | 1px divider | usage (right) ── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified__body {
+    display: grid !important;
+    grid-template-columns: 1fr 1px 300px !important;
+    min-height: 260px !important;
     align-items: stretch !important;
-    padding: 24px !important;
-    gap: 0 !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut-vertical .bbai-li-card-section--intro {
-    padding: 0;
-    margin-bottom: 16px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut-vertical .bbai-li-card-section--actions {
-    padding: 0;
-    margin-top: 16px;
-    margin-bottom: 0;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
-    width: 180px;
-    height: 180px;
-    margin-bottom: 3px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner {
-    inset: 20px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
-    gap: 5px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-card-meta-row {
-    margin-top: 8px;
-    padding-top: 8px;
-}
-
-/* ── Inline stats row (below donut) ─────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-inline-stats {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 0 !important;
-    margin-top: 14px !important;
-    padding: 10px 16px !important;
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 10px !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-stat {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 2px !important;
-    flex: 1 !important;
-    padding: 4px 8px !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-stat__icon {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: #64748b !important;
-    margin-bottom: 2px !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-stat__value {
-    font-size: 18px !important;
-    font-weight: 700 !important;
-    color: #0f172a !important;
-    line-height: 1.1 !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-stat__label {
-    font-size: 11px !important;
-    color: #64748b !important;
-    font-weight: 500 !important;
-    text-align: center !important;
-    line-height: 1.3 !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-stat-divider {
-    display: block !important;
-    width: 1px !important;
-    height: 36px !important;
-    background: #e2e8f0 !important;
-    flex-shrink: 0 !important;
-    align-self: center !important;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   RIGHT CONTENT CARD — Usage this month
+   COVERAGE SECTION — donut (left) + text stack (right)
 ───────────────────────────────────────────────────────────────────────────── */
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
-    padding: 22px !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-card {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage {
     display: flex !important;
-    flex-direction: column !important;
-    gap: 0 !important;
+    align-items: center !important;
+    gap: 28px !important;
+    padding: 32px !important;
 }
 
-/* "USAGE THIS MONTH" small label */
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-card-month-label {
-    font-size: 11px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage--clickable {
+    cursor: pointer !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage--clickable:hover {
+    background: rgba(248, 250, 252, 0.6) !important;
+}
+
+/* ── Donut wrap ── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-donut-wrap {
+    flex-shrink: 0 !important;
+    position: relative !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-donut-wrap .bbai-li-donut {
+    width: 168px !important;
+    height: 168px !important;
+    margin: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-donut-wrap .bbai-li-donut__inner {
+    inset: 17px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner-sub {
+    display: block !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.08em !important;
-    color: #94a3b8 !important;
     text-transform: uppercase !important;
-    margin: 0 0 10px !important;
-    padding: 0 !important;
-}
-
-/* Big credits label "31 / 50 used" */
-body.toplevel_page_bbai.bbai-dashboard .bbai-credit-big-label {
-    font-size: 26px !important;
-    font-weight: 800 !important;
-    color: #0f172a !important;
-    line-height: 1.1 !important;
-    margin: 0 0 6px !important;
-}
-
-/* Meta row: "Resets monthly" | "19 remaining" */
-body.toplevel_page_bbai.bbai-dashboard .bbai-credit-meta-row {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 8px !important;
-    margin-bottom: 10px !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-credit-meta-row .bbai-credit-clarity {
-    font-size: 12px !important;
+    letter-spacing: 0.06em !important;
     color: #64748b !important;
-    margin: 0 !important;
+    line-height: 1.2 !important;
+    margin-top: 2px !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-credit-rem-label {
-    font-size: 12px !important;
-    color: #64748b !important;
-    font-weight: 500 !important;
-}
+/* ── Text stack ── */
 
-/* HR dividers inside usage card */
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-divider {
-    border: none !important;
-    border-top: 1px solid #e2e8f0 !important;
-    margin: 14px 0 !important;
-}
-
-/* Automate toggle row — override nudge/note to hide them in this context */
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-card .bbai-all-clear-upgrade {
-    margin: 0 !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-card .bbai-all-clear-upgrade__panel {
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    padding: 0 !important;
-    background: none !important;
-    border: none !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-card .bbai-all-clear-upgrade__copy {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage__text {
     flex: 1 !important;
     min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-card .bbai-all-clear-upgrade__title {
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
-    margin: 0 0 2px !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-card .bbai-all-clear-upgrade__desc {
-    font-size: 12px !important;
-    color: #64748b !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage__text .bbai-li-state-badge {
     margin: 0 !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-usage-card .bbai-all-clear-upgrade__icon {
-    font-size: 18px !important;
-    flex-shrink: 0 !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage__text .bbai-li-headline {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    line-height: 1.25 !important;
 }
 
-/* Re-scan + Upgrade plan buttons row */
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-action-row {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage__text .bbai-li-support {
+    font-size: 14px !important;
+    color: #475569 !important;
+    margin: 0 !important;
+    line-height: 1.5 !important;
+}
+
+/* ── CTA stack ── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-stack {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin-top: 4px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-primary-row {
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
     flex-wrap: wrap !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-rescan-btn,
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-upgrade-btn {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-secondary-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+}
+
+/* Primary CTA — green filled */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-primary-row .bbai-li-btn-primary,
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-primary-row .bbai-btn-primary {
+    height: 42px !important;
+    min-height: 42px !important;
+}
+
+/* Ghost secondary */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-ghost {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 5px !important;
-    font-size: 12px !important;
-    padding: 7px 12px !important;
-    height: auto !important;
-    min-height: 0 !important;
+    justify-content: center !important;
+    height: 38px !important;
+    padding: 0 16px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    background: #ffffff !important;
+    color: #374151 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: border-color 0.15s ease, background 0.15s ease !important;
     white-space: nowrap !important;
 }
 
-/* Credits warning section */
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-warning-section {
-    margin-top: 14px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-ghost:hover {
+    border-color: #cbd5e1 !important;
+    background: #f8fafc !important;
+    color: #1e293b !important;
+    text-decoration: none !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-warning-section .bbai-credit-context {
+/* Tertiary minimal */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-tertiary {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #94a3b8 !important;
+    text-decoration: none !important;
+    padding: 6px 4px !important;
+    border-radius: 6px !important;
+    transition: color 0.15s ease !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-tertiary:hover {
+    color: #64748b !important;
+    text-decoration: none !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-tertiary svg {
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0 !important;
+}
+
+/* ── Vertical divider ── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified__divider {
+    background: rgba(226, 232, 240, 0.8) !important;
+    align-self: stretch !important;
+    width: 1px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   USAGE SECTION (right column)
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage {
+    padding: 32px 28px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: #94a3b8 !important;
+    margin: 0 !important;
+}
+
+/* "32 / 50 credits used" big stat */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__stat {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+}
+
+/* Meta row: resets | remaining */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__meta {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: -8px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__reset,
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__remaining {
+    font-size: 12px !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+}
+
+/* Progress bar */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__bar {
+    height: 8px !important;
+    border-radius: 999px !important;
+    background: #f1f5f9 !important;
+    overflow: hidden !important;
+    margin-top: -4px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__bar-fill {
+    height: 100% !important;
+    border-radius: 999px !important;
+    width: var(--bbai-credit-percent, 0%) !important;
+    background: linear-gradient(90deg, #10b981, #22c55e) !important;
+    transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__bar--low .bbai-hero-usage__bar-fill {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__bar--critical .bbai-hero-usage__bar-fill {
+    background: linear-gradient(90deg, #ef4444, #f87171) !important;
+}
+
+/* ── Upgrade callout card ── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-upgrade-callout {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 14px 16px !important;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(16, 185, 129, 0.04)) !important;
+    border: 1px solid rgba(37, 99, 235, 0.12) !important;
+    border-radius: 12px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-upgrade-callout__copy {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-upgrade-callout__title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    margin: 0 0 3px !important;
+    line-height: 1.3 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-upgrade-callout__desc {
+    font-size: 12px !important;
+    color: #64748b !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-upgrade-callout__cta {
+    flex-shrink: 0 !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 14px !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+}
+
+/* ── Usage footer (context + insight + helper) ── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-top: auto !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer .bbai-credit-context {
     font-size: 12px !important;
     color: #64748b !important;
     font-weight: 600 !important;
-    margin: 0 0 8px !important;
+    margin: 0 !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-warning-section .bbai-credit-context--warning {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer .bbai-credit-context--warning {
     color: #b45309 !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-warning-bar {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer .bbai-usage-warning-bar {
     height: 6px !important;
     background: #fef3c7 !important;
     border-radius: 3px !important;
     overflow: hidden !important;
-    margin-bottom: 8px !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-usage-warning-bar__fill {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer .bbai-usage-warning-bar__fill {
     height: 100% !important;
     background: #f59e0b !important;
     border-radius: 3px !important;
     transition: width 0.3s ease !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-credit-growth-link {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer .bbai-credit-insight {
+    font-size: 12px !important;
+    color: #94a3b8 !important;
+    margin: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer .bbai-credit-growth-link {
     font-size: 12px !important;
     color: #2563eb !important;
     text-decoration: none !important;
     font-weight: 500 !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-credit-growth-link:hover {
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__footer .bbai-credit-growth-link:hover {
     text-decoration: underline !important;
 }
 
-/* Left card intro section overrides */
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-state-badge {
-    margin-bottom: 7px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-support {
-    margin-top: 7px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut-vertical .bbai-action-block {
-    max-width: none;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card-section--spaced {
-    margin-top: 12px;
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
-   HERO CTA BUTTONS
-   42px height instead of 48px — tighter, still comfortable.
+   AUTOMATION STRIP (full-width bottom)
 ───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    padding: 16px 32px !important;
+    border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+    background: rgba(248, 250, 252, 0.7) !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation__content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation__icon {
+    font-size: 18px !important;
+    flex-shrink: 0 !important;
+    line-height: 1 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation__text {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation__title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    margin: 0 0 2px !important;
+    line-height: 1.3 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation__desc {
+    font-size: 12px !important;
+    color: #64748b !important;
+    margin: 0 !important;
+    line-height: 1.4 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation__lock {
+    display: flex !important;
+    align-items: center !important;
+    color: #94a3b8 !important;
+    flex-shrink: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation__lock svg {
+    width: 16px !important;
+    height: 16px !important;
+}
+
+/* Automation toggle button */
+body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    width: 44px !important;
+    height: 24px !important;
+    border-radius: 12px !important;
+    border: none !important;
+    background: #e2e8f0 !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: background 0.2s ease !important;
+    padding: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle span {
+    position: absolute !important;
+    left: 3px !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    transition: left 0.2s ease !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle[aria-pressed="true"] {
+    background: #22c55e !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle[aria-pressed="true"] span {
+    left: 23px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle--locked {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+}
+
+/* Ensure [hidden] attribute is respected inside the unified hero */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified [hidden] {
+    display: none !important;
+}
+
+/* ── Hero primary + secondary CTAs height ── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-primary,
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary,
@@ -409,8 +568,42 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary,
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   AUTOMATION TOGGLE CARD
-   Tighten inner padding so toggle row reads as an intentional inline unit.
+   FOCUS STATES (WCAG AA)
+───────────────────────────────────────────────────────────────────────────── */
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage--clickable:focus-visible {
+    outline: 2px solid #2563eb !important;
+    outline-offset: 2px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-ghost:focus-visible,
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-tertiary:focus-visible {
+    outline: 2px solid #2563eb !important;
+    outline-offset: 2px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle:focus-visible {
+    outline: 2px solid #2563eb !important;
+    outline-offset: 3px !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   REDUCED MOTION
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage__bar-fill {
+        transition: none !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-automation-toggle span {
+        transition: none !important;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   AUTOMATION TOGGLE CARD (standalone, outside hero)
 ───────────────────────────────────────────────────────────────────────────── */
 
 #bbai-dashboard-main .bbai-automation-card__toggle-row {
@@ -420,7 +613,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary,
 
 /* ─────────────────────────────────────────────────────────────────────────────
    RETENTION / CTA STRIP
-   ~25% height reduction: less padding, smaller title.
 ───────────────────────────────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip {
@@ -433,9 +625,27 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__title {
     margin-bottom: 2px !important;
 }
 
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__main {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__check-icon {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__text {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    min-width: 0 !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    INSIGHT / STAT CARDS
-   Tighter padding, remove forced min-height, lighter shadow, closer spacing.
 ───────────────────────────────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
@@ -466,8 +676,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__support {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
     margin: 8px 0 0 !important;
 }
-
-/* ── Insight card icon row + label ──────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__icon-row {
     display: flex !important;
@@ -514,34 +722,9 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__label {
     box-shadow: none !important;
 }
 
-/* ── Retention strip: check icon + text layout ──────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__main {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__check-icon {
-    display: flex !important;
-    align-items: center !important;
-    flex-shrink: 0 !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__text {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 2px !important;
-    min-width: 0 !important;
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
-   RESPONSIVE PRESERVATION
-   These match breakpoints already in logged-in-state.css — ensure overrides
-   don't accidentally break the mobile collapse.
+   DASHBOARD FOOTER
 ───────────────────────────────────────────────────────────────────────────── */
-
-/* ── Dashboard footer ───────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-footer {
     text-align: center !important;
@@ -566,21 +749,53 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-footer a:hover {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   RESPONSIVE PRESERVATION
+   RESPONSIVE
 ───────────────────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified__body {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified__divider {
+        width: auto !important;
+        height: 1px !important;
+        align-self: auto !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage {
+        padding: 24px 28px !important;
+    }
+
     body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
         gap: 14px !important;
-    }
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
-        grid-template-columns: minmax(0, 1fr) !important;
     }
 }
 
 @media (max-width: 680px) {
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut-vertical,
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
-        padding: 16px !important;
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage {
+        flex-direction: column !important;
+        padding: 24px !important;
+        text-align: center !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-coverage__text {
+        align-items: center !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-primary-row,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-secondary-row {
+        justify-content: center !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-automation {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        padding: 16px 24px !important;
+        gap: 12px !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-hero-usage {
+        padding: 24px !important;
     }
 }
