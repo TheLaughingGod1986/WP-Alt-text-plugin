@@ -848,31 +848,6 @@ if ( ‘ALL_CLEAR’ === $bbai_li_state_id ) {
 
 	var heroVariant = hero.getAttribute( 'data-bbai-li-variant' ) || '';
 
-	// DEBUG: render path audit — remove before release
-	(function bbaiDebugRenderAudit() {
-		var isUnified = hero.classList.contains( 'bbai-hero-unified' );
-		var legacyGrid = document.querySelector( '.bbai-li-hero-grid' );
-		var legacyStatusSummary = hero.querySelector( '.bbai-status-summary' );
-		var legacyProgressFlow = hero.querySelector( '[data-bbai-li-flow="1"]' );
-		var legacyReviewBlock = hero.querySelector( '[data-bbai-li-donut-review-block="1"]' );
-		var bodyClasses = document.body.className;
-		var unifiedModeEnabled = isUnified && ! legacyGrid;
-		console.group( '[BBAI Debug] Dashboard render audit' );
-		console.log( 'Hero variant attribute:', heroVariant || '(none)' );
-		console.log( 'Hero template:', isUnified ? 'bbai-hero-unified (NEW)' : 'UNKNOWN / legacy' );
-		console.log( 'Unified mode enabled:', unifiedModeEnabled );
-		console.log( 'Legacy .bbai-li-hero-grid in DOM:', !! legacyGrid );
-		console.log( 'Zombie .bbai-status-summary in hero:', !! legacyStatusSummary );
-		console.log( 'Zombie [data-bbai-li-flow="1"] in hero:', !! legacyProgressFlow );
-		console.log( 'Zombie [data-bbai-li-donut-review-block] in hero:', !! legacyReviewBlock );
-		console.log( 'Body classes:', bodyClasses );
-		console.log( 'State ID from data attr:', hero.getAttribute( 'data-bbai-li-state' ) || '(none)' );
-		if ( legacyStatusSummary || legacyProgressFlow || legacyReviewBlock ) {
-			console.warn( '[BBAI Debug] Legacy zombie elements detected in hero — structural cleanup incomplete!' );
-		}
-		console.groupEnd();
-	}());
-
 	var safetyTimer = null;
 	var heroGenerationWatchdog = null;
 	var liveSignalTimer = null;
