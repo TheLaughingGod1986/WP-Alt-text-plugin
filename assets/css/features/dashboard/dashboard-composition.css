@@ -136,24 +136,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified [hidden] {
     display: none !important;
 }
 
-/*
- * JS-compat element suppression — class-based so these stay hidden even when
- * the JS state machine calls element.hidden = false (which only removes the
- * [hidden] attribute; it does NOT add an inline style, so !important on a
- * class rule wins over JS).
- *
- * Suppressed: status chip summary, Generate→Review→Done flow, donut meta
- * copy, donut helper text, donut action wrap, donut review block.
- */
-body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified .bbai-status-summary,
-body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified [data-bbai-li-flow="1"],
-body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified .bbai-li-donut__meta,
-body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified .bbai-li-donut__helper,
-body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified .bbai-li-donut__action-wrap,
-body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified .bbai-li-donut__review-block {
-    display: none !important;
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
    COVERAGE SECTION — dominant left: large donut + text stack
 ───────────────────────────────────────────────────────────────────────────── */

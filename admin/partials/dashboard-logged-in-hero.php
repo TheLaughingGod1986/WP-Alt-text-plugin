@@ -19,11 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( empty( $bbai_li_state ) || ! is_array( $bbai_li_state ) ) {
 	?>
-	<div class="bbai-li-hero-grid">
-		<div class="bbai-li-hero-grid__content bbai-li-card">
-			<h1 id="bbai-li-hero-title" class="bbai-dashboard-hero-action__title">
-				<?php esc_html_e( 'Dashboard loading', 'beepbeep-ai-alt-text-generator' ); ?>
-			</h1>
+	<div class="bbai-hero-unified bbai-hero-unified--loading" aria-busy="true">
+		<div class="bbai-hero-coverage">
+			<p class="bbai-li-support"><?php esc_html_e( 'Dashboard loading&hellip;', 'beepbeep-ai-alt-text-generator' ); ?></p>
 		</div>
 	</div>
 	<?php
@@ -569,53 +567,6 @@ if ( ‘ALL_CLEAR’ === $bbai_li_state_id ) {
 					</span>
 				</div>
 
-				<?php /* Contextual elements kept for JS compat */ ?>
-				<?php
-				$bbai_li_donut_cm_href  = ‘’;
-				$bbai_li_donut_cm_label = ‘’;
-				if ( in_array( $bbai_li_state_id, [ ‘MISSING_ALT’, ‘MIXED_ATTENTION’ ], true ) && $bbai_li_seg_miss > 0 ) {
-					$bbai_li_donut_cm_href  = $bbai_li_primary_cta[‘href’] ?? ‘#’;
-					$bbai_li_donut_cm_label = __( ‘Generate ALT text →’, ‘beepbeep-ai-alt-text-generator’ );
-				} elseif ( ‘MIXED_ATTENTION’ === $bbai_li_state_id && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
-					$bbai_li_donut_cm_href  = $bbai_needs_review_library_url;
-					$bbai_li_donut_cm_label = __( ‘Review images →’, ‘beepbeep-ai-alt-text-generator’ );
-				}
-				?>
-				<?php if ( $bbai_li_donut_cm_href && $bbai_li_donut_cm_label ) : ?>
-				<p class="bbai-li-donut__action-wrap" hidden><a href="<?php echo esc_url( $bbai_li_donut_cm_href ); ?>" class="bbai-li-donut__action-cm" data-bbai-li-donut-action-cm="1"><?php echo esc_html( $bbai_li_donut_cm_label ); ?></a></p>
-				<?php endif; ?>
-
-				<div
-					class="bbai-li-donut__review-block"
-					data-bbai-li-donut-review-block="1"
-					<?php echo ( ‘NEEDS_REVIEW’ === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta[‘href’] ) ) ? ‘’ : ‘hidden’; ?>
-				>
-					<p class="bbai-li-donut__review-prompt" data-bbai-li-donut-review-prompt="1"><?php esc_html_e( ‘Review now to complete your optimisation’, ‘beepbeep-ai-alt-text-generator’ ); ?></p>
-					<a
-						class="bbai-li-donut__text-cta"
-						data-bbai-li-donut-review-link="1"
-						href="<?php echo esc_url( ( ‘NEEDS_REVIEW’ === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta[‘href’] ) ) ? $bbai_li_secondary_cta[‘href’] : ‘#’ ); ?>"
-						data-action="<?php echo esc_attr( ‘NEEDS_REVIEW’ === $bbai_li_state_id ? ( $bbai_li_secondary_cta[‘action’] ?? ‘navigate’ ) : ‘navigate’ ); ?>"
-					><?php esc_html_e( ‘Review images →’, ‘beepbeep-ai-alt-text-generator’ ); ?></a>
-				</div>
-
-				<p class="bbai-li-donut__helper" data-bbai-li-donut-helper="1" <?php echo $bbai_li_donut_helper ? ‘’ : ‘hidden’; ?>><?php echo $bbai_li_donut_helper ? esc_html( $bbai_li_donut_helper ) : ‘’; ?></p>
-
-				<?php
-				$bbai_li_donut_meta = ‘’;
-				if ( ! $bbai_li_donut_helper ) {
-					if ( ‘QUEUED’ === $bbai_li_state_id ) {
-						$bbai_li_donut_meta = __( ‘Start generation when you&#8217;re ready.’, ‘beepbeep-ai-alt-text-generator’ );
-					} elseif ( ‘PROCESSING’ === $bbai_li_state_id ) {
-						$bbai_li_donut_meta = __( ‘This may take a few minutes’, ‘beepbeep-ai-alt-text-generator’ );
-					} elseif ( ‘MISSING_ALT’ === $bbai_li_state_id ) {
-						$bbai_li_donut_meta = __( ‘Click to generate’, ‘beepbeep-ai-alt-text-generator’ );
-					} elseif ( ‘QUOTA_EXHAUSTED’ === $bbai_li_state_id ) {
-						$bbai_li_donut_meta = __( ‘Add credits to continue’, ‘beepbeep-ai-alt-text-generator’ );
-					}
-				}
-				?>
-				<p class="bbai-li-donut__meta" data-bbai-li-donut-meta="1" <?php echo $bbai_li_donut_meta ? ‘’ : ‘hidden’; ?>><?php echo $bbai_li_donut_meta ? esc_html( $bbai_li_donut_meta ) : ‘’; ?></p>
 			</div><!-- /.bbai-hero-donut-wrap -->
 
 			<?php /* Text stack: badge → headline → support → CTAs */ ?>
@@ -722,45 +673,6 @@ if ( ‘ALL_CLEAR’ === $bbai_li_state_id ) {
 
 				<?php /* Activity strip (JS populates; hidden by default) */ ?>
 				<div class="bbai-li-activity-strip" data-bbai-li-activity-strip="1" hidden aria-hidden="true"></div>
-
-				<?php /* Status chips — hidden in new design; kept for JS compat */ ?>
-				<?php
-				$bbai_li_ready_label_count = ( ‘QUEUED’ === $bbai_li_state_id && isset( $bbai_li_queued_total ) ) ? $bbai_li_queued_total : $bbai_li_missing_count;
-				?>
-				<div class="bbai-status-summary" role="group" aria-label="<?php esc_attr_e( ‘Status summary’, ‘beepbeep-ai-alt-text-generator’ ); ?>" hidden aria-hidden="true">
-					<button type="button" class="bbai-status-item bbai-status-item--readout is-missing" data-bbai-dashboard-status-filter="missing" data-filter="missing">
-						<span class="bbai-dot <?php echo esc_attr( ‘QUEUED’ === $bbai_li_state_id ? ‘blue’ : ‘red’ ); ?>"></span>
-						<span class="bbai-status-text">
-							<strong class="bbai-count" data-bbai-status-metric="missing"><?php echo esc_html( (string) number_format_i18n( $bbai_li_ready_label_count ) ); ?></strong>
-							<?php echo esc_html( ‘QUEUED’ === $bbai_li_state_id
-								? ‘ ‘ . _n( ‘ready to generate’, ‘ready to generate’, $bbai_li_ready_label_count, ‘beepbeep-ai-alt-text-generator’ )
-								: ‘ ‘ . _n( ‘image needs ALT text’, ‘images need ALT text’, $bbai_li_missing_count, ‘beepbeep-ai-alt-text-generator’ )
-							); ?>
-						</span>
-					</button>
-					<button type="button" class="bbai-status-item bbai-status-item--readout is-review" data-bbai-dashboard-status-filter="weak" data-filter="review">
-						<span class="bbai-dot orange"></span>
-						<span class="bbai-status-text">
-							<strong class="bbai-count" data-bbai-status-metric="review"><?php echo esc_html( (string) number_format_i18n( $bbai_li_review_count ) ); ?></strong>
-							<?php echo esc_html( ‘ ‘ . _n( ‘ready for review’, ‘ready for review’, $bbai_li_review_count, ‘beepbeep-ai-alt-text-generator’ ) ); ?>
-						</span>
-					</button>
-				</div>
-
-				<?php /* Progress flow — hidden in new design; kept for JS compat */ ?>
-				<?php
-				$bbai_li_active_step = ( $bbai_li_missing_count > 0 ) ? ‘generate’ : ( $bbai_li_review_count > 0 ? ‘review’ : ‘done’ );
-				$bbai_li_gen_class   = ( ‘generate’ === $bbai_li_active_step ) ? ‘is-active’ : ‘is-done’;
-				$bbai_li_rev_class   = ( ‘review’ === $bbai_li_active_step ) ? ‘is-active’ : ( ‘done’ === $bbai_li_active_step ? ‘is-done’ : ‘is-inactive’ );
-				$bbai_li_done_class  = ( ‘done’ === $bbai_li_active_step ) ? ‘is-active’ : ‘is-inactive’;
-				?>
-				<div class="bbai-progress-flow" data-bbai-li-flow="1" hidden role="group" aria-hidden="true">
-					<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( ‘Generate’, ‘beepbeep-ai-alt-text-generator’ ); ?></span>
-					<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? ‘←’ : ‘→’ ); ?></span>
-					<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_rev_class ); ?>" data-bbai-flow-step="review"><?php esc_html_e( ‘Review’, ‘beepbeep-ai-alt-text-generator’ ); ?></span>
-					<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? ‘←’ : ‘→’ ); ?></span>
-					<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_done_class ); ?>" data-bbai-flow-step="done"><?php esc_html_e( ‘Done’, ‘beepbeep-ai-alt-text-generator’ ); ?></span>
-				</div>
 
 			</div><!-- /.bbai-hero-coverage__text -->
 		</div><!-- /.bbai-hero-coverage -->
@@ -933,6 +845,32 @@ if ( ‘ALL_CLEAR’ === $bbai_li_state_id ) {
 	}
 
 	var heroVariant = hero.getAttribute( 'data-bbai-li-variant' ) || '';
+
+	// DEBUG: render path audit — remove before release
+	(function bbaiDebugRenderAudit() {
+		var isUnified = hero.classList.contains( 'bbai-hero-unified' );
+		var legacyGrid = document.querySelector( '.bbai-li-hero-grid' );
+		var legacyStatusSummary = hero.querySelector( '.bbai-status-summary' );
+		var legacyProgressFlow = hero.querySelector( '[data-bbai-li-flow="1"]' );
+		var legacyReviewBlock = hero.querySelector( '[data-bbai-li-donut-review-block="1"]' );
+		var bodyClasses = document.body.className;
+		var unifiedModeEnabled = isUnified && ! legacyGrid;
+		console.group( '[BBAI Debug] Dashboard render audit' );
+		console.log( 'Hero variant attribute:', heroVariant || '(none)' );
+		console.log( 'Hero template:', isUnified ? 'bbai-hero-unified (NEW)' : 'UNKNOWN / legacy' );
+		console.log( 'Unified mode enabled:', unifiedModeEnabled );
+		console.log( 'Legacy .bbai-li-hero-grid in DOM:', !! legacyGrid );
+		console.log( 'Zombie .bbai-status-summary in hero:', !! legacyStatusSummary );
+		console.log( 'Zombie [data-bbai-li-flow="1"] in hero:', !! legacyProgressFlow );
+		console.log( 'Zombie [data-bbai-li-donut-review-block] in hero:', !! legacyReviewBlock );
+		console.log( 'Body classes:', bodyClasses );
+		console.log( 'State ID from data attr:', hero.getAttribute( 'data-bbai-li-state' ) || '(none)' );
+		if ( legacyStatusSummary || legacyProgressFlow || legacyReviewBlock ) {
+			console.warn( '[BBAI Debug] Legacy zombie elements detected in hero — structural cleanup incomplete!' );
+		}
+		console.groupEnd();
+	}());
+
 	var safetyTimer = null;
 	var heroGenerationWatchdog = null;
 	var liveSignalTimer = null;
