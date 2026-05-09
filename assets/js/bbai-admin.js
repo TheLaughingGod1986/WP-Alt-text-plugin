@@ -15716,9 +15716,18 @@
                 }
                 valueNode.classList.add('bbai-li-donut__value--' + tone);
             } else {
-                valueNode.textContent = centerText !== '' ? centerText
+                // In the unified hero, show the percentage (e.g. "100%") for the
+                // all-clear state rather than a checkmark so the large donut carries
+                // the number prominently.  The old ✓ is preserved for any legacy
+                // layouts that don't use the unified surface.
+                var isUnifiedHero = hero && hero.classList && hero.classList.contains('bbai-hero-unified');
+                var pctVal = Math.max(0, Math.min(100, parseInt(donut.pct, 10) || 100));
+                var clearFallback = isUnifiedHero ? (pctVal + '%') : '✓';
+                var resolvedCenter = (centerText !== '' && centerText !== '✓') ? centerText : '';
+                valueNode.textContent = resolvedCenter !== ''
+                    ? resolvedCenter
                     : (missingN > 0 ? String(formatDashboardNumber(missingN))
-                    : (weakN > 0 ? String(formatDashboardNumber(weakN)) : '✓'));
+                    : (weakN > 0 ? String(formatDashboardNumber(weakN)) : clearFallback));
                 if (missingN > 0) {
                     valueNode.classList.add('bbai-li-donut__value--center-missing');
                 } else if (weakN > 0) {
@@ -15734,7 +15743,14 @@
         var reviewPromptNode;
 
         if (subNode) {
-            subNode.textContent = getLoggedInDonutSubLabel(stateId, donut);
+            var subLabel = getLoggedInDonutSubLabel(stateId, donut);
+            // In the unified hero, ALL_CLEAR should show "Optimised" under the
+            // percentage value.  getLoggedInDonutSubLabel returns '' for ALL_CLEAR
+            // (correct for legacy layouts), so we patch it here for the new surface.
+            if (!subLabel && stateId === 'ALL_CLEAR' && hero && hero.classList && hero.classList.contains('bbai-hero-unified')) {
+                subLabel = __('Optimised', 'beepbeep-ai-alt-text-generator');
+            }
+            subNode.textContent = subLabel;
             subNode.hidden = !subNode.textContent;
             subNode.classList.toggle('bbai-li-donut__sub-label--review-ready', stateId === 'NEEDS_REVIEW');
         }
