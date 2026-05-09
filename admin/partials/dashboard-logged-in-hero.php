@@ -716,7 +716,8 @@ if ( ‘ALL_CLEAR’ === $bbai_li_state_id ) {
 				</div>
 			</div>
 
-			<?php /* Premium upgrade callout */ ?>
+			<?php /* Premium upgrade callout (free plan only) */ ?>
+			<?php if ( $bbai_hero_is_free_plan ) : ?>
 			<div class="bbai-hero-upgrade-callout">
 				<div class="bbai-hero-upgrade-callout__copy">
 					<p class="bbai-hero-upgrade-callout__title"><?php esc_html_e( ‘Upgrade to automate ALT text for future uploads’, ‘beepbeep-ai-alt-text-generator’ ); ?></p>
@@ -733,6 +734,7 @@ if ( ‘ALL_CLEAR’ === $bbai_li_state_id ) {
 					data-bbai-analytics-upgrade="hero_upgrade_callout_primary"
 				><?php esc_html_e( ‘Upgrade Plan’, ‘beepbeep-ai-alt-text-generator’ ); ?></a>
 			</div>
+			<?php endif; ?>
 
 			<?php /* Credits context + batch info + growth link + scan feedback */ ?>
 			<div class="bbai-hero-usage__footer">
@@ -770,7 +772,7 @@ if ( ‘ALL_CLEAR’ === $bbai_li_state_id ) {
 	</div><!-- /.bbai-hero-unified__body -->
 
 	<?php /* ── BOTTOM: Automation strip — full width ── */ ?>
-	<div class="bbai-hero-automation" data-bbai-all-clear-upgrade="1">
+	<div class="bbai-hero-automation">
 		<div class="bbai-hero-automation__content">
 			<span class="bbai-hero-automation__icon" aria-hidden="true">&#9889;</span>
 			<div class="bbai-hero-automation__text">
