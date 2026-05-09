@@ -18,8 +18,8 @@ const execPath = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const browser = await chromium.launch({ headless: true, executablePath: execPath });
 const page = await browser.newPage();
 
-// Set viewport to match a typical WordPress admin viewport
-await page.setViewportSize({ width: 1200, height: 900 });
+// Set viewport to match a wide WordPress admin viewport (WP sidebar ~160px)
+await page.setViewportSize({ width: 1440, height: 900 });
 
 // Navigate to the local HTML file
 await page.goto(`file://${mockFile}`);
@@ -35,7 +35,7 @@ console.log(`Screenshot saved: ${screenshotPath}`);
 // Also take a clipped screenshot of just the main content area
 await page.screenshot({
   path: path.join(outputDir, 'dashboard-mock-hero.png'),
-  clip: { x: 0, y: 0, width: 1200, height: 600 }
+  clip: { x: 0, y: 0, width: 1440, height: 660 }
 });
 console.log(`Hero screenshot saved: ${path.join(outputDir, 'dashboard-mock-hero.png')}`);
 
