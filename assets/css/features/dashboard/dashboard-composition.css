@@ -274,6 +274,15 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-hero-cta-primary-row .bbai-btn-prim
     font-size: 15px !important;
     font-weight: 700 !important;
     border-radius: 12px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+}
+
+/* [hidden] must stay hidden even when other rules set display */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-unified [hidden] {
+    display: none !important;
 }
 
 /* Ghost secondary */
