@@ -61,7 +61,7 @@ class Queue_Controller {
 			);
 		}
 
-		$job_id     = isset( $_POST['job_id'] ) ? absint( wp_unslash( $_POST['job_id'] ) ) : 0;
+		$job_id = isset( $_POST['job_id'] ) ? absint( wp_unslash( $_POST['job_id'] ) ) : 0;
 
 		return $this->queue_service->retry_job( $job_id );
 	}

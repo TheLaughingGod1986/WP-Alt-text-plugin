@@ -20,45 +20,108 @@ class BBAI_Alt_Quality_Scorer {
 
 	/* ─── Score labels ─── */
 
-	const LABEL_EXCELLENT        = 'Excellent';
-	const LABEL_GOOD             = 'Good';
+	const LABEL_EXCELLENT         = 'Excellent';
+	const LABEL_GOOD              = 'Good';
 	const LABEL_NEEDS_IMPROVEMENT = 'Needs improvement';
-	const LABEL_POOR             = 'Poor';
-	const LABEL_CRITICAL         = 'Critical';
+	const LABEL_POOR              = 'Poor';
+	const LABEL_CRITICAL          = 'Critical';
 
 	/* ─── Hard-fail score caps ─── */
 
-	const CAP_EMPTY              = 0;
-	const CAP_PLACEHOLDER        = 5;
-	const CAP_GIBBERISH          = 10;
-	const CAP_GENERIC_ONLY       = 10;
-	const CAP_SINGLE_WORD        = 15;
-	const CAP_TOO_FEW_WORDS      = 20;
-	const CAP_THIN_MEANING       = 30; // Fewer than 3 meaningful words (non-hard-fail edge cases).
-	const CAP_NONSENSE           = 15;
+	const CAP_EMPTY         = 0;
+	const CAP_PLACEHOLDER   = 5;
+	const CAP_GIBBERISH     = 10;
+	const CAP_GENERIC_ONLY  = 10;
+	const CAP_SINGLE_WORD   = 15;
+	const CAP_TOO_FEW_WORDS = 20;
+	const CAP_THIN_MEANING  = 30; // Fewer than 3 meaningful words (non-hard-fail edge cases).
+	const CAP_NONSENSE      = 15;
 
 	/* ─── Known word lists ─── */
 
 	private static $placeholder_words = array(
-		'test', 'testing', 'tested', 'tests', 'asdf', 'qwerty', 'placeholder',
-		'sample', 'example', 'demo', 'foo', 'bar', 'abc', 'xyz', 'temp', 'tmp',
-		'crap', 'stuff', 'thing', 'things', 'something', 'anything', 'whatever',
-		'blah', 'meh', 'idk', 'nada', 'random', 'garbage', 'junk', 'dummy',
-		'fake', 'lorem', 'ipsum', 'untitled', 'none', 'null', 'n/a', 'na',
-		'todo', 'fixme', 'xxx', 'yyy', 'zzz', 'aaa', 'bbb',
+		'test',
+		'testing',
+		'tested',
+		'tests',
+		'asdf',
+		'qwerty',
+		'placeholder',
+		'sample',
+		'example',
+		'demo',
+		'foo',
+		'bar',
+		'abc',
+		'xyz',
+		'temp',
+		'tmp',
+		'crap',
+		'stuff',
+		'thing',
+		'things',
+		'something',
+		'anything',
+		'whatever',
+		'blah',
+		'meh',
+		'idk',
+		'nada',
+		'random',
+		'garbage',
+		'junk',
+		'dummy',
+		'fake',
+		'lorem',
+		'ipsum',
+		'untitled',
+		'none',
+		'null',
+		'n/a',
+		'na',
+		'todo',
+		'fixme',
+		'xxx',
+		'yyy',
+		'zzz',
+		'aaa',
+		'bbb',
 	);
 
 	private static $generic_image_words = array(
-		'image', 'picture', 'photo', 'photograph', 'graphic', 'icon',
-		'screenshot', 'img', 'pic', 'thumbnail', 'banner', 'logo',
+		'image',
+		'picture',
+		'photo',
+		'photograph',
+		'graphic',
+		'icon',
+		'screenshot',
+		'img',
+		'pic',
+		'thumbnail',
+		'banner',
+		'logo',
 	);
 
 	private static $redundant_prefixes = array(
-		"it's a photo of", 'its a photo of', 'a photo of', 'an image of',
-		'a picture of', "it's an image of", 'its an image of',
-		"it's a picture of", 'its a picture of', 'image of', 'picture of',
-		'photo of', 'photograph of', 'graphic of', 'illustration of',
-		'image showing', 'picture showing', 'photo showing',
+		"it's a photo of",
+		'its a photo of',
+		'a photo of',
+		'an image of',
+		'a picture of',
+		"it's an image of",
+		'its an image of',
+		"it's a picture of",
+		'its a picture of',
+		'image of',
+		'picture of',
+		'photo of',
+		'photograph of',
+		'graphic of',
+		'illustration of',
+		'image showing',
+		'picture showing',
+		'photo showing',
 	);
 
 	private static $filename_patterns = array(
@@ -94,11 +157,19 @@ class BBAI_Alt_Quality_Scorer {
 		$alt_text = is_string( $alt_text ) ? trim( $alt_text ) : '';
 
 		if ( $alt_text === '' ) {
-			return self::build_result( 0, array(), array(
-				__( 'ALT text is missing.', 'beepbeep-ai-alt-text-generator' ),
-			), array(
-				__( 'Add a description that conveys the image content to screen-reader users.', 'beepbeep-ai-alt-text-generator' ),
-			), true, self::CAP_EMPTY, $alt_text );
+			return self::build_result(
+				0,
+				array(),
+				array(
+					__( 'ALT text is missing.', 'beepbeep-ai-alt-text-generator' ),
+				),
+				array(
+					__( 'Add a description that conveys the image content to screen-reader users.', 'beepbeep-ai-alt-text-generator' ),
+				),
+				true,
+				self::CAP_EMPTY,
+				$alt_text
+			);
 		}
 
 		$issues      = array();
@@ -122,10 +193,10 @@ class BBAI_Alt_Quality_Scorer {
 
 		$weighted_score = (int) round(
 			$breakdown['descriptiveness'] * 0.30
-			+ $breakdown['relevance']     * 0.25
+			+ $breakdown['relevance'] * 0.25
 			+ $breakdown['accessibility'] * 0.20
-			+ $breakdown['seo']           * 0.15
-			+ $breakdown['conciseness']   * 0.10
+			+ $breakdown['seo'] * 0.15
+			+ $breakdown['conciseness'] * 0.10
 		);
 
 		$score = max( 0, min( 100, $weighted_score ) );
@@ -251,9 +322,9 @@ PROMPT;
 	 * @return int|false Score cap if hard-fail triggered, false otherwise.
 	 */
 	private static function check_hard_fails( $alt_text, $context, &$issues, &$suggestions ) {
-		$lower   = strtolower( $alt_text );
-		$words   = preg_split( '/\s+/', trim( $alt_text ), -1, PREG_SPLIT_NO_EMPTY );
-		$lc_words = array_map( 'strtolower', $words );
+		$lower      = strtolower( $alt_text );
+		$words      = preg_split( '/\s+/', trim( $alt_text ), -1, PREG_SPLIT_NO_EMPTY );
+		$lc_words   = array_map( 'strtolower', $words );
 		$word_count = count( $words );
 
 		// ── Placeholder / exact-match nonsense ──
@@ -277,12 +348,12 @@ PROMPT;
 
 			// Check if it's also a placeholder word.
 			if ( in_array( $lc_words[0], self::$placeholder_words, true ) ) {
-				$issues[]      = __( 'The word does not describe an image.', 'beepbeep-ai-alt-text-generator' );
+				$issues[] = __( 'The word does not describe an image.', 'beepbeep-ai-alt-text-generator' );
 				return self::CAP_PLACEHOLDER;
 			}
 			// Check if it's just a generic image word.
 			if ( in_array( $lc_words[0], self::$generic_image_words, true ) ) {
-				$issues[]      = __( 'A generic word like "image" or "photo" tells the user nothing about the content.', 'beepbeep-ai-alt-text-generator' );
+				$issues[] = __( 'A generic word like "image" or "photo" tells the user nothing about the content.', 'beepbeep-ai-alt-text-generator' );
 				return self::CAP_GENERIC_ONLY;
 			}
 
@@ -334,7 +405,7 @@ PROMPT;
 		$placeholder_count = 0;
 		foreach ( $lc_words as $w ) {
 			if ( in_array( $w, self::$placeholder_words, true ) ) {
-				$placeholder_count++;
+				++$placeholder_count;
 			}
 		}
 		if ( $placeholder_count > 0 && ( $placeholder_count >= 2 || ( $word_count <= 4 && $placeholder_count >= 1 ) ) ) {
@@ -399,10 +470,27 @@ PROMPT;
 		}
 
 		// Descriptive markers: verbs/prepositions that indicate a real description.
-		$descriptive_markers = array( 'showing', 'depicting', 'displaying', 'featuring', 'wearing',
-			'holding', 'standing', 'sitting', 'walking', 'running', 'looking', 'smiling',
-			'pointing', 'flying', 'floating', 'hanging', 'lying', 'resting' );
-		$has_action = false;
+		$descriptive_markers = array(
+			'showing',
+			'depicting',
+			'displaying',
+			'featuring',
+			'wearing',
+			'holding',
+			'standing',
+			'sitting',
+			'walking',
+			'running',
+			'looking',
+			'smiling',
+			'pointing',
+			'flying',
+			'floating',
+			'hanging',
+			'lying',
+			'resting',
+		);
+		$has_action          = false;
 		foreach ( $descriptive_markers as $marker ) {
 			if ( strpos( $lower, $marker ) !== false ) {
 				$has_action = true;
@@ -424,7 +512,7 @@ PROMPT;
 		if ( $has_substantial ) {
 			$desc += 10;
 		} else {
-			$desc -= 15;
+			$desc         -= 15;
 			$issues[]      = __( 'Lacks descriptive language — include meaningful nouns or adjectives.', 'beepbeep-ai-alt-text-generator' );
 			$suggestions[] = __( 'Use specific words like "sunset", "laptop", "conference room" instead of vague terms.', 'beepbeep-ai-alt-text-generator' );
 		}
@@ -438,18 +526,18 @@ PROMPT;
 		$generic_count = 0;
 		foreach ( $lc_words as $w ) {
 			if ( in_array( $w, self::$generic_image_words, true ) ) {
-				$generic_count++;
+				++$generic_count;
 			}
 		}
 		if ( $generic_count > 0 && $word_count < 5 ) {
-			$rel -= 20;
+			$rel     -= 20;
 			$issues[] = __( 'Contains generic filler words like "image" or "photo" — describe the subject directly.', 'beepbeep-ai-alt-text-generator' );
 		}
 
 		// Redundant prefix.
 		foreach ( self::$redundant_prefixes as $prefix ) {
 			if ( str_starts_with( $lower, $prefix ) ) {
-				$rel -= 25;
+				$rel          -= 25;
 				$issues[]      = __( 'Starts with a redundant phrase like "photo of" — describe the subject directly.', 'beepbeep-ai-alt-text-generator' );
 				$suggestions[] = __( 'Remove the "image of" / "photo of" prefix and start with the subject.', 'beepbeep-ai-alt-text-generator' );
 				break;
@@ -461,7 +549,7 @@ PROMPT;
 			$title_norm = self::normalize_for_comparison( $context['title'] );
 			$alt_norm   = self::normalize_for_comparison( $alt_text );
 			if ( $title_norm !== '' && $alt_norm === $title_norm ) {
-				$rel -= 10;
+				$rel     -= 10;
 				$issues[] = __( 'Identical to the attachment title — add more unique detail.', 'beepbeep-ai-alt-text-generator' );
 			}
 		}
@@ -475,11 +563,11 @@ PROMPT;
 		if ( $char_count >= 30 && $char_count <= 160 ) {
 			$acc += 35;
 		} elseif ( $char_count < 30 ) {
-			$acc -= 5;
+			$acc          -= 5;
 			$issues[]      = __( 'Too short for a screen reader to convey useful information.', 'beepbeep-ai-alt-text-generator' );
 			$suggestions[] = __( 'Expand the description to at least 30 characters with concrete details.', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( $char_count > 160 ) {
-			$acc -= 10;
+			$acc     -= 10;
 			$issues[] = __( 'Very long — trim to keep it concise for screen-reader users (under 160 characters).', 'beepbeep-ai-alt-text-generator' );
 		}
 
@@ -490,7 +578,7 @@ PROMPT;
 
 		// No special characters that screen readers struggle with.
 		if ( preg_match( '/[<>{}|\\\\]/', $alt_text ) ) {
-			$acc -= 10;
+			$acc     -= 10;
 			$issues[] = __( 'Contains special characters that may confuse screen readers.', 'beepbeep-ai-alt-text-generator' );
 		}
 
@@ -508,7 +596,7 @@ PROMPT;
 		if ( $char_count > 0 && $char_count <= 125 && self::passes_minimum_descriptive_alt( $alt_text ) ) {
 			$seo += 32;
 		} elseif ( $char_count > 125 ) {
-			$seo -= 12;
+			$seo     -= 12;
 			$issues[] = sprintf(
 				/* translators: %d: character count */
 				__( 'At %d characters, this exceeds the 125-char SEO sweet spot for Google Images.', 'beepbeep-ai-alt-text-generator' ),
@@ -527,10 +615,10 @@ PROMPT;
 		}
 
 		// Keyword stuffing detection: same word repeated 3+ times.
-		$freq = array_count_values( $lc_words );
+		$freq     = array_count_values( $lc_words );
 		$max_freq = max( $freq );
 		if ( $max_freq >= 3 && $word_count > 3 ) {
-			$seo -= 30;
+			$seo          -= 30;
 			$issues[]      = __( 'Possible keyword stuffing — a word is repeated too many times.', 'beepbeep-ai-alt-text-generator' );
 			$suggestions[] = __( 'Use natural language instead of repeating the same keyword.', 'beepbeep-ai-alt-text-generator' );
 		}
@@ -545,7 +633,7 @@ PROMPT;
 		} elseif ( $word_count >= 3 && $word_count <= 20 ) {
 			$conc += 25;
 		} elseif ( $word_count > 25 ) {
-			$conc -= 20;
+			$conc         -= 20;
 			$issues[]      = __( 'ALT text is unusually long — consider trimming to the essential details.', 'beepbeep-ai-alt-text-generator' );
 			$suggestions[] = __( 'Keep ALT text under 20 words for optimal readability.', 'beepbeep-ai-alt-text-generator' );
 		} else {
@@ -632,10 +720,18 @@ PROMPT;
 	 * Label from score.
 	 */
 	public static function label_from_score( $score ) {
-		if ( $score >= 90 ) return self::LABEL_EXCELLENT;
-		if ( $score >= 70 ) return self::LABEL_GOOD;
-		if ( $score >= 50 ) return self::LABEL_NEEDS_IMPROVEMENT;
-		if ( $score >= 20 ) return self::LABEL_POOR;
+		if ( $score >= 90 ) {
+			return self::LABEL_EXCELLENT;
+		}
+		if ( $score >= 70 ) {
+			return self::LABEL_GOOD;
+		}
+		if ( $score >= 50 ) {
+			return self::LABEL_NEEDS_IMPROVEMENT;
+		}
+		if ( $score >= 20 ) {
+			return self::LABEL_POOR;
+		}
 		return self::LABEL_CRITICAL;
 	}
 
@@ -643,10 +739,18 @@ PROMPT;
 	 * Letter grade from score.
 	 */
 	public static function grade_from_score( $score ) {
-		if ( $score >= 90 ) return 'A';
-		if ( $score >= 70 ) return 'B';
-		if ( $score >= 50 ) return 'C';
-		if ( $score >= 30 ) return 'D';
+		if ( $score >= 90 ) {
+			return 'A';
+		}
+		if ( $score >= 70 ) {
+			return 'B';
+		}
+		if ( $score >= 50 ) {
+			return 'C';
+		}
+		if ( $score >= 30 ) {
+			return 'D';
+		}
 		return 'F';
 	}
 
@@ -654,10 +758,18 @@ PROMPT;
 	 * Badge CSS key from score.
 	 */
 	public static function badge_from_score( $score ) {
-		if ( $score >= 90 ) return 'excellent';
-		if ( $score >= 70 ) return 'good';
-		if ( $score >= 50 ) return 'fair';
-		if ( $score >= 30 ) return 'poor';
+		if ( $score >= 90 ) {
+			return 'excellent';
+		}
+		if ( $score >= 70 ) {
+			return 'good';
+		}
+		if ( $score >= 50 ) {
+			return 'fair';
+		}
+		if ( $score >= 30 ) {
+			return 'poor';
+		}
 		return 'needs-work';
 	}
 
@@ -666,17 +778,58 @@ PROMPT;
 	 */
 	private static function count_meaningful_words( $lc_words ) {
 		$stop_words = array(
-			'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-			'of', 'in', 'on', 'at', 'to', 'for', 'with', 'and', 'or', 'but',
-			'my', 'our', 'your', 'his', 'her', 'its', 'their', 'this', 'that',
-			'it', 'he', 'she', 'we', 'they', 'i', 'me', 'him', 'us', 'them',
+			'a',
+			'an',
+			'the',
+			'is',
+			'are',
+			'was',
+			'were',
+			'be',
+			'been',
+			'being',
+			'of',
+			'in',
+			'on',
+			'at',
+			'to',
+			'for',
+			'with',
+			'and',
+			'or',
+			'but',
+			'my',
+			'our',
+			'your',
+			'his',
+			'her',
+			'its',
+			'their',
+			'this',
+			'that',
+			'it',
+			'he',
+			'she',
+			'we',
+			'they',
+			'i',
+			'me',
+			'him',
+			'us',
+			'them',
 		);
-		$count = 0;
+		$count      = 0;
 		foreach ( $lc_words as $w ) {
-			if ( strlen( $w ) < 2 ) continue;
-			if ( in_array( $w, $stop_words, true ) ) continue;
-			if ( in_array( $w, self::$generic_image_words, true ) ) continue;
-			$count++;
+			if ( strlen( $w ) < 2 ) {
+				continue;
+			}
+			if ( in_array( $w, $stop_words, true ) ) {
+				continue;
+			}
+			if ( in_array( $w, self::$generic_image_words, true ) ) {
+				continue;
+			}
+			++$count;
 		}
 		return $count;
 	}

@@ -62,17 +62,17 @@ class BBAI_Upgrade_State {
 	 */
 	public static function resolve( array $args ): array {
 
-		$used         = max( 0, (int) ( $args['used']         ?? 0 ) );
-		$limit        = max( 1, (int) ( $args['limit']        ?? 50 ) );
-		$remaining    = max( 0, (int) ( $args['remaining']    ?? ( $limit - $used ) ) );
-		$coverage_pct = max( 0, min( 100, (int) ( $args['coverage_pct']  ?? 0 ) ) );
+		$used         = max( 0, (int) ( $args['used'] ?? 0 ) );
+		$limit        = max( 1, (int) ( $args['limit'] ?? 50 ) );
+		$remaining    = max( 0, (int) ( $args['remaining'] ?? ( $limit - $used ) ) );
+		$coverage_pct = max( 0, min( 100, (int) ( $args['coverage_pct'] ?? 0 ) ) );
 		$total_images = max( 0, (int) ( $args['total_images'] ?? 0 ) );
 		$last_scan_ts = max( 0, (int) ( $args['last_scan_ts'] ?? 0 ) );
 		$is_pro       = ! empty( $args['is_pro'] );
 		$is_agency    = ! empty( $args['is_agency'] );
-		$days_reset   = max( 0, (int) ( $args['days_reset']   ?? 0 ) );
-		$upgrade_url  = (string) ( $args['upgrade_url']       ?? '' );
-		$context      = (string) ( $args['context']           ?? 'default' );
+		$days_reset   = max( 0, (int) ( $args['days_reset'] ?? 0 ) );
+		$upgrade_url  = (string) ( $args['upgrade_url'] ?? '' );
+		$context      = (string) ( $args['context'] ?? 'default' );
 
 		$used_pct        = (int) round( ( $used / $limit ) * 100 );
 		$days_since_scan = $last_scan_ts > 0
@@ -93,7 +93,7 @@ class BBAI_Upgrade_State {
 
 		} elseif ( $coverage_pct >= 100 && $total_images > 0 ) {
 			// Pro users at 100% coverage need no upgrade prompt.
-			return $is_pro ? self::hidden() : self::build( self::STATE_SUCCESS, [] );
+			return $is_pro ? self::hidden() : self::build( self::STATE_SUCCESS, array() );
 
 		} elseif (
 			$days_since_scan >= self::INACTIVE_DAYS
@@ -112,7 +112,7 @@ class BBAI_Upgrade_State {
 
 		return self::build(
 			$state,
-			[
+			array(
 				'used'            => $used,
 				'limit'           => $limit,
 				'remaining'       => $remaining,
@@ -122,7 +122,7 @@ class BBAI_Upgrade_State {
 				'days_since_scan' => $days_since_scan,
 				'upgrade_url'     => $upgrade_url ?: 'https://beepbeep.ai/pricing',
 				'context'         => $context,
-			]
+			)
 		);
 	}
 
@@ -130,7 +130,10 @@ class BBAI_Upgrade_State {
 
 	/** @return array */
 	private static function hidden(): array {
-		return [ 'visible' => false, 'state' => self::STATE_HIDDEN ];
+		return array(
+			'visible' => false,
+			'state'   => self::STATE_HIDDEN,
+		);
 	}
 
 	/**
@@ -145,25 +148,25 @@ class BBAI_Upgrade_State {
 		$upgrade_url = ! empty( $data['upgrade_url'] ) ? $data['upgrade_url'] : 'https://beepbeep.ai/pricing';
 
 		// Reusable CTAs (all states share these).
-		$enable_auto = [
+		$enable_auto = array(
 			'label'  => __( 'Enable automatic optimisation', 'beepbeep-ai-alt-text-generator' ),
 			'action' => 'show-upgrade-modal',
 			'href'   => '#',
 			'target' => '',
-		];
+		);
 
-		$buy_credits = [
+		$buy_credits = array(
 			'label'  => __( 'Buy extra credits', 'beepbeep-ai-alt-text-generator' ),
 			'action' => '',
 			'href'   => $upgrade_url,
 			'target' => '_blank',
-		];
+		);
 
 		switch ( $state ) {
 
 			// ── Blocked: 0 credits, free plan ───────────────────
 			case self::STATE_BLOCKED:
-				return [
+				return array(
 					'visible'   => true,
 					'state'     => $state,
 					'tone'      => 'urgent',
@@ -175,11 +178,11 @@ class BBAI_Upgrade_State {
 					),
 					'primary'   => $enable_auto,
 					'secondary' => $buy_credits,
-				];
+				);
 
 			// ── Low credits: >80 % used, free plan ──────────────
 			case self::STATE_LOW:
-				return [
+				return array(
 					'visible'   => true,
 					'state'     => $state,
 					'tone'      => 'warning',
@@ -187,16 +190,16 @@ class BBAI_Upgrade_State {
 					'body'      => sprintf(
 						/* translators: 1: credits used, 2: credit limit */
 						__( "You've used %1\$d of %2\$d credits this month. Keep generating without interruption by enabling automatic optimisation.", 'beepbeep-ai-alt-text-generator' ),
-						(int) ( $data['used']  ?? 0 ),
+						(int) ( $data['used'] ?? 0 ),
 						(int) ( $data['limit'] ?? 50 )
 					),
 					'primary'   => $enable_auto,
 					'secondary' => $buy_credits,
-				];
+				);
 
 			// ── Success: 100 % coverage, free plan ──────────────
 			case self::STATE_SUCCESS:
-				return [
+				return array(
 					'visible'   => true,
 					'state'     => $state,
 					'tone'      => 'healthy',
@@ -204,28 +207,28 @@ class BBAI_Upgrade_State {
 					'body'      => __( 'Every image has ALT text. Enable automatic optimisation to keep your coverage complete as you upload new images — no manual scanning needed.', 'beepbeep-ai-alt-text-generator' ),
 					'primary'   => $enable_auto,
 					'secondary' => null,
-				];
+				);
 
 			// ── Inactive: no scan in 7+ days ────────────────────
 			case self::STATE_INACTIVE:
-				return [
+				return array(
 					'visible'   => true,
 					'state'     => $state,
 					'tone'      => 'warning',
 					'headline'  => __( 'New images may be missing ALT text', 'beepbeep-ai-alt-text-generator' ),
 					'body'      => __( "You haven't scanned recently. New uploads aren't checked automatically — enable auto-optimisation to keep your coverage complete.", 'beepbeep-ai-alt-text-generator' ),
 					'primary'   => $enable_auto,
-					'secondary' => [
+					'secondary' => array(
 						'label'  => __( 'Scan now', 'beepbeep-ai-alt-text-generator' ),
 						'action' => 'scan-opportunity',
 						'href'   => '#',
 						'target' => '',
-					],
-				];
+					),
+				);
 
 			// ── Default: free plan, no specific urgency ──────────
 			default:
-				return [
+				return array(
 					'visible'   => true,
 					'state'     => $state,
 					'tone'      => 'neutral',
@@ -233,7 +236,7 @@ class BBAI_Upgrade_State {
 					'body'      => __( 'Process every new image as you upload it. No manual scanning, no missed images, no extra work.', 'beepbeep-ai-alt-text-generator' ),
 					'primary'   => $enable_auto,
 					'secondary' => null,
-				];
+				);
 		}
 	}
 }

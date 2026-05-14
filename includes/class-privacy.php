@@ -19,8 +19,8 @@ class Privacy {
 	 * Register exporters and erasers.
 	 */
 	public static function init(): void {
-		add_filter( 'wp_privacy_personal_data_exporters', [ __CLASS__, 'register_exporter' ] );
-		add_filter( 'wp_privacy_personal_data_erasers', [ __CLASS__, 'register_eraser' ] );
+		add_filter( 'wp_privacy_personal_data_exporters', array( __CLASS__, 'register_exporter' ) );
+		add_filter( 'wp_privacy_personal_data_erasers', array( __CLASS__, 'register_eraser' ) );
 	}
 
 	/**
@@ -30,10 +30,10 @@ class Privacy {
 	 * @return array
 	 */
 	public static function register_exporter( array $exporters ): array {
-		$exporters[ self::EXPORTER_ID ] = [
+		$exporters[ self::EXPORTER_ID ] = array(
 			'exporter_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
-			'callback'               => [ __CLASS__, 'exporter' ],
-		];
+			'callback'               => array( __CLASS__, 'exporter' ),
+		);
 
 		return $exporters;
 	}
@@ -45,10 +45,10 @@ class Privacy {
 	 * @return array
 	 */
 	public static function register_eraser( array $erasers ): array {
-		$erasers[ self::ERASER_ID ] = [
+		$erasers[ self::ERASER_ID ] = array(
 			'eraser_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
-			'callback'             => [ __CLASS__, 'eraser' ],
-		];
+			'callback'             => array( __CLASS__, 'eraser' ),
+		);
 
 		return $erasers;
 	}
@@ -61,10 +61,10 @@ class Privacy {
 	 * @return array
 	 */
 	public static function exporter( string $email_address, int $page = 1 ): array {
-		$data = [];
+		$data = array();
 		$done = true;
 
-		$user = get_user_by( 'email', $email_address );
+		$user    = get_user_by( 'email', $email_address );
 		$user_id = $user ? (int) $user->ID : 0;
 
 		$data = array_merge( $data, self::export_contact_submissions( $email_address, $user_id, $page, $done ) );
@@ -74,10 +74,10 @@ class Privacy {
 			$data = array_merge( $data, self::export_trial_usage_summary() );
 		}
 
-		return [
+		return array(
 			'data' => $data,
 			'done' => $done,
-		];
+		);
 	}
 
 	/**
@@ -90,10 +90,10 @@ class Privacy {
 	public static function eraser( string $email_address, int $page = 1 ): array {
 		$items_removed  = false;
 		$items_retained = false;
-		$messages       = [];
+		$messages       = array();
 		$done           = true;
 
-		$user = get_user_by( 'email', $email_address );
+		$user    = get_user_by( 'email', $email_address );
 		$user_id = $user ? (int) $user->ID : 0;
 
 		$contact_deleted = self::erase_contact_submissions( $email_address, $user_id, $page, $done );
@@ -117,12 +117,12 @@ class Privacy {
 			$messages[] = __( 'No BeepBeep AI data found for this email address.', 'beepbeep-ai-alt-text-generator' );
 		}
 
-		return [
+		return array(
 			'items_removed'  => $items_removed,
 			'items_retained' => $items_retained,
 			'messages'       => $messages,
 			'done'           => $done,
-		];
+		);
 	}
 
 	/**
@@ -133,22 +133,22 @@ class Privacy {
 
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Contact_Submissions', 'includes/class-contact-submissions.php' );
 		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Contact_Submissions' ) ) {
-			return [];
+			return array();
 		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', Contact_Submissions::table() )
 		);
 		if ( $exists !== Contact_Submissions::table() ) {
-			return [];
+			return array();
 		}
 
 		$page_size = 50;
-		$offset = ( max( 1, $page ) - 1 ) * $page_size;
+		$offset    = ( max( 1, $page ) - 1 ) * $page_size;
 
-			if ( $email_address === '' && $user_id <= 0 ) {
-				return [];
-			}
+		if ( $email_address === '' && $user_id <= 0 ) {
+			return array();
+		}
 			$submissions_table = esc_sql( Contact_Submissions::table() );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -167,28 +167,46 @@ class Privacy {
 				)
 			);
 		if ( empty( $rows ) ) {
-			return [];
+			return array();
 		}
 
 		if ( count( $rows ) === $page_size ) {
 			$done = false;
 		}
 
-		$items = [];
+		$items = array();
 		foreach ( $rows as $row ) {
-			$items[] = [
+			$items[] = array(
 				'group_id'    => 'bbai_contact_submissions',
 				'group_label' => __( 'BeepBeep AI Contact Submissions', 'beepbeep-ai-alt-text-generator' ),
 				'item_id'     => 'submission-' . absint( $row->id ),
-				'data'        => [
-					[ 'name' => __( 'Name', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $row->name ?? '' ) ],
-					[ 'name' => __( 'Email', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_email( $row->email ?? '' ) ],
-					[ 'name' => __( 'Subject', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $row->subject ?? '' ) ],
-					[ 'name' => __( 'Message', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_textarea_field( $row->message ?? '' ) ],
-					[ 'name' => __( 'Submitted At', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $row->created_at ?? '' ) ],
-					[ 'name' => __( 'Site URL', 'beepbeep-ai-alt-text-generator' ), 'value' => esc_url_raw( $row->site_url ?? '' ) ],
-				],
-			];
+				'data'        => array(
+					array(
+						'name'  => __( 'Name', 'beepbeep-ai-alt-text-generator' ),
+						'value' => sanitize_text_field( $row->name ?? '' ),
+					),
+					array(
+						'name'  => __( 'Email', 'beepbeep-ai-alt-text-generator' ),
+						'value' => sanitize_email( $row->email ?? '' ),
+					),
+					array(
+						'name'  => __( 'Subject', 'beepbeep-ai-alt-text-generator' ),
+						'value' => sanitize_text_field( $row->subject ?? '' ),
+					),
+					array(
+						'name'  => __( 'Message', 'beepbeep-ai-alt-text-generator' ),
+						'value' => sanitize_textarea_field( $row->message ?? '' ),
+					),
+					array(
+						'name'  => __( 'Submitted At', 'beepbeep-ai-alt-text-generator' ),
+						'value' => sanitize_text_field( $row->created_at ?? '' ),
+					),
+					array(
+						'name'  => __( 'Site URL', 'beepbeep-ai-alt-text-generator' ),
+						'value' => esc_url_raw( $row->site_url ?? '' ),
+					),
+				),
+			);
 		}
 
 		return $items;
@@ -208,43 +226,58 @@ class Privacy {
 		}
 
 		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_site_hash' ) ) {
-			return [];
+			return array();
 		}
 
-		$site_hash = sanitize_key( bbai_get_trial_site_hash() );
-		$limit     = absint( bbai_get_trial_limit() );
-		$remaining = absint( bbai_get_trial_remaining( $site_hash ) );
-		$used      = max( 0, $limit - $remaining );
+		$site_hash  = sanitize_key( bbai_get_trial_site_hash() );
+		$limit      = absint( bbai_get_trial_limit() );
+		$remaining  = absint( bbai_get_trial_remaining( $site_hash ) );
+		$used       = max( 0, $limit - $remaining );
 		$option_key = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_option_key' )
 			? bbai_get_trial_option_key( $site_hash )
 			: 'bbai_trial_usage_' . $site_hash;
 
-		return [
-			[
+		return array(
+			array(
 				'group_id'    => 'bbai_trial_usage',
 				'group_label' => __( 'BeepBeep AI Trial Usage', 'beepbeep-ai-alt-text-generator' ),
 				'item_id'     => 'trial-usage-local',
-				'data'        => [
-					[ 'name' => __( 'Trial Limit', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) $limit ],
-					[ 'name' => __( 'Trial Used', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) $used ],
-					[ 'name' => __( 'Trial Remaining', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) $remaining ],
-					[ 'name' => __( 'Storage Key', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $option_key ) ],
-					[ 'name' => __( 'Disclosure', 'beepbeep-ai-alt-text-generator' ), 'value' => __( 'Trial usage count is stored locally in wp_options using an anonymous site identifier. No email is required for trial usage.', 'beepbeep-ai-alt-text-generator' ) ],
-				],
-			],
-		];
+				'data'        => array(
+					array(
+						'name'  => __( 'Trial Limit', 'beepbeep-ai-alt-text-generator' ),
+						'value' => (string) $limit,
+					),
+					array(
+						'name'  => __( 'Trial Used', 'beepbeep-ai-alt-text-generator' ),
+						'value' => (string) $used,
+					),
+					array(
+						'name'  => __( 'Trial Remaining', 'beepbeep-ai-alt-text-generator' ),
+						'value' => (string) $remaining,
+					),
+					array(
+						'name'  => __( 'Storage Key', 'beepbeep-ai-alt-text-generator' ),
+						'value' => sanitize_text_field( $option_key ),
+					),
+					array(
+						'name'  => __( 'Disclosure', 'beepbeep-ai-alt-text-generator' ),
+						'value' => __( 'Trial usage count is stored locally in wp_options using an anonymous site identifier. No email is required for trial usage.', 'beepbeep-ai-alt-text-generator' ),
+					),
+				),
+			),
+		);
 	}
 
 	/**
 	 * Export connected account data stored in options.
 	 */
 	private static function export_account_data( string $email_address ): array {
-		$items = [];
+		$items = array();
 
-		$user_data_sources = [
+		$user_data_sources = array(
 			get_option( 'beepbeepai_user_data', null ),
 			get_option( 'opptibbai_user_data', null ),
-		];
+		);
 
 		foreach ( $user_data_sources as $user_data ) {
 			if ( ! is_array( $user_data ) ) {
@@ -252,16 +285,25 @@ class Privacy {
 			}
 			$stored_email = isset( $user_data['email'] ) ? sanitize_email( $user_data['email'] ) : '';
 			if ( $stored_email && strcasecmp( $stored_email, $email_address ) === 0 ) {
-				$items[] = [
+				$items[] = array(
 					'group_id'    => 'bbai_account_data',
 					'group_label' => __( 'BeepBeep AI Account Data', 'beepbeep-ai-alt-text-generator' ),
 					'item_id'     => 'account-data',
-					'data'        => [
-						[ 'name' => __( 'Email', 'beepbeep-ai-alt-text-generator' ), 'value' => $stored_email ],
-						[ 'name' => __( 'Name', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $user_data['name'] ?? '' ) ],
-						[ 'name' => __( 'Plan', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $user_data['plan'] ?? '' ) ],
-					],
-				];
+					'data'        => array(
+						array(
+							'name'  => __( 'Email', 'beepbeep-ai-alt-text-generator' ),
+							'value' => $stored_email,
+						),
+						array(
+							'name'  => __( 'Name', 'beepbeep-ai-alt-text-generator' ),
+							'value' => sanitize_text_field( $user_data['name'] ?? '' ),
+						),
+						array(
+							'name'  => __( 'Plan', 'beepbeep-ai-alt-text-generator' ),
+							'value' => sanitize_text_field( $user_data['plan'] ?? '' ),
+						),
+					),
+				);
 				break;
 			}
 		}
@@ -274,73 +316,91 @@ class Privacy {
 	 */
 	private static function export_usage_summary( int $user_id ): array {
 		if ( $user_id <= 0 ) {
-			return [];
+			return array();
 		}
 
 		global $wpdb;
 
-		$items = [];
+		$items = array();
 
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger', 'includes/class-credit-usage-logger.php' );
-			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger' ) ) {
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Credit_Usage_Logger' ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$exists = $wpdb->get_var(
+				$wpdb->prepare( 'SHOW TABLES LIKE %s', Credit_Usage_Logger::table() )
+			);
+			if ( $exists === Credit_Usage_Logger::table() ) {
+				$credit_usage_table = esc_sql( Credit_Usage_Logger::table() );
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$exists = $wpdb->get_var(
-					$wpdb->prepare( 'SHOW TABLES LIKE %s', Credit_Usage_Logger::table() )
+				$summary = $wpdb->get_row(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT COUNT(*) AS events, SUM(credits_used) AS credits, MAX(generated_at) AS last_event FROM `{$credit_usage_table}` WHERE user_id = %d",
+						$user_id
+					),
+					ARRAY_A
 				);
-				if ( $exists === Credit_Usage_Logger::table() ) {
-					$credit_usage_table = esc_sql( Credit_Usage_Logger::table() );
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-					$summary = $wpdb->get_row(
-						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-							"SELECT COUNT(*) AS events, SUM(credits_used) AS credits, MAX(generated_at) AS last_event FROM `{$credit_usage_table}` WHERE user_id = %d",
-							$user_id
-						),
-						ARRAY_A
-					);
 				if ( ! empty( $summary ) && (int) $summary['events'] > 0 ) {
-					$items[] = [
+					$items[] = array(
 						'group_id'    => 'bbai_credit_usage',
 						'group_label' => __( 'BeepBeep AI Credit Usage', 'beepbeep-ai-alt-text-generator' ),
 						'item_id'     => 'credit-usage-' . $user_id,
-						'data'        => [
-							[ 'name' => __( 'Events', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['events'] ) ],
-							[ 'name' => __( 'Credits Used', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['credits'] ?? 0 ) ],
-							[ 'name' => __( 'Last Activity', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $summary['last_event'] ?? '' ) ],
-						],
-					];
+						'data'        => array(
+							array(
+								'name'  => __( 'Events', 'beepbeep-ai-alt-text-generator' ),
+								'value' => (string) intval( $summary['events'] ),
+							),
+							array(
+								'name'  => __( 'Credits Used', 'beepbeep-ai-alt-text-generator' ),
+								'value' => (string) intval( $summary['credits'] ?? 0 ),
+							),
+							array(
+								'name'  => __( 'Last Activity', 'beepbeep-ai-alt-text-generator' ),
+								'value' => sanitize_text_field( $summary['last_event'] ?? '' ),
+							),
+						),
+					);
 				}
 			}
 		}
 
 		self::load_class( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs', 'includes/usage/class-usage-logs.php' );
-			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs' ) ) {
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage\Usage_Logs' ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$exists = $wpdb->get_var(
+				$wpdb->prepare( 'SHOW TABLES LIKE %s', \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() )
+			);
+			if ( $exists === \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() ) {
+				$usage_logs_table = esc_sql( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() );
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$exists = $wpdb->get_var(
-					$wpdb->prepare( 'SHOW TABLES LIKE %s', \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() )
+				$summary = $wpdb->get_row(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						"SELECT COUNT(*) AS events, SUM(tokens_used) AS tokens, MAX(created_at) AS last_event FROM `{$usage_logs_table}` WHERE user_id = %d",
+						$user_id
+					),
+					ARRAY_A
 				);
-				if ( $exists === \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() ) {
-					$usage_logs_table = esc_sql( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() );
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-					$summary = $wpdb->get_row(
-						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-							"SELECT COUNT(*) AS events, SUM(tokens_used) AS tokens, MAX(created_at) AS last_event FROM `{$usage_logs_table}` WHERE user_id = %d",
-							$user_id
-						),
-						ARRAY_A
-					);
 				if ( ! empty( $summary ) && (int) $summary['events'] > 0 ) {
-					$items[] = [
+					$items[] = array(
 						'group_id'    => 'bbai_usage_logs',
 						'group_label' => __( 'BeepBeep AI Usage Logs', 'beepbeep-ai-alt-text-generator' ),
 						'item_id'     => 'usage-logs-' . $user_id,
-						'data'        => [
-							[ 'name' => __( 'Events', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['events'] ) ],
-							[ 'name' => __( 'Tokens Used', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['tokens'] ?? 0 ) ],
-							[ 'name' => __( 'Last Activity', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $summary['last_event'] ?? '' ) ],
-						],
-					];
+						'data'        => array(
+							array(
+								'name'  => __( 'Events', 'beepbeep-ai-alt-text-generator' ),
+								'value' => (string) intval( $summary['events'] ),
+							),
+							array(
+								'name'  => __( 'Tokens Used', 'beepbeep-ai-alt-text-generator' ),
+								'value' => (string) intval( $summary['tokens'] ?? 0 ),
+							),
+							array(
+								'name'  => __( 'Last Activity', 'beepbeep-ai-alt-text-generator' ),
+								'value' => sanitize_text_field( $summary['last_event'] ?? '' ),
+							),
+						),
+					);
 				}
 			}
 		}
@@ -368,9 +428,9 @@ class Privacy {
 
 		$page_size = 50;
 
-			if ( $email_address === '' && $user_id <= 0 ) {
-				return false;
-			}
+		if ( $email_address === '' && $user_id <= 0 ) {
+			return false;
+		}
 			$submissions_table = esc_sql( Contact_Submissions::table() );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -399,8 +459,8 @@ class Privacy {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->delete(
 				Contact_Submissions::table(),
-				[ 'id' => absint( $id ) ],
-				[ '%d' ]
+				array( 'id' => absint( $id ) ),
+				array( '%d' )
 			);
 		}
 
@@ -426,13 +486,13 @@ class Privacy {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$rows = $wpdb->update(
 					$table,
-					[
-						'user_id' => 0,
+					array(
+						'user_id'                  => 0,
 						'deleted_user_original_id' => $user_id,
-					],
-					[ 'user_id' => $user_id ],
-					[ '%d', '%d' ],
-					[ '%d' ]
+					),
+					array( 'user_id' => $user_id ),
+					array( '%d', '%d' ),
+					array( '%d' )
 				);
 				if ( $rows !== false && $rows > 0 ) {
 					$updated = true;
@@ -451,10 +511,10 @@ class Privacy {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$rows = $wpdb->update(
 					$table,
-					[ 'user_id' => 0 ],
-					[ 'user_id' => $user_id ],
-					[ '%d' ],
-					[ '%d' ]
+					array( 'user_id' => 0 ),
+					array( 'user_id' => $user_id ),
+					array( '%d' ),
+					array( '%d' )
 				);
 				if ( $rows !== false && $rows > 0 ) {
 					$updated = true;
@@ -471,10 +531,10 @@ class Privacy {
 	private static function erase_account_data( string $email_address ): bool {
 		$removed = false;
 
-		$user_data_sources = [
+		$user_data_sources = array(
 			'beepbeepai_user_data' => get_option( 'beepbeepai_user_data', null ),
 			'opptibbai_user_data'  => get_option( 'opptibbai_user_data', null ),
-		];
+		);
 
 		foreach ( $user_data_sources as $key => $user_data ) {
 			if ( ! is_array( $user_data ) ) {

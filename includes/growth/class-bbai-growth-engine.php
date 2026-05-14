@@ -18,9 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Growth_Engine {
 
-	public const OPTION_INSTALLED_AT      = 'bbai_growth_installed_at';
-	public const USER_SNOOZE_META         = 'bbai_growth_review_snooze_until';
-	public const USER_REVIEW_LEFT_META    = 'bbai_growth_review_left';
+	public const OPTION_INSTALLED_AT   = 'bbai_growth_installed_at';
+	public const USER_SNOOZE_META      = 'bbai_growth_review_snooze_until';
+	public const USER_REVIEW_LEFT_META = 'bbai_growth_review_left';
 
 	/** @var bool */
 	private static $bootstrapped = false;
@@ -34,8 +34,8 @@ class Growth_Engine {
 		}
 		self::$bootstrapped = true;
 
-		add_action( 'admin_init', [ self::class, 'handle_dismiss_requests' ], 5 );
-		add_action( 'admin_notices', [ self::class, 'maybe_output_review_notice' ] );
+		add_action( 'admin_init', array( self::class, 'handle_dismiss_requests' ), 5 );
+		add_action( 'admin_notices', array( self::class, 'maybe_output_review_notice' ) );
 	}
 
 	/**
@@ -81,7 +81,7 @@ class Growth_Engine {
 		}
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$action = sanitize_key( wp_unslash( $_GET['bbai_growth_review'] ) );
-		if ( ! in_array( $action, [ 'snooze', 'done' ], true ) ) {
+		if ( ! in_array( $action, array( 'snooze', 'done' ), true ) ) {
 			return;
 		}
 		check_admin_referer( 'bbai_growth_review_' . $action );
@@ -102,9 +102,9 @@ class Growth_Engine {
 		if ( function_exists( 'bbai_telemetry_emit' ) ) {
 			bbai_telemetry_emit(
 				'growth_review_notice_dismissed',
-				[
+				array(
 					'action' => $action,
-				]
+				)
 			);
 		}
 
@@ -173,7 +173,7 @@ class Growth_Engine {
 			return;
 		}
 
-		$review_url = 'https://wordpress.org/support/plugin/beepbeep-ai-alt-text-generator/reviews/?rate=5#new-post';
+		$review_url  = 'https://wordpress.org/support/plugin/beepbeep-ai-alt-text-generator/reviews/?rate=5#new-post';
 		$base_return = self::current_bbai_admin_return_url();
 		$snooze_url  = wp_nonce_url(
 			add_query_arg( 'bbai_growth_review', 'snooze', $base_return ),
@@ -189,9 +189,9 @@ class Growth_Engine {
 			set_transient( $t_key, 1, DAY_IN_SECONDS );
 			bbai_telemetry_emit(
 				'growth_review_admin_notice_shown',
-				[
+				array(
 					'screen' => 'bbai_admin',
-				]
+				)
 			);
 		}
 
@@ -233,4 +233,3 @@ class Growth_Engine {
 		return admin_url( 'admin.php?page=' . rawurlencode( $page ) );
 	}
 }
-

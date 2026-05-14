@@ -47,7 +47,7 @@ class Container {
 	 * @param callable $factory Factory function that returns the service instance.
 	 * @return void
 	 */
-	public function register(string $name, callable $factory): void {
+	public function register( string $name, callable $factory ): void {
 		$this->services[ $name ] = $factory;
 	}
 
@@ -62,7 +62,7 @@ class Container {
 	 * @param callable $factory Factory function that returns the service instance.
 	 * @return void
 	 */
-	public function singleton(string $name, callable $factory): void {
+	public function singleton( string $name, callable $factory ): void {
 		$this->register(
 			$name,
 			function () use ( $name, $factory ) {
@@ -85,7 +85,7 @@ class Container {
 	 * @param string $service Target service name.
 	 * @return void
 	 */
-	public function alias(string $alias, string $service): void {
+	public function alias( string $alias, string $service ): void {
 		$this->aliases[ $alias ] = $service;
 	}
 
@@ -98,7 +98,7 @@ class Container {
 	 * @return mixed Service instance.
 	 * @throws \Exception If service is not found.
 	 */
-	public function get(string $name) {
+	public function get( string $name ) {
 		// Resolve alias.
 		$service_name = $this->aliases[ $name ] ?? $name;
 
@@ -118,7 +118,7 @@ class Container {
 	 * @param string $name Service name or alias.
 	 * @return bool True if service exists.
 	 */
-	public function has(string $name): bool {
+	public function has( string $name ): bool {
 		$service_name = $this->aliases[ $name ] ?? $name;
 		return isset( $this->services[ $service_name ] );
 	}
@@ -134,7 +134,7 @@ class Container {
 	 * @param mixed  $instance Service instance.
 	 * @return void
 	 */
-	public function instance(string $name, $instance): void {
+	public function instance( string $name, $instance ): void {
 		$this->singleton(
 			$name,
 			function () use ( $instance ) {
@@ -155,7 +155,7 @@ class Container {
 	 * @throws \ReflectionException If class doesn't exist.
 	 * @throws \Exception If dependencies cannot be resolved.
 	 */
-	public function make(string $class_name) {
+	public function make( string $class_name ) {
 		$reflection = new \ReflectionClass( $class_name );
 
 		$constructor = $reflection->getConstructor();
@@ -175,7 +175,7 @@ class Container {
 					continue;
 				}
 
-				$parameter_name = sanitize_text_field( $parameter->getName() );
+				$parameter_name  = sanitize_text_field( $parameter->getName() );
 				$class_name_safe = sanitize_text_field( $class_name );
 				throw new \Exception(
 					esc_html( "Cannot resolve parameter '{$parameter_name}' in {$class_name_safe}" )
@@ -189,7 +189,7 @@ class Container {
 			} elseif ( class_exists( $type_name ) ) {
 				$dependencies[] = $this->make( $type_name );
 			} else {
-				$type_name_safe = sanitize_text_field( $type_name );
+				$type_name_safe  = sanitize_text_field( $type_name );
 				$class_name_safe = sanitize_text_field( $class_name );
 				throw new \Exception( esc_html( "Cannot resolve dependency '{$type_name_safe}' for {$class_name_safe}" ) );
 			}

@@ -167,9 +167,9 @@ class Authentication_Service {
 				}
 
 				return array(
-					'success' => false,
-					'message' => $result->get_error_message(),
-					'code'    => 'site_has_license',
+					'success'        => false,
+					'message'        => $result->get_error_message(),
+					'code'           => 'site_has_license',
 					'existing_email' => $existing_email,
 				);
 			}

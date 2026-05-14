@@ -34,7 +34,7 @@ class BBAI_Cache {
 	 *
 	 * @var array<string, int>
 	 */
-	private static $generations = [];
+	private static $generations = array();
 
 	/**
 	 * Get the current cache generation for a table slug.
@@ -116,6 +116,6 @@ class BBAI_Cache {
 	 * @return string[] List of table slugs.
 	 */
 	public static function known_slugs() {
-		return [ 'logs', 'queue', 'credit_usage', 'usage_logs', 'contact', 'library', 'stats' ];
+		return array( 'logs', 'queue', 'credit_usage', 'usage_logs', 'contact', 'library', 'stats' );
 	}
 }

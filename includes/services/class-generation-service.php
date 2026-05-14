@@ -215,7 +215,7 @@ class Generation_Service {
 			$attachment_id = absint( $id );
 
 			if ( ! $attachment_id ) {
-				$invalid++;
+				++$invalid;
 				continue;
 			}
 
@@ -223,16 +223,16 @@ class Generation_Service {
 			if ( class_exists( '\BbAI_Queue' ) ) {
 				$existing_job = \BbAI_Queue::get_job_by_attachment( $attachment_id );
 				if ( $existing_job && 'pending' === $existing_job['status'] ) {
-					$already_queued++;
+					++$already_queued;
 					continue;
 				}
 
 				// Queue the job.
 				$enqueued = \BbAI_Queue::enqueue( $attachment_id, 'bulk' );
 				if ( $enqueued ) {
-					$queued++;
+					++$queued;
 				} else {
-					$invalid++;
+					++$invalid;
 				}
 			}
 		}
@@ -327,17 +327,17 @@ class Generation_Service {
 	 */
 	private function get_user_friendly_error_message( string $error_code, string $error_message ): string {
 		$messages = array(
-			'missing_alt_text'      => __( 'The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'beepbeep-ai-alt-text-generator' ),
-			'api_response_invalid'  => __( 'The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
-			'quota_check_mismatch'  => __( 'Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
-			'limit_reached'         => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
-			'quota_exhausted'       => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
-			'api_timeout'           => __( 'The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator' ),
-			'api_unreachable'       => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
-			'network_error'         => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
-			'rate_limited'          => __( 'Too many requests were sent at once. Please wait a moment and retry.', 'beepbeep-ai-alt-text-generator' ),
-			'server_error'          => __( 'The service is temporarily unavailable. Please retry in a moment.', 'beepbeep-ai-alt-text-generator' ),
-			'auth_required'         => __( 'Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator' ),
+			'missing_alt_text'     => __( 'The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'beepbeep-ai-alt-text-generator' ),
+			'api_response_invalid' => __( 'The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+			'quota_check_mismatch' => __( 'Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
+			'limit_reached'        => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
+			'quota_exhausted'      => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
+			'api_timeout'          => __( 'The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator' ),
+			'api_unreachable'      => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
+			'network_error'        => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
+			'rate_limited'         => __( 'Too many requests were sent at once. Please wait a moment and retry.', 'beepbeep-ai-alt-text-generator' ),
+			'server_error'         => __( 'The service is temporarily unavailable. Please retry in a moment.', 'beepbeep-ai-alt-text-generator' ),
+			'auth_required'        => __( 'Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator' ),
 		);
 
 		return $messages[ $error_code ] ?? $error_message;

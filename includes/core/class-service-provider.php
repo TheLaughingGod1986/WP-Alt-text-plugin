@@ -180,7 +180,6 @@ class Service_Provider {
 				);
 			}
 		);
-
 	}
 
 	/**

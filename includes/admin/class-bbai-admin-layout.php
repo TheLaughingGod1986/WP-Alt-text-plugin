@@ -33,7 +33,7 @@ if ( ! function_exists( 'bbai_render_layout_template' ) ) {
 	 * @param string $fallback_message Message shown when the partial is missing.
 	 * @param object $scope            Optional object scope used when the partial relies on $this.
 	 */
-	function bbai_render_layout_template( $partial, array $context = [], $fallback_message = '', $scope = null ) {
+	function bbai_render_layout_template( $partial, array $context = array(), $fallback_message = '', $scope = null ) {
 		ob_start();
 
 		$renderer = function () use ( $partial, $context, $fallback_message ) {
