@@ -6,6 +6,16 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### Unreleased
 
+### 4.6.4 — 2026-05-14
+
+- **Fixed**: Background generation persistence now survives page navigation, refreshes, and multi-tab sessions across all plugin pages.
+- **Fixed**: In-browser background jobs now sync progress via the shared bbaiJobState subscription, removing duplicate polling and stale state after navigation.
+- **Fixed**: ALT Library pagination now automatically reloads to show remaining filtered items after approving all visible items on the current page.
+- **Fixed**: Floating job widget "Review images" button is now visible after generation completes (WordPress admin CSS override was making text invisible).
+- **Fixed**: Removed misleading "Review suggestions." suffix from the generation-complete widget status line.
+- **Fixed**: Plugin Check `MissingTranslatorsComment` warnings resolved by adding translator comments to all i18n calls with printf placeholders.
+- **Fixed**: Dashboard insight cards (Accessibility, Time Saved, SEO) now have horizontally aligned value headings and CTA buttons across all three cards.
+
 ### 4.6.3 — 2026-05-06
 
 - **Changed**: Updated the WordPress.org large and small banners with correctly sized Better Alt Text, Better Accessibility artwork.

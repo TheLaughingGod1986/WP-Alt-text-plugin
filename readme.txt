@@ -134,6 +134,15 @@ Privacy policy: https://openai.com/privacy
 
 == Changelog ==
 
+= 4.6.4 =
+* Fixed background generation persistence so progress survives page navigation, refreshes, and multi-tab sessions across all plugin pages.
+* Fixed in-browser background jobs so progress syncs correctly via the shared bbaiJobState subscription, removing duplicate polling and stale state.
+* Fixed the ALT Library pagination so approving all items on a filtered page automatically reloads to show remaining items from other pages, instead of leaving an empty view.
+* Fixed the floating job widget so the Review images button is visible after generation completes (was invisible due to a WordPress admin CSS conflict).
+* Removed the misleading "Review suggestions." suffix from the generation-complete widget status; the button label already communicates the next action.
+* Fixed Plugin Check warnings by adding translator comments to all i18n calls with printf placeholders across the plugin.
+* Aligned the dashboard insight card layout so the main value heading and CTA buttons sit at the same vertical position across all three cards regardless of the optional success badge.
+
 = 4.6.3 =
 * Updated the WordPress.org large and small banners with correctly sized Better Alt Text, Better Accessibility artwork.
 * Refreshed the WordPress.org thumbnail icon and improved readme SEO coverage for AI alt text, image SEO, accessibility, WooCommerce, and missing alt attributes.
