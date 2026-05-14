@@ -541,6 +541,19 @@ JS,
                 $this->get_asset_version( $bbai_job_widget_css, '1.0.0', $base_path )
             );
         }
+
+        // Background job persistence layer — runs on every BeepBeep AI admin page
+        // so generation progress survives navigation, page refreshes, and multi-tab.
+        $bbai_bg_job_js = 'assets/js/admin/bbai-background-job.js';
+        if ( file_exists( $base_path . $bbai_bg_job_js ) ) {
+            wp_enqueue_script(
+                'bbai-background-job',
+                $base_url . $bbai_bg_job_js,
+                [ 'bbai-job-state', 'bbai-job-widget' ],
+                $this->get_asset_version( $bbai_bg_job_js, '1.0.0', $base_path ),
+                true
+            );
+        }
     }
 
     /**

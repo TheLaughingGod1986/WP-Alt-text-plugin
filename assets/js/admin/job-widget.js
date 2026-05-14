@@ -48,8 +48,24 @@
         $('body').append(html);
         $widget = $('#' + WIDGET_ID);
 
-        // View → reopen modal
+        // View → reopen modal or navigate to dashboard
+        // bbai-background-job.js intercepts this click first (capture phase) to
+        // handle cross-page navigation.  We only reach here when the modal is
+        // present on the current page.
         $widget.on('click', '.bbai-job-widget__view', function () {
+            var state = window.bbaiJobState ? window.bbaiJobState.getState() : null;
+
+            // Complete state → navigate to library for review.
+            if (state && state.status === 'complete') {
+                var adminUrl = (window.bbai_ajax && window.bbai_ajax.admin_url) ||
+                               (window.bbai_env  && window.bbai_env.admin_url)  || '';
+                if (adminUrl) {
+                    window.location.assign(adminUrl + '?page=bbai&tab=library');
+                }
+                return;
+            }
+
+            // Processing / error → reopen progress modal if present.
             if (window.bbaiJobState) {
                 window.bbaiJobState.update({ modalVisible: true });
             }
@@ -69,7 +85,7 @@
     function render(state) {
         if (!$widget) return;
 
-        // Show widget when: job running but modal hidden, OR job just completed
+        // Show widget when: job running but modal hidden, OR job just completed/failed
         var shouldShow = !state.modalVisible && (
             state.status === 'processing' ||
             state.status === 'complete' ||
@@ -77,7 +93,7 @@
             state.status === 'quota'
         );
 
-        // Hide when idle or modal is visible during processing
+        // Hide when idle or modal is open during processing
         if (state.status === 'idle') {
             $widget.prop('hidden', true);
             return;
@@ -91,33 +107,31 @@
         $widget.prop('hidden', !shouldShow);
         if (!shouldShow) return;
 
-        // Status text
         var statusEl = $widget.find('.bbai-job-widget__status');
-        var viewBtn = $widget.find('.bbai-job-widget__view');
+        var viewBtn  = $widget.find('.bbai-job-widget__view');
 
         if (state.status === 'complete') {
-            statusEl.text('ALT text generation complete');
-            $widget.find('.bbai-job-widget__progress-text').text(
-                state.successes + ' image' + (state.successes !== 1 ? 's' : '') + ' updated'
-            );
+            var count = state.successes || state.progress || 0;
+            statusEl.text(count + ' image' + (count !== 1 ? 's' : '') + ' optimised. Review suggestions.');
+            $widget.find('.bbai-job-widget__progress-text').text('Generation complete');
             $widget.find('.bbai-job-widget__eta').text('');
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--error')
                    .addClass('bbai-job-widget--complete');
-            viewBtn.text('Review');
+            viewBtn.text('Review images');
         } else if (state.status === 'quota') {
-            statusEl.text('Credits exhausted');
+            statusEl.text('Generation paused or failed.');
             $widget.find('.bbai-job-widget__progress-text').text(
-                state.successes + ' processed, ' + state.skipped + ' skipped' +
+                state.successes + ' processed' +
                 (state.failures > 0 ? ', ' + state.failures + ' failed' : '')
             );
             $widget.find('.bbai-job-widget__eta').text('');
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--complete')
                    .addClass('bbai-job-widget--error');
-            viewBtn.text('View');
+            viewBtn.text('Resume status check');
         } else if (state.status === 'error') {
-            statusEl.text('Completed with issues');
+            statusEl.text('Generation paused or failed.');
             $widget.find('.bbai-job-widget__progress-text').text(
                 state.successes + ' succeeded, ' + state.failures + ' failed'
             );
@@ -125,17 +139,19 @@
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--complete')
                    .addClass('bbai-job-widget--error');
-            viewBtn.text('View');
+            viewBtn.text('Resume status check');
         } else {
-            statusEl.text(state.label || 'Generating ALT text\u2026');
+            var done  = state.progress || 0;
+            var total = state.total    || 0;
+            statusEl.text('Generating ALT text\u2026 ' + done + '/' + total + ' complete');
             $widget.find('.bbai-job-widget__progress-text').text(
-                state.progress + ' / ' + state.total
+                done + ' / ' + total
             );
             $widget.find('.bbai-job-widget__eta').text(state.eta ? 'ETA ' + state.eta : '');
             $widget.find('.bbai-job-widget__bar-fill').css('width', state.percentage + '%');
             $widget.removeClass('bbai-job-widget--complete bbai-job-widget--error')
                    .addClass('bbai-job-widget--processing');
-            viewBtn.text('View');
+            viewBtn.text('View progress');
         }
     }
 
