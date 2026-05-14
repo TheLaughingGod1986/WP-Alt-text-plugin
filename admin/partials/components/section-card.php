@@ -14,28 +14,28 @@
  * @package BeepBeep_AI
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-$bbai_ui = isset($bbai_ui) && is_array($bbai_ui) ? $bbai_ui : [];
-$bbai_phase = isset($bbai_ui['phase']) ? (string) $bbai_ui['phase'] : 'open';
+$bbai_ui    = isset( $bbai_ui ) && is_array( $bbai_ui ) ? $bbai_ui : array();
+$bbai_phase = isset( $bbai_ui['phase'] ) ? (string) $bbai_ui['phase'] : 'open';
 
-if ('close' === $bbai_phase) {
-    $bbai_close_tag = isset($bbai_ui['close_tag']) ? strtolower((string) $bbai_ui['close_tag']) : 'div';
-    echo '</' . ('section' === $bbai_close_tag ? 'section' : 'div') . '>';
-    return;
+if ( 'close' === $bbai_phase ) {
+	$bbai_close_tag = isset( $bbai_ui['close_tag'] ) ? strtolower( (string) $bbai_ui['close_tag'] ) : 'div';
+	echo '</' . ( 'section' === $bbai_close_tag ? 'section' : 'div' ) . '>';
+	return;
 }
 
-$bbai_tag = isset($bbai_ui['tag']) ? strtolower((string) $bbai_ui['tag']) : 'div';
-$bbai_tag = 'section' === $bbai_tag ? 'section' : 'div';
-$bbai_extra = isset($bbai_ui['class']) ? trim((string) $bbai_ui['class']) : '';
-$bbai_surface = isset($bbai_ui['surface']) ? strtolower((string) $bbai_ui['surface']) : 'dashboard';
-if ('custom' === $bbai_surface) {
-    $bbai_classes = trim('bbai-ui-section-shell ' . $bbai_extra);
+$bbai_tag     = isset( $bbai_ui['tag'] ) ? strtolower( (string) $bbai_ui['tag'] ) : 'div';
+$bbai_tag     = 'section' === $bbai_tag ? 'section' : 'div';
+$bbai_extra   = isset( $bbai_ui['class'] ) ? trim( (string) $bbai_ui['class'] ) : '';
+$bbai_surface = isset( $bbai_ui['surface'] ) ? strtolower( (string) $bbai_ui['surface'] ) : 'dashboard';
+if ( 'custom' === $bbai_surface ) {
+	$bbai_classes = trim( 'bbai-ui-section-shell ' . $bbai_extra );
 } else {
-    $bbai_classes = trim('bbai-ui-section-card bbai-dashboard-surface-card bbai-card ' . $bbai_extra);
+	$bbai_classes = trim( 'bbai-ui-section-card bbai-dashboard-surface-card bbai-card ' . $bbai_extra );
 }
-$bbai_aria = isset($bbai_ui['aria_label']) ? trim((string) $bbai_ui['aria_label']) : '';
-$bbai_aria_out = '' !== $bbai_aria ? ' aria-label="' . esc_attr($bbai_aria) . '"' : '';
-printf('<%s class="%s"%s>', esc_attr($bbai_tag), esc_attr($bbai_classes), $bbai_aria_out); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+$bbai_aria     = isset( $bbai_ui['aria_label'] ) ? trim( (string) $bbai_ui['aria_label'] ) : '';
+$bbai_aria_out = '' !== $bbai_aria ? ' aria-label="' . esc_attr( $bbai_aria ) . '"' : '';
+printf( '<%s class="%s"%s>', esc_attr( $bbai_tag ), esc_attr( $bbai_classes ), $bbai_aria_out ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

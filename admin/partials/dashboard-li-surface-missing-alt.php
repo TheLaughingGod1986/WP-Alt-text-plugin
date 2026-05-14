@@ -22,14 +22,18 @@ $bbai_it_heading     = __( 'Ready to generate', 'beepbeep-ai-alt-text-generator'
 $bbai_it_subheading  = __( 'These images have no ALT text. Generate now or open the library to manage individually.', 'beepbeep-ai-alt-text-generator' );
 $bbai_it_loading     = __( 'Loading images…', 'beepbeep-ai-alt-text-generator' );
 $bbai_it_alt_col     = __( 'ALT text', 'beepbeep-ai-alt-text-generator' );
-$bbai_it_primary_cta = [
+$bbai_it_primary_cta = array(
 	'label'  => __( 'Generate all', 'beepbeep-ai-alt-text-generator' ),
 	'href'   => '#',
 	'action' => 'generate-missing',
-];
+);
 $bbai_it_library_url = add_query_arg(
-	[ 'page' => 'bbai-library', 'status' => 'missing', 'filter' => 'missing' ],
+	array(
+		'page'   => 'bbai-library',
+		'status' => 'missing',
+		'filter' => 'missing',
+	),
 	admin_url( 'admin.php' )
 );
 
-include __DIR__ . '/components/image-table.php';
+require __DIR__ . '/components/image-table.php';

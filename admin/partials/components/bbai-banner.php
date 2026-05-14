@@ -5,8 +5,8 @@
  * @package BeepBeep_AI
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 require __DIR__ . '/status-banner.php';

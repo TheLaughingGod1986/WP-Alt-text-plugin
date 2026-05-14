@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_li_surface = $bbai_li_state['surface']['props'] ?? [];
-$bbai_li_steps   = is_array( $bbai_li_surface['steps'] ?? null ) ? $bbai_li_surface['steps'] : [];
+$bbai_li_surface = $bbai_li_state['surface']['props'] ?? array();
+$bbai_li_steps   = is_array( $bbai_li_surface['steps'] ?? null ) ? $bbai_li_surface['steps'] : array();
 ?>
 
 <div class="bbai-li-surface bbai-li-surface--quick-start" data-bbai-li-surface="QuickStartChecklist">
@@ -25,10 +25,11 @@ $bbai_li_steps   = is_array( $bbai_li_surface['steps'] ?? null ) ? $bbai_li_surf
 
 	<?php if ( ! empty( $bbai_li_steps ) ) : ?>
 		<ol class="bbai-li-checklist">
-			<?php foreach ( $bbai_li_steps as $bbai_li_step ) :
+			<?php
+			foreach ( $bbai_li_steps as $bbai_li_step ) :
 				$bbai_li_step_label = (string) ( $bbai_li_step['label'] ?? '' );
 				$bbai_li_step_href  = (string) ( $bbai_li_step['href'] ?? '#' );
-			?>
+				?>
 				<li class="bbai-li-checklist__item">
 					<a href="<?php echo esc_url( $bbai_li_step_href ); ?>" class="bbai-li-checklist__link">
 						<?php echo esc_html( $bbai_li_step_label ); ?>

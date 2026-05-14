@@ -8,12 +8,12 @@
  * @package BeepBeep_AI
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-$bbai_ui = [
-    'command_hero' => isset($bbai_command_hero) && is_array($bbai_command_hero) ? $bbai_command_hero : [],
-];
+$bbai_ui = array(
+	'command_hero' => isset( $bbai_command_hero ) && is_array( $bbai_command_hero ) ? $bbai_command_hero : array(),
+);
 
 require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/bbai-banner.php';

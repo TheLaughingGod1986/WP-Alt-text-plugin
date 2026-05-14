@@ -16,14 +16,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_connected_lib_rows = isset( $bbai_connected_lib_rows ) && is_array( $bbai_connected_lib_rows ) ? $bbai_connected_lib_rows : [];
-$bbai_connected_lib_heading = isset( $bbai_connected_lib_heading ) ? (string) $bbai_connected_lib_heading : '';
+$bbai_connected_lib_rows        = isset( $bbai_connected_lib_rows ) && is_array( $bbai_connected_lib_rows ) ? $bbai_connected_lib_rows : array();
+$bbai_connected_lib_heading     = isset( $bbai_connected_lib_heading ) ? (string) $bbai_connected_lib_heading : '';
 $bbai_connected_lib_description = isset( $bbai_connected_lib_description ) ? (string) $bbai_connected_lib_description : '';
 $bbai_connected_lib_empty_title = isset( $bbai_connected_lib_empty_title ) ? (string) $bbai_connected_lib_empty_title : '';
-$bbai_connected_lib_empty_copy = isset( $bbai_connected_lib_empty_copy ) ? (string) $bbai_connected_lib_empty_copy : '';
+$bbai_connected_lib_empty_copy  = isset( $bbai_connected_lib_empty_copy ) ? (string) $bbai_connected_lib_empty_copy : '';
 
 $bbai_lib_card_row_path = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/library-dashboard-card-row.php';
-$bbai_lib_row_readable = is_readable( $bbai_lib_card_row_path );
+$bbai_lib_row_readable  = is_readable( $bbai_lib_card_row_path );
 ?>
 <section
 	class="bbai-dashboard-trial-preview bbai-dashboard-connected-library"

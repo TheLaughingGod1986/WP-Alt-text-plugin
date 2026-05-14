@@ -16,9 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_li_props         = $bbai_li_state['surface']['props'] ?? [];
-$bbai_li_queued_count  = max( 0, (int) ( $bbai_li_props['queued_count'] ?? 0 ) );
-$bbai_li_billing_url = admin_url( 'admin.php?page=bbai-credit-usage' );
+$bbai_li_props        = $bbai_li_state['surface']['props'] ?? array();
+$bbai_li_queued_count = max( 0, (int) ( $bbai_li_props['queued_count'] ?? 0 ) );
+$bbai_li_billing_url  = admin_url( 'admin.php?page=bbai-credit-usage' );
 ?>
 
 <div

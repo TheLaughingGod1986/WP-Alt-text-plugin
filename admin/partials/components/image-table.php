@@ -27,28 +27,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_it_component   = (string) ( $bbai_it_component   ?? '' );
-$bbai_it_scope       = (string) ( $bbai_it_scope       ?? '' );
-$bbai_it_heading     = (string) ( $bbai_it_heading     ?? '' );
-$bbai_it_subheading  = (string) ( $bbai_it_subheading  ?? '' );
-$bbai_it_loading     = (string) ( $bbai_it_loading     ?? '' );
-$bbai_it_alt_col     = (string) ( $bbai_it_alt_col     ?? '' );
-$bbai_it_primary_cta = is_array( $bbai_it_primary_cta ?? null ) ? $bbai_it_primary_cta : [];
+$bbai_it_component   = (string) ( $bbai_it_component ?? '' );
+$bbai_it_scope       = (string) ( $bbai_it_scope ?? '' );
+$bbai_it_heading     = (string) ( $bbai_it_heading ?? '' );
+$bbai_it_subheading  = (string) ( $bbai_it_subheading ?? '' );
+$bbai_it_loading     = (string) ( $bbai_it_loading ?? '' );
+$bbai_it_alt_col     = (string) ( $bbai_it_alt_col ?? '' );
+$bbai_it_primary_cta = is_array( $bbai_it_primary_cta ?? null ) ? $bbai_it_primary_cta : array();
 $bbai_it_library_url = (string) ( $bbai_it_library_url ?? '' );
 
-$bbai_it_rows            = is_array( $bbai_it_rows ?? null ) ? $bbai_it_rows : [];
-$bbai_it_empty_message   = (string) ( $bbai_it_empty_message ?? __( 'No rows to show.', 'beepbeep-ai-alt-text-generator' ) );
-$bbai_it_server_render   = ! empty( $bbai_it_server_render );
+$bbai_it_rows          = is_array( $bbai_it_rows ?? null ) ? $bbai_it_rows : array();
+$bbai_it_empty_message = (string) ( $bbai_it_empty_message ?? __( 'No rows to show.', 'beepbeep-ai-alt-text-generator' ) );
+$bbai_it_server_render = ! empty( $bbai_it_server_render );
 
-$bbai_it_surface_mod = sanitize_html_class( strtolower( str_replace( 'AltTable', '-alt-table',
-	str_replace( 'Queue', '-queue', preg_replace( '/([A-Z])/', '-$1', lcfirst( $bbai_it_component ) ) )
-) ) );
+$bbai_it_surface_mod = sanitize_html_class(
+	strtolower(
+		str_replace(
+			'AltTable',
+			'-alt-table',
+			str_replace( 'Queue', '-queue', preg_replace( '/([A-Z])/', '-$1', lcfirst( $bbai_it_component ) ) )
+		)
+	)
+);
 // Simpler: derive modifier from component name map.
-$bbai_it_modifier_map = [
+$bbai_it_modifier_map = array(
 	'MissingAltTable' => 'missing-alt',
 	'ReviewQueue'     => 'review-queue',
-];
-$bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_component ] ?? 'table' );
+);
+$bbai_it_modifier     = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_component ] ?? 'table' );
 ?>
 
 <div
@@ -70,7 +76,17 @@ $bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_compone
 					href="<?php echo esc_url( $bbai_it_primary_cta['href'] ?? '#' ); ?>"
 					class="bbai-li-surface__cta bbai-li-surface__cta--primary"
 					data-action="<?php echo esc_attr( $bbai_it_primary_cta['action'] ?? '' ); ?>"
-				><?php if ( 'approve-all' === (string) ( $bbai_it_primary_cta['action'] ?? '' ) ) : ?><span class="bbai-btn-content"><?php echo esc_html( $bbai_it_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php esc_html_e( 'Approving...', 'beepbeep-ai-alt-text-generator' ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span><?php else : echo esc_html( $bbai_it_primary_cta['label'] ); endif; ?></a>
+				>
+				<?php
+				if ( 'approve-all' === (string) ( $bbai_it_primary_cta['action'] ?? '' ) ) :
+					?>
+					<span class="bbai-btn-content"><?php echo esc_html( $bbai_it_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php esc_html_e( 'Approving...', 'beepbeep-ai-alt-text-generator' ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span>
+					<?php
+else :
+					echo esc_html( $bbai_it_primary_cta['label'] );
+endif;
+?>
+</a>
 			<?php endif; ?>
 
 			<?php if ( $bbai_it_library_url ) : ?>
@@ -109,10 +125,10 @@ $bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_compone
 				<?php if ( $bbai_it_server_render && ! empty( $bbai_it_rows ) ) : ?>
 					<?php foreach ( $bbai_it_rows as $bbai_it_row ) : ?>
 						<?php
-						$bbai_rid   = absint( $bbai_it_row['id'] ?? 0 );
-						$bbai_rfile = (string) ( $bbai_it_row['filename'] ?? '' );
-						$bbai_rthumb = (string) ( $bbai_it_row['thumb_url'] ?? '' );
-						$bbai_rscope = (string) ( $bbai_it_row['scope'] ?? $bbai_it_scope );
+						$bbai_rid     = absint( $bbai_it_row['id'] ?? 0 );
+						$bbai_rfile   = (string) ( $bbai_it_row['filename'] ?? '' );
+						$bbai_rthumb  = (string) ( $bbai_it_row['thumb_url'] ?? '' );
+						$bbai_rscope  = (string) ( $bbai_it_row['scope'] ?? $bbai_it_scope );
 						$bbai_is_miss = ( 'needs_review' !== $bbai_rscope );
 						?>
 						<tr class="bbai-li-image-table__row" data-attachment-id="<?php echo esc_attr( (string) $bbai_rid ); ?>">

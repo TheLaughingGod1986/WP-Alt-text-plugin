@@ -17,9 +17,9 @@ if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) ) {
 }
 
 $bbai_lo_trial_status    = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
-$bbai_lo_trial_used      = max( 0, (int) ( $bbai_lo_trial_status['used']      ?? 0 ) );
+$bbai_lo_trial_used      = max( 0, (int) ( $bbai_lo_trial_status['used'] ?? 0 ) );
 $bbai_lo_trial_remaining = max( 0, (int) ( $bbai_lo_trial_status['remaining'] ?? 0 ) );
-$bbai_lo_trial_limit     = max( 1, (int) ( $bbai_lo_trial_status['limit']     ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() ) );
+$bbai_lo_trial_limit     = max( 1, (int) ( $bbai_lo_trial_status['limit'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() ) );
 $bbai_lo_trial_exhausted = ! empty( $bbai_lo_trial_status['exhausted'] )
 	|| $bbai_lo_trial_remaining <= 0
 	|| $bbai_lo_trial_used >= $bbai_lo_trial_limit;
@@ -150,9 +150,9 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
 	</div><!-- .bbai-logged-out__container -->
 
 	<?php if ( $bbai_lo_show_conversion_modal ) : ?>
-	<?php
-	$bbai_lo_dismiss_label = _x( 'Close', 'dismiss conversion dialog', 'beepbeep-ai-alt-text-generator' );
-	?>
+		<?php
+		$bbai_lo_dismiss_label = _x( 'Close', 'dismiss conversion dialog', 'beepbeep-ai-alt-text-generator' );
+		?>
 	<div
 		id="bbai-ftue-conversion-modal"
 		class="bbai-ftue-conversion-modal is-open"

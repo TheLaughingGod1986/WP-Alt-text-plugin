@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_locked_ctx = isset( $bbai_locked_preview_context_line ) ? (string) $bbai_locked_preview_context_line : '';
+$bbai_locked_ctx      = isset( $bbai_locked_preview_context_line ) ? (string) $bbai_locked_preview_context_line : '';
 $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exhausted : false;
 ?>
 <div

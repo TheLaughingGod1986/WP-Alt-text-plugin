@@ -13,9 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_li_props    = $bbai_li_state['surface']['props'] ?? [];
-$bbai_li_err_code = sanitize_key( (string) ( $bbai_li_props['error_code'] ?? '' ) );
-$bbai_li_err_msg = (string) ( $bbai_li_props['error_message'] ?? '' );
+$bbai_li_props     = $bbai_li_state['surface']['props'] ?? array();
+$bbai_li_err_code  = sanitize_key( (string) ( $bbai_li_props['error_code'] ?? '' ) );
+$bbai_li_err_msg   = (string) ( $bbai_li_props['error_message'] ?? '' );
 $bbai_li_is_no_key = 'NO_API_KEY' === $bbai_li_err_code;
 ?>
 

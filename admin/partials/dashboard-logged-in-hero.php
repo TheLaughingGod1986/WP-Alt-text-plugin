@@ -30,8 +30,8 @@ if ( empty( $bbai_li_state ) || ! is_array( $bbai_li_state ) ) {
 	return;
 }
 
-$bbai_li_hero     = $bbai_li_state['hero']  ?? [];
-$bbai_li_donut    = $bbai_li_state['donut'] ?? [];
+$bbai_li_hero     = $bbai_li_state['hero'] ?? array();
+$bbai_li_donut    = $bbai_li_state['donut'] ?? array();
 $bbai_li_state_id = $bbai_li_state['state'] ?? '';
 
 $bbai_hero_is_free_plan = true;
@@ -40,7 +40,7 @@ if ( isset( $bbai_state_is_pro_plan ) ) {
 } elseif ( isset( $bbai_is_premium ) ) {
 	$bbai_hero_is_free_plan = ! (bool) $bbai_is_premium;
 }
-$bbai_li_all_clear_free_upsell = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero_is_free_plan );
+$bbai_li_all_clear_free_upsell   = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero_is_free_plan );
 $bbai_li_all_clear_upgrade_panel = $bbai_li_all_clear_free_upsell;
 
 // ── Donut ────────────────────────────────────────────────────────────────────
@@ -51,20 +51,20 @@ $bbai_li_donut_aria     = (string) ( $bbai_li_donut['aria_label'] ?? '' );
 $bbai_li_donut_pct      = max( 0, min( 100, (int) ( $bbai_li_donut['pct'] ?? 0 ) ) );
 
 // Map resolver color → tone class (needed before computing center value class).
-$bbai_li_tone_map = [
+$bbai_li_tone_map   = array(
 	'blue'  => 'scanning',
 	'green' => 'healthy',
 	'amber' => 'problem',
 	'gray'  => 'neutral',
-];
+);
 $bbai_li_donut_tone = sanitize_html_class( $bbai_li_tone_map[ $bbai_li_donut_color ] ?? 'neutral' );
 
 // Build multi-segment conic-gradient: **missing (red) → review (amber) → optimised (green) → empty (gray)**.
-$bbai_li_seg      = is_array( $bbai_li_donut['segments'] ?? null ) ? $bbai_li_donut['segments'] : [];
+$bbai_li_seg      = is_array( $bbai_li_donut['segments'] ?? null ) ? $bbai_li_donut['segments'] : array();
 $bbai_li_seg_opt  = max( 0, (int) ( $bbai_li_seg['optimized'] ?? 0 ) );
-$bbai_li_seg_weak = max( 0, (int) ( $bbai_li_seg['weak']      ?? 0 ) );
-$bbai_li_seg_miss = max( 0, (int) ( $bbai_li_seg['missing']   ?? 0 ) );
-$bbai_li_seg_tot  = max( 1, (int) ( $bbai_li_seg['total']     ?? 1 ) );
+$bbai_li_seg_weak = max( 0, (int) ( $bbai_li_seg['weak'] ?? 0 ) );
+$bbai_li_seg_miss = max( 0, (int) ( $bbai_li_seg['missing'] ?? 0 ) );
+$bbai_li_seg_tot  = max( 1, (int) ( $bbai_li_seg['total'] ?? 1 ) );
 
 // Donut centre text: use resolver `center_label` when present (queue/processing/etc.), else segment order.
 $bbai_li_donut_center = isset( $bbai_li_donut['center_label'] ) && (string) $bbai_li_donut['center_label'] !== ''
@@ -76,7 +76,7 @@ $bbai_li_donut_center = isset( $bbai_li_donut['center_label'] ) && (string) $bba
 			: '✓' ) );
 
 // Value colour: jobs/system states use tone; data states use segment-based emphasis.
-$bbai_li_donut_value_uses_tone = in_array( $bbai_li_state_id, [ 'QUEUED', 'PROCESSING', 'ERROR', 'NO_IMAGES' ], true );
+$bbai_li_donut_value_uses_tone = in_array( $bbai_li_state_id, array( 'QUEUED', 'PROCESSING', 'ERROR', 'NO_IMAGES' ), true );
 if ( $bbai_li_donut_value_uses_tone ) {
 	$bbai_li_donut_value_class = 'bbai-li-donut__value--' . $bbai_li_donut_tone;
 } elseif ( $bbai_li_seg_miss > 0 ) {
@@ -89,7 +89,7 @@ if ( $bbai_li_donut_value_uses_tone ) {
 
 // While a batch is queued or generating, trust copy lives in donut meta + activity strip;
 // avoid hiding meta behind the generic missing-image helper (still true for static MISSING_ALT).
-$bbai_li_donut_helper = ( $bbai_li_seg_miss > 0 && ! in_array( $bbai_li_state_id, [ 'QUEUED', 'PROCESSING' ], true ) )
+$bbai_li_donut_helper = ( $bbai_li_seg_miss > 0 && ! in_array( $bbai_li_state_id, array( 'QUEUED', 'PROCESSING' ), true ) )
 	? __( 'Fix these first to improve SEO and accessibility.', 'beepbeep-ai-alt-text-generator' )
 	: '';
 
@@ -138,7 +138,7 @@ if ( ! function_exists( 'bbai_dashboard_donut_ring_degrees' ) ) {
 		$a2 = round( min( 360, $dm + $dw ), 3 );
 		$a3 = round( min( 360, $dm + $dw + $do ), 3 );
 
-		return [ $a1, $a2, $a3 ];
+		return array( $a1, $a2, $a3 );
 	}
 }
 
@@ -155,7 +155,7 @@ if ( $bbai_li_seg_opt + $bbai_li_seg_weak + $bbai_li_seg_miss === 0 ) {
 	);
 	// In QUEUED, the “missing” segment is a ready action (not an error) — use a neutral blue accent.
 	$bbai_li_missing_seg_color = ( 'QUEUED' === $bbai_li_state_id ) ? '#3b82f6' : '#ef4444';
-	$bbai_li_donut_bg = sprintf(
+	$bbai_li_donut_bg          = sprintf(
 		'conic-gradient(%1$s 0deg %.3Fdeg, #f59e0b %.3Fdeg %.3Fdeg, #22c55e %.3Fdeg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
 		$bbai_li_missing_seg_color,
 		$bbai_li_donut_a1,
@@ -174,7 +174,7 @@ if ( ! isset( $bbai_li_donut_a1, $bbai_li_donut_a2, $bbai_li_donut_a3 ) ) {
 // ── Per-segment hover gradients for the chip → donut interaction ─────────────
 // Each chip highlights its own segment: full ring in that segment's colour,
 // the rest fades to the empty-track grey. Center label shows the segment count.
-$bbai_li_seg_hover = [];
+$bbai_li_seg_hover = array();
 if ( $bbai_li_seg_tot > 0 ) {
 	$bbai_li_seg_all_pct = 360; // "all" = full ring, use the real multi-segment bg
 	if ( ( $bbai_li_seg_miss + $bbai_li_seg_weak + $bbai_li_seg_opt ) > 0 && $bbai_li_seg_opt < $bbai_li_seg_tot ) {
@@ -188,32 +188,32 @@ if ( $bbai_li_seg_tot > 0 ) {
 	}
 
 	// "all" → restore the real gradient (stored as empty string = use default)
-	$bbai_li_seg_hover['all'] = [
+	$bbai_li_seg_hover['all'] = array(
 		'bg'    => $bbai_li_donut_bg,
 		'label' => (string) $bbai_li_seg_tot,
 		'sub'   => esc_js( __( 'total images', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => $bbai_li_donut_tone,
-	];
+	);
 	// "optimized" → full green arc proportional to optimized count
-	$bbai_li_seg_hover['optimized'] = [
+	$bbai_li_seg_hover['optimized'] = array(
 		'bg'    => $bbai_li_seg_opt_deg > 0
 			? sprintf( 'conic-gradient(#22c55e 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)', $bbai_li_seg_opt_deg, $bbai_li_seg_opt_deg )
 			: 'conic-gradient(#e2e8f0 0deg 360deg)',
 		'label' => (string) $bbai_li_seg_opt,
 		'sub'   => esc_js( __( 'optimized', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => 'healthy',
-	];
+	);
 	// "weak" → full amber arc
-	$bbai_li_seg_hover['weak'] = [
+	$bbai_li_seg_hover['weak'] = array(
 		'bg'    => $bbai_li_seg_weak_deg > 0
 			? sprintf( 'conic-gradient(#f59e0b 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)', $bbai_li_seg_weak_deg, $bbai_li_seg_weak_deg )
 			: 'conic-gradient(#e2e8f0 0deg 360deg)',
 		'label' => (string) $bbai_li_seg_weak,
 		'sub'   => esc_js( __( 'needs review', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => 'problem',
-	];
+	);
 	// "missing" → full red arc
-	$bbai_li_seg_hover['missing'] = [
+	$bbai_li_seg_hover['missing'] = array(
 		'bg'    => $bbai_li_seg_miss_deg > 0
 			? sprintf(
 				'conic-gradient(%1$s 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
@@ -225,7 +225,7 @@ if ( $bbai_li_seg_tot > 0 ) {
 		'label' => (string) $bbai_li_seg_miss,
 		'sub'   => esc_js( __( 'missing ALT', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => 'problem',
-	];
+	);
 }
 $bbai_li_seg_hover_json = wp_json_encode( $bbai_li_seg_hover );
 
@@ -236,7 +236,7 @@ $bbai_li_description = (string) ( $bbai_li_hero['support'] ?? '' );
 // Right-card action strip (same numbers as donut segments).
 $bbai_li_missing_count = $bbai_li_seg_miss;
 $bbai_li_review_count  = $bbai_li_seg_weak;
-$bbai_li_flow_hidden   = in_array( $bbai_li_state_id, [ 'QUEUED', 'QUOTA_EXHAUSTED', 'ERROR', 'NO_IMAGES' ], true );
+$bbai_li_flow_hidden   = in_array( $bbai_li_state_id, array( 'QUEUED', 'QUOTA_EXHAUSTED', 'ERROR', 'NO_IMAGES' ), true );
 $bbai_li_flow_gen_on   = ( $bbai_li_missing_count > 0 );
 $bbai_li_flow_rev_on   = ( $bbai_li_review_count > 0 );
 $bbai_li_flow_done_on  = ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count );
@@ -253,36 +253,36 @@ if ( $bbai_li_missing_count > 0 ) {
 }
 
 // ── CTAs ─────────────────────────────────────────────────────────────────────
-$bbai_li_primary_cta   = is_array( $bbai_li_hero['primary_cta'] ?? null ) ? $bbai_li_hero['primary_cta'] : [];
+$bbai_li_primary_cta   = is_array( $bbai_li_hero['primary_cta'] ?? null ) ? $bbai_li_hero['primary_cta'] : array();
 $bbai_li_secondary_cta = is_array( $bbai_li_hero['secondary_cta'] ?? null ) ? $bbai_li_hero['secondary_cta'] : null;
 
-if ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count && in_array( $bbai_li_state_id, [ 'ALL_CLEAR', 'DONE' ], true ) ) {
-	$bbai_li_state_id = 'ALL_CLEAR';
-	$bbai_li_title    = __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' );
-	$bbai_li_description = __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
-	$bbai_li_primary_cta = [
+if ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count && in_array( $bbai_li_state_id, array( 'ALL_CLEAR', 'DONE' ), true ) ) {
+	$bbai_li_state_id      = 'ALL_CLEAR';
+	$bbai_li_title         = __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_description   = __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_primary_cta   = array(
 		'label'  => __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ),
 		'action' => 'navigate',
 		'href'   => admin_url( 'upload.php' ),
-	];
-	$bbai_li_secondary_cta = [
+	);
+	$bbai_li_secondary_cta = array(
 		'label'      => __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ),
 		'busy_label' => __( 'Scanning library…', 'beepbeep-ai-alt-text-generator' ),
 		'action'     => 'rescan-media-library',
 		'href'       => '#',
-	];
+	);
 	if ( is_array( $bbai_li_hero ) ) {
 		$bbai_li_hero['primary_cta']   = $bbai_li_primary_cta;
 		$bbai_li_hero['secondary_cta'] = $bbai_li_secondary_cta;
-		$bbai_li_hero['library_cta']   = [
+		$bbai_li_hero['library_cta']   = array(
 			'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
 			'action' => 'navigate',
 			'href'   => admin_url( 'admin.php?page=bbai-library' ),
-		];
-		$bbai_li_hero['badge'] = [
+		);
+		$bbai_li_hero['badge']         = array(
 			'text' => __( 'All optimised', 'beepbeep-ai-alt-text-generator' ),
 			'mod'  => 'green',
-		];
+		);
 	}
 }
 
@@ -293,13 +293,19 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 // - <= 5 missing: no badge
 // - 6–20 missing: "Recommended"
 // - > 20 missing: "Action needed"
-if ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_missing_count > 0 ) {
+if ( in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_missing_count > 0 ) {
 	if ( $bbai_li_missing_count <= 5 ) {
 		$bbai_li_badge = null;
 	} elseif ( $bbai_li_missing_count > 20 ) {
-		$bbai_li_badge = [ 'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'amber' ];
+		$bbai_li_badge = array(
+			'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ),
+			'mod'  => 'amber',
+		);
 	} else {
-		$bbai_li_badge = [ 'text' => __( 'Recommended', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'blue' ];
+		$bbai_li_badge = array(
+			'text' => __( 'Recommended', 'beepbeep-ai-alt-text-generator' ),
+			'mod'  => 'blue',
+		);
 	}
 }
 
@@ -314,7 +320,7 @@ if ( 'QUEUED' === $bbai_li_state_id ) {
 	// Prefer the dashboard root counts (local coverage scan; matches ALT Library chips),
 	// because resolver "truth" counts can lag behind the Media Library.
 	$bbai_li_dashboard_missing_cap = isset( $bbai_dashboard_root_missing_count ) ? max( 0, (int) $bbai_dashboard_root_missing_count ) : 0;
-	$bbai_li_missing_cap = $bbai_li_dashboard_missing_cap > 0 ? $bbai_li_dashboard_missing_cap : max( 0, (int) $bbai_li_missing_count );
+	$bbai_li_missing_cap           = $bbai_li_dashboard_missing_cap > 0 ? $bbai_li_dashboard_missing_cap : max( 0, (int) $bbai_li_missing_count );
 	if ( $bbai_li_missing_cap > 0 ) {
 		$bbai_li_queued_total = min( $bbai_li_queued_total, $bbai_li_missing_cap );
 	}
@@ -322,10 +328,10 @@ if ( 'QUEUED' === $bbai_li_state_id ) {
 		$bbai_li_queued_total = 1;
 	}
 
-	$bbai_li_badge = [
+	$bbai_li_badge = array(
 		'text' => __( 'READY TO GENERATE', 'beepbeep-ai-alt-text-generator' ),
 		'mod'  => 'blue',
-	];
+	);
 	$bbai_li_title = sprintf(
 		/* translators: %s: number of images ready to generate */
 		_n( '%s image is ready for ALT text', '%s images are ready for ALT text', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
@@ -377,7 +383,7 @@ if ( isset( $bbai_dashboard_root_credits_total, $bbai_dashboard_root_credits_use
 $bbai_hero_c_used = min( $bbai_hero_c_used, $bbai_hero_c_lim );
 $bbai_hero_c_rem  = min( max( 0, $bbai_hero_c_rem ), $bbai_hero_c_lim );
 $bbai_hero_c_rem  = min( $bbai_hero_c_rem, max( 0, $bbai_hero_c_lim - $bbai_hero_c_used ) );
-$bbai_hero_c_pct = (int) min( 100, max( 0, round( ( $bbai_hero_c_used / $bbai_hero_c_lim ) * 100 ) ) );
+$bbai_hero_c_pct  = (int) min( 100, max( 0, round( ( $bbai_hero_c_used / $bbai_hero_c_lim ) * 100 ) ) );
 
 $bbai_hero_credit_state = 'healthy';
 if ( $bbai_hero_c_rem <= 0 ) {
@@ -391,7 +397,7 @@ $bbai_hero_credit_usage_line = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero
 	: __( 'Used when generating or improving ALT text', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_hero_credit_state_hint = '';
-$bbai_hero_credit_low_suffix  = '';
+$bbai_hero_credit_low_suffix = '';
 if ( $bbai_hero_c_rem > 0 ) {
 	if ( $bbai_hero_c_rem <= 10 ) {
 		$bbai_hero_credit_low_suffix = __( 'Running low — upgrade or top up before you run out.', 'beepbeep-ai-alt-text-generator' );
@@ -418,7 +424,7 @@ if ( $bbai_hero_c_rem > 0 ) {
 
 $bbai_hero_credit_context_line = trim( trim( (string) $bbai_hero_credit_state_hint ) . ( $bbai_hero_credit_state_hint && $bbai_hero_credit_low_suffix ? ' ' : '' ) . (string) $bbai_hero_credit_low_suffix );
 
-$bbai_hero_credit_helper          = '';
+$bbai_hero_credit_helper        = '';
 $bbai_hero_credit_helper_hidden = true;
 
 if ( 0 === $bbai_hero_c_rem ) {
@@ -478,7 +484,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 ?>
 
 <div
-	class="bbai-li-hero-grid<?php echo 'ALL_CLEAR' === $bbai_li_state_id ? ' bbai-all-clear-state' : ''; ?><?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-hero--needs-review' : ''; ?><?php echo in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_missing_count > 0 ? ' bbai-li-hero--missing' : ''; ?>"
+	class="bbai-li-hero-grid<?php echo 'ALL_CLEAR' === $bbai_li_state_id ? ' bbai-all-clear-state' : ''; ?><?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-hero--needs-review' : ''; ?><?php echo in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_missing_count > 0 ? ' bbai-li-hero--missing' : ''; ?>"
 	data-bbai-li-hero="1"
 	data-bbai-li-state="<?php echo esc_attr( $bbai_li_state_id ); ?>"
 	data-bbai-li-variant="<?php echo esc_attr( (string) ( $bbai_li_hero['variant'] ?? 'default' ) ); ?>"
@@ -491,9 +497,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 		<?php
 		// Donut card is clickable for actionable states and follows that state's next step.
-		$bbai_li_has_primary_cta = ! empty( $bbai_li_primary_cta['label'] );
-		$bbai_li_donut_clickable = (
-			in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true )
+		$bbai_li_has_primary_cta    = ! empty( $bbai_li_primary_cta['label'] );
+		$bbai_li_donut_clickable    = (
+			in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true )
 			&& $bbai_li_has_primary_cta
 		) || 'NEEDS_REVIEW' === $bbai_li_state_id
 			|| ( 'PROCESSING' === $bbai_li_state_id && $bbai_li_has_primary_cta );
@@ -532,46 +538,46 @@ $bbai_hero_credit_bar_aria = sprintf(
 			</div>
 
 			<?php
-		// Build a clearer sub-label based on state and counts.
-		$bbai_li_donut_sub_display = '';
-		if ( in_array( $bbai_li_state_id, [ 'QUEUED', 'ERROR', 'NO_IMAGES' ], true ) && $bbai_li_donut_sub ) {
-			$bbai_li_donut_sub_display = $bbai_li_donut_sub;
-		} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
-			$bbai_li_donut_sub_display = __( 'generating now', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
-			$bbai_li_donut_sub_display = __( 'IMAGES READY FOR REVIEW', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( $bbai_li_seg_miss > 0 ) {
-			// Completes the sentence with the large centre numeral: "4" + "images need ALT text".
-			$bbai_li_donut_sub_display = _n(
-				'image needs ALT text',
-				'images need ALT text',
-				$bbai_li_seg_miss,
-				'beepbeep-ai-alt-text-generator'
-			);
-		} elseif ( $bbai_li_seg_weak > 0 ) {
-			// Centre shows the count; sub is the tail of the sentence.
-			$bbai_li_donut_sub_display = _n(
-				'image ready for review',
-				'images ready for review',
-				$bbai_li_seg_weak,
-				'beepbeep-ai-alt-text-generator'
-			);
-		} elseif ( $bbai_li_donut_sub ) {
-			$bbai_li_donut_sub_display = $bbai_li_donut_sub;
-		}
-		if ( $bbai_li_donut_sub_display ) :
-		?>
+			// Build a clearer sub-label based on state and counts.
+			$bbai_li_donut_sub_display = '';
+			if ( in_array( $bbai_li_state_id, array( 'QUEUED', 'ERROR', 'NO_IMAGES' ), true ) && $bbai_li_donut_sub ) {
+				$bbai_li_donut_sub_display = $bbai_li_donut_sub;
+			} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
+				$bbai_li_donut_sub_display = __( 'generating now', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
+				$bbai_li_donut_sub_display = __( 'IMAGES READY FOR REVIEW', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( $bbai_li_seg_miss > 0 ) {
+				// Completes the sentence with the large centre numeral: "4" + "images need ALT text".
+				$bbai_li_donut_sub_display = _n(
+					'image needs ALT text',
+					'images need ALT text',
+					$bbai_li_seg_miss,
+					'beepbeep-ai-alt-text-generator'
+				);
+			} elseif ( $bbai_li_seg_weak > 0 ) {
+				// Centre shows the count; sub is the tail of the sentence.
+				$bbai_li_donut_sub_display = _n(
+					'image ready for review',
+					'images ready for review',
+					$bbai_li_seg_weak,
+					'beepbeep-ai-alt-text-generator'
+				);
+			} elseif ( $bbai_li_donut_sub ) {
+				$bbai_li_donut_sub_display = $bbai_li_donut_sub;
+			}
+			if ( $bbai_li_donut_sub_display ) :
+				?>
 		<p class="bbai-donut-label bbai-li-donut__sub-label<?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-donut__sub-label--review-ready' : ''; ?>" data-bbai-li-donut-sub="1"><?php echo esc_html( $bbai_li_donut_sub_display ); ?></p>
 		<?php endif; ?>
 
 		<?php
-		$bbai_li_donut_cm_href   = '';
+		$bbai_li_donut_cm_href  = '';
 		$bbai_li_donut_cm_label = '';
-		if ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_seg_miss > 0 ) {
-			$bbai_li_donut_cm_href   = $bbai_li_primary_cta['href'] ?? '#';
+		if ( in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_seg_miss > 0 ) {
+			$bbai_li_donut_cm_href  = $bbai_li_primary_cta['href'] ?? '#';
 			$bbai_li_donut_cm_label = __( 'Generate ALT text →', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'MIXED_ATTENTION' === $bbai_li_state_id && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
-			$bbai_li_donut_cm_href   = $bbai_needs_review_library_url;
+			$bbai_li_donut_cm_href  = $bbai_needs_review_library_url;
 			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
 		}
 		?>
@@ -612,7 +618,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			}
 		}
 		if ( $bbai_li_donut_meta ) :
-		?>
+			?>
 		<p class="bbai-li-donut__meta" data-bbai-li-donut-meta="1"><?php echo esc_html( $bbai_li_donut_meta ); ?></p>
 		<?php endif; ?>
 		</div>
@@ -631,13 +637,19 @@ $bbai_hero_credit_bar_aria = sprintf(
 			id="bbai-li-hero-title"
 			class="bbai-li-headline"
 			data-bbai-li-hero-headline="1"
-			<?php if ( $bbai_li_donut_animated ) : ?>aria-live="polite" aria-atomic="true"<?php endif; ?>
+			<?php
+			if ( $bbai_li_donut_animated ) :
+				?>
+				aria-live="polite" aria-atomic="true"<?php endif; ?>
 		><?php echo esc_html( $bbai_li_title ); ?></h1>
 
 		<p
 			class="bbai-li-support"
 			data-bbai-li-hero-support="1"
-			<?php if ( $bbai_li_donut_animated ) : ?>aria-live="polite" aria-atomic="true"<?php endif; ?>
+			<?php
+			if ( $bbai_li_donut_animated ) :
+				?>
+				aria-live="polite" aria-atomic="true"<?php endif; ?>
 		><?php echo esc_html( $bbai_li_description ); ?></p>
 
 		</div>
@@ -645,11 +657,12 @@ $bbai_hero_credit_bar_aria = sprintf(
 		<div class="bbai-li-card-section bbai-li-card-section--actions">
 		<div class="bbai-action-block">
 			<div class="bbai-li-cta-row bbai-li-cta-group bbai-cta-group">
-			<?php if ( ! empty( $bbai_li_primary_cta['label'] ) ) :
+			<?php
+			if ( ! empty( $bbai_li_primary_cta['label'] ) ) :
 					$bbai_li_busy_label = (string) ( $bbai_li_primary_cta['busy_label'] ?? '' );
-					if ( '' === $bbai_li_busy_label ) {
-						$bbai_li_busy_label = __( 'Working…', 'beepbeep-ai-alt-text-generator' );
-					}
+				if ( '' === $bbai_li_busy_label ) {
+					$bbai_li_busy_label = __( 'Working…', 'beepbeep-ai-alt-text-generator' );
+				}
 				?>
 				<div class="bbai-li-cta-primary-col">
 					<a
@@ -663,7 +676,17 @@ $bbai_hero_credit_bar_aria = sprintf(
 						<?php endif; ?>
 						data-bbai-li-primary-cta="1"
 						data-busy-label="<?php echo esc_attr( $bbai_li_busy_label ); ?>"
-					><?php if ( 'approve-all' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) : ?><span class="bbai-btn-content"><?php echo esc_html( $bbai_li_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php echo esc_html( $bbai_li_busy_label ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span><?php else : echo esc_html( $bbai_li_primary_cta['label'] ); endif; ?></a>
+					>
+					<?php
+					if ( 'approve-all' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) :
+						?>
+						<span class="bbai-btn-content"><?php echo esc_html( $bbai_li_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php echo esc_html( $bbai_li_busy_label ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span>
+						<?php
+else :
+						echo esc_html( $bbai_li_primary_cta['label'] );
+endif;
+?>
+</a>
 					<?php if ( $bbai_hero_cta_hint ) : ?>
 					<p class="bbai-hero-cta-hint" data-bbai-hero-cta-hint="1"><?php echo esc_html( $bbai_hero_cta_hint ); ?></p>
 					<?php endif; ?>
@@ -711,7 +734,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 				</div>
 			<?php endif; ?>
 
-			<?php if ( $bbai_li_review_count > 0 && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) && 'NEEDS_REVIEW' !== $bbai_li_state_id && 'ALL_CLEAR' !== $bbai_li_state_id ) :
+			<?php
+			if ( $bbai_li_review_count > 0 && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) && 'NEEDS_REVIEW' !== $bbai_li_state_id && 'ALL_CLEAR' !== $bbai_li_state_id ) :
 				$bbai_li_secondary_busy = (string) ( $bbai_li_secondary_cta['busy_label'] ?? '' );
 				?>
 				<a
@@ -736,7 +760,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 					<strong class="bbai-count" data-bbai-status-metric="missing"><?php echo esc_html( (string) number_format_i18n( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ? $bbai_li_queued_total : $bbai_li_missing_count ) ); ?></strong>
 					<?php
 					$bbai_li_ready_label_count = ( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ) ? $bbai_li_queued_total : $bbai_li_missing_count;
-					echo esc_html( 'QUEUED' === $bbai_li_state_id
+					echo esc_html(
+						'QUEUED' === $bbai_li_state_id
 						? ' ' . _n( 'ready to generate', 'ready to generate', $bbai_li_ready_label_count, 'beepbeep-ai-alt-text-generator' )
 						: ' ' . _n( 'image needs ALT text', 'images need ALT text', $bbai_li_missing_count, 'beepbeep-ai-alt-text-generator' )
 					);
@@ -761,9 +786,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 			$bbai_li_active_step = ( $bbai_li_missing_count > 0 )
 				? 'generate'
 				: ( $bbai_li_review_count > 0 ? 'review' : 'done' );
-			$bbai_li_gen_class  = ( 'generate' === $bbai_li_active_step ) ? 'is-active' : 'is-done';
-			$bbai_li_rev_class  = ( 'review' === $bbai_li_active_step ) ? 'is-active' : ( 'done' === $bbai_li_active_step ? 'is-done' : 'is-inactive' );
-			$bbai_li_done_class = ( 'done' === $bbai_li_active_step ) ? 'is-active' : 'is-inactive';
+			$bbai_li_gen_class   = ( 'generate' === $bbai_li_active_step ) ? 'is-active' : 'is-done';
+			$bbai_li_rev_class   = ( 'review' === $bbai_li_active_step ) ? 'is-active' : ( 'done' === $bbai_li_active_step ? 'is-done' : 'is-inactive' );
+			$bbai_li_done_class  = ( 'done' === $bbai_li_active_step ) ? 'is-active' : 'is-inactive';
 			?>
 			<div
 				class="bbai-progress-flow"
@@ -1214,19 +1239,21 @@ $bbai_hero_credit_bar_aria = sprintf(
 		bootstrapSyncUrl: '<?php echo esc_js( rest_url( 'bbai/v1/dashboard/bootstrap-sync' ) ); ?>',
 		dashboardUrl: '<?php echo esc_js( rest_url( 'bbai/v1/dashboard' ) ); ?>',
 		restNonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>' || ( window.wpApiSettings && window.wpApiSettings.nonce ) || '',
-		missingCount: <?php
+		missingCount: 
+		<?php
 			// Pull missing count from hero summary items (same approach as activity strip).
 			$bbai_hero_missing_count = 0;
-			$bbai_hero_summary_items = is_array( $bbai_li_state['hero']['summary'] ?? null ) ? $bbai_li_state['hero']['summary'] : [];
-			foreach ( $bbai_hero_summary_items as $bbai_hero_stat ) {
-				$bbai_hero_lbl = strtolower( (string) ( $bbai_hero_stat['label'] ?? '' ) );
-				if ( strpos( $bbai_hero_lbl, 'missing' ) !== false ) {
-					$bbai_hero_missing_count = (int) str_replace( ',', '', (string) ( $bbai_hero_stat['value'] ?? '0' ) );
-					break;
-				}
+			$bbai_hero_summary_items = is_array( $bbai_li_state['hero']['summary'] ?? null ) ? $bbai_li_state['hero']['summary'] : array();
+		foreach ( $bbai_hero_summary_items as $bbai_hero_stat ) {
+			$bbai_hero_lbl = strtolower( (string) ( $bbai_hero_stat['label'] ?? '' ) );
+			if ( strpos( $bbai_hero_lbl, 'missing' ) !== false ) {
+				$bbai_hero_missing_count = (int) str_replace( ',', '', (string) ( $bbai_hero_stat['value'] ?? '0' ) );
+				break;
 			}
+		}
 			echo absint( $bbai_hero_missing_count );
-			?>,
+		?>
+			,
 		wpDebug: '<?php echo ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? '1' : '0'; ?>',
 	};
 

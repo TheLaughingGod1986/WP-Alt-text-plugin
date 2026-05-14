@@ -13,20 +13,20 @@ if ( ! empty( $bbai_has_connected_account ) ) {
 	return;
 }
 
-$bbai_state_missing_count     = isset( $bbai_state_missing_count ) ? max( 0, (int) $bbai_state_missing_count ) : 0;
-$bbai_state_weak_count        = isset( $bbai_state_weak_count ) ? max( 0, (int) $bbai_state_weak_count ) : 0;
+$bbai_state_missing_count    = isset( $bbai_state_missing_count ) ? max( 0, (int) $bbai_state_missing_count ) : 0;
+$bbai_state_weak_count       = isset( $bbai_state_weak_count ) ? max( 0, (int) $bbai_state_weak_count ) : 0;
 $bbai_state_optimized_count  = isset( $bbai_state_optimized_count ) ? max( 0, (int) $bbai_state_optimized_count ) : 0;
-$bbai_state_total_images       = isset( $bbai_state_total_images ) ? max( 0, (int) $bbai_state_total_images ) : 0;
-$bbai_guest_attention_total    = $bbai_state_missing_count + $bbai_state_weak_count;
-$bbai_guest_actionable_count   = max(
+$bbai_state_total_images     = isset( $bbai_state_total_images ) ? max( 0, (int) $bbai_state_total_images ) : 0;
+$bbai_guest_attention_total  = $bbai_state_missing_count + $bbai_state_weak_count;
+$bbai_guest_actionable_count = max(
 	$bbai_state_missing_count,
 	$bbai_state_weak_count,
 	$bbai_guest_attention_total
 );
 
-$bbai_gt_src = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
+$bbai_gt_src       = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
 	? $bbai_product_state_model['trial']
-	: [];
+	: array();
 $bbai_gt_limit     = max( 1, (int) ( $bbai_gt_src['limit'] ?? 5 ) );
 $bbai_gt_used      = max( 0, min( $bbai_gt_limit, (int) ( $bbai_gt_src['used'] ?? 0 ) ) );
 $bbai_gt_remaining = max( 0, (int) ( $bbai_gt_src['remaining'] ?? max( 0, $bbai_gt_limit - $bbai_gt_used ) ) );
@@ -62,23 +62,23 @@ $bbai_free_plan_monthly = max(
 );
 
 if ( 'exhausted' === $bbai_guest_hero_variant ) {
-	$bbai_donut_tone        = 'neutral';
+	$bbai_donut_tone = 'neutral';
 	// Completion-based conversion: emphasize finishing the remaining work (not "trial complete").
 	$bbai_guest_remaining_images = max( 0, (int) $bbai_state_missing_count );
-	$bbai_guest_fixed_images = $bbai_state_total_images > 0
+	$bbai_guest_fixed_images     = $bbai_state_total_images > 0
 		? max( 0, (int) ( $bbai_state_total_images - $bbai_state_missing_count ) )
 		: max( 0, (int) $bbai_state_optimized_count + (int) $bbai_state_weak_count );
-	$bbai_guest_pct = $bbai_state_total_images > 0
+	$bbai_guest_pct              = $bbai_state_total_images > 0
 		? (int) max( 0, min( 100, round( 100 * ( ( $bbai_state_total_images - $bbai_state_missing_count ) / max( 1, $bbai_state_total_images ) ) ) ) )
 		: 0;
 
-	$bbai_donut_center_val  = $bbai_guest_pct > 0 ? (string) $bbai_guest_pct . '%' : '✓';
-	$bbai_donut_center_sub  = __( 'Almost done', 'beepbeep-ai-alt-text-generator' );
-	$bbai_left_helper       = $bbai_guest_remaining_images === 1
+	$bbai_donut_center_val = $bbai_guest_pct > 0 ? (string) $bbai_guest_pct . '%' : '✓';
+	$bbai_donut_center_sub = __( 'Almost done', 'beepbeep-ai-alt-text-generator' );
+	$bbai_left_helper      = $bbai_guest_remaining_images === 1
 		? __( '1 image remaining', 'beepbeep-ai-alt-text-generator' )
 		: __( 'Keep going', 'beepbeep-ai-alt-text-generator' );
 
-	$bbai_left_meta_parts = [];
+	$bbai_left_meta_parts   = array();
 	$bbai_left_meta_parts[] = sprintf(
 		/* translators: 1: used generations, 2: trial limit */
 		__( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ),
@@ -86,7 +86,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		number_format_i18n( $bbai_gt_limit )
 	);
 	if ( $bbai_guest_fixed_images > 0 ) {
-		$bbai_left_meta_lines = [];
+		$bbai_left_meta_lines   = array();
 		$bbai_left_meta_lines[] = sprintf(
 			/* translators: %s: images fixed count */
 			__( '%s images fixed', 'beepbeep-ai-alt-text-generator' ),
@@ -117,33 +117,33 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		$bbai_guest_body = __( 'You’ve fixed 51 images. Just 1 more to complete your library.', 'beepbeep-ai-alt-text-generator' );
 	}
 
-	$bbai_primary_register = [
-		'label'       => __( 'Finish the last image', 'beepbeep-ai-alt-text-generator' ),
-		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
-		'action'      => 'show-auth-modal',
-		'auth_tab'    => 'signup',
-		'analytics'   => 'guest_hero_primary_register_exhausted',
-		'is_button'   => false,
-	];
-	$bbai_secondary_login = [
+	$bbai_primary_register      = array(
+		'label'     => __( 'Finish the last image', 'beepbeep-ai-alt-text-generator' ),
+		'class'     => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
+		'action'    => 'show-auth-modal',
+		'auth_tab'  => 'signup',
+		'analytics' => 'guest_hero_primary_register_exhausted',
+		'is_button' => false,
+	);
+	$bbai_secondary_login       = array(
 		'label'     => __( 'Already have an account? Log in', 'beepbeep-ai-alt-text-generator' ),
 		'class'     => 'bbai-guest-hero__text-link',
-		'action'   => 'show-auth-modal',
-		'auth_tab' => 'login',
+		'action'    => 'show-auth-modal',
+		'auth_tab'  => 'login',
 		'is_text'   => true,
 		'is_button' => false,
-	];
+	);
 	$bbai_show_generate_primary = false;
 } elseif ( 'in_progress' === $bbai_guest_hero_variant ) {
-	$bbai_donut_tone         = $bbai_guest_actionable_count > 0 ? 'problem' : 'neutral';
-	$bbai_donut_center_val   = number_format_i18n( $bbai_gt_remaining );
+	$bbai_donut_tone       = $bbai_guest_actionable_count > 0 ? 'problem' : 'neutral';
+	$bbai_donut_center_val = number_format_i18n( $bbai_gt_remaining );
 	$bbai_donut_center_sub = _n(
 		'free generation left',
 		'free generations left',
 		$bbai_gt_remaining,
 		'beepbeep-ai-alt-text-generator'
 	);
-	$bbai_left_helper        = $bbai_state_missing_count > 0
+	$bbai_left_helper      = $bbai_state_missing_count > 0
 		? sprintf(
 			/* translators: %s: number of images missing ALT text */
 			__( '%s images are hurting your SEO and accessibility', 'beepbeep-ai-alt-text-generator' ),
@@ -156,37 +156,37 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		__( 'You have %d free generations left', 'beepbeep-ai-alt-text-generator' ),
 		(int) $bbai_gt_remaining
 	);
-	$bbai_guest_body  = __( 'Keep fixing your images, then create a free account to unlock your full ALT library.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_guest_body = __( 'Keep fixing your images, then create a free account to unlock your full ALT library.', 'beepbeep-ai-alt-text-generator' );
 
-	$bbai_n_rem = max( 0, (int) $bbai_gt_remaining );
+	$bbai_n_rem                 = max( 0, (int) $bbai_gt_remaining );
 	$bbai_show_generate_primary = $bbai_n_rem > 0 && $bbai_state_missing_count > 0;
-	$bbai_primary_generate = [
+	$bbai_primary_generate      = array(
 		'label'       => __( 'Generate free ALT text', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',
 		'is_button'   => false,
-	];
-	$bbai_primary_register = [
-		'label'       => __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
-		'class'       => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 )
+	);
+	$bbai_primary_register      = array(
+		'label'     => __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
+		'class'     => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 )
 			? 'bbai-btn bbai-btn-primary bbai-li-btn-primary'
 			: 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary',
-		'action'      => 'show-auth-modal',
-		'auth_tab'    => 'signup',
-		'analytics'   => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 ) ? 'guest_hero_primary_register_mid' : 'guest_hero_secondary_register',
-		'is_button'   => false,
-	];
-	$bbai_secondary_login = [
+		'action'    => 'show-auth-modal',
+		'auth_tab'  => 'signup',
+		'analytics' => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 ) ? 'guest_hero_primary_register_mid' : 'guest_hero_secondary_register',
+		'is_button' => false,
+	);
+	$bbai_secondary_login       = array(
 		'label'     => __( 'Already have an account? Log in', 'beepbeep-ai-alt-text-generator' ),
 		'class'     => 'bbai-guest-hero__text-link',
 		'action'    => 'show-auth-modal',
 		'auth_tab'  => 'login',
 		'is_text'   => true,
 		'is_button' => false,
-	];
+	);
 } else {
-	$bbai_donut_tone = $bbai_guest_actionable_count > 0 ? 'problem' : 'neutral';
+	$bbai_donut_tone       = $bbai_guest_actionable_count > 0 ? 'problem' : 'neutral';
 	$bbai_donut_center_val = '' !== number_format_i18n( max( 0, $bbai_state_missing_count ) )
 		? number_format_i18n( max( 0, $bbai_state_missing_count ) )
 		: '0';
@@ -194,24 +194,24 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	if ( $bbai_state_missing_count > 0 ) {
 		// Keep the donut clean: show the number only. Explanatory copy lives under the donut.
 		$bbai_donut_center_sub = '';
-		$bbai_left_helper = sprintf(
+		$bbai_left_helper      = sprintf(
 			/* translators: %s: number of images needing ALT text. */
 			_n( '%s image needs ALT text', '%s images need ALT text', $bbai_state_missing_count, 'beepbeep-ai-alt-text-generator' ),
 			number_format_i18n( $bbai_state_missing_count )
 		);
 		$bbai_left_helper_meta = __( 'Based on your last scan.', 'beepbeep-ai-alt-text-generator' );
 	} elseif ( $bbai_state_weak_count > 0 ) {
-		$bbai_donut_center_val  = number_format_i18n( $bbai_state_weak_count );
+		$bbai_donut_center_val = number_format_i18n( $bbai_state_weak_count );
 		$bbai_donut_center_sub = _n(
 			'image ready for review',
 			'images ready for review',
 			$bbai_state_weak_count,
 			'beepbeep-ai-alt-text-generator'
 		);
-		$bbai_left_helper       = __( 'Based on your last scan.', 'beepbeep-ai-alt-text-generator' );
+		$bbai_left_helper      = __( 'Based on your last scan.', 'beepbeep-ai-alt-text-generator' );
 	} else {
 		$bbai_donut_center_sub = __( 'Coverage', 'beepbeep-ai-alt-text-generator' );
-		$bbai_left_helper       = __( 'Scan your library to surface images that need ALT text.', 'beepbeep-ai-alt-text-generator' );
+		$bbai_left_helper      = __( 'Scan your library to surface images that need ALT text.', 'beepbeep-ai-alt-text-generator' );
 	}
 
 	if ( $bbai_state_missing_count <= 0 && $bbai_state_weak_count > 0 ) {
@@ -228,14 +228,14 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 
 	// Only show "Generate" when there is actually missing ALT to fix.
 	$bbai_show_generate_primary = $bbai_gt_remaining > 0 && $bbai_state_missing_count > 0;
-	$bbai_primary_generate    = [
+	$bbai_primary_generate      = array(
 		'label'       => __( 'Generate free ALT text', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',
 		'is_button'   => false,
-	];
-	$bbai_primary_register = [
+	);
+	$bbai_primary_register      = array(
 		'label'     => __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
 		'class'     => $bbai_show_generate_primary
 			? 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary'
@@ -244,15 +244,15 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		'auth_tab'  => 'signup',
 		'analytics' => 'guest_hero_secondary_register',
 		'is_button' => false,
-	];
-	$bbai_secondary_login = [
+	);
+	$bbai_secondary_login       = array(
 		'label'     => __( 'Already have an account? Log in', 'beepbeep-ai-alt-text-generator' ),
 		'class'     => 'bbai-guest-hero__text-link',
 		'action'    => 'show-auth-modal',
 		'auth_tab'  => 'login',
 		'is_text'   => true,
 		'is_button' => false,
-	];
+	);
 }
 
 $bbai_trial_meter_pct = $bbai_gt_limit > 0 ? (int) min( 100, round( 100 * $bbai_gt_used / $bbai_gt_limit ) ) : 0;
