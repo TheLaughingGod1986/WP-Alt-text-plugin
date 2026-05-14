@@ -508,14 +508,14 @@ $bbai_library_workspace_filter_items = array(
 		'key'               => 'all',
 		'label'             => __( 'All', 'beepbeep-ai-alt-text-generator' ),
 		'count'             => $bbai_table_filter_counts['all'],
-		'active'            => $bbai_default_review_filter === 'all',
+		'active'            => 'all' === $bbai_default_review_filter,
 		'filter_label_attr' => __( 'All', 'beepbeep-ai-alt-text-generator' ),
 	),
 	array(
 		'key'               => 'missing',
 		'label'             => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
 		'count'             => $bbai_table_filter_counts['missing'],
-		'active'            => $bbai_default_review_filter === 'missing',
+		'active'            => 'missing' === $bbai_default_review_filter,
 		'filter_label_attr' => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
 		'attention'         => $bbai_table_filter_counts['missing'] > 0,
 	),
@@ -523,7 +523,7 @@ $bbai_library_workspace_filter_items = array(
 		'key'               => 'weak',
 		'label'             => __( 'Needs review', 'beepbeep-ai-alt-text-generator' ),
 		'count'             => $bbai_table_filter_counts['weak'],
-		'active'            => $bbai_default_review_filter === 'weak',
+		'active'            => 'weak' === $bbai_default_review_filter,
 		'filter_label_attr' => __( 'Needs review', 'beepbeep-ai-alt-text-generator' ),
 		'attention'         => $bbai_table_filter_counts['weak'] > 0,
 	),
@@ -531,7 +531,7 @@ $bbai_library_workspace_filter_items = array(
 		'key'               => 'optimized',
 		'label'             => __( 'Optimized', 'beepbeep-ai-alt-text-generator' ),
 		'count'             => $bbai_table_filter_counts['optimized'],
-		'active'            => $bbai_default_review_filter === 'optimized',
+		'active'            => 'optimized' === $bbai_default_review_filter,
 		'filter_label_attr' => __( 'Optimized', 'beepbeep-ai-alt-text-generator' ),
 	),
 );
@@ -858,7 +858,7 @@ $bbai_library_workspace_filter_items = array(
 									$bbai_created_timestamp = strtotime( (string) $bbai_image->post_date );
 									$bbai_updated_timestamp = strtotime( (string) $bbai_image->post_modified );
 
-									$bbai_alt_preview          = $bbai_clean_alt ?: '';
+									$bbai_alt_preview          = $bbai_clean_alt ? $bbai_clean_alt : '';
 									$bbai_alt_preview_id       = 'bbai-alt-preview-' . $bbai_attachment_id;
 									$bbai_alt_char_count       = function_exists( 'mb_strlen' ) ? mb_strlen( $bbai_alt_preview ) : strlen( $bbai_alt_preview );
 									$bbai_has_long_alt_preview = $bbai_alt_char_count > 160;
@@ -907,7 +907,7 @@ $bbai_library_workspace_filter_items = array(
 									}
 									$bbai_file_meta = implode( ' • ', $bbai_file_meta_parts );
 
-									$status                = $bbai_rs['status'];
+									$bbai_row_status                = $bbai_rs['status'];
 									$bbai_status_label     = $bbai_rs['status_label'];
 									$bbai_quality_class    = $bbai_rs['quality_class'];
 									$bbai_quality_label    = $bbai_rs['quality_label'];
@@ -950,7 +950,7 @@ $bbai_library_workspace_filter_items = array(
 
 									if ( ! $bbai_has_alt ) {
 										$bbai_row_summary = __( 'No ALT yet — generate or add manually.', 'beepbeep-ai-alt-text-generator' );
-									} elseif ( 'weak' === $status ) {
+									} elseif ( 'weak' === $bbai_row_status ) {
 										$bbai_row_summary = ! empty( $bbai_analysis['issues'][0] )
 											? (string) $bbai_analysis['issues'][0]
 											: __( 'This description may be too generic or low quality.', 'beepbeep-ai-alt-text-generator' );
@@ -961,7 +961,7 @@ $bbai_library_workspace_filter_items = array(
 									}
 
 									$bbai_row_edit_label     = __( 'Edit manually', 'beepbeep-ai-alt-text-generator' );
-									$bbai_show_review_action = 'weak' === $status && ! $bbai_is_user_approved;
+									$bbai_show_review_action = 'weak' === $bbai_row_status && ! $bbai_is_user_approved;
 									$bbai_meta_parts_row     = array();
 									if ( ! empty( $bbai_file_meta ) ) {
 										$bbai_meta_parts_row[] = $bbai_file_meta;
@@ -975,7 +975,7 @@ $bbai_library_workspace_filter_items = array(
 									}
 									$bbai_card_meta_line = implode( ' • ', $bbai_meta_parts_row );
 
-									$bbai_row_state_rank = 'missing' === $status ? 0 : ( 'weak' === $status ? 1 : 2 );
+									$bbai_row_state_rank = 'missing' === $bbai_row_status ? 0 : ( 'weak' === $bbai_row_status ? 1 : 2 );
 
 									$bbai_regen_label = $bbai_has_alt ? __( 'Regenerate', 'beepbeep-ai-alt-text-generator' ) : bbai_copy_cta_generate_missing_images();
 									$bbai_regen_title = $bbai_limit_reached_state
@@ -1000,14 +1000,14 @@ $bbai_library_workspace_filter_items = array(
 									$bbai_q2_title  = $bbai_edit_title;
 
 									$bbai_row_extra_copy    = $bbai_has_alt;
-									$bbai_row_extra_improve = ( 'weak' === $status && $bbai_has_alt );
+									$bbai_row_extra_improve = ( 'weak' === $bbai_row_status && $bbai_has_alt );
 									$bbai_row_has_extras    = $bbai_row_extra_copy || $bbai_row_extra_improve || $bbai_show_review_action;
 									?>
 									<article class="bbai-library-row bbai-library-review-card bbai-row"
 										data-attachment-id="<?php echo esc_attr( $bbai_attachment_id ); ?>"
 										data-id="<?php echo esc_attr( $bbai_attachment_id ); ?>"
-										data-status="<?php echo esc_attr( $status ); ?>"
-										data-review-state="<?php echo esc_attr( $status ); ?>"
+										data-status="<?php echo esc_attr( $bbai_row_status ); ?>"
+										data-review-state="<?php echo esc_attr( $bbai_row_status ); ?>"
 										data-quality="<?php echo esc_attr( $bbai_quality_class ); ?>"
 										data-ai-source="<?php echo esc_attr( $bbai_ai_source ); ?>"
 										data-alt-missing="<?php echo $bbai_has_alt ? 'false' : 'true'; ?>"
@@ -1073,7 +1073,7 @@ $bbai_library_workspace_filter_items = array(
 											</div>
 											<div class="bbai-library-card__col bbai-library-card__col--status bbai-row__status">
 												<div class="bbai-library-status-tags" role="group" aria-label="<?php esc_attr_e( 'Status and quality score', 'beepbeep-ai-alt-text-generator' ); ?>">
-													<span class="bbai-library-status-badge bbai-library-status-badge--<?php echo esc_attr( $status ); ?>"><?php echo esc_html( $bbai_status_label ); ?></span>
+													<span class="bbai-library-status-badge bbai-library-status-badge--<?php echo esc_attr( $bbai_row_status ); ?>"><?php echo esc_html( $bbai_status_label ); ?></span>
 													<?php if ( $bbai_has_alt ) : ?>
 														<span class="bbai-library-score-badge bbai-library-score-badge--<?php echo esc_attr( $bbai_score_tier ); ?>" title="<?php echo esc_attr( $bbai_quality_tooltip ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: numeric score */ __( 'Score %s', 'beepbeep-ai-alt-text-generator' ), (string) (int) $bbai_quality_score ) ); ?>">
 															<span class="bbai-library-score-badge__value" aria-hidden="true"><?php echo esc_html( (string) (int) $bbai_quality_score ); ?></span>

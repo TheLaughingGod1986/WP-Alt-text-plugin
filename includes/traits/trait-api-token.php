@@ -19,7 +19,7 @@ trait Api_Token {
 	 */
 	public function get_token() {
 		$token = get_option( $this->token_option_key, '' );
-		if ( $token === '' || $token === false ) {
+		if ( '' === $token || false === $token ) {
 			$legacy = get_option( 'beepbeepai_jwt_token', '' );
 			if ( ! empty( $legacy ) ) {
 				$this->set_token( $legacy );
@@ -173,7 +173,7 @@ trait Api_Token {
 			$iv_length = openssl_cipher_iv_length( 'AES-256-CBC' );
 			$iv        = openssl_random_pseudo_bytes( $iv_length );
 			$encrypted = openssl_encrypt( $value, 'AES-256-CBC', LOGGED_IN_KEY, OPENSSL_RAW_DATA, $iv );
-			if ( $encrypted !== false ) {
+			if ( false !== $encrypted ) {
 				return $this->encryption_prefix . base64_encode( $iv . $encrypted );
 			}
 		}
@@ -195,7 +195,7 @@ trait Api_Token {
 
 		if ( function_exists( 'openssl_decrypt' ) && defined( 'LOGGED_IN_KEY' ) && ! empty( LOGGED_IN_KEY ) ) {
 			$data = base64_decode( substr( $value, strlen( $this->encryption_prefix ) ) );
-			if ( $data === false ) {
+			if ( false === $data ) {
 				return '';
 			}
 
@@ -204,7 +204,7 @@ trait Api_Token {
 			$encrypted = substr( $data, $iv_length );
 
 			$decrypted = openssl_decrypt( $encrypted, 'AES-256-CBC', LOGGED_IN_KEY, OPENSSL_RAW_DATA, $iv );
-			if ( $decrypted !== false ) {
+			if ( false !== $decrypted ) {
 				return $decrypted;
 			}
 		}

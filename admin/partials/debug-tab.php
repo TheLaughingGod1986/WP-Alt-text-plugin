@@ -275,7 +275,7 @@ $bbai_debug_embedded   = ! empty( $bbai_debug_embedded );
 									$bbai_recent_context_preview = '—';
 								if ( is_array( $bbai_recent_context ) && ! empty( $bbai_recent_context ) ) {
 									$bbai_recent_context_preview = (string) wp_json_encode( $bbai_recent_context );
-								} elseif ( is_string( $bbai_recent_context ) && $bbai_recent_context !== '' ) {
+								} elseif ( is_string( $bbai_recent_context ) && '' !== $bbai_recent_context ) {
 									$bbai_recent_context_preview = $bbai_recent_context;
 								}
 								if ( function_exists( 'mb_strlen' ) && function_exists( 'mb_substr' ) ) {
@@ -354,7 +354,8 @@ $bbai_debug_embedded   = ! empty( $bbai_debug_embedded );
 							<?php foreach ( $bbai_debug_logs as $bbai_log ) : ?>
 								<?php
 									$bbai_level          = strtolower( $bbai_log['level'] ?? 'info' );
-									$bbai_level_slug     = preg_replace( '/[^a-z0-9_-]/i', '', $bbai_level ) ?: 'info';
+									$bbai_level_slug_raw = preg_replace( '/[^a-z0-9_-]/i', '', $bbai_level );
+									$bbai_level_slug     = $bbai_level_slug_raw ? $bbai_level_slug_raw : 'info';
 									$bbai_context_attr   = '';
 									$bbai_context_source = $bbai_log['context'] ?? array();
 								if ( ! empty( $bbai_context_source ) ) {
@@ -377,11 +378,11 @@ $bbai_debug_embedded   = ! empty( $bbai_debug_embedded );
 								}
 
 									$bbai_badge_variant = 'info';
-								if ( $bbai_level_slug === 'warning' ) {
+								if ( 'warning' === $bbai_level_slug ) {
 									$bbai_badge_variant = 'warning';
-								} elseif ( $bbai_level_slug === 'error' ) {
+								} elseif ( 'error' === $bbai_level_slug ) {
 									$bbai_badge_variant = 'error';
-								} elseif ( $bbai_level_slug === 'debug' ) {
+								} elseif ( 'debug' === $bbai_level_slug ) {
 									$bbai_badge_variant = 'pending';
 								}
 									$bbai_badge_class = 'bbai-status-badge bbai-status-badge--' . $bbai_badge_variant;

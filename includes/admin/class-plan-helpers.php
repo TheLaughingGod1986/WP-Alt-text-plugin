@@ -43,7 +43,7 @@ class Plan_Helpers {
 	 * @return array Plan data with keys: plan_slug, is_free, is_growth, is_agency, is_pro
 	 */
 	public static function get_plan_data( $force_refresh = false ) {
-		if ( self::$cached_plan_data !== null && ! $force_refresh ) {
+		if ( self::null !== $cached_plan_data && ! $force_refresh ) {
 			return self::$cached_plan_data;
 		}
 
@@ -65,22 +65,22 @@ class Plan_Helpers {
 				$has_license = ! empty( $license_key );
 
 				// If using license and plan is still free, check license data
-				if ( $has_license && $plan_slug === 'free' ) {
+				if ( $has_license && 'free' === $plan_slug ) {
 					$license_data = $api_client->get_license_data();
 					if ( $license_data && isset( $license_data['organization'] ) ) {
 						$plan_slug = strtolower( $license_data['organization']['plan'] ?? 'free' );
 					}
 				}
 			} catch ( \Exception $e ) {
-				// Silently fail, use current plan_slug
+				unset( $e ); // Silently skip; fall back to current plan_slug.
 			}
 		}
 
 		// Calculate plan flags
-		$is_free   = ( $plan_slug === 'free' );
-		$is_growth = ( $plan_slug === 'pro' || $plan_slug === 'growth' );
-		$is_agency = ( $plan_slug === 'agency' );
-		$is_pro    = ( $plan_slug === 'pro' || $plan_slug === 'agency' ); // Any paid plan
+		$is_free   = ( 'free' === $plan_slug );
+		$is_growth = ( 'pro' === $plan_slug || 'growth' === $plan_slug );
+		$is_agency = ( 'agency' === $plan_slug );
+		$is_pro    = ( 'pro' === $plan_slug || 'agency' === $plan_slug ); // Any paid plan
 
 		self::$cached_plan_data = array(
 			'plan_slug' => $plan_slug,

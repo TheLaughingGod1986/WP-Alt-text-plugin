@@ -41,11 +41,12 @@ if ( ! function_exists( 'bbai_render_layout_template' ) ) {
 				unset( $context['this'] );
 			}
 
+			// phpcs:ignore WordPress.PHP.DontExtract.extract_extract -- generic template renderer; context keys are controlled by callers.
 			extract( $context, EXTR_SKIP );
 
-			if ( is_string( $partial ) && $partial !== '' && file_exists( $partial ) ) {
+			if ( is_string( $partial ) && '' !== $partial && file_exists( $partial ) ) {
 				include $partial;
-			} elseif ( $fallback_message !== '' ) {
+			} elseif ( '' !== $fallback_message ) {
 				echo esc_html( $fallback_message );
 			}
 		};

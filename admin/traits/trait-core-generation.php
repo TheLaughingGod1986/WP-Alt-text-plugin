@@ -21,7 +21,7 @@ trait Core_Generation {
 	 * @return string Sanitized message
 	 */
 	private function sanitize_error_message( $message ) {
-		if ( ! is_string( $message ) || $message === '' ) {
+		if ( ! is_string( $message ) || '' === $message ) {
 			return '';
 		}
 
@@ -88,7 +88,7 @@ trait Core_Generation {
 		}
 
 		$size = filesize( $file );
-		if ( $size === false || $size <= 0 ) {
+		if ( false === $size || $size <= 0 ) {
 			return new \WP_Error( 'inline_image_size', __( 'Unable to read the image size for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
@@ -116,7 +116,7 @@ trait Core_Generation {
 
 		$fs   = new \WP_Filesystem_Direct( null );
 		$data = method_exists( $fs, 'get_contents' ) ? $fs->get_contents( $file ) : false;
-		if ( $data === false ) {
+		if ( false === $data ) {
 			return new \WP_Error( 'inline_image_read', __( 'Failed to read the image file for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
@@ -188,7 +188,7 @@ trait Core_Generation {
 	 */
 	private function extract_json_object( string $content ) {
 		$content = trim( $content );
-		if ( $content === '' ) {
+		if ( '' === $content ) {
 			return null;
 		}
 
@@ -198,10 +198,10 @@ trait Core_Generation {
 			$content = trim( $content );
 		}
 
-		if ( $content !== '' && is_string( $content ) && isset( $content[0] ) && $content[0] !== '{' ) {
+		if ( '' !== $content && is_string( $content ) && isset( $content[0] ) && '{' !== $content[0] ) {
 			$start = strpos( (string) $content, '{' );
 			$end   = strrpos( (string) $content, '}' );
-			if ( $start !== false && $end !== false && $end > $start ) {
+			if ( false !== $start && false !== $end && $end > $start ) {
 				$content = substr( $content, $start, $end - $start + 1 );
 			}
 		}
@@ -232,7 +232,7 @@ trait Core_Generation {
 	 * @return string Redacted message
 	 */
 	private function redact_api_token( $message ) {
-		if ( ! is_string( $message ) || $message === '' ) {
+		if ( ! is_string( $message ) || '' === $message ) {
 			return $message;
 		}
 
@@ -278,7 +278,7 @@ trait Core_Generation {
 		}
 
 		$alt_text = sanitize_text_field( $alt_text );
-		if ( $alt_text === '' ) {
+		if ( '' === $alt_text ) {
 			return false;
 		}
 

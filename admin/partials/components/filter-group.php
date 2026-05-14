@@ -44,15 +44,15 @@ $bbai_fg_classes = array_filter(
 	)
 );
 
-$bbai_fg_label = $bbai_fg_aria !== '' ? $bbai_fg_aria : (
-	$bbai_fg_mode === 'navigate'
+$bbai_fg_label = '' !== $bbai_fg_aria ? $bbai_fg_aria : (
+	'navigate' === $bbai_fg_mode
 		? __( 'Open filtered views in ALT Library', 'beepbeep-ai-alt-text-generator' )
 		: __( 'Filter images by state', 'beepbeep-ai-alt-text-generator' )
 );
 
 $bbai_merge_attrs = static function ( array $base, array $extra ): array {
 	foreach ( $extra as $key => $value ) {
-		if ( $key === 'class' ) {
+		if ( 'class' === $key ) {
 			$base['class'] = trim( (string) ( $base['class'] ?? '' ) . ' ' . (string) $value );
 			continue;
 		}
@@ -65,7 +65,7 @@ $bbai_merge_attrs = static function ( array $base, array $extra ): array {
 $bbai_open = static function ( string $tag, array $attrs ): void {
 	$parts = array();
 	foreach ( $attrs as $k => $v ) {
-		if ( $v === null || $v === false || $v === '' ) {
+		if ( null === $v || false === $v || '' === $v ) {
 			continue;
 		}
 		$parts[] = sprintf( '%s="%s"', $k, esc_attr( is_bool( $v ) ? ( $v ? 'true' : 'false' ) : (string) $v ) );
@@ -74,21 +74,21 @@ $bbai_open = static function ( string $tag, array $attrs ): void {
 	echo '<' . $tag . ( $parts ? ' ' . implode( ' ', $parts ) : '' ) . '>';
 };
 
-$bbai_root_tag   = $bbai_fg_mode === 'navigate' ? 'nav' : 'div';
+$bbai_root_tag   = 'navigate' === $bbai_fg_mode ? 'nav' : 'div';
 $bbai_root_attrs = array(
 	'class'      => implode( ' ', $bbai_fg_classes ),
 	'aria-label' => $bbai_fg_label,
 );
 
-if ( $bbai_fg_mode === 'filter' ) {
+if ( 'filter' === $bbai_fg_mode ) {
 	$bbai_root_attrs['role'] = 'group';
 }
 
-if ( $bbai_fg_id !== '' ) {
+if ( '' !== $bbai_fg_id ) {
 	$bbai_root_attrs['id'] = $bbai_fg_id;
 }
 
-if ( $bbai_fg_default !== '' ) {
+if ( '' !== $bbai_fg_default ) {
 	$bbai_root_attrs['data-bbai-default-filter'] = $bbai_fg_default;
 }
 
@@ -101,12 +101,12 @@ foreach ( $bbai_fg_items as $bbai_item ) {
 	}
 
 	$bbai_key = isset( $bbai_item['key'] ) ? sanitize_key( (string) $bbai_item['key'] ) : '';
-	if ( $bbai_key === '' ) {
+	if ( '' === $bbai_key ) {
 		continue;
 	}
 
 	$bbai_slug = preg_replace( '/[^a-z]/', '', $bbai_key );
-	if ( $bbai_slug === '' ) {
+	if ( '' === $bbai_slug ) {
 		$bbai_slug = 'all';
 	}
 
@@ -134,22 +134,22 @@ foreach ( $bbai_fg_items as $bbai_item ) {
 		)
 	);
 
-	if ( $bbai_fg_mode === 'navigate' ) {
+	if ( 'navigate' === $bbai_fg_mode ) {
 		$bbai_href         = isset( $bbai_item['href'] ) ? (string) $bbai_item['href'] : '';
 		$bbai_item_aria    = isset( $bbai_item['item_aria_label'] ) ? (string) $bbai_item['item_aria_label'] : $bbai_label;
 		$bbai_seg          = array_key_exists( 'status_segment', $bbai_item )
 			? (string) $bbai_item['status_segment']
-			: ( $bbai_key === 'all' ? 'all' : $bbai_key );
+			: ( 'all' === $bbai_key ? 'all' : $bbai_key );
 		$bbai_filt_default = '';
-		if ( $bbai_key === 'weak' ) {
+		if ( 'weak' === $bbai_key ) {
 			$bbai_filt_default = 'needs_review';
-		} elseif ( $bbai_key !== 'all' ) {
+		} elseif ( 'all' !== $bbai_key ) {
 			$bbai_filt_default = $bbai_key;
 		}
 		$bbai_filt       = array_key_exists( 'status_filter', $bbai_item ) ? (string) $bbai_item['status_filter'] : $bbai_filt_default;
 		$bbai_status_url = isset( $bbai_item['status_url'] ) ? (string) $bbai_item['status_url'] : $bbai_href;
 		$bbai_metric     = isset( $bbai_item['metric_key'] ) ? (string) $bbai_item['metric_key'] : $bbai_key;
-		$bbai_tag        = ( ! $bbai_disabled && ! $bbai_locked && $bbai_href !== '' ) ? 'a' : 'button';
+		$bbai_tag        = ( ! $bbai_disabled && ! $bbai_locked && '' !== $bbai_href ) ? 'a' : 'button';
 		$bbai_attrs      = array(
 			'class'                    => implode( ' ', $bbai_item_classes ),
 			'data-bbai-status-row'     => '1',
@@ -157,17 +157,17 @@ foreach ( $bbai_fg_items as $bbai_item ) {
 			'aria-label'               => $bbai_item_aria,
 		);
 
-		if ( $bbai_tag === 'a' ) {
+		if ( 'a' === $bbai_tag ) {
 			$bbai_attrs['href'] = esc_url( $bbai_href );
 		} else {
 			$bbai_attrs['type'] = 'button';
 		}
 
-		if ( $bbai_filt !== '' ) {
+		if ( '' !== $bbai_filt ) {
 			$bbai_attrs['data-bbai-status-filter'] = $bbai_filt;
 		}
 
-		if ( $bbai_status_url !== '' ) {
+		if ( '' !== $bbai_status_url ) {
 			$bbai_attrs['data-bbai-status-url'] = esc_url( $bbai_status_url );
 		}
 

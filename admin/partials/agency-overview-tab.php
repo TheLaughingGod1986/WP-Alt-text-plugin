@@ -77,7 +77,7 @@ $bbai_export_url = wp_nonce_url( admin_url( 'admin-post.php?action=beepbeepai_us
 					/* translators: 1: site count, 2: plural suffix */
 					esc_html__( 'Across %1$s Site%2$s', 'beepbeep-ai-alt-text-generator' ),
 					esc_html( number_format_i18n( $bbai_site_count ) ),
-					esc_html( $bbai_site_count !== 1 ? 's' : '' )
+					esc_html( 1 !== $bbai_site_count ? 's' : '' )
 				);
 				?>
 				</div>
@@ -128,7 +128,7 @@ $bbai_export_url = wp_nonce_url( admin_url( 'admin-post.php?action=beepbeepai_us
 							$bbai_last_activity_formatted = '';
 							if ( ! empty( $bbai_last_activity ) ) {
 								$bbai_timestamp = strtotime( $bbai_last_activity );
-								if ( $bbai_timestamp !== false ) {
+								if ( false !== $bbai_timestamp ) {
 									$bbai_last_activity_formatted = date_i18n( 'j M Y', $bbai_timestamp );
 								}
 							}
@@ -167,8 +167,8 @@ $bbai_export_url = wp_nonce_url( admin_url( 'admin-post.php?action=beepbeepai_us
 // Set plan variables for bottom upsell CTA (only show for non-agency users)
 $bbai_plan_slug = isset( $bbai_usage_stats['plan'] ) ? strtolower( $bbai_usage_stats['plan'] ) : 'agency';
 $bbai_is_free   = false;
-$bbai_is_growth = ( $bbai_plan_slug === 'pro' || $bbai_plan_slug === 'growth' );
-$bbai_is_agency = ( $bbai_plan_slug === 'agency' );
+$bbai_is_growth = ( 'pro' === $bbai_plan_slug || 'growth' === $bbai_plan_slug );
+$bbai_is_agency = ( 'agency' === $bbai_plan_slug );
 
 // Only show upsell if not agency (though this tab is agency-only, keeping for consistency)
 if ( ! $bbai_is_agency ) {

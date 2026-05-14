@@ -24,14 +24,14 @@ try {
 $bbai_plan_slug = isset( $bbai_usage_stats['plan'] ) ? $bbai_usage_stats['plan'] : 'free';
 if ( $bbai_has_license && $bbai_license_data && isset( $bbai_license_data['organization'] ) ) {
 	$bbai_license_plan = strtolower( $bbai_license_data['organization']['plan'] ?? 'free' );
-	if ( $bbai_license_plan !== 'free' ) {
+	if ( 'free' !== $bbai_license_plan ) {
 		$bbai_plan_slug = $bbai_license_plan;
 	}
 }
 
-$bbai_is_free   = ( $bbai_plan_slug === 'free' );
-$bbai_is_growth = ( $bbai_plan_slug === 'pro' || $bbai_plan_slug === 'growth' );
-$bbai_is_agency = ( $bbai_plan_slug === 'agency' );
+$bbai_is_free   = ( 'free' === $bbai_plan_slug );
+$bbai_is_growth = ( 'pro' === $bbai_plan_slug || 'growth' === $bbai_plan_slug );
+$bbai_is_agency = ( 'agency' === $bbai_plan_slug );
 $bbai_is_pro    = ( $bbai_is_growth || $bbai_is_agency );
 ?>
 

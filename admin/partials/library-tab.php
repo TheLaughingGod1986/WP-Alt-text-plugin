@@ -40,7 +40,7 @@ $bbai_use_library_workspace     = is_readable( $bbai_library_workspace_partial )
 $bbai_requested_status = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 $bbai_filter_param = isset( $_GET['filter'] ) ? sanitize_key( wp_unslash( $_GET['filter'] ) ) : '';
-if ( $bbai_requested_status === '' && $bbai_filter_param !== '' ) {
+if ( '' === $bbai_requested_status && '' !== $bbai_filter_param ) {
 	$bbai_filter_norm = strtolower( str_replace( '-', '_', $bbai_filter_param ) );
 	if ( 'needs_review' === $bbai_filter_norm ) {
 		$bbai_requested_status = 'needs_review';
@@ -56,7 +56,7 @@ $bbai_workspace_status_map   = array(
 );
 $bbai_default_review_filter  = 'all';
 $bbai_review_filter_from_url = false;
-if ( $bbai_requested_status !== '' && isset( $bbai_workspace_status_map[ $bbai_requested_status ] ) ) {
+if ( '' !== $bbai_requested_status && isset( $bbai_workspace_status_map[ $bbai_requested_status ] ) ) {
 	$bbai_default_review_filter  = $bbai_workspace_status_map[ $bbai_requested_status ];
 	$bbai_review_filter_from_url = true;
 }
@@ -236,13 +236,13 @@ if ( $bbai_has_connected_account && $bbai_has_license && $bbai_license_data && i
 }
 
 // Map 'pro' to 'growth' for consistency
-if ( $bbai_plan_slug === 'pro' ) {
+if ( 'pro' === $bbai_plan_slug ) {
 	$bbai_plan_slug = 'growth';
 }
 
 $bbai_is_free   = in_array( $bbai_plan_slug, array( 'free', 'trial' ), true );
-$bbai_is_growth = ( $bbai_plan_slug === 'growth' );
-$bbai_is_agency = ( $bbai_plan_slug === 'agency' );
+$bbai_is_growth = ( 'growth' === $bbai_plan_slug );
+$bbai_is_agency = ( 'agency' === $bbai_plan_slug );
 $bbai_is_pro    = ( $bbai_is_growth || $bbai_is_agency );
 
 // Calculate stats percentages
@@ -674,7 +674,7 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 							$bbai_modified_date = date_i18n( 'j M Y', strtotime( $bbai_image->post_modified ) );
 
 							// Keep full alt text in DOM and clamp with CSS for readable ellipsis.
-							$bbai_alt_preview = $bbai_clean_alt ?: '';
+							$bbai_alt_preview = $bbai_clean_alt ? $bbai_clean_alt : '';
 
 							// Truncate filename for display.
 							$bbai_display_filename = ! empty( $bbai_filename ) && is_string( $bbai_filename ) ? $bbai_filename : __( 'Unknown file', 'beepbeep-ai-alt-text-generator' );
@@ -702,7 +702,7 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 								}
 
 								$bbai_file_size_bytes = filesize( $bbai_attached_file );
-								if ( $bbai_file_size_bytes !== false && is_numeric( $bbai_file_size_bytes ) ) {
+								if ( false !== $bbai_file_size_bytes && is_numeric( $bbai_file_size_bytes ) ) {
 									$bbai_file_size = size_format( $bbai_file_size_bytes );
 								}
 							}
@@ -720,7 +720,7 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 							$bbai_file_meta = implode( ' • ', $bbai_file_meta_parts );
 
 							// Determine queue state
-							$status                = 'missing';
+							$bbai_row_status                = 'missing';
 							$bbai_status_label     = bbai_copy_status_missing();
 							$bbai_quality_class    = 'poor';
 							$bbai_quality_label    = bbai_copy_score_poor();
@@ -801,10 +801,10 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 								$bbai_row_optimized_lt = $bbai_opt_eligible_lt && $bbai_quality_score >= 70;
 
 								if ( $bbai_row_optimized_lt ) {
-									$status            = 'optimized';
+									$bbai_row_status            = 'optimized';
 									$bbai_status_label = bbai_copy_status_optimized();
 								} else {
-									$status            = 'weak';
+									$bbai_row_status            = 'weak';
 									$bbai_status_label = bbai_copy_status_needs_review();
 								}
 							}
@@ -864,11 +864,11 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 										}
 									}
 									$bbai_quality_tooltip = implode( "\n", $bbai_tooltip_lines );
-								} elseif ( $bbai_quality_class === 'excellent' ) {
+								} elseif ( 'excellent' === $bbai_quality_class ) {
 									$bbai_quality_tooltip = __( 'ALT text is descriptive and SEO-friendly', 'beepbeep-ai-alt-text-generator' );
-								} elseif ( $bbai_quality_class === 'good' ) {
+								} elseif ( 'good' === $bbai_quality_class ) {
 									$bbai_quality_tooltip = __( 'ALT text is clear and descriptive', 'beepbeep-ai-alt-text-generator' );
-								} elseif ( $bbai_quality_class === 'needs-review' ) {
+								} elseif ( 'needs-review' === $bbai_quality_class ) {
 									$bbai_quality_tooltip = __( 'ALT text could use more descriptive detail', 'beepbeep-ai-alt-text-generator' );
 								} else {
 									$bbai_quality_tooltip = __( 'ALT text is too short or lacks descriptive detail', 'beepbeep-ai-alt-text-generator' );
@@ -879,17 +879,17 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 								$bbai_row_summary = __( 'No ALT text yet. Add one inline or generate it with AI.', 'beepbeep-ai-alt-text-generator' );
 							} elseif ( $bbai_is_user_approved ) {
 								$bbai_row_summary = __( 'Reviewed and approved by you.', 'beepbeep-ai-alt-text-generator' );
-							} elseif ( $status === 'weak' && ! empty( $bbai_analysis['issues'][0] ) ) {
+							} elseif ( 'weak' === $bbai_row_status && ! empty( $bbai_analysis['issues'][0] ) ) {
 								$bbai_row_summary = (string) $bbai_analysis['issues'][0];
-							} elseif ( $status === 'optimized' ) {
+							} elseif ( 'optimized' === $bbai_row_status ) {
 								$bbai_row_summary = __( 'Ready to publish.', 'beepbeep-ai-alt-text-generator' );
 							}
 							?>
 							<tr class="bbai-library-row"
 								data-attachment-id="<?php echo esc_attr( $bbai_attachment_id ); ?>"
 								data-id="<?php echo esc_attr( $bbai_attachment_id ); ?>"
-								data-status="<?php echo esc_attr( $status ); ?>"
-								data-review-state="<?php echo esc_attr( $status ); ?>"
+								data-status="<?php echo esc_attr( $bbai_row_status ); ?>"
+								data-review-state="<?php echo esc_attr( $bbai_row_status ); ?>"
 								data-quality="<?php echo esc_attr( $bbai_quality_class ); ?>"
 								data-ai-source="<?php echo esc_attr( $bbai_ai_source ); ?>"
 								data-alt-missing="<?php echo $bbai_has_alt ? 'false' : 'true'; ?>"
@@ -988,14 +988,14 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 										</button>
 										</div>
 										<p class="bbai-library-alt-helper"><?php echo esc_html( $bbai_has_alt ? __( 'Click the ALT text to edit inline and save without leaving the page.', 'beepbeep-ai-alt-text-generator' ) : __( 'Add ALT text inline or generate it with AI.', 'beepbeep-ai-alt-text-generator' ) ); ?></p>
-										<?php if ( $status === 'weak' ) : ?>
+										<?php if ( 'weak' === $bbai_row_status ) : ?>
 											<p class="bbai-library-alt-summary"><?php echo esc_html( $bbai_row_summary ); ?></p>
 										<?php endif; ?>
 									</div>
 								</td>
 								<td class="bbai-library-cell--status">
 									<div class="bbai-library-status-stack">
-										<span class="bbai-library-status-badge bbai-library-status-badge--<?php echo esc_attr( $status ); ?>">
+										<span class="bbai-library-status-badge bbai-library-status-badge--<?php echo esc_attr( $bbai_row_status ); ?>">
 											<?php echo esc_html( $bbai_status_label ); ?>
 										</span>
 										<p class="bbai-library-status-copy"><?php echo esc_html( $bbai_row_summary ); ?></p>
@@ -1026,8 +1026,8 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 											</div>
 											<?php
 											$bbai_table_extra_copy    = $bbai_has_alt;
-											$bbai_table_extra_improve = $bbai_has_alt && 'weak' === $status;
-											$bbai_table_extra_review  = 'weak' === $status && $bbai_has_alt && ! $bbai_is_user_approved;
+											$bbai_table_extra_improve = $bbai_has_alt && 'weak' === $bbai_row_status;
+											$bbai_table_extra_review  = 'weak' === $bbai_row_status && $bbai_has_alt && ! $bbai_is_user_approved;
 											$bbai_table_has_extras    = $bbai_table_extra_copy || $bbai_table_extra_improve || $bbai_table_extra_review;
 											?>
 											<?php if ( $bbai_table_has_extras ) : ?>

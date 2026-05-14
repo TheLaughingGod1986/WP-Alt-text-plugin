@@ -26,7 +26,7 @@ $bbai_li_initial_json = (string) wp_json_encode( $bbai_li_state );
 //                          PROCESSING running on dashboard — hero owns it)
 // In the suppressed case we unset the plan banner so nothing renders.
 $bbai_li_banner_cfg     = is_array( $bbai_li_state['banner'] ?? null ) ? $bbai_li_state['banner'] : null;
-$bbai_li_banner_is_null = ( $bbai_li_banner_cfg === null );  // resolver didn't set key at all
+$bbai_li_banner_is_null = ( null === $bbai_li_banner_cfg );  // resolver didn't set key at all
 
 if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	// Empty array = explicit suppress signal from resolver.

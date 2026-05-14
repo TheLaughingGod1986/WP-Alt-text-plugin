@@ -149,7 +149,7 @@ class Usage_Logs {
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
 		);
-		return $exists === self::table();
+		return self::table() === $exists;
 	}
 
 	/**
@@ -268,7 +268,7 @@ class Usage_Logs {
 			)
 		);
 
-		$result = absint( $total ?: 0 );
+		$result = absint( $total ? $total : 0 );
 		BBAI_Cache::set( 'usage_logs', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
 		return $result;
 	}
@@ -324,7 +324,7 @@ class Usage_Logs {
 			// Determine username and display name
 			if ( $wp_user instanceof \WP_User ) {
 				$username     = $wp_user->user_login;
-				$display_name = $wp_user->display_name ?: $wp_user->user_login;
+				$display_name = $wp_user->display_name ? $wp_user->display_name : $wp_user->user_login;
 			} elseif ( $user_id > 0 ) {
 				// User ID exists but user not found - might be deleted
 				/* translators: %d: WordPress user ID for a deleted/missing user. */
@@ -390,7 +390,7 @@ class Usage_Logs {
 		$site_id          = sanitize_text_field( substr( $site_id, 0, 64 ) );
 		$skip_site_filter = ! empty( $filters['skip_site_filter'] );
 
-		$user_id         = ( $filters['user_id'] !== null && $filters['user_id'] !== '' ) ? absint( $filters['user_id'] ) : 0;
+		$user_id         = ( null !== $filters['user_id'] && '' !== $filters['user_id'] ) ? absint( $filters['user_id'] ) : 0;
 		$has_user_filter = $user_id > 0 ? 1 : 0;
 		$date_from       = ! empty( $filters['date_from'] ) ? sanitize_text_field( $filters['date_from'] ) . ' 00:00:00' : '';
 		$date_to         = ! empty( $filters['date_to'] ) ? sanitize_text_field( $filters['date_to'] ) . ' 23:59:59' : '';
@@ -441,7 +441,7 @@ class Usage_Logs {
 				)
 			);
 		}
-		$total = absint( $total ?: 0 );
+		$total = absint( $total ? $total : 0 );
 
 		// Pagination
 		$per_page = max( 1, absint( $filters['per_page'] ) );
@@ -514,7 +514,7 @@ class Usage_Logs {
 			// Determine username and display name
 			if ( $wp_user instanceof \WP_User ) {
 				$username     = $wp_user->user_login;
-				$display_name = $wp_user->display_name ?: $wp_user->user_login;
+				$display_name = $wp_user->display_name ? $wp_user->display_name : $wp_user->user_login;
 			} elseif ( $user_id > 0 ) {
 				// User ID exists but user not found - might be deleted
 				// Try to get from deleted users table or show user ID

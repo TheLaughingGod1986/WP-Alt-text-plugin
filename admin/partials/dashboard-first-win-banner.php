@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 $bbai_fw_optimized = 0;
 if ( isset( $bbai_optimized_count ) ) {
 	$bbai_fw_optimized = max( 0, (int) $bbai_optimized_count );
-} elseif ( isset( $optimizedCount ) ) {
-	$bbai_fw_optimized = max( 0, (int) $optimizedCount );
+} elseif ( isset( $optimizedCount ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
+	$bbai_fw_optimized = max( 0, (int) $optimizedCount ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
 }
 
 if ( $bbai_fw_optimized <= 0 ) {

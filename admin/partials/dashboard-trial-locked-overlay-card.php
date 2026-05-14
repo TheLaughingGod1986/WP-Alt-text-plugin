@@ -37,7 +37,7 @@ $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exha
 			);
 			?>
 		</p>
-		<?php if ( $bbai_locked_ctx !== '' ) : ?>
+		<?php if ( '' !== $bbai_locked_ctx ) : ?>
 			<p class="bbai-dashboard-locked-preview__overlay-context" data-bbai-guest-preview-context>
 				<?php echo esc_html( $bbai_locked_ctx ); ?>
 			</p>

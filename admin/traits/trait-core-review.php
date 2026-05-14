@@ -79,7 +79,7 @@ trait Core_Review {
 		}
 
 		$stored_hash = get_post_meta( $attachment_id, '_bbai_review_alt_hash', true );
-		if ( $current_alt !== '' ) {
+		if ( '' !== $current_alt ) {
 			$current_hash = $this->hash_alt_text( $current_alt );
 			if ( $stored_hash && ! hash_equals( $stored_hash, $current_hash ) ) {
 				$this->purge_review_meta( $attachment_id );
@@ -101,7 +101,7 @@ trait Core_Review {
 				foreach ( $decoded as $issue ) {
 					if ( is_string( $issue ) ) {
 						$issue = sanitize_text_field( $issue );
-						if ( $issue !== '' ) {
+						if ( '' !== $issue ) {
 							$issues[] = $issue;
 						}
 					}
@@ -111,7 +111,7 @@ trait Core_Review {
 
 		return array(
 			'score'        => max( 0, min( 100, $score ) ),
-			'status'       => $status ?: null,
+			'status'       => $status ? $status : null,
 			'grade'        => is_string( $grade_input ) ? sanitize_text_field( $grade_input ) : null,
 			'summary'      => is_string( $summary ) ? sanitize_text_field( $summary ) : '',
 			'issues'       => $issues,
@@ -133,7 +133,7 @@ trait Core_Review {
 	 */
 	private function evaluate_alt_health( int $attachment_id, string $alt ): array {
 		$alt = trim( (string) $alt );
-		if ( $alt === '' ) {
+		if ( '' === $alt ) {
 			return array(
 				'score'     => 0,
 				'grade'     => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
@@ -206,9 +206,9 @@ trait Core_Review {
 		}
 		if ( $review ) {
 			$final_score   = min( $heuristic['score'], $review['score'] );
-			$review_status = $review['status'] ?: $this->status_from_score( $review['score'] );
+			$review_status = $review['status'] ? $review['status'] : $this->status_from_score( $review['score'] );
 			$final_status  = $this->worst_status( $heuristic['status'], $review_status );
-			$final_grade   = $review['grade'] ?: $this->grade_from_status( $final_status );
+			$final_grade   = $review['grade'] ? $review['grade'] : $this->grade_from_status( $final_status );
 
 			$combined_issues = array();
 			if ( ! empty( $review['summary'] ) ) {
@@ -378,7 +378,7 @@ trait Core_Review {
 		$attachment_id = intval( $attachment_id );
 		$alt_text      = sanitize_text_field( $alt_text );
 
-		if ( $attachment_id <= 0 || $alt_text === '' ) {
+		if ( $attachment_id <= 0 || '' === $alt_text ) {
 			return new \WP_Error( 'invalid_input', __( 'Invalid attachment ID or alt text.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
@@ -430,7 +430,7 @@ Return JSON only:
 		}
 
 		$messages = array();
-		if ( $system_prompt !== '' ) {
+		if ( '' !== $system_prompt ) {
 			$messages[] = array(
 				'role'    => 'system',
 				'content' => $system_prompt,

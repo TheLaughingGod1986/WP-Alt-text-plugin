@@ -67,7 +67,7 @@ $bbai_li_seg_miss = max( 0, (int) ( $bbai_li_seg['missing'] ?? 0 ) );
 $bbai_li_seg_tot  = max( 1, (int) ( $bbai_li_seg['total'] ?? 1 ) );
 
 // Donut centre text: use resolver `center_label` when present (queue/processing/etc.), else segment order.
-$bbai_li_donut_center = isset( $bbai_li_donut['center_label'] ) && (string) $bbai_li_donut['center_label'] !== ''
+$bbai_li_donut_center = isset( $bbai_li_donut['center_label'] ) && (string) '' !== $bbai_li_donut['center_label']
 	? (string) $bbai_li_donut['center_label']
 	: ( $bbai_li_seg_miss > 0
 		? (string) number_format_i18n( $bbai_li_seg_miss )
@@ -142,7 +142,7 @@ if ( ! function_exists( 'bbai_dashboard_donut_ring_degrees' ) ) {
 	}
 }
 
-if ( $bbai_li_seg_opt + $bbai_li_seg_weak + $bbai_li_seg_miss === 0 ) {
+if ( $bbai_li_seg_opt + $bbai_li_seg_weak + 0 === $bbai_li_seg_miss ) {
 	$bbai_li_donut_bg = 'conic-gradient(#e2e8f0 0deg 360deg)';
 } elseif ( $bbai_li_seg_opt >= $bbai_li_seg_tot ) {
 	$bbai_li_donut_bg = 'conic-gradient(#22c55e 0deg 360deg)';
@@ -168,7 +168,9 @@ if ( $bbai_li_seg_opt + $bbai_li_seg_weak + $bbai_li_seg_miss === 0 ) {
 }
 
 if ( ! isset( $bbai_li_donut_a1, $bbai_li_donut_a2, $bbai_li_donut_a3 ) ) {
-	$bbai_li_donut_a1 = $bbai_li_donut_a2 = $bbai_li_donut_a3 = 0.0;
+	$bbai_li_donut_a1 = 0.0;
+	$bbai_li_donut_a2 = 0.0;
+	$bbai_li_donut_a3 = 0.0;
 }
 
 // ── Per-segment hover gradients for the chip → donut interaction ─────────────

@@ -30,8 +30,8 @@ trait Api_Auth {
 
 		$cache_key = 'bbai_auth_check_' . md5( $token );
 		$cached    = get_transient( $cache_key );
-		if ( $cached !== false ) {
-			return $cached === 'valid';
+		if ( false !== $cached ) {
+			return 'valid' === $cached;
 		}
 
 		$response = $this->make_request( '/auth/me', 'GET' );

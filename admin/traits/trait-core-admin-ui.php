@@ -148,9 +148,9 @@ trait Core_Admin_UI {
 			add_action(
 				'current_screen',
 				static function () {
-					global $title;
-					if ( ! isset( $title ) || $title === null ) {
-						$title = '';
+					global $title; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- initialises WP admin page title.
+					if ( ! isset( $title ) || null === $title ) {
+						$title = ''; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 					}
 				}
 			);
@@ -239,11 +239,11 @@ trait Core_Admin_UI {
 					$lang_input         = $lang_input_input ? sanitize_text_field( $lang_input_input ) : 'en-GB';
 					$custom_input_input = isset( $input['language_custom'] ) ? (string) $input['language_custom'] : '';
 					$custom_input       = $custom_input_input ? sanitize_text_field( $custom_input_input ) : '';
-					if ( $lang_input === 'custom' ) {
-						$out['language']        = $custom_input ?: 'en-GB';
+					if ( 'custom' === $lang_input ) {
+						$out['language']        = $custom_input ? $custom_input : 'en-GB';
 						$out['language_custom'] = $custom_input;
 					} else {
-						$out['language']        = $lang_input ?: 'en-GB';
+						$out['language']        = $lang_input ? $lang_input : 'en-GB';
 						$out['language_custom'] = '';
 					}
 					$out['enable_on_upload'] = method_exists( $this, 'current_account_can_use_upload_generation' )
@@ -253,7 +253,7 @@ trait Core_Admin_UI {
 					$out['tone']             = $tone ? sanitize_text_field( $tone ) : 'professional, accessible';
 					$out['force_overwrite']  = ! empty( $input['force_overwrite'] );
 					$out['token_limit']      = max( 0, intval( $input['token_limit'] ?? 0 ) );
-					if ( $out['token_limit'] === 0 ) {
+					if ( 0 === $out['token_limit'] ) {
 						$out['token_alert_sent'] = false;
 					} elseif ( intval( $existing['token_limit'] ?? 0 ) !== $out['token_limit'] ) {
 						$out['token_alert_sent'] = false;
@@ -383,20 +383,20 @@ trait Core_Admin_UI {
 			// If using license, check license plan
 			if ( $bbai_has_license && $bbai_license_data && isset( $bbai_license_data['organization'] ) ) {
 				$bbai_license_plan = strtolower( $bbai_license_data['organization']['plan'] ?? 'free' );
-				if ( $bbai_license_plan !== 'free' ) {
+				if ( 'free' !== $bbai_license_plan ) {
 					$bbai_plan_slug = $bbai_license_plan;
 				}
 			} elseif ( $bbai_is_authenticated ) {
 				// For authenticated users without license, try to get plan from usage stats
 				require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 				$bbai_usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display( false );
-				if ( isset( $bbai_usage_stats['plan'] ) && $bbai_usage_stats['plan'] !== 'free' ) {
+				if ( isset( $bbai_usage_stats['plan'] ) && 'free' !== $bbai_usage_stats['plan'] ) {
 					$bbai_plan_slug = $bbai_usage_stats['plan'];
 				}
 			}
 
-			$bbai_is_agency = ( $bbai_plan_slug === 'agency' );
-			$bbai_is_pro    = ( $bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency' );
+			$bbai_is_agency = ( 'agency' === $bbai_plan_slug );
+			$bbai_is_pro    = ( 'pro' === $bbai_plan_slug || 'agency' === $bbai_plan_slug );
 
 			// Visible primary navigation only includes the main product workflow areas.
 			$bbai_tabs = array(
@@ -444,14 +444,14 @@ trait Core_Admin_UI {
 				// Determine current tab from URL
 	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 				$bbai_page_input   = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'bbai';
-				$bbai_current_page = $bbai_page_input ?: 'bbai';
+				$bbai_current_page = $bbai_page_input ? $bbai_page_input : 'bbai';
 				$tab_from_page     = $bbai_page_to_tab[ $bbai_current_page ] ?? 'dashboard';
 				$tab_from_page     = $bbai_tab_aliases[ $tab_from_page ] ?? $tab_from_page;
 
 				// Use tab from URL parameter if provided, otherwise use page slug mapping
 	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 				$bbai_tab_input     = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
-				$bbai_requested_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+				$bbai_requested_tab = '' !== $bbai_tab_input ? $bbai_tab_input : $tab_from_page;
 				$bbai_requested_tab = $bbai_tab_aliases[ $bbai_requested_tab ] ?? $bbai_requested_tab;
 
 			if ( 'debug' === $bbai_requested_tab && $bbai_can_show_debug_tab ) {
@@ -575,7 +575,7 @@ trait Core_Admin_UI {
 							if ( $bbai_has_license && ! $bbai_is_authenticated ) {
 								$bbai_license_data = $this->api_client->get_license_data();
 								$org_name          = isset( $bbai_license_data['organization']['name'] ) ? (string) $bbai_license_data['organization']['name'] : '';
-								$connected_email   = $org_name ?: __( 'License Active', 'beepbeep-ai-alt-text-generator' );
+								$connected_email   = $org_name ? $org_name : __( 'License Active', 'beepbeep-ai-alt-text-generator' );
 							}
 							?>
 							<!-- Compact Account Bar in Header -->
@@ -664,7 +664,7 @@ trait Core_Admin_UI {
 								<span class="bbai-header-credits-note"><?php esc_html_e( 'Free plan', 'beepbeep-ai-alt-text-generator' ); ?></span>
 								<?php endif; ?>
 								<?php endif; ?>
-								<?php if ( $bbai_plan_slug === 'free' && ! $bbai_has_license && ! $bbai_trait_header_free_inline ) : ?>
+								<?php if ( 'free' === $bbai_plan_slug && ! $bbai_has_license && ! $bbai_trait_header_free_inline ) : ?>
 									<button type="button" class="bbai-header-upgrade-btn" data-action="show-upgrade-modal">
 										<?php esc_html_e( 'Upgrade', 'beepbeep-ai-alt-text-generator' ); ?>
 									</button>
@@ -686,12 +686,12 @@ trait Core_Admin_UI {
 			</div>
 			
 			<!-- Main Content Container - uniform width across all tabs -->
-			<div class="bbai-container bbai-content-shell<?php echo ( isset( $bbai_tab ) && $bbai_tab === 'dashboard' ) ? ' bbai-dashboard-shell' : ''; ?>">
+			<div class="bbai-container bbai-content-shell<?php echo ( isset( $bbai_tab ) && 'dashboard' === $bbai_tab ) ? ' bbai-dashboard-shell' : ''; ?>">
 
 			<?php
 			// Ensure usage stats for banner when on dashboard.
 			if (
-				( $bbai_tab === 'dashboard' || $bbai_tab === 'library' || $bbai_tab === 'analytics' || $bbai_tab === 'usage' ) &&
+				( 'dashboard' === $bbai_tab || 'library' === $bbai_tab || 'analytics' === $bbai_tab || 'usage' === $bbai_tab ) &&
 				( $bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user ) &&
 				( ! isset( $bbai_usage_stats ) || ! is_array( $bbai_usage_stats ) )
 			) {
@@ -701,7 +701,7 @@ trait Core_Admin_UI {
 			// Usage limit banner - dashboard only, when monthly limit reached.
 			$bbai_banner_limit_reached = false;
 			if (
-				$bbai_tab === 'dashboard' &&
+				'dashboard' === $bbai_tab &&
 				isset( $bbai_usage_stats ) &&
 				is_array( $bbai_usage_stats ) &&
 				( $bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user )
@@ -716,7 +716,7 @@ trait Core_Admin_UI {
 			/* Banner is rendered inside dashboard-body.php when on dashboard tab */
 			?>
 
-			<?php if ( $bbai_tab === 'dashboard' ) : ?>
+			<?php if ( 'dashboard' === $bbai_tab ) : ?>
 				<?php
 				$bbai_dashboard_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-tab.php';
 				bbai_render_layout_template(
@@ -727,7 +727,7 @@ trait Core_Admin_UI {
 				);
 				?>
 
-<?php elseif ( $bbai_tab === 'library' && ( $bbai_is_authenticated || $bbai_has_license || ! $bbai_has_registered_user ) ) : ?>
+<?php elseif ( 'library' === $bbai_tab && ( $bbai_is_authenticated || $bbai_has_license || ! $bbai_has_registered_user ) ) : ?>
 	<?php
 	$bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
 	bbai_render_layout_template(
@@ -738,7 +738,7 @@ trait Core_Admin_UI {
 	);
 	?>
 
-<?php elseif ( $bbai_tab === 'help' || $bbai_page_slug === 'bbai-guide' ) : ?>
+<?php elseif ( 'help' === $bbai_tab || 'bbai-guide' === $bbai_page_slug ) : ?>
 			<?php
 			$bbai_guide_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/guide-tab.php';
 			bbai_render_layout_template(
@@ -749,7 +749,7 @@ trait Core_Admin_UI {
 			);
 			?>
 
-<?php elseif ( $bbai_tab === 'usage' && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
+<?php elseif ( 'usage' === $bbai_tab && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
 	<?php
 	$bbai_credit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-tab.php';
 	bbai_render_layout_template(
@@ -759,7 +759,7 @@ trait Core_Admin_UI {
 		$this
 	);
 	?>
-<?php elseif ( $bbai_tab === 'agency-overview' && $bbai_is_agency ) : ?>
+<?php elseif ( 'agency-overview' === $bbai_tab && $bbai_is_agency ) : ?>
 	<?php
 	$bbai_agency_overview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/agency-overview-tab.php';
 	if ( file_exists( $bbai_agency_overview_partial ) ) {
@@ -768,7 +768,7 @@ trait Core_Admin_UI {
 		esc_html_e( 'Agency overview content unavailable.', 'beepbeep-ai-alt-text-generator' );
 	}
 	?>
-<?php elseif ( $bbai_tab === 'analytics' && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
+<?php elseif ( 'analytics' === $bbai_tab && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
 	<?php
 	// Ensure usage_stats is available for analytics tab
 	if ( ! isset( $bbai_usage_stats ) ) {
@@ -783,7 +783,7 @@ trait Core_Admin_UI {
 	);
 	?>
 
-<?php elseif ( $bbai_tab === 'settings' ) : ?>
+<?php elseif ( 'settings' === $bbai_tab ) : ?>
 			<?php
 			$bbai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
 			bbai_render_layout_template(
@@ -794,7 +794,7 @@ trait Core_Admin_UI {
 			);
 			?>
 
-			<?php elseif ( $bbai_tab === 'admin' && $bbai_is_pro_for_admin ) : ?>
+			<?php elseif ( 'admin' === $bbai_tab && $bbai_is_pro_for_admin ) : ?>
 			<!-- Admin Tab - Debug Logs and Settings for Pro and Agency -->
 				<?php
 				// Check if user is authenticated via API (JWT token or license) OR has admin session

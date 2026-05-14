@@ -21,7 +21,7 @@ trait Api_Usage {
 		$cache_key = 'bbai_usage_cache';
 		if ( ! $force_refresh ) {
 			$cached = get_transient( $cache_key );
-			if ( $cached !== false && is_array( $cached ) ) {
+			if ( false !== $cached && is_array( $cached ) ) {
 				return $cached;
 			}
 		}
@@ -32,7 +32,7 @@ trait Api_Usage {
 
 		if ( is_wp_error( $response ) ) {
 			$cached = get_transient( $cache_key );
-			if ( $cached !== false ) {
+			if ( false !== $cached ) {
 				return $cached;
 			}
 			return $response;
@@ -129,12 +129,12 @@ trait Api_Usage {
 		}
 
 		$plan = strtolower( $usage['plan'] ?? 'free' );
-		if ( $plan === 'pro' || $plan === 'agency' ) {
+		if ( 'pro' === $plan || 'agency' === $plan ) {
 			return false;
 		}
 
 		$remaining = isset( $usage['remaining'] ) ? intval( $usage['remaining'] ) : null;
-		if ( $remaining !== null && $remaining <= 0 ) {
+		if ( null !== $remaining && $remaining <= 0 ) {
 			return true;
 		}
 

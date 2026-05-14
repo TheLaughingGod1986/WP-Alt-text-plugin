@@ -77,7 +77,7 @@ class Credit_Usage_Logger {
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', self::table() )
 		);
-		return $exists === self::table();
+		return self::table() === $exists;
 	}
 
 	/**
@@ -103,7 +103,7 @@ class Credit_Usage_Logger {
 		$attachment_id = absint( $attachment_id );
 		$user_id       = absint( $user_id );
 		$credits_used  = absint( $credits_used );
-		$token_cost    = $token_cost !== null ? floatval( $token_cost ) : null;
+		$token_cost    = null !== $token_cost ? floatval( $token_cost ) : null;
 		$model         = sanitize_text_field( $model );
 		$source        = sanitize_key( $source );
 
@@ -156,7 +156,7 @@ class Credit_Usage_Logger {
 
 		foreach ( $ip_keys as $key ) {
 			$server_value = isset( $_SERVER[ $key ] ) ? sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) ) : '';
-			if ( $server_value === '' ) {
+			if ( '' === $server_value ) {
 				continue;
 			}
 			$ip = $server_value;
@@ -181,7 +181,7 @@ class Credit_Usage_Logger {
 	 * @return string
 	 */
 	private static function anonymize_ip_address( $ip ) {
-		if ( ! is_string( $ip ) || $ip === '' ) {
+		if ( ! is_string( $ip ) || '' === $ip ) {
 			return '';
 		}
 
@@ -196,7 +196,7 @@ class Credit_Usage_Logger {
 
 		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
 			$packed = @inet_pton( $ip );
-			if ( $packed === false ) {
+			if ( false === $packed ) {
 				return '';
 			}
 			$masked = substr( $packed, 0, 8 ) . str_repeat( "\0", 8 );
@@ -220,7 +220,7 @@ class Credit_Usage_Logger {
 		}
 
 		$raw = trim( sanitize_text_field( (string) $value ) );
-		if ( $raw === '' ) {
+		if ( '' === $raw ) {
 			return null;
 		}
 
@@ -253,11 +253,11 @@ class Credit_Usage_Logger {
 		$source       = is_scalar( $source_input ) ? sanitize_key( (string) $source_input ) : '';
 
 		return array(
-			'has_date_from' => $date_from !== null ? 1 : 0,
-			'date_from'     => $date_from !== null ? $date_from : '',
-			'has_date_to'   => $date_to !== null ? 1 : 0,
-			'date_to'       => $date_to !== null ? $date_to : '',
-			'has_source'    => $source !== '' ? 1 : 0,
+			'has_date_from' => null !== $date_from ? 1 : 0,
+			'date_from'     => null !== $date_from ? $date_from : '',
+			'has_date_to'   => null !== $date_to ? 1 : 0,
+			'date_to'       => null !== $date_to ? $date_to : '',
+			'has_source'    => '' !== $source ? 1 : 0,
 			'source'        => $source,
 		);
 	}
@@ -273,10 +273,10 @@ class Credit_Usage_Logger {
 		$date_to   = (string) ( $filter_state['date_to'] ?? '' );
 
 		// Avoid invalid DATETIME comparisons when a date filter is disabled.
-		if ( $date_from === '' ) {
+		if ( '' === $date_from ) {
 			$date_from = '1970-01-01 00:00:00';
 		}
-		if ( $date_to === '' ) {
+		if ( '' === $date_to ) {
 			$date_to = '9999-12-31 23:59:59';
 		}
 
@@ -530,7 +530,7 @@ class Credit_Usage_Logger {
 			)
 		);
 
-		$result = absint( $total_events ?: 0 );
+		$result = absint( $total_events ? $total_events : 0 );
 		BBAI_Cache::set( 'credit_usage', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
 		return $result;
 	}
@@ -570,7 +570,7 @@ class Credit_Usage_Logger {
 			return $cached;
 		}
 
-		$user_filter     = ( $args['user_id'] !== null && $args['user_id'] !== '' ) ? absint( $args['user_id'] ) : 0;
+		$user_filter     = ( null !== $args['user_id'] && '' !== $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
 		$has_user_filter = $user_filter > 0 ? 1 : 0;
 
 		$table        = esc_sql( self::table() );
@@ -710,7 +710,7 @@ class Credit_Usage_Logger {
 		$wp_user = get_user_by( 'ID', $user_id );
 		if ( $wp_user instanceof \WP_User ) {
 			return array(
-				'display_name' => $wp_user->display_name ?: $wp_user->user_login,
+				'display_name' => $wp_user->display_name ? $wp_user->display_name : $wp_user->user_login,
 				'user_email'   => (string) $wp_user->user_email,
 			);
 		}
@@ -760,7 +760,7 @@ class Credit_Usage_Logger {
 			return $cached;
 		}
 
-			$user_filter     = ( $args['user_id'] !== null && $args['user_id'] !== '' ) ? absint( $args['user_id'] ) : 0;
+			$user_filter     = ( null !== $args['user_id'] && '' !== $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
 			$has_user_filter = $user_filter > 0 ? 1 : 0;
 			$order_is_asc    = strtoupper( $args['order'] ) === 'ASC';
 			$orderby_input   = ( isset( $args['orderby'] ) && is_string( $args['orderby'] ) ) ? sanitize_key( $args['orderby'] ) : '';
@@ -775,7 +775,7 @@ class Credit_Usage_Logger {
 				self::get_usage_filter_params( $filter_state )
 			);
 
-		if ( $orderby_input === 'total_images' ) {
+		if ( 'total_images' === $orderby_input ) {
 			if ( $order_is_asc ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$all_results = $wpdb->get_results(
@@ -799,7 +799,7 @@ class Credit_Usage_Logger {
 					ARRAY_A
 				);
 			}
-		} elseif ( $orderby_input === 'last_activity' ) {
+		} elseif ( 'last_activity' === $orderby_input ) {
 			if ( $order_is_asc ) {
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$all_results = $wpdb->get_results(
@@ -875,7 +875,7 @@ class Credit_Usage_Logger {
 			// Format last_activity date for display
 			if ( ! empty( $user_data['last_activity'] ) ) {
 				$last_activity_timestamp = strtotime( $user_data['last_activity'] );
-				if ( $last_activity_timestamp !== false ) {
+				if ( false !== $last_activity_timestamp ) {
 					$user_data['latest_activity'] = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last_activity_timestamp );
 				} else {
 					$user_data['latest_activity'] = '';
@@ -1009,7 +1009,7 @@ class Credit_Usage_Logger {
 		// Get user info
 		$wp_user = get_user_by( 'ID', $user_id );
 		if ( $wp_user instanceof \WP_User ) {
-			$user_name  = $wp_user->display_name ?: $wp_user->user_login;
+			$user_name  = $wp_user->display_name ? $wp_user->display_name : $wp_user->user_login;
 			$user_email = $wp_user->user_email;
 		} elseif ( $user_id > 0 ) {
 			// User ID exists but user not found - show user ID instead of "Unknown User"
@@ -1028,7 +1028,8 @@ class Credit_Usage_Logger {
 			if ( $attachment ) {
 				$item['attachment_url']      = wp_get_attachment_url( $attachment_id );
 				$item['attachment_title']    = get_the_title( $attachment_id );
-				$item['attachment_filename'] = wp_basename( get_attached_file( $attachment_id ) ?: '' );
+				$attached_file               = get_attached_file( $attachment_id );
+				$item['attachment_filename'] = wp_basename( $attached_file ? $attached_file : '' );
 			}
 		}
 

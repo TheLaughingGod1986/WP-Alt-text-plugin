@@ -123,7 +123,8 @@ $bbai_format_reset_value = static function ( ?int $days_until_reset, string $fal
 	}
 
 	if ( '' !== $fallback ) {
-		return preg_replace( '/^Resets\s+/i', '', $fallback ) ?: $fallback;
+		$stripped = preg_replace( '/^Resets\s+/i', '', $fallback );
+		return $stripped ? $stripped : $fallback;
 	}
 
 	return __( 'Monthly', 'beepbeep-ai-alt-text-generator' );
@@ -353,7 +354,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 
 	$bbai_reset_raw           = (string) ( $bbai_usage_stats['reset_date'] ?? '' );
 	$bbai_reset_timestamp_raw = isset( $bbai_usage_stats['reset_timestamp'] ) ? (int) $bbai_usage_stats['reset_timestamp'] : 0;
-	$bbai_reset_ts            = $bbai_reset_timestamp_raw > 0 ? $bbai_reset_timestamp_raw : ( $bbai_reset_raw !== '' ? strtotime( $bbai_reset_raw ) : false );
+	$bbai_reset_ts            = $bbai_reset_timestamp_raw > 0 ? $bbai_reset_timestamp_raw : ( '' !== $bbai_reset_raw ? strtotime( $bbai_reset_raw ) : false );
 	$bbai_has_reset_timestamp = is_numeric( $bbai_reset_ts ) && (int) $bbai_reset_ts > 0;
 
 	$bbai_days_until_reset = null;
@@ -371,7 +372,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		)
 		: $bbai_format_reset_timing(
 			$bbai_days_until_reset,
-			( $bbai_reset_raw !== '' || $bbai_has_reset_timestamp )
+			( '' !== $bbai_reset_raw || $bbai_has_reset_timestamp )
 				? sprintf(
 					/* translators: %s: formatted reset date. */
 					__( 'Resets %s', 'beepbeep-ai-alt-text-generator' ),
@@ -386,7 +387,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 			__( 'Create a free account to keep your progress and unlock %d monthly generations', 'beepbeep-ai-alt-text-generator' ),
 			$bbai_free_plan_offer
 		)
-		: ( ( $bbai_reset_raw !== '' || $bbai_has_reset_timestamp )
+		: ( ( '' !== $bbai_reset_raw || $bbai_has_reset_timestamp )
 			? sprintf(
 				/* translators: %s: formatted credit reset date. */
 				__( 'Credits reset %s', 'beepbeep-ai-alt-text-generator' ),
@@ -414,7 +415,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 	$bbai_attn_total_need        = $bbai_missing_count + $bbai_weak_count;
 	$bbai_coverage_percent       = $bbai_total_images > 0 ? (int) round( ( $bbai_optimized_count / $bbai_total_images ) * 100 ) : 0;
 	// Match FTUE: credits spent but no visible library rows yet (optimized or needs-review).
-	$bbai_coverage_processing    = ( $bbai_credits_used > 0 && $bbai_optimized_count === 0 && $bbai_weak_count === 0 );
+	$bbai_coverage_processing    = ( $bbai_credits_used > 0 && 0 === $bbai_optimized_count && 0 === $bbai_weak_count );
 	$bbai_coverage_processing_ui = $bbai_coverage_processing && $bbai_total_images > 0;
 	if ( $bbai_has_no_saas_account ) {
 		$bbai_coverage_processing    = false;
@@ -462,7 +463,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		? 'conic-gradient(#e2e8f0 0deg 360deg)'
 		: $bbai_donut_background;
 
-	$bbai_state_is_healthy       = $bbai_missing_count === 0 && $bbai_weak_count === 0 && $bbai_total_images > 0;
+	$bbai_state_is_healthy       = 0 === $bbai_missing_count && 0 === $bbai_weak_count && $bbai_total_images > 0;
 	$bbai_state_is_pro_plan      = $bbai_is_premium;
 	$bbai_state_missing_count    = $bbai_missing_count;
 	$bbai_state_weak_count       = $bbai_weak_count;
@@ -486,9 +487,9 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 	$bbai_state_days_until_reset  = null !== $bbai_days_until_reset ? (int) $bbai_days_until_reset : 0;
 	$bbai_state_usage_percent     = $bbai_usage_percent;
 	$bbai_state_is_low_credits    = $bbai_state_credits_remaining > 0 && $bbai_state_credits_remaining <= $bbai_low_credit_threshold;
-	$bbai_state_is_out_of_credits = $bbai_state_credits_remaining === 0;
+	$bbai_state_is_out_of_credits = 0 === $bbai_state_credits_remaining;
 	$bbai_state_has_scan_history  = $bbai_has_scan_history;
-	$bbai_state_is_first_run      = ! $bbai_state_has_scan_history || $bbai_state_total_images === 0;
+	$bbai_state_is_first_run      = ! $bbai_state_has_scan_history || 0 === $bbai_state_total_images;
 	$bbai_product_resolve_args    = array(
 		'is_guest_trial' => $bbai_is_guest_trial,
 		'is_premium'     => $bbai_state_is_pro_plan,
@@ -1084,7 +1085,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 				),
 				$bbai_li_job_for_ctx,
 				$bbai_li_system_error,
-				$bbai_li_last_run_for_ctx ?: ( $bbai_last_scan_timestamp > 0 ? gmdate( 'c', $bbai_last_scan_timestamp ) : null ),
+				$bbai_li_last_run_for_ctx ? $bbai_li_last_run_for_ctx : ( $bbai_last_scan_timestamp > 0 ? gmdate( 'c', $bbai_last_scan_timestamp ) : null ),
 				$bbai_li_plan_ctx
 			);
 

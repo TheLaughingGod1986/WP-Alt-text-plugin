@@ -24,7 +24,7 @@ trait Core_Export {
 	 * @return string
 	 */
 	private function bbai_csv_safe_cell( $value, bool $allow_html = false ): string {
-		if ( $value === null ) {
+		if ( null === $value ) {
 			$value = '';
 		} elseif ( is_bool( $value ) ) {
 			$value = $value ? '1' : '0';
@@ -32,14 +32,14 @@ trait Core_Export {
 			$value = (string) $value;
 		} else {
 			$encoded = wp_json_encode( $value );
-			$value   = $encoded === false ? '' : (string) $encoded;
+			$value   = false === $encoded ? '' : (string) $encoded;
 		}
 
 		// CSV isn't HTML, but output is user-controlled; sanitize to avoid exporting unsafe content.
 		$value = $allow_html ? wp_kses_post( $value ) : sanitize_text_field( $value );
 
 		// Prefix every non-empty value to prevent CSV injection in spreadsheet software.
-		if ( $value !== '' && strpos( $value, "\t" ) !== 0 ) {
+		if ( '' !== $value && strpos( $value, "\t" ) !== 0 ) {
 			$value = "\t" . $value;
 		}
 
@@ -58,7 +58,7 @@ trait Core_Export {
 
 		$out = array();
 		foreach ( $fields as $field ) {
-			if ( $field === null ) {
+			if ( null === $field ) {
 				$field = '';
 			} elseif ( is_bool( $field ) ) {
 				$field = $field ? '1' : '0';
@@ -66,7 +66,7 @@ trait Core_Export {
 				$field = (string) $field;
 			} else {
 				$encoded = wp_json_encode( $field );
-				$field   = $encoded === false ? '' : (string) $encoded;
+				$field   = false === $encoded ? '' : (string) $encoded;
 			}
 
 			$needs_enclosure = strpbrk( $field, $delimiter . $enclosure . "\r\n\t\v\0" ) !== false;

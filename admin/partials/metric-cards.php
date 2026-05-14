@@ -51,7 +51,7 @@ $bbai_wrapper_class = isset( $bbai_wrapper_class ) ? $bbai_wrapper_class : 'bbai
 		<div class="bbai-metric-sublabel"><?php esc_html_e( 'TIME SAVED', 'beepbeep-ai-alt-text-generator' ); ?></div>
 		<div class="bbai-metric-description">
 			<?php
-			if ( $bbai_description_mode === 'empty' ) {
+			if ( 'empty' === $bbai_description_mode ) {
 				esc_html_e( 'Start optimizing to see your time savings', 'beepbeep-ai-alt-text-generator' );
 			} else {
 				esc_html_e( 'Estimated manual writing time saved this month', 'beepbeep-ai-alt-text-generator' );
@@ -73,7 +73,7 @@ $bbai_wrapper_class = isset( $bbai_wrapper_class ) ? $bbai_wrapper_class : 'bbai
 		<div class="bbai-metric-sublabel"><?php esc_html_e( 'OPTIMIZED', 'beepbeep-ai-alt-text-generator' ); ?></div>
 		<div class="bbai-metric-description">
 			<?php
-			if ( $bbai_description_mode === 'empty' ) {
+			if ( 'empty' === $bbai_description_mode ) {
 				esc_html_e( 'Start optimizing to see your progress', 'beepbeep-ai-alt-text-generator' );
 			} else {
 				esc_html_e( 'AI-generated ALT text added to your media library', 'beepbeep-ai-alt-text-generator' );
@@ -99,7 +99,7 @@ $bbai_wrapper_class = isset( $bbai_wrapper_class ) ? $bbai_wrapper_class : 'bbai
 		<div class="bbai-metric-sublabel"><?php esc_html_e( 'MEDIA ALT', 'beepbeep-ai-alt-text-generator' ); ?></div>
 		<div class="bbai-metric-description">
 			<?php
-			if ( $bbai_description_mode === 'empty' ) {
+			if ( 'empty' === $bbai_description_mode ) {
 				esc_html_e( 'Start optimizing to boost your SEO score', 'beepbeep-ai-alt-text-generator' );
 			} else {
 				esc_html_e( 'Share of images with descriptive ALT text', 'beepbeep-ai-alt-text-generator' );

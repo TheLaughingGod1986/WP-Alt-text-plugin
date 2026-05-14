@@ -120,7 +120,7 @@ class BBAI_Upgrade_State {
 				'coverage_pct'    => $coverage_pct,
 				'days_reset'      => $days_reset,
 				'days_since_scan' => $days_since_scan,
-				'upgrade_url'     => $upgrade_url ?: 'https://beepbeep.ai/pricing',
+				'upgrade_url'     => $upgrade_url ? $upgrade_url : 'https://beepbeep.ai/pricing',
 				'context'         => $context,
 			)
 		);

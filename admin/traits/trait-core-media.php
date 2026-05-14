@@ -181,7 +181,8 @@ trait Core_Media {
 		$completion      = intval( get_post_meta( $attachment_id, '_bbai_tokens_completion', true ) );
 		$generated_input = get_post_meta( $attachment_id, '_bbai_generated_at', true );
 		$generated       = $generated_input ? mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $generated_input ) : '';
-		$source_key      = sanitize_key( get_post_meta( $attachment_id, '_bbai_source', true ) ?: 'unknown' );
+		$source_meta     = get_post_meta( $attachment_id, '_bbai_source', true );
+		$source_key      = sanitize_key( $source_meta ? $source_meta : 'unknown' );
 		if ( ! $source_key ) {
 			$source_key = 'unknown';
 		}

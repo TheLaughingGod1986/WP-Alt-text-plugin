@@ -114,7 +114,7 @@ class Dashboard_State {
 				'generate_available'          => $generate_available,
 				'lock_generation_actions'     => ! $generate_available && ( $is_guest_trial || ! $is_premium ),
 				'show_trial_helper_copy'      => $is_guest_trial && ! $trial_status['exhausted'],
-				'show_exhausted_upgrade_wall' => $base_state === self::STATE_LOGGED_OUT_TRIAL_EXHAUSTED,
+				'show_exhausted_upgrade_wall' => self::STATE_LOGGED_OUT_TRIAL_EXHAUSTED === $base_state,
 			),
 			'cta'              => array(
 				'primary_mode' => self::resolve_primary_cta_mode(
@@ -373,7 +373,7 @@ class Dashboard_State {
 		$total   = (int) ( $model['_total_images'] ?? 0 );
 
 		// All images optimized.
-		if ( $total > 0 && $missing === 0 && $weak === 0 ) {
+		if ( $total > 0 && 0 === $missing && 0 === $weak ) {
 			return self::FUNNEL_COMPLETE;
 		}
 

@@ -156,7 +156,7 @@ class BBAI_Alt_Quality_Scorer {
 	public static function score( $alt_text, $context = array() ) {
 		$alt_text = is_string( $alt_text ) ? trim( $alt_text ) : '';
 
-		if ( $alt_text === '' ) {
+		if ( '' === $alt_text ) {
 			return self::build_result(
 				0,
 				array(),
@@ -180,7 +180,7 @@ class BBAI_Alt_Quality_Scorer {
 		 * ────────────────────────────────────────────── */
 		$hard_fail = self::check_hard_fails( $alt_text, $context, $issues, $suggestions );
 
-		if ( $hard_fail !== false ) {
+		if ( false !== $hard_fail ) {
 			// Build minimal breakdown — everything is bad.
 			$breakdown = self::zero_breakdown();
 			return self::build_result( $hard_fail, $breakdown, $issues, $suggestions, true, $hard_fail, $alt_text );
@@ -336,7 +336,7 @@ PROMPT;
 		}
 
 		// ── Single word ──
-		if ( $word_count === 1 ) {
+		if ( 1 === $word_count ) {
 			// Allow only if it's a recognized proper noun / brand — but we can't know that here.
 			// A single word is never adequate ALT text.
 			$issues[]      = __( 'ALT text is a single word — too brief to be meaningful.', 'beepbeep-ai-alt-text-generator' );
@@ -361,7 +361,7 @@ PROMPT;
 		}
 
 		// ── Two words, both non-descriptive ──
-		if ( $word_count === 2 ) {
+		if ( 2 === $word_count ) {
 			$all_non = true;
 			foreach ( $lc_words as $w ) {
 				$is_placeholder = in_array( $w, self::$placeholder_words, true );
@@ -427,7 +427,7 @@ PROMPT;
 		if ( ! empty( $context['filename'] ) ) {
 			$normalized_alt  = self::normalize_for_comparison( $alt_text );
 			$normalized_file = self::normalize_for_comparison( pathinfo( $context['filename'], PATHINFO_FILENAME ) );
-			if ( $normalized_file !== '' && $normalized_alt === $normalized_file ) {
+			if ( '' !== $normalized_file && $normalized_alt === $normalized_file ) {
 				$issues[]      = __( 'ALT text is identical to the filename — rewrite it to describe the image.', 'beepbeep-ai-alt-text-generator' );
 				$suggestions[] = __( 'Write what the image actually shows instead of repeating the file name.', 'beepbeep-ai-alt-text-generator' );
 				return self::CAP_TOO_FEW_WORDS;
@@ -548,7 +548,7 @@ PROMPT;
 		if ( ! empty( $context['title'] ) ) {
 			$title_norm = self::normalize_for_comparison( $context['title'] );
 			$alt_norm   = self::normalize_for_comparison( $alt_text );
-			if ( $title_norm !== '' && $alt_norm === $title_norm ) {
+			if ( '' !== $title_norm && $alt_norm === $title_norm ) {
 				$rel     -= 10;
 				$issues[] = __( 'Identical to the attachment title — add more unique detail.', 'beepbeep-ai-alt-text-generator' );
 			}
@@ -665,7 +665,7 @@ PROMPT;
 	private static function build_result( $score, $breakdown, $issues, $suggestions, $hard_fail, $cap, $alt_text = '' ) {
 		$score = max( 0, min( 100, (int) $score ) );
 
-		$breakdown = $breakdown ?: self::zero_breakdown();
+		$breakdown = $breakdown ? $breakdown : self::zero_breakdown();
 
 		$optimized_eligible = ! $hard_fail
 			&& $score >= 70
@@ -682,7 +682,7 @@ PROMPT;
 		$suggestions = array_values( array_unique( array_filter( $suggestions ) ) );
 
 		$library_status = 'needs_review';
-		if ( (string) $alt_text === '' ) {
+		if ( (string) '' === $alt_text ) {
 			$library_status = 'missing';
 		} elseif ( $optimized_eligible && $score >= 70 ) {
 			$library_status = 'optimized';
@@ -865,7 +865,7 @@ PROMPT;
 
 	private static function passes_minimum_descriptive_alt( $alt_text ) {
 		$alt_text = trim( (string) $alt_text );
-		if ( $alt_text === '' ) {
+		if ( '' === $alt_text ) {
 			return false;
 		}
 		$words    = preg_split( '/\s+/', $alt_text, -1, PREG_SPLIT_NO_EMPTY );

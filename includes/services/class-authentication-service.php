@@ -310,7 +310,7 @@ class Authentication_Service {
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
-				'message' => $result->get_error_message() ?: __( 'Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator' ),
+				'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 

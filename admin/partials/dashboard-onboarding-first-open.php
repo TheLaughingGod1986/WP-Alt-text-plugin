@@ -18,17 +18,21 @@ if ( ! in_array( $bbai_ob_phase, array( 'pre_scan', 'post_scan' ), true ) ) {
 	return;
 }
 
-$bbai_missing_ob = isset( $missingCount ) ? max( 0, (int) $missingCount ) : 0;
-$bbai_weak_ob    = isset( $weakCount ) ? max( 0, (int) $weakCount ) : 0;
-$bbai_total_ob   = isset( $totalImages ) ? max( 0, (int) $totalImages ) : 0;
-$bbai_credits_ob = isset( $creditsRemaining ) ? max( 0, (int) $creditsRemaining ) : 0;
-$bbai_usage_ob   = isset( $usagePercent ) ? max( 0, min( 100, (int) $usagePercent ) ) : 0;
-$bbai_is_pro_ob  = ! empty( $isProPlan );
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase -- camelCase vars come from legacy JS-injected scope.
+$bbai_missing_ob      = isset( $missingCount ) ? max( 0, (int) $missingCount ) : 0;
+$bbai_weak_ob         = isset( $weakCount ) ? max( 0, (int) $weakCount ) : 0;
+$bbai_total_ob        = isset( $totalImages ) ? max( 0, (int) $totalImages ) : 0;
+$bbai_credits_ob      = isset( $creditsRemaining ) ? max( 0, (int) $creditsRemaining ) : 0;
+$bbai_usage_ob        = isset( $usagePercent ) ? max( 0, min( 100, (int) $usagePercent ) ) : 0;
+$bbai_is_pro_ob       = ! empty( $isProPlan );
+// phpcs:enable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
 $bbai_attn_ob    = isset( $bbai_attn_total_need ) ? max( 0, (int) $bbai_attn_total_need ) : ( $bbai_missing_ob + $bbai_weak_ob );
 $bbai_session_ob = isset( $bbai_ftue_session_images ) ? max( 0, (int) $bbai_ftue_session_images ) : 0;
 
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
 $bbai_opt_ob          = isset( $optimizedCount ) ? max( 0, (int) $optimizedCount ) : 0;
 $bbai_credits_used_ob = isset( $creditsUsed ) ? max( 0, (int) $creditsUsed ) : 0;
+// phpcs:enable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
 /** At least one image shows ALT in library (optimized or needs-review bucket) — not “credits spent”. */
 $bbai_has_visible_alt_ob = $bbai_opt_ob > 0 || $bbai_weak_ob > 0;
 /**

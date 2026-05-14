@@ -74,7 +74,7 @@ trait Core_Ajax_Auth {
 					$error_data = $result->get_error_data();
 
 					// Handle site already has license (credit sharing)
-				if ( $error_code === 'site_has_license' || $error_code === 'SITE_HAS_LICENSE' ) {
+				if ( 'site_has_license' === $error_code || 'SITE_HAS_LICENSE' === $error_code ) {
 					$existing_email = isset( $error_data['existing_email'] ) ? $error_data['existing_email'] : '';
 					wp_send_json_error(
 						array(
@@ -90,7 +90,7 @@ trait Core_Ajax_Auth {
 					return;
 				}
 
-				if ( $error_code === 'free_plan_exists' || ( is_string( $error_message ) && strpos( strtolower( $error_message ), 'free plan' ) !== false ) ) {
+				if ( 'free_plan_exists' === $error_code || ( is_string( $error_message ) && strpos( strtolower( $error_message ), 'free plan' ) !== false ) ) {
 					wp_send_json_error(
 						array(
 							'message' => __( 'A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator' ),
@@ -100,7 +100,7 @@ trait Core_Ajax_Auth {
 					return;
 				}
 
-				if ( $error_code === 'invite_required' ) {
+				if ( 'invite_required' === $error_code ) {
 					$invite_url = '';
 					if ( is_array( $error_data ) && isset( $error_data['invite_url'] ) ) {
 						$invite_url = esc_url_raw( (string) $error_data['invite_url'] );
@@ -190,7 +190,7 @@ trait Core_Ajax_Auth {
 		if ( is_wp_error( $result ) ) {
 			$error_code = $result->get_error_code();
 			$error_data = $result->get_error_data();
-			if ( $error_code === 'site_has_license' || $error_code === 'SITE_HAS_LICENSE' ) {
+			if ( 'site_has_license' === $error_code || 'SITE_HAS_LICENSE' === $error_code ) {
 				$existing_email = '';
 				if ( is_array( $error_data ) && isset( $error_data['existing_email'] ) ) {
 					$existing_email = sanitize_email( (string) $error_data['existing_email'] );
@@ -205,7 +205,7 @@ trait Core_Ajax_Auth {
 				return;
 			}
 
-			if ( $error_code === 'invite_required' ) {
+			if ( 'invite_required' === $error_code ) {
 				$invite_url = '';
 				if ( is_array( $error_data ) && isset( $error_data['invite_url'] ) ) {
 					$invite_url = esc_url_raw( (string) $error_data['invite_url'] );

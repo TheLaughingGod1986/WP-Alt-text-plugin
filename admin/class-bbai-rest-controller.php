@@ -850,8 +850,8 @@ class REST_Controller {
 			'date'      => is_string( $date_input ) ? sanitize_text_field( $date_input ) : '',
 			'date_from' => is_string( $date_from_input ) ? sanitize_text_field( $date_from_input ) : '',
 			'date_to'   => is_string( $date_to_input ) ? sanitize_text_field( $date_to_input ) : '',
-			'per_page'  => absint( $per_page_input ?: 10 ),
-			'page'      => absint( $page_input ?: 1 ),
+			'per_page'  => absint( $per_page_input ? $per_page_input : 10 ),
+			'page'      => absint( $page_input ? $page_input : 1 ),
 		);
 
 		return rest_ensure_response( $this->core->get_debug_payload( $args ) );
@@ -951,17 +951,17 @@ class REST_Controller {
 
 				// Convert WP_Error to REST error response
 				$status = 500;
-				if ( $error_code === 'limit_reached' || $error_code === 'bbai_trial_exhausted' ) {
+				if ( 'limit_reached' === $error_code || 'bbai_trial_exhausted' === $error_code ) {
 					$status = 403;
-				} elseif ( $error_code === 'auth_required' || $error_code === 'user_not_found' ) {
+				} elseif ( 'auth_required' === $error_code || 'user_not_found' === $error_code ) {
 					$status = 401;
-				} elseif ( $error_code === 'not_image' || $error_code === 'invalid_attachment' ) {
+				} elseif ( 'not_image' === $error_code || 'invalid_attachment' === $error_code ) {
 					$status = 400;
 				}
 
 				$error_response_data = array( 'status' => $status );
 				// Include trial exhaustion metadata so the UI can show the signup CTA.
-				if ( $error_code === 'bbai_trial_exhausted' ) {
+				if ( 'bbai_trial_exhausted' === $error_code ) {
 					$trial_data = $alt->get_error_data();
 					if ( is_array( $trial_data ) ) {
 						$error_response_data = array_merge( $error_response_data, $trial_data );
@@ -1365,11 +1365,12 @@ class REST_Controller {
 			$per_page = 100;
 		}
 		$per_page            = max( 1, min( 500, $per_page ) );
-		$page                = max( 1, absint( $page_input ?: 1 ) );
+		$page                = max( 1, absint( $page_input ? $page_input : 1 ) );
 		$offset              = ( $page - 1 ) * $per_page;
 		$include_preview_raw = $request->get_param( 'include_preview' );
 		$include_preview     = filter_var( $include_preview_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
-		$preview_limit       = max( 1, min( 5, absint( $request->get_param( 'preview_limit' ) ?: 5 ) ) );
+		$preview_limit_raw   = $request->get_param( 'preview_limit' );
+		$preview_limit       = max( 1, min( 5, absint( $preview_limit_raw ? $preview_limit_raw : 5 ) ) );
 		$include_items_raw   = $request->get_param( 'include_items' );
 		$include_items       = filter_var( $include_items_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
 
@@ -1457,7 +1458,7 @@ class REST_Controller {
 	private function build_attachment_preview_item( int $attachment_id ): array {
 		$filename      = '';
 		$attached_file = get_attached_file( $attachment_id );
-		if ( is_string( $attached_file ) && $attached_file !== '' ) {
+		if ( is_string( $attached_file ) && '' !== $attached_file ) {
 			$filename = wp_basename( $attached_file );
 		}
 		if ( '' === $filename ) {
@@ -1485,7 +1486,7 @@ class REST_Controller {
 	public function handle_stats( \WP_REST_Request $request ) {
 		$fresh_input = $request->get_param( 'fresh' );
 		$fresh       = filter_var( $fresh_input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
-		return $this->core->get_dashboard_stats_payload( $fresh === true );
+		return $this->core->get_dashboard_stats_payload( true === $fresh );
 	}
 
 	/**
@@ -2587,7 +2588,7 @@ class REST_Controller {
 		// Anonymize usernames for non-admins if needed
 		if ( ! $show_full_names ) {
 			foreach ( $users as &$user ) {
-				if ( $user['user_id'] > 0 && $user['user_id'] !== get_current_user_id() ) {
+				if ( $user['user_id'] > 0 && get_current_user_id() !== $user['user_id'] ) {
 					// Show only first letter + last 3 chars of username
 					$username = $user['username'];
 					if ( strlen( $username ) > 4 ) {
@@ -2637,7 +2638,7 @@ class REST_Controller {
 		// Anonymize usernames for non-admins if needed
 		if ( ! $show_full_names ) {
 			foreach ( $result['events'] as &$event ) {
-				if ( $event['user_id'] > 0 && $event['user_id'] !== get_current_user_id() ) {
+				if ( $event['user_id'] > 0 && get_current_user_id() !== $event['user_id'] ) {
 					$username = $event['username'];
 					if ( strlen( $username ) > 4 ) {
 						$event['username'] = substr( $username, 0, 1 ) . '***' . substr( $username, -3 );
@@ -2673,7 +2674,7 @@ class REST_Controller {
 
 		$result = \BeepBeepAI\AltTextGenerator\Usage\record_usage_event( $user_id, $tokens_used, $action_type, $context );
 
-		if ( $result === false ) {
+		if ( false === $result ) {
 			return new \WP_Error( 'log_failed', 'Failed to log usage event.', array( 'status' => 500 ) );
 		}
 
@@ -2767,7 +2768,7 @@ class REST_Controller {
 			'user_id'     => $user_id > 0 ? $user_id : null,
 			'date_from'   => Input_Validator::string_param( $request, 'from' ),
 			'date_to'     => Input_Validator::string_param( $request, 'to' ),
-			'action_type' => $action_type ?: null,
+			'action_type' => $action_type ? $action_type : null,
 			'per_page'    => $pagination['per_page'],
 			'page'        => $pagination['page'],
 		);

@@ -232,7 +232,7 @@ class Resend_Service {
 		$decoded       = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $response_body ) : null;
 		$response_data = is_array( $decoded ) ? $decoded : array();
 
-		if ( $status_code !== 200 && $status_code !== 201 ) {
+		if ( 200 !== $status_code && 201 !== $status_code ) {
 			$error_message = isset( $response_data['message'] ) ? $response_data['message'] : __( 'Unknown error', 'beepbeep-ai-alt-text-generator' );
 			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 				Debug_Log::log(

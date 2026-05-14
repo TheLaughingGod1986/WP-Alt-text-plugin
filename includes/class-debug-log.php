@@ -75,11 +75,11 @@ class Debug_Log {
 			}
 		}
 
-		$source = sanitize_key( $source ?: 'core' );
-		$meta   = is_string( $meta ) && $meta !== '' ? sanitize_text_field( $meta ) : '';
+		$source = sanitize_key( $source ? $source : 'core' );
+		$meta   = is_string( $meta ) && '' !== $meta ? sanitize_text_field( $meta ) : '';
 
 		// Get current user ID if not provided
-		if ( $user_id === null ) {
+		if ( null === $user_id ) {
 			$user_id = get_current_user_id();
 		}
 		$user_id = $user_id > 0 ? intval( $user_id ) : null;
@@ -406,7 +406,7 @@ class Debug_Log {
 		if ( is_array( $latest_api ) && ! empty( $latest_api ) ) {
 			$level             = strtolower( (string) ( $latest_api['level'] ?? '' ) );
 			$message           = strtolower( (string) ( $latest_api['message'] ?? '' ) );
-			$looks_failed      = $level === 'error'
+			$looks_failed      = 'error' === $level
 				|| preg_match( '/failed|error|timeout|unreachable|refused|invalid|not found|denied|cannot/i', $message );
 			$connection_status = $looks_failed ? 'failed' : 'connected';
 		}
@@ -485,7 +485,7 @@ class Debug_Log {
 			}
 
 			$timing = self::extract_context_timing_ms( $context );
-			if ( $timing !== null ) {
+			if ( null !== $timing ) {
 				$timings[] = $timing;
 			}
 		}
@@ -591,7 +591,7 @@ class Debug_Log {
 	}
 
 	private static function normalize_level( $level ) {
-		$level = strtolower( $level ?: 'info' );
+		$level = strtolower( $level ? $level : 'info' );
 		return in_array( $level, self::allowed_levels(), true ) ? $level : 'info';
 	}
 
@@ -660,7 +660,7 @@ class Debug_Log {
 
 			if ( $is_sensitive ) {
 				$clean[ $key ] = '[REDACTED]';
-			} elseif ( $key_lower === 'error' && $value === null ) {
+			} elseif ( 'error' === $key_lower && null === $value ) {
 				// Omit error: null - backend often returns this on success, which gets misdisplayed as an error
 				continue;
 			} elseif ( is_scalar( $value ) ) {
@@ -682,7 +682,7 @@ class Debug_Log {
 			if ( $user ) {
 				$user_info = array(
 					'id'    => $user_id,
-					'name'  => $user->display_name ?: $user->user_login,
+					'name'  => $user->display_name ? $user->display_name : $user->user_login,
 					'email' => $user->user_email,
 				);
 			}
@@ -712,7 +712,7 @@ class Debug_Log {
 	 * @return array<string, mixed>
 	 */
 	private static function decode_context_data( $context_value ) {
-		if ( ! is_string( $context_value ) || $context_value === '' ) {
+		if ( ! is_string( $context_value ) || '' === $context_value ) {
 			return array();
 		}
 

@@ -83,12 +83,12 @@ if ( ! function_exists( 'bbai_prepare_social_proof_reviews' ) ) {
 			}
 
 			$rating = isset( $review['rating'] ) ? (int) $review['rating'] : 0;
-			if ( $rating !== 5 ) {
+			if ( 5 !== $rating ) {
 				continue;
 			}
 
 			$raw_quote = isset( $review['quote'] ) ? sanitize_text_field( (string) $review['quote'] ) : '';
-			if ( $raw_quote === '' ) {
+			if ( '' === $raw_quote ) {
 				continue;
 			}
 
@@ -185,7 +185,7 @@ if ( ! function_exists( 'bbai_get_wporg_reviews_for_social_proof' ) ) {
 				$rating = (int) $m[1];
 			}
 			$rating = max( 1, min( 5, $rating ) );
-			if ( $rating !== 5 ) {
+			if ( 5 !== $rating ) {
 				continue;
 			}
 
@@ -194,7 +194,7 @@ if ( ! function_exists( 'bbai_get_wporg_reviews_for_social_proof' ) ) {
 			$quote = preg_replace( '/Rating:\s*\d+\s*stars?/i', '', $quote );
 			$quote = trim( preg_replace( '/\s+/', ' ', (string) $quote ) );
 
-			if ( $quote === '' || $creator === '' ) {
+			if ( '' === $quote || '' === $creator ) {
 				continue;
 			}
 
@@ -324,7 +324,7 @@ $bbai_plugin_url  = defined( 'BEEPBEEP_AI_PLUGIN_URL' ) ? BEEPBEEP_AI_PLUGIN_URL
 					if ( ! empty( $bbai_avatar ) ) {
 						$bbai_avatar_is_relative = strpos( $bbai_avatar, 'data:' ) !== 0
 						&& ! preg_match( '#^(?:https?:)?//#', $bbai_avatar )
-						&& $bbai_avatar[0] !== '/';
+						&& '/' !== $bbai_avatar[0];
 						if ( $bbai_avatar_is_relative ) {
 							$bbai_avatar = $bbai_plugin_url . ltrim( $bbai_avatar, '/' );
 						}
@@ -337,7 +337,7 @@ $bbai_plugin_url  = defined( 'BEEPBEEP_AI_PLUGIN_URL' ) ? BEEPBEEP_AI_PLUGIN_URL
 							$bbai_initials .= strtoupper( substr( $bbai_name_parts[1], 0, 1 ) );
 						}
 					}
-					if ( $bbai_initials === '' ) {
+					if ( '' === $bbai_initials ) {
 						$bbai_initials = 'AI';
 					}
 					$bbai_rating_label = sprintf(
@@ -346,7 +346,7 @@ $bbai_plugin_url  = defined( 'BEEPBEEP_AI_PLUGIN_URL' ) ? BEEPBEEP_AI_PLUGIN_URL
 						$bbai_rating
 					);
 					?>
-				<div class="bbai-testimonial-card <?php echo esc_attr( $bbai_index === 0 ? 'active' : '' ); ?>" data-index="<?php echo esc_attr( $bbai_index ); ?>">
+				<div class="bbai-testimonial-card <?php echo esc_attr( 0 === $bbai_index ? 'active' : '' ); ?>" data-index="<?php echo esc_attr( $bbai_index ); ?>">
 					<article class="bbai-testimonial-shell">
 						<header class="bbai-testimonial-header">
 							<div class="bbai-testimonial-avatar" aria-hidden="true">
@@ -360,7 +360,7 @@ $bbai_plugin_url  = defined( 'BEEPBEEP_AI_PLUGIN_URL' ) ? BEEPBEEP_AI_PLUGIN_URL
 							</div>
 							<div class="bbai-testimonial-author">
 								<strong class="bbai-testimonial-author-name"><?php echo esc_html( $bbai_author_name ); ?></strong>
-								<?php if ( $bbai_author_title !== '' ) : ?>
+								<?php if ( '' !== $bbai_author_title ) : ?>
 									<span class="bbai-testimonial-author-role"><?php echo esc_html( $bbai_author_title ); ?></span>
 								<?php endif; ?>
 							</div>
@@ -377,7 +377,7 @@ $bbai_plugin_url  = defined( 'BEEPBEEP_AI_PLUGIN_URL' ) ? BEEPBEEP_AI_PLUGIN_URL
 									</svg>
 								<?php endfor; ?>
 							</div>
-							<?php if ( $bbai_card_tagline !== '' ) : ?>
+							<?php if ( '' !== $bbai_card_tagline ) : ?>
 								<p class="bbai-testimonial-tagline"><?php echo esc_html( $bbai_card_tagline ); ?></p>
 							<?php endif; ?>
 						</div>

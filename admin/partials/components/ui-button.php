@@ -65,7 +65,7 @@ if ( '' !== $bbai_href ) {
 	return;
 }
 
-$bbai_tail = trim( $bbai_from_array . ( $bbai_raw !== '' ? ' ' . $bbai_raw : '' ) );
+$bbai_tail = trim( $bbai_from_array . ( '' !== $bbai_raw ? ' ' . $bbai_raw : '' ) );
 $bbai_type = ( false === stripos( $bbai_tail, 'type=' ) ) ? 'type="button" ' : '';
 $bbai_sp   = '' !== $bbai_tail ? ' ' : '';
 printf( '<button %sclass="%s"%s%s>%s</button>', $bbai_type, esc_attr( trim( $bbai_cls ) ), $bbai_sp, $bbai_tail, $bbai_label_e ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

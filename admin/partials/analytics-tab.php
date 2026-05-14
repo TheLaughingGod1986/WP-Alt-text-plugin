@@ -314,7 +314,7 @@ $bbai_get_buy_credits_action = static function () use ( $bbai_make_button_action
 $bbai_get_plan_action = static function ( string $free_label = '', string $growth_label = '' ) use ( $bbai_is_free, $bbai_is_growth, $bbai_make_button_action, $bbai_make_link_action, $bbai_billing_portal_url ): ?array {
 	if ( $bbai_is_free ) {
 		return $bbai_make_button_action(
-			$free_label ?: __( 'Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator' ),
+			$free_label ? $free_label : __( 'Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator' ),
 			'primary',
 			array( 'data-action' => 'show-upgrade-modal' )
 		);
@@ -322,7 +322,7 @@ $bbai_get_plan_action = static function ( string $free_label = '', string $growt
 
 	if ( $bbai_is_growth ) {
 		return $bbai_make_button_action(
-			$growth_label ?: __( 'Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator' ),
+			$growth_label ? $growth_label : __( 'Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator' ),
 			'primary',
 			array( 'data-action' => 'show-upgrade-modal' )
 		);

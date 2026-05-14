@@ -74,7 +74,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 
 	$bbai_donut_center_val = $bbai_guest_pct > 0 ? (string) $bbai_guest_pct . '%' : '✓';
 	$bbai_donut_center_sub = __( 'Almost done', 'beepbeep-ai-alt-text-generator' );
-	$bbai_left_helper      = $bbai_guest_remaining_images === 1
+	$bbai_left_helper      = 1 === $bbai_guest_remaining_images
 		? __( '1 image remaining', 'beepbeep-ai-alt-text-generator' )
 		: __( 'Keep going', 'beepbeep-ai-alt-text-generator' );
 
@@ -102,7 +102,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	$bbai_left_helper_meta = implode( ' · ', array_filter( $bbai_left_meta_parts ) );
 
 	// Avoid a second "98% complete" banner — keep the goal-oriented CTA and let the modal do the conversion work.
-	$bbai_guest_title = $bbai_guest_remaining_images === 1
+	$bbai_guest_title = 1 === $bbai_guest_remaining_images
 		? __( 'Finish your last image', 'beepbeep-ai-alt-text-generator' )
 		: __( 'Keep optimising your library', 'beepbeep-ai-alt-text-generator' );
 	$bbai_guest_body  = ( $bbai_guest_fixed_images > 0 && $bbai_guest_remaining_images > 0 )
@@ -331,7 +331,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 							<span class="bbai-li-donut__helper-meta-line"><?php echo esc_html( (string) $bbai_meta_line ); ?></span>
 						<?php endforeach; ?>
 					</span>
-				<?php elseif ( $bbai_left_helper_meta !== '' ) : ?>
+				<?php elseif ( '' !== $bbai_left_helper_meta ) : ?>
 					<span class="bbai-li-donut__helper-meta"><?php echo esc_html( $bbai_left_helper_meta ); ?></span>
 				<?php endif; ?>
 			</p>

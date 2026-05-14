@@ -288,13 +288,13 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 				// If license is active, use license plan
 				if ( $bbai_has_license && $bbai_license_data && isset( $bbai_license_data['organization'] ) ) {
 					$bbai_license_plan = strtolower( $bbai_license_data['organization']['plan'] ?? 'free' );
-					if ( $bbai_license_plan !== 'free' ) {
+					if ( 'free' !== $bbai_license_plan ) {
 						$bbai_plan = $bbai_license_plan;
 					}
 				}
 
-				$bbai_is_pro                    = ( $bbai_plan === 'pro' || $bbai_plan === 'growth' );
-				$bbai_is_agency                 = $bbai_plan === 'agency';
+				$bbai_is_pro                    = ( 'pro' === $bbai_plan || 'growth' === $bbai_plan );
+				$bbai_is_agency                 = 'agency' === $bbai_plan;
 				$bbai_is_growth_plan            = ( $bbai_is_pro || $bbai_is_agency );
 				$bbai_can_use_upload_generation = method_exists( $this, 'current_account_can_use_upload_generation' )
 					? $this->current_account_can_use_upload_generation()
@@ -313,7 +313,7 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 				$bbai_reset_label     = esc_html__( 'Monthly', 'beepbeep-ai-alt-text-generator' );
 				$bbai_reset_raw       = $bbai_usage_box['reset_date'] ?? '';
 				$bbai_reset_timestamp = isset( $bbai_usage_box['reset_timestamp'] ) ? intval( $bbai_usage_box['reset_timestamp'] ) : strtotime( (string) $bbai_reset_raw );
-				if ( $bbai_reset_timestamp !== false && $bbai_reset_timestamp > 0 ) {
+				if ( false !== $bbai_reset_timestamp && $bbai_reset_timestamp > 0 ) {
 					$bbai_reset_label = date_i18n( 'F j', $bbai_reset_timestamp );
 				} elseif ( ! empty( $bbai_reset_raw ) && strtolower( (string) $bbai_reset_raw ) !== 'monthly' ) {
 					$bbai_reset_label = (string) $bbai_reset_raw;
@@ -382,7 +382,7 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 
 				<?php
                 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Display only, no action
-				if ( isset( $_GET['settings-updated'] ) && $_GET['settings-updated'] === 'true' ) :
+				if ( isset( $_GET['settings-updated'] ) && 'true' === $_GET['settings-updated'] ) :
 					?>
 				<div class="bbai-settings-saved-notice bbai-page-section" role="status">
 					<span class="bbai-settings-saved-icon" aria-hidden="true">✓</span>

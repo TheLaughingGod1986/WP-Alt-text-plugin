@@ -362,7 +362,7 @@ JS,
 			'bbai-onboarding'      => 'onboarding',
 		);
 
-		if ( $tab !== '' ) {
+		if ( '' !== $tab ) {
 			return $tab_aliases[ $tab ] ?? $tab;
 		}
 

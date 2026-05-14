@@ -62,7 +62,7 @@ function bbai_retention_load_history( int $user_id ): array {
 		return array();
 	}
 	$raw = get_user_meta( $user_id, BBAI_RETENTION_META_COVERAGE_HIST, true );
-	if ( ! is_string( $raw ) || $raw === '' ) {
+	if ( ! is_string( $raw ) || '' === $raw ) {
 		return array();
 	}
 	$decoded = json_decode( $raw, true );
@@ -129,7 +129,7 @@ function bbai_retention_merge_today_snapshot( array $hist, int $coverage_pct, in
  * @param list<array{d:string,p:int,m:int,w:int,t:int}> $hist
  */
 function bbai_retention_baseline_percent( array $hist, int $min_days ): ?int {
-	if ( $hist === array() ) {
+	if ( array() === $hist ) {
 		return null;
 	}
 	$cutoff = (int) gmdate( 'Ymd', strtotime( '-' . max( 1, $min_days ) . ' days' ) );
@@ -247,7 +247,7 @@ function bbai_retention_build_strip_model( array $ctx ): ?array {
 			$coverage_pct,
 			$remaining_pct
 		);
-		$supporting = $issues === 1
+		$supporting = 1 === $issues
 			? __( 'One image still needs attention.', 'beepbeep-ai-alt-text-generator' )
 			: sprintf(
 				/* translators: %d: issue count */
@@ -403,7 +403,7 @@ function bbai_retention_build_strip_model( array $ctx ): ?array {
 	}
 
 	$upgrade_hint = '';
-	if ( ! $is_pro && $trigger !== 'upgrade_momentum' && $issues > 0 && $credits_used >= 8 ) {
+	if ( ! $is_pro && 'upgrade_momentum' !== $trigger && $issues > 0 && $credits_used >= 8 ) {
 		$upgrade_hint = __( 'Remove monthly limits with Growth — keep every new upload optimised.', 'beepbeep-ai-alt-text-generator' );
 	}
 
@@ -473,8 +473,9 @@ function bbai_return_loop_resolve( array $ctx ): ?array {
 	$cta_action         = '';
 	if ( ! empty( $strip['primary'] ) && is_array( $strip['primary'] ) ) {
 		$cta_label          = (string) ( $strip['primary']['label'] ?? '' );
-		$cta_action         = (string) ( ( $strip['primary']['action'] ?? '' ) ?: ( $strip['primary']['bbai_action'] ?? '' ) );
-		$recommended_action = $cta_action ?: 'none';
+		$cta_action_primary = $strip['primary']['action'] ?? '';
+		$cta_action         = (string) ( $cta_action_primary ? $cta_action_primary : ( $strip['primary']['bbai_action'] ?? '' ) );
+		$recommended_action = $cta_action ? $cta_action : 'none';
 	}
 
 	$baseline = null;
@@ -494,9 +495,9 @@ function bbai_return_loop_resolve( array $ctx ): ?array {
 		'coverage_percent'               => $coverage_pct,
 		'previous_coverage_percent'      => $baseline,
 		'coverage_delta'                 => $delta,
-		'last_scan_at'                   => isset( $ctx['last_scan_at'] ) ? ( $ctx['last_scan_at'] ?: null ) : null,
-		'last_generation_at'             => isset( $ctx['last_generation_at'] ) ? ( $ctx['last_generation_at'] ?: null ) : null,
-		'recommended_action'             => $recommended_action ?: 'none',
+		'last_scan_at'                   => isset( $ctx['last_scan_at'] ) ? ( $ctx['last_scan_at'] ? $ctx['last_scan_at'] : null ) : null,
+		'last_generation_at'             => isset( $ctx['last_generation_at'] ) ? ( $ctx['last_generation_at'] ? $ctx['last_generation_at'] : null ) : null,
+		'recommended_action'             => $recommended_action ? $recommended_action : 'none',
 		'message'                        => (string) ( $strip['headline'] ?? '' ),
 		'cta_label'                      => $cta_label,
 		'cta_action'                     => $cta_action,

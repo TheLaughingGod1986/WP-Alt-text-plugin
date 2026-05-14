@@ -80,7 +80,7 @@ class API_Client_V2 {
 			}
 		}
 
-		return $last_error ?: new \WP_Error( 'api_error', __( 'Unknown API error', 'beepbeep-ai-alt-text-generator' ) );
+		return $last_error ? $last_error : new \WP_Error( 'api_error', __( 'Unknown API error', 'beepbeep-ai-alt-text-generator' ) );
 	}
 
 	/**
@@ -93,7 +93,7 @@ class API_Client_V2 {
 	private function bbai_init_wp_filesystem() {
 		global $wp_filesystem;
 
-		if ( is_object( $wp_filesystem ) && isset( $wp_filesystem->method ) && $wp_filesystem->method === 'direct' ) {
+		if ( is_object( $wp_filesystem ) && isset( $wp_filesystem->method ) && 'direct' === $wp_filesystem->method ) {
 			return $wp_filesystem;
 		}
 
@@ -104,9 +104,8 @@ class API_Client_V2 {
 
 		$direct = new \WP_Filesystem_Direct( null );
 
-		// Only populate the global if nothing else has been set.
 		if ( ! is_object( $wp_filesystem ) ) {
-			$wp_filesystem = $direct;
+			$wp_filesystem = $direct; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- intentionally bootstraps the WP_Filesystem global.
 		}
 
 		return $direct;
@@ -158,7 +157,7 @@ class API_Client_V2 {
 	 */
 	public function get_token() {
 		$token = get_option( $this->token_option_key, '' );
-		if ( $token === '' || $token === false ) {
+		if ( '' === $token || false === $token ) {
 			$legacy = get_option( 'beepbeepai_jwt_token', '' );
 			if ( ! empty( $legacy ) ) {
 				$this->set_token( $legacy );
@@ -201,14 +200,14 @@ class API_Client_V2 {
 	 */
 	public function get_user_data() {
 		$data = get_option( $this->user_option_key, null );
-		if ( ( $data === false || $data === null ) ) {
+		if ( ( false === $data || null === $data ) ) {
 			$legacy = get_option( 'beepbeepai_user_data', null );
-			if ( $legacy !== null && $legacy !== false ) {
+			if ( null !== $legacy && false !== $legacy ) {
 				update_option( $this->user_option_key, $legacy );
 				$data = $legacy;
 			}
 		}
-		return ( $data !== false && $data !== null ) ? $data : null;
+		return ( false !== $data && null !== $data ) ? $data : null;
 	}
 
 	/**
@@ -223,7 +222,7 @@ class API_Client_V2 {
 	 */
 	public function get_license_key() {
 		$key = get_option( $this->license_key_option_key, '' );
-		if ( $key === '' || $key === false ) {
+		if ( '' === $key || false === $key ) {
 			return '';
 		}
 		return $this->maybe_decrypt_secret( $key );
@@ -258,7 +257,7 @@ class API_Client_V2 {
 	 */
 	public function get_license_data() {
 		$data = get_option( $this->license_data_option_key, null );
-		if ( $data === false || $data === null || ! is_array( $data ) ) {
+		if ( false === $data || null === $data || ! is_array( $data ) ) {
 			return null;
 		}
 
@@ -337,7 +336,7 @@ class API_Client_V2 {
 				$org['resetDate'] = sanitize_text_field( (string) $org['reset_date'] );
 			}
 
-			unset( $org[ 'token' . 'Limit' ], $org[ 'tokens' . 'Remaining' ] );
+			unset( $org['tokenLimit'], $org['tokensRemaining'] ); // phpcs:ignore Generic.Strings.UnnecessaryStringConcat.Found
 			$normalized['organization'] = $org;
 		}
 
@@ -380,7 +379,7 @@ class API_Client_V2 {
 
 		// Validate token is still valid (check periodically, not every request)
 		$last_check      = get_transient( 'bbai_token_last_check' );
-		$should_validate = $last_check === false;
+		$should_validate = false === $last_check;
 
 		if ( $should_validate ) {
 			// Prevent concurrent requests from stampeding /auth/me during outages.
@@ -405,8 +404,8 @@ class API_Client_V2 {
 
 				// Only clear token if it's definitely invalid (not a temporary server error)
 				// Don't clear on server errors (500), network errors, or timeouts
-				if ( $error_code === 'auth_required' ||
-					$error_code === 'user_not_found' ||
+				if ( 'auth_required' === $error_code ||
+					'user_not_found' === $error_code ||
 					( $error_message_str && strpos( $error_message_str, 'user not found' ) !== false ) ||
 					( $error_message_str && strpos( $error_message_str, 'session expired' ) !== false ) ||
 					( $error_message_str && strpos( $error_message_str, 'unauthorized' ) !== false ) ) {
@@ -489,7 +488,7 @@ class API_Client_V2 {
 	 * Encrypt secret values before persisting to the options table.
 	 */
 	private function encrypt_secret( $value ) {
-		if ( ! is_string( $value ) || $value === '' ) {
+		if ( ! is_string( $value ) || '' === $value ) {
 			return '';
 		}
 
@@ -499,12 +498,12 @@ class API_Client_V2 {
 
 		$key = substr( hash( 'sha256', wp_salt( 'auth' ) ), 0, 32 );
 		$iv  = function_exists( 'random_bytes' ) ? @random_bytes( 16 ) : openssl_random_pseudo_bytes( 16 );
-		if ( $iv === false ) {
+		if ( false === $iv ) {
 			return $value;
 		}
 
 		$cipher = openssl_encrypt( $value, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv );
-		if ( $cipher === false ) {
+		if ( false === $cipher ) {
 			return $value;
 		}
 
@@ -515,7 +514,7 @@ class API_Client_V2 {
 	 * Decrypt stored secrets when retrieved from options.
 	 */
 	private function maybe_decrypt_secret( $value ) {
-		if ( ! is_string( $value ) || $value === '' ) {
+		if ( ! is_string( $value ) || '' === $value ) {
 			return '';
 		}
 
@@ -528,7 +527,7 @@ class API_Client_V2 {
 		}
 
 		$payload = base64_decode( substr( $value, strlen( $this->encryption_prefix ) ), true );
-		if ( $payload === false || strlen( $payload ) < 17 ) {
+		if ( false === $payload || strlen( $payload ) < 17 ) {
 			return '';
 		}
 
@@ -537,7 +536,7 @@ class API_Client_V2 {
 		$key    = substr( hash( 'sha256', wp_salt( 'auth' ) ), 0, 32 );
 		$plain  = openssl_decrypt( $cipher, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv );
 
-		return $plain !== false ? $plain : '';
+		return false !== $plain ? $plain : '';
 	}
 
 	/**
@@ -548,7 +547,7 @@ class API_Client_V2 {
 		$headers = $this->get_auth_headers( $include_user_id, $extra_headers );
 
 		// Use longer timeout for generation requests (OpenAI can take time) and for cold-start-sensitive endpoints (Render free tier)
-		if ( $timeout === null ) {
+		if ( null === $timeout ) {
 			$endpoint_str           = is_string( $endpoint ) ? $endpoint : '';
 			$is_generate_endpoint   = $endpoint_str && ( ( strpos( $endpoint_str, '/generate' ) !== false ) || ( strpos( $endpoint_str, 'generate' ) !== false ) ) && strpos( $endpoint_str, '/api/' ) === false;
 			$is_cold_start_endpoint = $endpoint_str && ( strpos( $endpoint_str, '/auth/' ) !== false || strpos( $endpoint_str, '/billing/' ) !== false );
@@ -588,7 +587,7 @@ class API_Client_V2 {
 			// Encode to JSON with error handling
 			$json_body = wp_json_encode( $clean_data );
 
-			if ( $json_body === false || $json_body === null ) {
+			if ( false === $json_body || null === $json_body ) {
 				$json_error = json_last_error_msg();
 				$this->log_api_event(
 					'error',
@@ -610,7 +609,7 @@ class API_Client_V2 {
 			}
 
 			// Validate JSON is not empty
-			if ( empty( $json_body ) || $json_body === '{}' || $json_body === '[]' ) {
+			if ( empty( $json_body ) || '{}' === $json_body || '[]' === $json_body ) {
 				$this->log_api_event(
 					'error',
 					'JSON body is empty or invalid',
@@ -662,8 +661,8 @@ class API_Client_V2 {
 				'endpoint'  => $endpoint,
 				'method'    => $method,
 				'url'       => $url,
-				'api_host'  => wp_parse_url( $url, PHP_URL_HOST ) ?: '',
-				'api_path'  => wp_parse_url( $url, PHP_URL_PATH ) ?: '',
+				'api_host'  => wp_parse_url( $url, PHP_URL_HOST ) ? wp_parse_url( $url, PHP_URL_HOST ) : '',
+				'api_path'  => wp_parse_url( $url, PHP_URL_PATH ) ? wp_parse_url( $url, PHP_URL_PATH ) : '',
 				'headers'   => array_keys( $headers ), // Log header names only (not values for security)
 				'has_body'  => isset( $args['body'] ),
 				'body_size' => isset( $args['body'] ) ? strlen( $args['body'] ) : 0,
@@ -686,8 +685,8 @@ class API_Client_V2 {
 				array(
 					'endpoint'        => $endpoint,
 					'method'          => $method,
-					'api_host'        => wp_parse_url( $url, PHP_URL_HOST ) ?: '',
-					'api_path'        => wp_parse_url( $url, PHP_URL_PATH ) ?: '',
+					'api_host'        => wp_parse_url( $url, PHP_URL_HOST ) ? wp_parse_url( $url, PHP_URL_HOST ) : '',
+					'api_path'        => wp_parse_url( $url, PHP_URL_PATH ) ? wp_parse_url( $url, PHP_URL_PATH ) : '',
 					'timeout_seconds' => (int) $timeout,
 					'error'           => $error_message,
 				)
@@ -715,7 +714,7 @@ class API_Client_V2 {
 			} elseif ( $error_message_str && strpos( $error_message_str, 'cURL error' ) !== false ) {
 				return new \WP_Error( 'network_error', __( 'Network error while connecting to authentication server. Please check your server\'s outbound connections and try again.', 'beepbeep-ai-alt-text-generator' ) );
 			}
-			return new \WP_Error( 'api_error', $error_message ?: __( 'API request failed', 'beepbeep-ai-alt-text-generator' ) );
+			return new \WP_Error( 'api_error', $error_message ? $error_message : __( 'API request failed', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
 		$status_code = wp_remote_retrieve_response_code( $response );
@@ -739,7 +738,7 @@ class API_Client_V2 {
 		$this->log_api_event( $status_code >= 400 ? 'warning' : 'debug', 'API response received', $log_context );
 
 		// Handle authentication errors FIRST (401/403) - these are more specific than 404
-		if ( $status_code === 401 || $status_code === 403 ) {
+		if ( 401 === $status_code || 403 === $status_code ) {
 			$body_str            = is_string( $body ) ? $body : '';
 			$data_array          = is_array( $data ) ? $data : array();
 			$endpoint_str        = is_string( $endpoint ) ? $endpoint : '';
@@ -815,7 +814,7 @@ class API_Client_V2 {
 		}
 
 		// Handle 404 - endpoint not found (check AFTER auth errors)
-		if ( $status_code === 404 ) {
+		if ( 404 === $status_code ) {
 			// Check if it's an HTML error page (means endpoint doesn't exist)
 			$body_str     = is_string( $body ) ? $body : '';
 			$endpoint_str = is_string( $endpoint ) ? $endpoint : '';
@@ -1014,7 +1013,7 @@ class API_Client_V2 {
 		$status = isset( $data['status_code'] ) ? intval( $data['status_code'] ) : 0;
 
 		// Retry network errors without status codes, and HTTP 5xx responses.
-		if ( $status === 0 ) {
+		if ( 0 === $status ) {
 			return true;
 		}
 
@@ -1057,7 +1056,7 @@ class API_Client_V2 {
 			$error_message = is_string( $raw_msg ) ? strtolower( $raw_msg ) : '';
 
 			// Check for "site already has license" error (credit sharing)
-			if ( $error_code === 'SITE_HAS_LICENSE' || $error_code === 'site_has_license' ||
+			if ( 'SITE_HAS_LICENSE' === $error_code || 'site_has_license' === $error_code ||
 				strpos( $error_message, 'site is already connected' ) !== false ) {
 				$existing_email = '';
 				if ( is_array( $error_data ) && isset( $error_data['existing_email'] ) ) {
@@ -1065,7 +1064,7 @@ class API_Client_V2 {
 				}
 				return new \WP_Error(
 					'site_has_license',
-					$raw_msg ?: __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
+					$raw_msg ? $raw_msg : __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
 					array( 'existing_email' => $existing_email )
 				);
 			}
@@ -1073,7 +1072,7 @@ class API_Client_V2 {
 			// Check for "free plan already used" error from backend
 			if ( strpos( $error_message, 'free plan' ) !== false ||
 				strpos( $error_message, 'already used' ) !== false ||
-				$error_code === 'free_plan_exists' ) {
+				'free_plan_exists' === $error_code ) {
 				return new \WP_Error(
 					'free_plan_exists',
 					__( 'A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator' ),
@@ -1127,7 +1126,7 @@ class API_Client_V2 {
 			if ( in_array( $normalized_code, array( 'user_exists', 'email_exists' ), true ) ) {
 				return new \WP_Error(
 					'user_exists',
-					$error_message ?: __( 'An account with this email already exists. Please log in instead.', 'beepbeep-ai-alt-text-generator' ),
+					$error_message ? $error_message : __( 'An account with this email already exists. Please log in instead.', 'beepbeep-ai-alt-text-generator' ),
 					array( 'status_code' => $status_code )
 				);
 			}
@@ -1135,7 +1134,7 @@ class API_Client_V2 {
 			if ( in_array( $normalized_code, array( 'invite_required', 'member_invite_required', 'team_invite_required' ), true ) ) {
 				return new \WP_Error(
 					'invite_required',
-					$error_message ?: __( 'This site is connected to an existing account. Ask the site owner to invite your email to the team.', 'beepbeep-ai-alt-text-generator' ),
+					$error_message ? $error_message : __( 'This site is connected to an existing account. Ask the site owner to invite your email to the team.', 'beepbeep-ai-alt-text-generator' ),
 					array(
 						'status_code' => $status_code,
 						'invite_url'  => $invite_url,
@@ -1145,7 +1144,7 @@ class API_Client_V2 {
 
 			$is_site_conflict = in_array( $normalized_code, array( 'site_has_license', 'site_already_connected', 'site_already_linked' ), true )
 				|| (
-					(int) $status_code === 409
+					(int) 409 === $status_code
 					&& (
 						strpos( $error_message_lower, 'already connected' ) !== false
 						|| strpos( $error_message_lower, 'site has license' ) !== false
@@ -1156,7 +1155,7 @@ class API_Client_V2 {
 			if ( $is_site_conflict ) {
 				return new \WP_Error(
 					'site_has_license',
-					$error_message ?: __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
+					$error_message ? $error_message : __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
 					array(
 						'existing_email' => $existing_email,
 						'status_code'    => $status_code,
@@ -1176,10 +1175,10 @@ class API_Client_V2 {
 			// Generic 4xx error
 			return new \WP_Error(
 				'registration_failed',
-				$error_message ?: __( 'Registration failed', 'beepbeep-ai-alt-text-generator' ),
+				$error_message ? $error_message : __( 'Registration failed', 'beepbeep-ai-alt-text-generator' ),
 				array(
 					'status_code' => $status_code,
-					'error_code'  => $normalized_code ?: $error_code,
+					'error_code'  => $normalized_code ? $normalized_code : $error_code,
 				)
 			);
 		}
@@ -1282,7 +1281,7 @@ class API_Client_V2 {
 				|| strpos( $error_message_lower, 'site has license' ) !== false ) {
 				return new \WP_Error(
 					'site_has_license',
-					$error_message ?: __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
+					$error_message ? $error_message : __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
 					array(
 						'existing_email' => $existing_email,
 						'status_code'    => $status_code,
@@ -1293,7 +1292,7 @@ class API_Client_V2 {
 			if ( in_array( $normalized_code, array( 'invite_required', 'member_invite_required', 'team_invite_required' ), true ) ) {
 				return new \WP_Error(
 					'invite_required',
-					$error_message ?: __( 'This email is not yet invited for this site. Ask the site owner to send an invite.', 'beepbeep-ai-alt-text-generator' ),
+					$error_message ? $error_message : __( 'This email is not yet invited for this site. Ask the site owner to send an invite.', 'beepbeep-ai-alt-text-generator' ),
 					array(
 						'status_code' => $status_code,
 						'invite_url'  => $invite_url,
@@ -1304,17 +1303,17 @@ class API_Client_V2 {
 			if ( in_array( $normalized_code, array( 'invalid_credentials', 'invalid_password', 'auth_failed', 'unauthorized' ), true ) ) {
 				return new \WP_Error(
 					'invalid_credentials',
-					$error_message ?: __( 'Invalid email or password.', 'beepbeep-ai-alt-text-generator' ),
+					$error_message ? $error_message : __( 'Invalid email or password.', 'beepbeep-ai-alt-text-generator' ),
 					array( 'status_code' => $status_code )
 				);
 			}
 
 			return new \WP_Error(
 				'login_failed',
-				$error_message ?: __( 'Login failed', 'beepbeep-ai-alt-text-generator' ),
+				$error_message ? $error_message : __( 'Login failed', 'beepbeep-ai-alt-text-generator' ),
 				array(
 					'status_code' => $status_code,
-					'error_code'  => $normalized_code ?: $error_code,
+					'error_code'  => $normalized_code ? $normalized_code : $error_code,
 				)
 			);
 		}
@@ -1372,7 +1371,7 @@ class API_Client_V2 {
 				$error_message = $response->get_error_message();
 
 				// Retry on timeout/unreachable errors (likely cold start)
-				if ( ( $error_code === 'api_timeout' || $error_code === 'api_unreachable' ) && $attempt < $max_retries ) {
+				if ( ( 'api_timeout' === $error_code || 'api_unreachable' === $error_code ) && $attempt < $max_retries ) {
 					$this->log_api_event(
 						'info',
 						'Retrying /auth/me after timeout',
@@ -1742,7 +1741,7 @@ class API_Client_V2 {
 			);
 		}
 
-		return $last_error ?: new \WP_Error(
+		return $last_error ? $last_error : new \WP_Error(
 			'dashboard_state_truth_unavailable',
 			__( 'Dashboard state truth is currently unavailable.', 'beepbeep-ai-alt-text-generator' )
 		);
@@ -1796,7 +1795,7 @@ class API_Client_V2 {
 					array_map(
 						static function ( $endpoint ) {
 							$endpoint = trim( (string) $endpoint );
-							if ( $endpoint === '' ) {
+							if ( '' === $endpoint ) {
 								return '';
 							}
 
@@ -1921,7 +1920,7 @@ class API_Client_V2 {
 			);
 			return new \WP_Error(
 				'inventory_sync_failed',
-				is_string( $message ) && $message !== ''
+				is_string( $message ) && '' !== $message
 					? $message
 					: __( 'Failed to sync media inventory.', 'beepbeep-ai-alt-text-generator' ),
 				array(
@@ -1932,7 +1931,7 @@ class API_Client_V2 {
 			);
 		}
 
-		return $last_error ?: new \WP_Error(
+		return $last_error ? $last_error : new \WP_Error(
 			'inventory_sync_unavailable',
 			__( 'Media inventory sync endpoint is currently unavailable.', 'beepbeep-ai-alt-text-generator' )
 		);
@@ -1954,7 +1953,7 @@ class API_Client_V2 {
 		$chunk_count = max( $chunk_index, (int) ( $meta['chunk_count'] ?? 1 ) );
 		$offset      = max( 0, (int) ( $meta['offset'] ?? 0 ) );
 		$sync_reason = sanitize_key( (string) ( $meta['reason'] ?? 'dashboard_bootstrap' ) );
-		if ( $sync_reason === '' ) {
+		if ( '' === $sync_reason ) {
 			$sync_reason = 'dashboard_bootstrap';
 		}
 		$scope = (string) ( $meta['scope'] ?? 'full_site' );
@@ -2111,7 +2110,7 @@ class API_Client_V2 {
 		$org['creditsTotal']     = $limit;
 		$org['creditsLimit']     = $limit;
 		$org['creditsRemaining'] = $remaining;
-		unset( $org[ 'token' . 'Limit' ], $org[ 'tokens' . 'Remaining' ] );
+		unset( $org['tokenLimit'], $org['tokensRemaining'] ); // phpcs:ignore Generic.Strings.UnnecessaryStringConcat.Found
 
 		if ( ! empty( $usage['resetDate'] ) ) {
 			$org['resetDate'] = sanitize_text_field( $usage['resetDate'] );
@@ -2170,7 +2169,7 @@ class API_Client_V2 {
 				if ( $remaining > 0 ) {
 					return false; // Cached shows credits available - don't block
 				}
-				if ( $remaining === 0 ) {
+				if ( 0 === $remaining ) {
 					return true; // Cached shows 0 - block generation
 				}
 			}
@@ -2185,7 +2184,7 @@ class API_Client_V2 {
 				$error_code = $usage->get_error_code();
 
 				// If it's an auth/user error, don't block generation - backend will handle it
-				if ( $error_code === 'auth_required' || $error_code === 'user_not_found' ) {
+				if ( 'auth_required' === $error_code || 'user_not_found' === $error_code ) {
 					return false; // Don't block on auth errors
 				}
 
@@ -2199,7 +2198,7 @@ class API_Client_V2 {
 			if ( isset( $usage['remaining'] ) && is_numeric( $usage['remaining'] ) ) {
 				$remaining = intval( $usage['remaining'] );
 				// Only block if API explicitly shows 0 remaining AND no cached usage contradicted it
-				if ( $remaining === 0 && ( ! is_array( $cached_usage ) || ! isset( $cached_usage['remaining'] ) || intval( $cached_usage['remaining'] ) === 0 ) ) {
+				if ( 0 === $remaining && ( ! is_array( $cached_usage ) || ! isset( $cached_usage['remaining'] ) || intval( $cached_usage['remaining'] ) === 0 ) ) {
 					return true; // API and cache both show 0 - block
 				}
 				if ( $remaining > 0 ) {
@@ -2221,7 +2220,7 @@ class API_Client_V2 {
 			}
 
 			// If cached usage shows 0 remaining, respect that and block
-			if ( is_array( $cached_usage ) && isset( $cached_usage['remaining'] ) && is_numeric( $cached_usage['remaining'] ) && $cached_usage['remaining'] === 0 ) {
+			if ( is_array( $cached_usage ) && isset( $cached_usage['remaining'] ) && is_numeric( $cached_usage['remaining'] ) && 0 === $cached_usage['remaining'] ) {
 				// Cached usage shows 0 credits - block generation
 				return true;
 			}
@@ -2245,7 +2244,7 @@ class API_Client_V2 {
 		$used  = $usage['used'] ?? 0;
 		$limit = $usage['limit'] ?? 50;
 
-		if ( $limit == 0 ) {
+		if ( 0 == $limit ) {
 			return 0;
 		}
 		return min( 100, round( ( $used / $limit ) * 100 ) );
@@ -2295,7 +2294,7 @@ class API_Client_V2 {
 			if ( ! empty( $token ) && ! defined( 'WP_LOCAL_DEV' ) ) {
 				$last_check = get_transient( 'bbai_token_last_check' );
 				// If token check expired or never done, validate before generating
-				if ( $last_check === false ) {
+				if ( false === $last_check ) {
 					$user_info = $this->get_user_info();
 					if ( is_wp_error( $user_info ) ) {
 						$error_code    = $user_info->get_error_code();
@@ -2303,8 +2302,8 @@ class API_Client_V2 {
 						$error_message = is_string( $raw_msg ) ? strtolower( $raw_msg ) : '';
 
 						// Only clear token if it's definitely invalid (not a temporary server error)
-						if ( $error_code === 'auth_required' ||
-							$error_code === 'user_not_found' ||
+						if ( 'auth_required' === $error_code ||
+							'user_not_found' === $error_code ||
 							( strpos( $error_message, 'user not found' ) !== false ) ||
 							( strpos( $error_message, 'session expired' ) !== false ) ||
 							( strpos( $error_message, 'unauthorized' ) !== false ) ) {
@@ -2398,7 +2397,7 @@ class API_Client_V2 {
 		$image_payload = $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename );
 
 		// Check if image preparation failed due to size (too large)
-		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'image_too_large' ) {
+		if ( isset( $image_payload['_error'] ) && 'image_too_large' === $image_payload['_error'] ) {
 			return new \WP_Error(
 				'image_too_large',
 				$image_payload['_error_message'] ?? __( 'Image file is too large.', 'beepbeep-ai-alt-text-generator' ),
@@ -2407,7 +2406,7 @@ class API_Client_V2 {
 		}
 
 		// Check if image is too small or invalid
-		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'image_too_small' ) {
+		if ( isset( $image_payload['_error'] ) && 'image_too_small' === $image_payload['_error'] ) {
 			return new \WP_Error(
 				'image_too_small',
 				$image_payload['_error_message'] ?? __( 'Image file is too small or invalid. Please use a valid image file.', 'beepbeep-ai-alt-text-generator' ),
@@ -2416,7 +2415,7 @@ class API_Client_V2 {
 		}
 
 		// Check if image data is missing (critical error)
-		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'missing_image_data' ) {
+		if ( isset( $image_payload['_error'] ) && 'missing_image_data' === $image_payload['_error'] ) {
 			return new \WP_Error(
 				'missing_image_data',
 				$image_payload['_error_message'] ?? __( 'Image data is missing. Cannot generate alt text.', 'beepbeep-ai-alt-text-generator' ),
@@ -2623,9 +2622,9 @@ class API_Client_V2 {
 		$quota_error_code  = isset( $quota_error_data['code'] ) ? strtoupper( (string) $quota_error_data['code'] ) : '';
 		$quota_error_text  = strtolower( trim( (string) ( $quota_error_data['error'] ?? $quota_error_data['message'] ?? '' ) ) );
 		$is_quota_response = (
-			$quota_status_code === 429 ||
-			$quota_status_code === 402 ||
-			$quota_error_code === 'QUOTA_EXCEEDED' ||
+			429 === $quota_status_code ||
+			402 === $quota_status_code ||
+			'QUOTA_EXCEEDED' === $quota_error_code ||
 			strpos( $quota_error_text, 'quota exceeded' ) !== false ||
 			strpos( $quota_error_text, 'quota exhausted' ) !== false ||
 			strpos( $quota_error_text, 'monthly quota' ) !== false ||
@@ -2692,7 +2691,7 @@ class API_Client_V2 {
 								'retry_after' => 3,
 							)
 						);
-					} elseif ( ! is_wp_error( $fresh_usage ) && is_array( $fresh_usage ) && isset( $fresh_usage['remaining'] ) && is_numeric( $fresh_usage['remaining'] ) && $fresh_usage['remaining'] === 0 ) {
+					} elseif ( ! is_wp_error( $fresh_usage ) && is_array( $fresh_usage ) && isset( $fresh_usage['remaining'] ) && is_numeric( $fresh_usage['remaining'] ) && 0 === $fresh_usage['remaining'] ) {
 						// Fresh API check confirms 0 credits - backend was correct, update cache
 						\BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage( $fresh_usage );
 					}
@@ -2728,7 +2727,7 @@ class API_Client_V2 {
 			// Only clear token if it's clearly an auth issue, not a server error
 			if ( ( strpos( $error_message_lower, 'user not found' ) !== false ||
 				strpos( $error_message_lower, 'user does not exist' ) !== false ||
-				( $status_code_check === 401 && strpos( $error_message_lower, 'unauthorized' ) !== false ) ) &&
+				( 401 === $status_code_check && strpos( $error_message_lower, 'unauthorized' ) !== false ) ) &&
 				$status_code_check < 500 ) { // Don't clear token on 500 errors - might be backend issue
 
 				// User was deleted or token is invalid - clear stored credentials
@@ -2746,7 +2745,7 @@ class API_Client_V2 {
 			}
 
 			// Handle 413 Payload Too Large specifically
-			if ( $response['status_code'] === 413 ) {
+			if ( 413 === $response['status_code'] ) {
 				$error_message = __( 'Image file is too large. Please compress or resize the image before generating alt text.', 'beepbeep-ai-alt-text-generator' );
 				$error_code    = 'payload_too_large';
 			}
@@ -2758,7 +2757,7 @@ class API_Client_V2 {
 			if ( strpos( $backend_error_lower, 'incorrect api key' ) !== false ||
 				strpos( $backend_error_lower, 'invalid api key' ) !== false ||
 				strpos( $backend_error_lower, 'api key provided' ) !== false ||
-				$error_code === 'GENERATION_ERROR' ) {
+				'GENERATION_ERROR' === $error_code ) {
 				// This is a backend configuration issue - the backend's OpenAI API key is invalid/expired
 				// This is NOT a plugin issue, but a backend server configuration problem
 				$error_message = __( 'The backend service is experiencing a configuration issue. This is a temporary backend problem that needs to be fixed on the server side. Please try again in a few minutes or contact support if the issue persists.', 'beepbeep-ai-alt-text-generator' );
@@ -2989,7 +2988,7 @@ class API_Client_V2 {
 
 			if ( is_wp_error( $response ) ) {
 				$error_code = $response->get_error_code();
-				if ( ( $error_code === 'api_timeout' || $error_code === 'api_unreachable' ) && $attempt < $max_retries ) {
+				if ( ( 'api_timeout' === $error_code || 'api_unreachable' === $error_code ) && $attempt < $max_retries ) {
 					$this->log_api_event(
 						'info',
 						'Retrying /billing/plans after timeout',
@@ -3061,11 +3060,11 @@ class API_Client_V2 {
 			$error_data    = $response->get_error_data();
 
 			// Check for "user not found" errors in various forms
-			$is_user_not_found_error = $error_code === 'user_not_found' ||
+			$is_user_not_found_error = 'user_not_found' === $error_code ||
 										strpos( $error_message, 'user not found' ) !== false ||
 										strpos( $error_message, 'user does not exist' ) !== false ||
 										( is_array( $error_data ) && isset( $error_data['code'] ) &&
-										( $error_data['code'] === 'user_not_found' ||
+										( 'user_not_found' === $error_data['code'] ||
 										strpos( strtolower( $error_data['code'] ), 'user_not_found' ) !== false ) ) ||
 										( is_array( $error_data ) && isset( $error_data['backend_message'] ) &&
 										is_string( $error_data['backend_message'] ) &&
@@ -3119,8 +3118,8 @@ class API_Client_V2 {
 				strpos( $error_lower, 'authenticated' ) !== false ||
 				strpos( $error_lower, 'user not found' ) !== false ||
 				strpos( $error_lower, 'user does not exist' ) !== false ||
-				$error_code === 'user_not_found' ||
-				$error_code === 'auth_required' ||
+				'user_not_found' === $error_code ||
+				'auth_required' === $error_code ||
 				( is_array( $error_data ) && isset( $error_data['status_code'] ) && $error_data['status_code'] >= 500 ) ) {
 				// For checkout errors, provide a helpful message
 				return new \WP_Error(
@@ -3220,9 +3219,9 @@ class API_Client_V2 {
 		$error_message = $response['data']['error'] ?? $response['data']['message'] ?? __( 'Failed to send password reset email', 'beepbeep-ai-alt-text-generator' );
 
 		// Check for specific error cases
-		if ( $response['status_code'] === 404 ) {
+		if ( 404 === $response['status_code'] ) {
 			$error_message = __( 'Password reset is currently being set up. This feature is not yet available on our backend. Please contact support for assistance.', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( $response['status_code'] === 429 ) {
+		} elseif ( 429 === $response['status_code'] ) {
 			$error_message = __( 'Too many password reset requests. Please wait 15 minutes before trying again.', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( $response['status_code'] >= 500 ) {
 			$error_message = __( 'The authentication server is temporarily unavailable. Please try again in a few minutes.', 'beepbeep-ai-alt-text-generator' );
@@ -3399,7 +3398,8 @@ class API_Client_V2 {
 				$max_file_size = 512 * 1024; // 512KB - resize if larger
 
 				// Get metadata first
-				$mime_type = get_post_mime_type( $image_id ) ?: 'image/jpeg';
+				$mime_raw  = get_post_mime_type( $image_id );
+				$mime_type = $mime_raw ? $mime_raw : 'image/jpeg';
 				$metadata  = wp_get_attachment_metadata( $image_id );
 
 				// Always resize large images and send as base64 to prevent 413 errors
@@ -3439,14 +3439,14 @@ class API_Client_V2 {
 
 							if ( ! is_wp_error( $saved ) && isset( $saved['path'] ) ) {
 								$resized_contents = false;
-								if ( is_string( $saved['path'] ) && $saved['path'] !== '' ) {
+								if ( is_string( $saved['path'] ) && '' !== $saved['path'] ) {
 									$fs               = $this->bbai_init_wp_filesystem();
 									$resized_contents = ( is_object( $fs ) && method_exists( $fs, 'get_contents' ) ) ? $fs->get_contents( $saved['path'] ) : false;
 								}
 								if ( is_string( $saved['path'] ) && is_file( $saved['path'] ) ) {
 									wp_delete_file( $saved['path'] );
 								}
-								if ( $resized_contents !== false ) {
+								if ( false !== $resized_contents ) {
 									$base64 = base64_encode( $resized_contents );
 									if ( strlen( $base64 ) <= 5.5 * 1024 * 1024 ) {
 										$payload['image_base64'] = $base64;
@@ -3478,9 +3478,7 @@ class API_Client_V2 {
 				// Fallback to URL if file doesn't exist
 				$payload['image_url'] = $image_url;
 			}
-		} else {
-			// No image URL provided - this is an error condition
-			// Log it but still return the payload (backend should handle the error)
+		} else { // phpcs:ignore Universal.ControlStructures.DisallowLonelyIf.Found -- guard keeps conditional log self-contained.
 			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 				\BeepBeepAI\AltTextGenerator\Debug_Log::log(
 					'error',
@@ -3502,15 +3500,16 @@ class API_Client_V2 {
 			$max_inline_size = 5.5 * 1024 * 1024; // ~5.5MB upper bound
 			if ( $file_size > 0 && $file_size <= $max_inline_size ) {
 					$contents = false;
-				if ( is_string( $file_path ) && $file_path !== '' ) {
+				if ( is_string( $file_path ) && '' !== $file_path ) {
 					$fs       = $this->bbai_init_wp_filesystem();
 					$contents = ( is_object( $fs ) && method_exists( $fs, 'get_contents' ) ) ? $fs->get_contents( $file_path ) : false;
 				}
-				if ( $contents !== false ) {
+				if ( false !== $contents ) {
 					$base64 = base64_encode( $contents );
 					// Avoid sending absurdly large base64 (should align with size check)
 					if ( ! empty( $base64 ) && strlen( $base64 ) <= $max_inline_size * 1.4 ) {
-						$mime_type               = $mime_type ?? get_post_mime_type( $image_id ) ?: 'image/jpeg';
+						$mime_type_fallback      = get_post_mime_type( $image_id );
+						$mime_type               = $mime_type ?? ( $mime_type_fallback ? $mime_type_fallback : 'image/jpeg' );
 						$payload['image_base64'] = $base64;
 						$payload['mime_type']    = $mime_type;
 						// CRITICAL: Remove image_url when we have base64 to force backend to use our image data
@@ -3589,13 +3588,13 @@ class API_Client_V2 {
 			if ( is_array( $value ) || is_object( $value ) ) {
 				$cleaned_value = $this->clean_json_data( $value );
 				// Only add if cleaning succeeded
-				if ( $cleaned_value !== null ) {
+				if ( null !== $cleaned_value ) {
 					$cleaned[ $key ] = $cleaned_value;
 				}
 			} elseif ( is_resource( $value ) ) {
 				// Skip resources
 				continue;
-			} elseif ( is_scalar( $value ) || $value === null ) {
+			} elseif ( is_scalar( $value ) || null === $value ) {
 				// Include scalar values and null
 				$cleaned[ $key ] = $value;
 			}
@@ -3624,43 +3623,36 @@ class API_Client_V2 {
 			}
 
 			// Sanitize URLs - only show endpoint path, not full URL
-			if ( $key === 'url' && is_string( $value ) ) {
+			if ( 'url' === $key && is_string( $value ) ) {
 				// Extract just the endpoint path, remove base URL
 				$parsed = wp_parse_url( $value );
 				if ( isset( $parsed['path'] ) ) {
-					$sanitized[ $key ] = $parsed['path'] . ( isset( $parsed['query'] ) ? '?' . '[QUERY_PARAMS]' : '' );
+					$sanitized[ $key ] = $parsed['path'] . ( isset( $parsed['query'] ) ? '?[QUERY_PARAMS]' : '' );
 				} else {
 					$sanitized[ $key ] = '[REDACTED_URL]';
 				}
-			}
-			// Sanitize endpoint - remove query parameters
-			elseif ( $key === 'endpoint' && is_string( $value ) ) {
+			} elseif ( 'endpoint' === $key && is_string( $value ) ) {
+				// Sanitize endpoint - remove query parameters.
 				$sanitized[ $key ] = strtok( $value, '?' );
-			}
-			// Omit error key when null - backend often returns error: null on success, which gets misdisplayed as an error
-			elseif ( $key === 'error' && $value === null ) {
+			} elseif ( 'error' === $key && null === $value ) {
+				// Omit error key when null - backend often returns error: null on success.
 				continue;
-			}
-			// Sanitize error messages - remove potential sensitive data
-			elseif ( $key === 'error' && is_string( $value ) ) {
-				// Remove any URLs, tokens, or API keys from error messages
+			} elseif ( 'error' === $key && is_string( $value ) ) {
+				// Sanitize error messages - remove URLs, tokens, and API keys.
 				$sanitized[ $key ] = preg_replace(
 					array(
-						'/https?:\/\/[^\s]+/i',  // Remove URLs
-						'/Bearer\s+[A-Za-z0-9\-_]+/i',  // Remove Bearer tokens
-						'/token[=:]\s*[A-Za-z0-9\-_]+/i',  // Remove token values
-						'/api[_-]?key[=:]\s*[A-Za-z0-9\-_]+/i',  // Remove API keys
+						'/https?:\/\/[^\s]+/i',
+						'/Bearer\s+[A-Za-z0-9\-_]+/i',
+						'/token[=:]\s*[A-Za-z0-9\-_]+/i',
+						'/api[_-]?key[=:]\s*[A-Za-z0-9\-_]+/i',
 					),
 					'[REDACTED]',
 					$value
 				);
-			}
-			// Recursively sanitize nested arrays
-			elseif ( is_array( $value ) ) {
+			} elseif ( is_array( $value ) ) {
+				// Recursively sanitize nested arrays.
 				$sanitized[ $key ] = $this->sanitize_log_context( $value );
-			}
-			// Keep other values as-is
-			else {
+			} else {
 				$sanitized[ $key ] = $value;
 			}
 		}
@@ -3727,21 +3719,21 @@ class API_Client_V2 {
 
 		$image_payload = $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename );
 
-		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'image_too_large' ) {
+		if ( isset( $image_payload['_error'] ) && 'image_too_large' === $image_payload['_error'] ) {
 			return new \WP_Error(
 				'image_too_large',
 				$image_payload['_error_message'] ?? __( 'Image file is too large.', 'beepbeep-ai-alt-text-generator' ),
 				array( 'image_id' => $image_id )
 			);
 		}
-		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'image_too_small' ) {
+		if ( isset( $image_payload['_error'] ) && 'image_too_small' === $image_payload['_error'] ) {
 			return new \WP_Error(
 				'image_too_small',
 				$image_payload['_error_message'] ?? __( 'Image file is too small or invalid.', 'beepbeep-ai-alt-text-generator' ),
 				array( 'image_id' => $image_id )
 			);
 		}
-		if ( isset( $image_payload['_error'] ) && $image_payload['_error'] === 'missing_image_data' ) {
+		if ( isset( $image_payload['_error'] ) && 'missing_image_data' === $image_payload['_error'] ) {
 			return new \WP_Error(
 				'missing_image_data',
 				$image_payload['_error_message'] ?? __( 'Image data is missing.', 'beepbeep-ai-alt-text-generator' ),
@@ -3842,7 +3834,7 @@ class API_Client_V2 {
 	 */
 	public function get_alt_text_job_status( string $job_id ) {
 		$job_id = trim( $job_id );
-		if ( $job_id === '' ) {
+		if ( '' === $job_id ) {
 			return new \WP_Error( 'bbai_job_invalid_id', __( 'Invalid job id.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 

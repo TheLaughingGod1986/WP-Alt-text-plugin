@@ -136,7 +136,7 @@ trait Core_Ajax_License {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
-					'message' => $result->get_error_message() ?: __( 'Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator' ),
+					'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator' ),
 				)
 			);
 			return;
@@ -183,7 +183,7 @@ trait Core_Ajax_License {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
-					'message' => $result->get_error_message() ?: __( 'Failed to disconnect site', 'beepbeep-ai-alt-text-generator' ),
+					'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Failed to disconnect site', 'beepbeep-ai-alt-text-generator' ),
 				)
 			);
 			return;
@@ -202,12 +202,12 @@ trait Core_Ajax_License {
 	 */
 	private function is_admin_authenticated() {
 		$admin_session = get_transient( 'bbai_admin_session_' . get_current_user_id() );
-		if ( $admin_session === false || empty( $admin_session ) ) {
+		if ( false === $admin_session || empty( $admin_session ) ) {
 			return false;
 		}
 
 		$session_time = get_transient( 'bbai_admin_session_time_' . get_current_user_id() );
-		if ( $session_time === false || ( time() - intval( $session_time ) ) > ( 24 * HOUR_IN_SECONDS ) ) {
+		if ( false === $session_time || ( time() - intval( $session_time ) ) > ( 24 * HOUR_IN_SECONDS ) ) {
 			$this->clear_admin_session();
 			return false;
 		}
@@ -253,7 +253,7 @@ trait Core_Ajax_License {
 
 		if ( $has_license && $license_data && isset( $license_data['organization'] ) ) {
 			$license_plan = strtolower( $license_data['organization']['plan'] ?? 'free' );
-			$is_agency    = ( $license_plan === 'agency' );
+			$is_agency    = ( 'agency' === $license_plan );
 		}
 
 		if ( ! $is_agency ) {
@@ -292,7 +292,7 @@ trait Core_Ajax_License {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
-					'message' => $result->get_error_message() ?: __( 'Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator' ),
+					'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator' ),
 				)
 			);
 			return;

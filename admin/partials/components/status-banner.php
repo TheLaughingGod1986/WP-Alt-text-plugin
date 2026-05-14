@@ -45,7 +45,7 @@ $bbai_ch_body               = (string) ( $bbai_ch['body'] ?? '' );
 $bbai_ch_status             = (string) ( $bbai_ch['status_line'] ?? '' );
 $bbai_ch_note               = (string) ( $bbai_ch['note'] ?? '' );
 $bbai_ch_stack              = isset( $bbai_ch['stack_paragraphs'] ) && is_array( $bbai_ch['stack_paragraphs'] ) ? $bbai_ch['stack_paragraphs'] : array();
-$bbai_ch_icon_html          = isset( $bbai_ch['icon_html'] ) && is_string( $bbai_ch['icon_html'] ) && $bbai_ch['icon_html'] !== ''
+$bbai_ch_icon_html          = isset( $bbai_ch['icon_html'] ) && is_string( $bbai_ch['icon_html'] ) && '' !== $bbai_ch['icon_html']
 	? $bbai_ch['icon_html']
 	: null;
 $bbai_ch_icon_wrapper_attrs = isset( $bbai_ch['icon_wrapper_attrs'] ) && is_array( $bbai_ch['icon_wrapper_attrs'] )
@@ -123,7 +123,7 @@ $bbai_ch_subtext_attr_str = implode( ' ', $bbai_ch_subtext_pairs );
 
 $bbai_ch_section_attr_extra = '';
 foreach ( $bbai_ch_section_data as $bbai_ch_dk => $bbai_ch_dv ) {
-	if ( ! is_string( $bbai_ch_dk ) || $bbai_ch_dk === '' ) {
+	if ( ! is_string( $bbai_ch_dk ) || '' === $bbai_ch_dk ) {
 		continue;
 	}
 	$bbai_ch_section_attr_extra .= sprintf( ' %s="%s"', esc_attr( $bbai_ch_dk ), esc_attr( (string) $bbai_ch_dv ) );

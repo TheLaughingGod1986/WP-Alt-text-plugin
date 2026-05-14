@@ -123,7 +123,7 @@ $bbai_build_locked_attrs     = static function ( string $reason, string $source 
 	);
 };
 
-if ( $bbai_quick_actions_context === 'dashboard' ) :
+if ( 'dashboard' === $bbai_quick_actions_context ) :
 	$bbai_format_credit_helper = static function ( int $required, int $remaining ): string {
 		if ( $remaining >= $required ) {
 			return sprintf(

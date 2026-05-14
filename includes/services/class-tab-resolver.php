@@ -38,7 +38,8 @@ class Tab_Resolver {
 		if ( in_array( $default_tab, $allowed, true ) ) {
 			return $default_tab;
 		}
-		return reset( $allowed ) ?: $default_tab;
+		$first = reset( $allowed );
+		return $first ? $first : $default_tab;
 	}
 
 	/**

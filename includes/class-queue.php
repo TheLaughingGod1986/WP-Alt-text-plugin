@@ -163,7 +163,7 @@ class Queue {
 	 */
 	public static function enqueue_many( array $ids, $source = 'bulk' ) {
 		// For regeneration, clear existing queue entries first
-		if ( $source === 'bulk-regenerate' ) {
+		if ( 'bulk-regenerate' === $source ) {
 			self::clear_for_attachments( $ids );
 		}
 
@@ -536,7 +536,8 @@ class Queue {
 				$limit
 			),
 			ARRAY_A
-		) ?: array();
+		);
+		$result = $result ? $result : array();
 
 		BBAI_Cache::set( 'queue', $cache_suffix, $result, BBAI_Cache::SHORT_TTL );
 		return $result;

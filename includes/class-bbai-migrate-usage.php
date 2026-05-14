@@ -144,7 +144,7 @@ class Migrate_Usage {
 			$source = 'manual';
 			if ( ! empty( $context['source'] ) ) {
 				$source = sanitize_key( $context['source'] );
-			} elseif ( ! empty( $log['source'] ) && $log['source'] !== 'generation' ) {
+			} elseif ( ! empty( $log['source'] ) && 'generation' !== $log['source'] ) {
 				$source = sanitize_key( $log['source'] );
 			}
 

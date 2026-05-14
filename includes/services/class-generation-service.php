@@ -202,8 +202,7 @@ class Generation_Service {
 			$usage = $this->api_client->get_usage();
 
 			// If usage check fails due to authentication, warn but allow queueing.
-			if ( is_wp_error( $usage ) && 'not_authenticated' === $usage->get_error_code() ) {
-				// Allow queue but backend will handle auth.
+			if ( is_wp_error( $usage ) && 'not_authenticated' === $usage->get_error_code() ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf -- auth error does not block queueing.
 			}
 		}
 

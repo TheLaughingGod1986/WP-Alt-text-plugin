@@ -27,7 +27,7 @@ class Token_Quota_Service {
 		// Check cache first unless forcing refresh
 		if ( ! $force_refresh ) {
 			$cached = get_transient( self::CACHE_KEY );
-			if ( $cached !== false && is_array( $cached ) ) {
+			if ( false !== $cached && is_array( $cached ) ) {
 				return $cached;
 			}
 		}
@@ -41,7 +41,7 @@ class Token_Quota_Service {
 		if ( is_wp_error( $usage ) ) {
 			// Return cached data if available, even if stale
 			$cached = get_transient( self::CACHE_KEY );
-			if ( $cached !== false && is_array( $cached ) ) {
+			if ( false !== $cached && is_array( $cached ) ) {
 				return $cached;
 			}
 			return $usage;
@@ -116,7 +116,7 @@ class Token_Quota_Service {
 				// Backend will handle the actual consumption and error handling
 				return true;
 			}
-			if ( $remaining === 0 ) {
+			if ( 0 === $remaining ) {
 				// Cached shows 0 credits - verify with fresh API check
 				$quota = self::get_site_quota( true ); // Force refresh
 

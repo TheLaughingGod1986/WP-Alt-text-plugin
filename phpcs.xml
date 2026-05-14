@@ -14,7 +14,10 @@
 	<exclude-pattern>output/*</exclude-pattern>
 
 	<!-- WordPress Extra (Plugin Check uses this) -->
-	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Extra">
+		<!-- Class files use class-bbai-* prefix convention; sniff produces false positives -->
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+	</rule>
 
 	<!-- Minimum PHP version -->
 	<config name="minimum_supported_wp_version" value="6.2"/>

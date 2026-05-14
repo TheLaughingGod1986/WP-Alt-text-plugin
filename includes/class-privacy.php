@@ -139,14 +139,14 @@ class Privacy {
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', Contact_Submissions::table() )
 		);
-		if ( $exists !== Contact_Submissions::table() ) {
+		if ( Contact_Submissions::table() !== $exists ) {
 			return array();
 		}
 
 		$page_size = 50;
 		$offset    = ( max( 1, $page ) - 1 ) * $page_size;
 
-		if ( $email_address === '' && $user_id <= 0 ) {
+		if ( '' === $email_address && $user_id <= 0 ) {
 			return array();
 		}
 			$submissions_table = esc_sql( Contact_Submissions::table() );
@@ -329,7 +329,7 @@ class Privacy {
 			$exists = $wpdb->get_var(
 				$wpdb->prepare( 'SHOW TABLES LIKE %s', Credit_Usage_Logger::table() )
 			);
-			if ( $exists === Credit_Usage_Logger::table() ) {
+			if ( Credit_Usage_Logger::table() === $exists ) {
 				$credit_usage_table = esc_sql( Credit_Usage_Logger::table() );
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$summary = $wpdb->get_row(
@@ -370,7 +370,7 @@ class Privacy {
 			$exists = $wpdb->get_var(
 				$wpdb->prepare( 'SHOW TABLES LIKE %s', \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() )
 			);
-			if ( $exists === \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() ) {
+			if ( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() === $exists ) {
 				$usage_logs_table = esc_sql( \BeepBeepAI\AltTextGenerator\Usage\Usage_Logs::table() );
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$summary = $wpdb->get_row(
@@ -422,13 +422,13 @@ class Privacy {
 		$exists = $wpdb->get_var(
 			$wpdb->prepare( 'SHOW TABLES LIKE %s', Contact_Submissions::table() )
 		);
-		if ( $exists !== Contact_Submissions::table() ) {
+		if ( Contact_Submissions::table() !== $exists ) {
 			return false;
 		}
 
 		$page_size = 50;
 
-		if ( $email_address === '' && $user_id <= 0 ) {
+		if ( '' === $email_address && $user_id <= 0 ) {
 			return false;
 		}
 			$submissions_table = esc_sql( Contact_Submissions::table() );
@@ -494,7 +494,7 @@ class Privacy {
 					array( '%d', '%d' ),
 					array( '%d' )
 				);
-				if ( $rows !== false && $rows > 0 ) {
+				if ( false !== $rows && $rows > 0 ) {
 					$updated = true;
 				}
 			}
@@ -516,7 +516,7 @@ class Privacy {
 					array( '%d' ),
 					array( '%d' )
 				);
-				if ( $rows !== false && $rows > 0 ) {
+				if ( false !== $rows && $rows > 0 ) {
 					$updated = true;
 				}
 			}

@@ -59,7 +59,7 @@ trait Core_Ajax_Billing {
 			$error_code          = $result->get_error_code();
 			$error_message_lower = is_string( $error_message ) ? strtolower( $error_message ) : '';
 
-			if ( $error_code === 'auth_required' ||
+			if ( 'auth_required' === $error_code ||
 				strpos( $error_message_lower, 'session' ) !== false ||
 				strpos( $error_message_lower, 'log in' ) !== false ) {
 				$error_message = __( 'Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator' );
@@ -112,7 +112,7 @@ trait Core_Ajax_Billing {
 				$license_data = $this->api_client->get_license_data();
 				if ( $license_data && isset( $license_data['organization'] ) ) {
 					$license_plan       = strtolower( $license_data['organization']['plan'] ?? 'free' );
-					$has_agency_license = ( $license_plan === 'agency' || $license_plan === 'pro' );
+					$has_agency_license = ( 'agency' === $license_plan || 'pro' === $license_plan );
 				}
 			}
 		}

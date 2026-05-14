@@ -43,7 +43,7 @@ class Credit_Usage_Page {
 		// Handle table creation request - sanitize and verify nonce first.
 		$bbai_action_input = isset( $_POST['bbai_action'] ) ? sanitize_key( wp_unslash( $_POST['bbai_action'] ) ) : '';
 		$bbai_action       = in_array( $bbai_action_input, array( 'create_credit_table' ), true ) ? $bbai_action_input : '';
-		if ( $bbai_action === 'create_credit_table' ) {
+		if ( 'create_credit_table' === $bbai_action ) {
 			check_admin_referer( 'bbai_create_credit_table', 'bbai_create_table_nonce' );
 			Credit_Usage_Logger::create_table();
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Credit usage table created successfully!', 'beepbeep-ai-alt-text-generator' ) . '</p></div>';
@@ -139,7 +139,7 @@ class Credit_Usage_Page {
 				}
 			}
 		} catch ( \Exception $e ) {
-			// Silently fail - backend data is optional enhancement
+			unset( $e ); // Backend data is optional; silently skip on error.
 		}
 
 		// Diagnostic: Check if table exists and has any data
@@ -223,7 +223,7 @@ class Credit_Usage_Page {
 
 		// Get user details if viewing specific user
 		$user_details = null;
-		if ( $view === 'user_detail' && $user_id > 0 ) {
+		if ( 'user_detail' === $view && $user_id > 0 ) {
 			$user_details = Credit_Usage_Logger::get_user_details( $user_id, $query_args );
 		}
 
@@ -326,7 +326,7 @@ class Credit_Usage_Page {
 		$usage_percent     = $credits_limit > 0 ? (int) round( ( $credits_used / $credits_limit ) * 100 ) : 0;
 		$usage_percent     = min( 100, max( 0, $usage_percent ) );
 		$plan_slug         = sanitize_key( (string) ( $current_usage['plan'] ?? 'free' ) );
-		$plan_label        = sanitize_text_field( (string) ( $current_usage['plan_label'] ?? ucfirst( $plan_slug ?: 'free' ) ) );
+		$plan_label        = sanitize_text_field( (string) ( $current_usage['plan_label'] ?? ucfirst( $plan_slug ? $plan_slug : 'free' ) ) );
 		$is_pro_plan       = in_array( $plan_slug, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
 		$is_low_credits    = $credits_remaining < 10 && $credits_remaining > 0;
 		$is_out_of_credits = 0 === $credits_remaining;
@@ -852,7 +852,7 @@ class Credit_Usage_Page {
 
 			$wp_user = self::resolve_backend_hero_wp_user( $hero );
 			if ( $wp_user instanceof \WP_User ) {
-				$hero['display_name'] = $wp_user->display_name ?: $wp_user->user_login;
+				$hero['display_name'] = $wp_user->display_name ? $wp_user->display_name : $wp_user->user_login;
 				if ( empty( $hero['user_email'] ) && ! empty( $wp_user->user_email ) ) {
 					$hero['user_email'] = $wp_user->user_email;
 				}
@@ -880,7 +880,7 @@ class Credit_Usage_Page {
 					)
 				);
 				if ( $db_user ) {
-					$hero['display_name'] = $db_user->display_name ?: $db_user->user_login;
+					$hero['display_name'] = $db_user->display_name ? $db_user->display_name : $db_user->user_login;
 					if ( empty( $hero['user_email'] ) && ! empty( $db_user->user_email ) ) {
 						$hero['user_email'] = $db_user->user_email;
 					}
@@ -921,15 +921,15 @@ class Credit_Usage_Page {
 							'skip_site_filter' => true,
 						)
 					);
-					if ( ! empty( $usage_events['events'][0]['display_name'] ) && $usage_events['events'][0]['display_name'] !== __( 'System', 'beepbeep-ai-alt-text-generator' ) ) {
+					if ( ! empty( $usage_events['events'][0]['display_name'] ) && __( 'System', 'beepbeep-ai-alt-text-generator' ) !== $usage_events['events'][0]['display_name'] ) {
 						$hero['display_name'] = $usage_events['events'][0]['display_name'];
-					} elseif ( ! empty( $usage_events['events'][0]['username'] ) && $usage_events['events'][0]['username'] !== __( 'System', 'beepbeep-ai-alt-text-generator' ) ) {
+					} elseif ( ! empty( $usage_events['events'][0]['username'] ) && __( 'System', 'beepbeep-ai-alt-text-generator' ) !== $usage_events['events'][0]['username'] ) {
 						$hero['display_name'] = $usage_events['events'][0]['username'];
 					} else {
 						// Method 2: Try get_user_by
 						$wp_user_retry = get_user_by( 'ID', $user_id );
 						if ( $wp_user_retry instanceof \WP_User ) {
-							$hero['display_name'] = $wp_user_retry->display_name ?: $wp_user_retry->user_login;
+							$hero['display_name'] = $wp_user_retry->display_name ? $wp_user_retry->display_name : $wp_user_retry->user_login;
 							if ( empty( $hero['user_email'] ) && ! empty( $wp_user_retry->user_email ) ) {
 								$hero['user_email'] = $wp_user_retry->user_email;
 							}
@@ -945,7 +945,7 @@ class Credit_Usage_Page {
 								)
 							);
 							if ( $db_user ) {
-								$hero['display_name'] = $db_user->display_name ?: $db_user->user_login;
+								$hero['display_name'] = $db_user->display_name ? $db_user->display_name : $db_user->user_login;
 								if ( empty( $hero['user_email'] ) && ! empty( $db_user->user_email ) ) {
 									$hero['user_email'] = $db_user->user_email;
 								}
@@ -961,7 +961,7 @@ class Credit_Usage_Page {
 								if ( $matching_wp_user_id && absint( $matching_wp_user_id ) > 0 ) {
 									$matching_user = get_user_by( 'ID', absint( $matching_wp_user_id ) );
 									if ( $matching_user instanceof \WP_User ) {
-										$hero['display_name'] = $matching_user->display_name ?: $matching_user->user_login;
+										$hero['display_name'] = $matching_user->display_name ? $matching_user->display_name : $matching_user->user_login;
 										if ( empty( $hero['user_email'] ) && ! empty( $matching_user->user_email ) ) {
 											$hero['user_email'] = $matching_user->user_email;
 										}
@@ -978,7 +978,7 @@ class Credit_Usage_Page {
 											)
 										);
 										if ( $db_user_direct ) {
-											$hero['display_name'] = $db_user_direct->display_name ?: $db_user_direct->user_login;
+											$hero['display_name'] = $db_user_direct->display_name ? $db_user_direct->display_name : $db_user_direct->user_login;
 											if ( empty( $hero['user_email'] ) && ! empty( $db_user_direct->user_email ) ) {
 												$hero['user_email'] = $db_user_direct->user_email;
 											}

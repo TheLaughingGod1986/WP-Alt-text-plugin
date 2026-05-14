@@ -83,7 +83,7 @@ class BBAI_Telemetry {
 	 */
 	public static function bump_session_images_processed( int $count ): void {
 		$count = max( 0, $count );
-		if ( $count === 0 ) {
+		if ( 0 === $count ) {
 			return;
 		}
 		$uid = get_current_user_id();
@@ -326,6 +326,7 @@ class BBAI_Telemetry {
  * @param string               $event_name Event name (snake_case).
  * @param array<string,mixed> $properties  Optional properties.
  */
+// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed -- convenience wrapper kept in same file as its class.
 function bbai_telemetry_emit( string $event_name, array $properties = array() ): void {
 	BBAI_Telemetry::emit( $event_name, $properties );
 }

@@ -18,11 +18,11 @@ try {
 		}
 	}
 } catch ( Exception $e ) {
-	// Silently fail, use default free plan
+	unset( $e ); // Silently skip; default free plan is used as fallback.
 }
 
 // Map 'pro' to 'growth' for consistency
-if ( $bbai_current_plan === 'pro' ) {
+if ( 'pro' === $bbai_current_plan ) {
 	$bbai_current_plan = 'growth';
 }
 

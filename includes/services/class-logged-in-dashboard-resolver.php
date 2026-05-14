@@ -372,7 +372,7 @@ class Logged_In_Dashboard_Resolver {
 		$system_err = $ctx['systemError'];
 
 		// 1. No images at all.
-		if ( $ctx['mediaCount'] === 0 ) {
+		if ( 0 === $ctx['mediaCount'] ) {
 			return self::STATE_NO_IMAGES;
 		}
 
@@ -383,7 +383,7 @@ class Logged_In_Dashboard_Resolver {
 		}
 
 		// 3. System error when no active job (API key missing, auth failure, etc.).
-		if ( $system_err !== null && $job === null ) {
+		if ( null !== $system_err && null === $job ) {
 			return self::STATE_ERROR;
 		}
 
@@ -568,7 +568,7 @@ class Logged_In_Dashboard_Resolver {
 						/* translators: 1: done count, 2: eta string */
 						__( '%1$s optimised so far · ~%2$s to finish', 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $done ),
-						$eta_str ?: __( 'a moment', 'beepbeep-ai-alt-text-generator' )
+						$eta_str ? $eta_str : __( 'a moment', 'beepbeep-ai-alt-text-generator' )
 					)
 					: ( $eta_str
 						? sprintf(
@@ -1754,7 +1754,7 @@ class Logged_In_Dashboard_Resolver {
 		}
 
 		// Add queued / processing pill only while a job is active.
-		if ( self::STATE_QUEUED === $state && $job !== null ) {
+		if ( self::STATE_QUEUED === $state && null !== $job ) {
 			$queued_count = max( 0, (int) ( $job['total'] ?? 0 ) - (int) ( $job['done'] ?? 0 ) );
 			if ( $queued_count > 0 ) {
 				$pills[] = array(
@@ -1768,7 +1768,7 @@ class Logged_In_Dashboard_Resolver {
 					'color' => 'blue',
 				);
 			}
-		} elseif ( self::STATE_PROCESSING === $state && $job !== null ) {
+		} elseif ( self::STATE_PROCESSING === $state && null !== $job ) {
 			$processing_count = max( 0, (int) ( $job['total'] ?? 0 ) - (int) ( $job['done'] ?? 0 ) );
 			if ( $processing_count > 0 ) {
 				$pills[] = array(

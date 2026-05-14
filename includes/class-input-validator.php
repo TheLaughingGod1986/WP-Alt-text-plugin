@@ -26,12 +26,12 @@ class Input_Validator {
 	 */
 	public static function int_param( \WP_REST_Request $request, $param, $default = 0, $min = null, $max = null ) {
 		$value = $request->get_param( $param );
-		$value = $value !== null ? absint( $value ) : $default;
+		$value = null !== $value ? absint( $value ) : $default;
 
-		if ( $min !== null ) {
+		if ( null !== $min ) {
 			$value = max( $min, $value );
 		}
-		if ( $max !== null ) {
+		if ( null !== $max ) {
 			$value = min( $max, $value );
 		}
 
@@ -50,7 +50,7 @@ class Input_Validator {
 	public static function string_param( \WP_REST_Request $request, $param, $default = '', $allowed = array() ) {
 		$value = $request->get_param( $param );
 
-		if ( $value === null || ! is_string( $value ) ) {
+		if ( null === $value || ! is_string( $value ) ) {
 			return $default;
 		}
 
@@ -75,7 +75,7 @@ class Input_Validator {
 	public static function key_param( \WP_REST_Request $request, $param, $default = '', $allowed = array() ) {
 		$value = $request->get_param( $param );
 
-		if ( $value === null || ! is_string( $value ) ) {
+		if ( null === $value || ! is_string( $value ) ) {
 			return $default;
 		}
 
@@ -99,11 +99,11 @@ class Input_Validator {
 	public static function bool_param( \WP_REST_Request $request, $param, $default = false ) {
 		$value = $request->get_param( $param );
 
-		if ( $value === null ) {
+		if ( null === $value ) {
 			return $default;
 		}
 
-		return $value === true || $value === 'true' || $value === '1' || $value === 1;
+		return true === $value || 'true' === $value || '1' === $value || 1 === $value;
 	}
 
 	/**

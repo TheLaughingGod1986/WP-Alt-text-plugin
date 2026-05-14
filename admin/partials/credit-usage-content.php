@@ -40,11 +40,11 @@ $bbai_activity_base_url = add_query_arg(
 	array_filter(
 		array(
 			'page'      => 'bbai-credit-usage',
-			'date_from' => $date_from ?: null,
-			'date_to'   => $date_to ?: null,
-			'source'    => $source ?: null,
+			'date_from' => $date_from ? $date_from : null,
+			'date_to'   => $date_to ? $date_to : null,
+			'source'    => $source ? $source : null,
 			'user_id'   => $user_id > 0 ? $user_id : null,
-			'view'      => $view !== 'summary' ? $view : null,
+			'view'      => 'summary' !== $view ? $view : null,
 		),
 		static function ( $value ) {
 			return null !== $value && '' !== $value;
@@ -108,7 +108,7 @@ $bbai_ins_chips = isset( $bbai_usage_insights['chips'] ) && is_array( $bbai_usag
 
 <div class="bbai-container bbai-usage-workspace bbai-ui-page-shell bbai-credit-usage-page">
 
-	<?php if ( $view === 'user_detail' && $user_id > 0 ) : ?>
+	<?php if ( 'user_detail' === $view && $user_id > 0 ) : ?>
 		<div class="bbai-usage-back-wrap">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=bbai-credit-usage' ) ); ?>" class="bbai-back-btn">
 				<?php esc_html_e( '← Back to Summary', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -346,7 +346,7 @@ $bbai_ins_chips = isset( $bbai_usage_insights['chips'] ) && is_array( $bbai_usag
 													sprintf(
 													/* translators: %s: related item label. */
 														__( 'Open %s', 'beepbeep-ai-alt-text-generator' ),
-														$bbai_related_label ?: __( 'related item', 'beepbeep-ai-alt-text-generator' )
+														$bbai_related_label ? $bbai_related_label : __( 'related item', 'beepbeep-ai-alt-text-generator' )
 													)
 												);
 												?>
@@ -462,7 +462,7 @@ $bbai_ins_chips = isset( $bbai_usage_insights['chips'] ) && is_array( $bbai_usag
 		<?php endif; ?>
 	</section>
 
-	<?php if ( $view === 'user_detail' && $bbai_user_details ) : ?>
+	<?php if ( 'user_detail' === $view && $bbai_user_details ) : ?>
 	<div class="bbai-usage-supplemental">
 		<div class="bbai-card bbai-user-details-card">
 			<h2 class="bbai-card-title"><?php esc_html_e( 'User details', 'beepbeep-ai-alt-text-generator' ); ?></h2>
@@ -474,7 +474,7 @@ $bbai_ins_chips = isset( $bbai_usage_insights['chips'] ) && is_array( $bbai_usag
 	</div>
 	<?php endif; ?>
 
-	<?php if ( $view === 'summary' && ! empty( $bbai_backend_user_activity['users'] ) ) : ?>
+	<?php if ( 'summary' === $view && ! empty( $bbai_backend_user_activity['users'] ) ) : ?>
 	<section class="bbai-usage-contributors" aria-labelledby="bbai-usage-contributors-heading">
 		<h2 id="bbai-usage-contributors-heading" class="bbai-usage-contributors__title bbai-section-title"><?php esc_html_e( 'Top contributors', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 		<p class="bbai-usage-contributors__lead bbai-ui-section-header__description"><?php esc_html_e( 'Users who consumed the most credits in the current reporting period.', 'beepbeep-ai-alt-text-generator' ); ?></p>

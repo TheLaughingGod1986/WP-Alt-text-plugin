@@ -94,7 +94,7 @@ class Contact_Submissions {
 		$table_name        = esc_sql( self::table() );
 		$user_id           = get_current_user_id();
 		$license_key_input = isset( $data['license_key'] ) ? sanitize_text_field( $data['license_key'] ) : '';
-		$license_key_hash  = $license_key_input !== '' ? wp_hash( $license_key_input ) : null;
+		$license_key_hash  = '' !== $license_key_input ? wp_hash( $license_key_input ) : null;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->insert(
@@ -269,7 +269,7 @@ class Contact_Submissions {
 		$pages = $total > 0 ? ceil( $total / $per_page ) : 0;
 
 		$result = array(
-			'items' => $items ?: array(),
+			'items' => $items ? $items : array(),
 			'total' => $total,
 			'pages' => $pages,
 		);
@@ -300,7 +300,7 @@ class Contact_Submissions {
 			OBJECT
 		);
 
-		return $submission ?: null;
+		return $submission ? $submission : null;
 	}
 
 	/**
@@ -320,9 +320,9 @@ class Contact_Submissions {
 
 		$update_data = array( 'status' => $status );
 
-		if ( $status === 'read' && $status !== 'replied' ) {
+		if ( 'read' === $status && 'replied' !== $status ) {
 			$update_data['read_at'] = current_time( 'mysql' );
-		} elseif ( $status === 'replied' ) {
+		} elseif ( 'replied' === $status ) {
 			$update_data['replied_at'] = current_time( 'mysql' );
 			$table                     = esc_sql( self::table() );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -351,7 +351,7 @@ class Contact_Submissions {
 			BBAI_Cache::bump( 'contact' );
 		}
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**
@@ -377,7 +377,7 @@ class Contact_Submissions {
 			BBAI_Cache::bump( 'contact' );
 		}
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**

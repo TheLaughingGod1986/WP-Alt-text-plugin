@@ -18,7 +18,7 @@ if ( defined( 'BEEPBEEP_AI_PLUGIN_FILE' ) && is_string( BEEPBEEP_AI_PLUGIN_FILE 
 } elseif ( defined( 'BBAI_PLUGIN_FILE' ) && is_string( BBAI_PLUGIN_FILE ) && BBAI_PLUGIN_FILE !== '' ) {
 	$bbai_plugin_file = BBAI_PLUGIN_FILE;
 }
-if ( $bbai_plugin_file === '' ) {
+if ( '' === $bbai_plugin_file ) {
 	$bbai_plugin_file = __FILE__;
 }
 
@@ -44,10 +44,10 @@ if ( ! defined( 'BBAI_PLUGIN_BASENAME' ) ) {
 	$bbai_plugin_basename = ( defined( 'BEEPBEEP_AI_PLUGIN_BASENAME' ) && is_string( BEEPBEEP_AI_PLUGIN_BASENAME ) && BEEPBEEP_AI_PLUGIN_BASENAME !== '' )
 		? BEEPBEEP_AI_PLUGIN_BASENAME
 		: '';
-	if ( $bbai_plugin_basename === '' ) {
+	if ( '' === $bbai_plugin_basename ) {
 		$bbai_plugin_basename = plugin_basename( $bbai_plugin_file );
 	}
-	if ( $bbai_plugin_basename === '' || ! is_string( $bbai_plugin_basename ) ) {
+	if ( '' === $bbai_plugin_basename || ! is_string( $bbai_plugin_basename ) ) {
 		$bbai_plugin_basename = 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php';
 	}
 	define( 'BBAI_PLUGIN_BASENAME', $bbai_plugin_basename );
@@ -365,10 +365,10 @@ class Core {
 		$this->api_client = API_Client_V2::get_instance();
 		// Soft-migrate legacy options to new prefixed keys
 		$current = get_option( self::OPTION_KEY, null );
-		if ( $current === null ) {
+		if ( null === $current ) {
 			foreach ( array( 'bbai_gpt_settings', 'beepbeepai_settings', 'opptibbai_settings', 'bbai_settings' ) as $legacy_key ) {
 				$legacy_value = get_option( $legacy_key, null );
-				if ( $legacy_value !== null ) {
+				if ( null !== $legacy_value ) {
 					update_option( self::OPTION_KEY, $legacy_value, false );
 					break;
 				}
@@ -414,7 +414,7 @@ class Core {
 			return;
 		}
 		$current = get_option( self::OPTION_KEY, null );
-		if ( $current === null || $current === false ) {
+		if ( null === $current || false === $current ) {
 			return;
 		}
 		foreach ( array( 'bbai_gpt_settings', 'beepbeepai_settings', 'opptibbai_settings' ) as $legacy_key ) {
@@ -487,9 +487,9 @@ class Core {
 				return true;
 			}
 		} catch ( \Exception $e ) {
-			// Fall through to stored-credential checks.
+			unset( $e ); // Fall through to stored-credential checks.
 		} catch ( \Error $e ) {
-			// Fall through to stored-credential checks.
+			unset( $e ); // Fall through to stored-credential checks.
 		}
 
 		$stored_token = get_option( 'beepbeepai_jwt_token', '' );
@@ -504,9 +504,9 @@ class Core {
 				return true;
 			}
 		} catch ( \Exception $e ) {
-			// Ignore and continue.
+			unset( $e ); // Ignore and continue.
 		} catch ( \Error $e ) {
-			// Ignore and continue.
+			unset( $e ); // Ignore and continue.
 		}
 
 		return false;
@@ -534,11 +534,11 @@ class Core {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
 
-		if ( $page === self::MENU_SLUG_LIBRARY ) {
+		if ( self::MENU_SLUG_LIBRARY === $page ) {
 			return true;
 		}
 
-		return $tab === 'library';
+		return 'library' === $tab;
 	}
 
 	/**
@@ -896,13 +896,13 @@ class Core {
 
 		// Check for new key first
 		$value = get_post_meta( $post_id, $new_key, $single );
-		if ( $value !== '' && $value !== false && $value !== null ) {
+		if ( '' !== $value && false !== $value && null !== $value ) {
 			return $value;
 		}
 
 		// Check for old key and migrate if found
 		$old_value = get_post_meta( $post_id, $old_key, $single );
-		if ( $old_value !== '' && $old_value !== false && $old_value !== null ) {
+		if ( '' !== $old_value && false !== $old_value && null !== $old_value ) {
 			// Migrate to new key
 			update_post_meta( $post_id, $new_key, $old_value );
 			// Delete old key after migration
@@ -1116,7 +1116,7 @@ class Core {
 		if ( $theme instanceof \WP_Theme ) {
 			$theme_name = (string) $theme->get( 'Name' );
 		}
-		if ( $theme_name === '' ) {
+		if ( '' === $theme_name ) {
 			$theme_name = 'Unknown';
 		}
 
@@ -1192,7 +1192,7 @@ class Core {
 	}
 
 	private function get_debug_bootstrap( $force_refresh = false ) {
-		if ( $force_refresh || $this->debug_bootstrap === null ) {
+		if ( $force_refresh || null === $this->debug_bootstrap ) {
 			$this->debug_bootstrap = $this->get_debug_payload(
 				array(
 					'per_page' => 10,
@@ -1256,7 +1256,7 @@ class Core {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$bbai_page_input = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 		$page            = $bbai_page_input;
-		if ( $page !== 'bbai-checkout' ) {
+		if ( 'bbai-checkout' !== $page ) {
 			return; }
 
 		$action = 'bbai_direct_checkout';           if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ?? '' ) ), $action ) ) {
@@ -1272,7 +1272,7 @@ class Core {
 		$valid_plan_ids = array_keys( $this->get_checkout_price_ids() );
 		$plan_param     = in_array( $plan_input, $valid_plan_ids, true ) ? $plan_input : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
-		$price_id = isset( $_GET['price_id'] ) && $_GET['price_id'] !== null ? sanitize_text_field( wp_unslash( $_GET['price_id'] ) ) : '';
+		$price_id = isset( $_GET['price_id'] ) && null !== $_GET['price_id'] ? sanitize_text_field( wp_unslash( $_GET['price_id'] ) ) : '';
 		$fallback = Usage_Tracker::get_upgrade_url();
 
 		if ( $plan_param ) {
@@ -1293,9 +1293,9 @@ class Core {
 		$result                = $this->api_client->create_checkout_session( $price_id, $success_url, $cancel_url );
 		$resolved_checkout_url = $this->resolve_checkout_url_from_result( $result, $plan_param, $price_id );
 
-		if ( is_wp_error( $result ) || $resolved_checkout_url === '' ) {
+		if ( is_wp_error( $result ) || '' === $resolved_checkout_url ) {
 			$fallback_checkout_url = $this->get_checkout_fallback_url( $plan_param, $price_id );
-			if ( $fallback_checkout_url !== '' ) {
+			if ( '' !== $fallback_checkout_url ) {
 				$this->redirect_to_checkout_url( $fallback_checkout_url );
 			}
 
@@ -1390,7 +1390,7 @@ class Core {
 	 */
 	private function get_checkout_plan_from_price_id( string $price_id ): string {
 		$normalized_price_id = sanitize_text_field( $price_id );
-		if ( $normalized_price_id === '' ) {
+		if ( '' === $normalized_price_id ) {
 			return '';
 		}
 
@@ -1398,7 +1398,7 @@ class Core {
 			$plan_id         = is_string( $plan_id ) ? sanitize_key( $plan_id ) : '';
 			$mapped_price_id = is_string( $mapped_price_id ) ? sanitize_text_field( $mapped_price_id ) : '';
 
-			if ( $plan_id !== '' && $mapped_price_id !== '' && hash_equals( $mapped_price_id, $normalized_price_id ) ) {
+			if ( '' !== $plan_id && '' !== $mapped_price_id && hash_equals( $mapped_price_id, $normalized_price_id ) ) {
 				return $plan_id;
 			}
 		}
@@ -1411,12 +1411,12 @@ class Core {
 	 */
 	private function get_checkout_fallback_url( string $plan_id = '', string $price_id = '' ): string {
 		$normalized_plan_id = sanitize_key( $plan_id );
-		if ( $normalized_plan_id === '' && $price_id !== '' ) {
+		if ( '' === $normalized_plan_id && '' !== $price_id ) {
 			$normalized_plan_id = $this->get_checkout_plan_from_price_id( $price_id );
 		}
 
 		$fallback_links = apply_filters( 'bbai_checkout_stripe_links', self::DEFAULT_STRIPE_LINKS );
-		if ( ! is_array( $fallback_links ) || $normalized_plan_id === '' ) {
+		if ( ! is_array( $fallback_links ) || '' === $normalized_plan_id ) {
 			return '';
 		}
 
@@ -1429,13 +1429,13 @@ class Core {
 	 */
 	private function is_stripe_hosted_checkout_session_url( string $url ): bool {
 		$normalized_url = esc_url_raw( $url );
-		if ( $normalized_url === '' ) {
+		if ( '' === $normalized_url ) {
 			return false;
 		}
 
 		$host = wp_parse_url( $normalized_url, PHP_URL_HOST );
 		$path = wp_parse_url( $normalized_url, PHP_URL_PATH );
-		if ( ! is_string( $host ) || ! is_string( $path ) || $host === '' || $path === '' ) {
+		if ( ! is_string( $host ) || ! is_string( $path ) || '' === $host || '' === $path ) {
 			return false;
 		}
 
@@ -1453,7 +1453,7 @@ class Core {
 		$checkout_url = isset( $result['url'] ) && is_string( $result['url'] )
 			? esc_url_raw( $result['url'] )
 			: '';
-		if ( $checkout_url === '' ) {
+		if ( '' === $checkout_url ) {
 			return '';
 		}
 
@@ -1461,9 +1461,9 @@ class Core {
 			? sanitize_text_field( $result['sessionId'] )
 			: '';
 
-		if ( $this->is_stripe_hosted_checkout_session_url( $checkout_url ) && $session_id === '' ) {
+		if ( $this->is_stripe_hosted_checkout_session_url( $checkout_url ) && '' === $session_id ) {
 			$fallback_url = $this->get_checkout_fallback_url( $plan_id, $price_id );
-			if ( $fallback_url !== '' ) {
+			if ( '' !== $fallback_url ) {
 				return $fallback_url;
 			}
 		}
@@ -1483,18 +1483,18 @@ class Core {
 		$error_code          = $result->get_error_code();
 		$error_message_lower = is_string( $error_message ) ? strtolower( $error_message ) : '';
 
-		if ( $error_code === 'auth_required' ||
-			$error_code === 'license_required' ||
-			$error_code === 'invalid_license' ||
-			$error_code === 'trial_backend_auth' ||
-			$error_code === 'checkout_failed' ||
+		if ( 'auth_required' === $error_code ||
+			'license_required' === $error_code ||
+			'invalid_license' === $error_code ||
+			'trial_backend_auth' === $error_code ||
+			'checkout_failed' === $error_code ||
 			strpos( $error_message_lower, 'session' ) !== false ||
 			strpos( $error_message_lower, 'log in' ) !== false ||
 			strpos( $error_message_lower, 'license' ) !== false ) {
 			return __( 'Unable to start hosted checkout right now. Please try again or contact support.', 'beepbeep-ai-alt-text-generator' );
 		}
 
-		return is_string( $error_message ) && $error_message !== ''
+		return is_string( $error_message ) && '' !== $error_message
 			? $error_message
 			: __( 'Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator' );
 	}
@@ -1504,7 +1504,7 @@ class Core {
 	 */
 	private function is_allowed_external_checkout_url( string $url ): bool {
 		$host = wp_parse_url( $url, PHP_URL_HOST );
-		if ( ! is_string( $host ) || $host === '' ) {
+		if ( ! is_string( $host ) || '' === $host ) {
 			return false;
 		}
 
@@ -1517,7 +1517,7 @@ class Core {
 	 */
 	private function redirect_to_checkout_url( string $url ): void {
 			$target_url = esc_url_raw( $url );
-		if ( $target_url === '' ) {
+		if ( '' === $target_url ) {
 			wp_die( esc_html__( 'Invalid checkout URL.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
@@ -1547,7 +1547,7 @@ class Core {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$bbai_page_input = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 		$page            = $bbai_page_input;
-		if ( $page !== 'beepbeep-ai-alt-text-generator' ) {
+		if ( 'beepbeep-ai-alt-text-generator' !== $page ) {
 			return;
 		}
 
@@ -1579,13 +1579,13 @@ class Core {
 		} else {
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 			$checkout = isset( $_GET['checkout'] ) ? sanitize_key( wp_unslash( $_GET['checkout'] ) ) : '';
-			if ( $checkout === 'success' ) {
+			if ( 'success' === $checkout ) {
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Growth.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 				</div>
 				<?php
-			} elseif ( $checkout === 'cancel' ) {
+			} elseif ( 'cancel' === $checkout ) {
 				?>
 				<div class="notice notice-warning is-dismissible">
 					<p><?php esc_html_e( 'Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Growth.', 'beepbeep-ai-alt-text-generator' ); ?></p>
@@ -1597,14 +1597,14 @@ class Core {
 		// Password reset notices
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$password_reset = isset( $_GET['password_reset'] ) ? sanitize_key( wp_unslash( $_GET['password_reset'] ) ) : '';
-		if ( $password_reset === 'requested' ) {
+		if ( 'requested' === $password_reset ) {
 			?>
 			<div class="notice notice-success is-dismissible">
 				<p><strong><?php esc_html_e( 'Password Reset Email Sent', 'beepbeep-ai-alt-text-generator' ); ?></strong></p>
 				<p><?php esc_html_e( 'Check your email inbox (and spam folder) for password reset instructions. The link will expire in 1 hour.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			</div>
 			<?php
-		} elseif ( $password_reset === 'success' ) {
+		} elseif ( 'success' === $password_reset ) {
 			?>
 			<div class="notice notice-success is-dismissible">
 				<p><strong><?php esc_html_e( 'Password Reset Successful', 'beepbeep-ai-alt-text-generator' ); ?></strong></p>
@@ -1627,7 +1627,7 @@ class Core {
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		$portal_return = isset( $_GET['portal_return'] ) ? sanitize_key( wp_unslash( $_GET['portal_return'] ) ) : '';
-		if ( $portal_return === 'success' ) {
+		if ( 'success' === $portal_return ) {
 			?>
 			<div class="notice notice-success is-dismissible">
 				<p><strong><?php esc_html_e( 'Billing Updated', 'beepbeep-ai-alt-text-generator' ); ?></strong></p>
@@ -1666,7 +1666,7 @@ class Core {
 		if ( $count <= 0 ) {
 			return;
 		}
-		$message = $count === 1
+		$message = 1 === $count
 			? __( '1 image queued for background optimisation. The alt text will appear shortly.', 'beepbeep-ai-alt-text-generator' )
 			: sprintf(
 				/* translators: 1: number of images queued */
@@ -2025,9 +2025,9 @@ class Core {
 			add_action(
 				'current_screen',
 				static function () {
-					global $title;
-					if ( ! isset( $title ) || $title === null ) {
-						$title = '';
+					global $title; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- initialises WP admin page title.
+					if ( ! isset( $title ) || null === $title ) {
+						$title = ''; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 					}
 				}
 			);
@@ -2067,7 +2067,7 @@ class Core {
 
 		if ( is_wp_error( $result ) ) {
 			$fallback_checkout_url = $this->get_checkout_fallback_url( '', $price_id );
-			if ( $fallback_checkout_url !== '' ) {
+			if ( '' !== $fallback_checkout_url ) {
 				$this->redirect_to_checkout_url( $fallback_checkout_url );
 			}
 
@@ -2083,12 +2083,12 @@ class Core {
 			);
 		}
 
-		if ( $resolved_checkout_url !== '' ) {
+		if ( '' !== $resolved_checkout_url ) {
 			$this->redirect_to_checkout_url( $resolved_checkout_url );
 		}
 
 		$fallback_checkout_url = $this->get_checkout_fallback_url( '', $price_id );
-		if ( $fallback_checkout_url !== '' ) {
+		if ( '' !== $fallback_checkout_url ) {
 			$this->redirect_to_checkout_url( $fallback_checkout_url );
 		}
 
@@ -2121,11 +2121,11 @@ class Core {
 					$lang_input         = $lang_input_input ? sanitize_text_field( $lang_input_input ) : 'en-GB';
 					$custom_input_input = isset( $input['language_custom'] ) ? (string) $input['language_custom'] : '';
 					$custom_input       = $custom_input_input ? sanitize_text_field( $custom_input_input ) : '';
-					if ( $lang_input === 'custom' ) {
-						$out['language']        = $custom_input ?: 'en-GB';
+					if ( 'custom' === $lang_input ) {
+						$out['language']        = $custom_input ? $custom_input : 'en-GB';
 						$out['language_custom'] = $custom_input;
 					} else {
-						$out['language']        = $lang_input ?: 'en-GB';
+						$out['language']        = $lang_input ? $lang_input : 'en-GB';
 						$out['language_custom'] = '';
 					}
 					$out['enable_on_upload'] = $this->current_account_can_use_upload_generation() && ! empty( $input['enable_on_upload'] );
@@ -2133,7 +2133,7 @@ class Core {
 					$out['tone']             = $tone ? sanitize_text_field( $tone ) : 'professional, accessible';
 					$out['force_overwrite']  = ! empty( $input['force_overwrite'] );
 					$out['token_limit']      = max( 0, intval( $input['token_limit'] ?? 0 ) );
-					if ( $out['token_limit'] === 0 ) {
+					if ( 0 === $out['token_limit'] ) {
 						$out['token_alert_sent'] = false;
 					} elseif ( intval( $existing['token_limit'] ?? 0 ) !== $out['token_limit'] ) {
 						$out['token_alert_sent'] = false;
@@ -2285,12 +2285,12 @@ class Core {
 	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 			$step = isset( $_GET['step'] ) ? absint( wp_unslash( $_GET['step'] ) ) : 1;
 
-		if ( $step === 1 ) {
+		if ( 1 === $step ) {
 			$this->render_bbai_onboarding_step1();
 			return;
 		}
 
-		if ( $step === 3 ) {
+		if ( 3 === $step ) {
 			$this->render_bbai_onboarding_step3();
 			return;
 		}
@@ -2654,7 +2654,7 @@ class Core {
 				$bbai_page_input = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 				$bbai_page_slug  = $bbai_page_input;
 
-		if ( $bbai_page_slug === 'bbai-ui-kit' && ! $this->can_show_ui_kit_page() ) {
+		if ( 'bbai-ui-kit' === $bbai_page_slug && ! $this->can_show_ui_kit_page() ) {
 			wp_die(
 				esc_html__( 'You do not have permission to view the UI Kit preview.', 'beepbeep-ai-alt-text-generator' ),
 				esc_html__( 'Forbidden', 'beepbeep-ai-alt-text-generator' ),
@@ -2705,17 +2705,17 @@ class Core {
 			);
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 			$bbai_page_input   = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'bbai';
-			$bbai_current_page = $bbai_page_input ?: 'bbai';
+			$bbai_current_page = $bbai_page_input ? $bbai_page_input : 'bbai';
 			$tab_from_page     = $bbai_page_to_tab[ $bbai_current_page ] ?? 'dashboard';
 			$tab_from_page     = $bbai_tab_aliases[ $tab_from_page ] ?? $tab_from_page;
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 			$bbai_tab_input        = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
-			$bbai_requested_tab    = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+			$bbai_requested_tab    = '' !== $bbai_tab_input ? $bbai_tab_input : $tab_from_page;
 			$bbai_requested_tab    = $bbai_tab_aliases[ $bbai_requested_tab ] ?? $bbai_requested_tab;
 			$bbai_route_is_allowed = isset( $bbai_page_to_tab[ $bbai_current_page ] ) && in_array( $bbai_requested_tab, array_keys( $bbai_allowed_tabs ), true );
 			if ( ! $bbai_route_is_allowed ) {
 				$bbai_guest_redirect_url = admin_url( 'admin.php?page=bbai' );
-				if ( $bbai_current_page === 'bbai-library' || $bbai_requested_tab === 'library' ) {
+				if ( 'bbai-library' === $bbai_current_page || 'library' === $bbai_requested_tab ) {
 					$bbai_guest_redirect_url = add_query_arg(
 						array(
 							'upgrade'                => 'required',
@@ -2732,7 +2732,7 @@ class Core {
 			$bbai_is_agency_for_admin = false;
 			$bbai_can_show_debug_tab  = false;
 			$bbai_active_nav_tab      = ( 'dashboard' === $bbai_tab ) ? 'dashboard' : '';
-			$bbai_help_is_active      = ( 'help' === $bbai_tab ) || ( $bbai_current_page === 'bbai-guide' );
+			$bbai_help_is_active      = ( 'help' === $bbai_tab ) || ( 'bbai-guide' === $bbai_current_page );
 			$bbai_settings_section    = 'general';
 		} else {
 			// Determine if agency license
@@ -2745,20 +2745,20 @@ class Core {
 			// If using license, check license plan
 			if ( $bbai_has_license && $bbai_license_data && isset( $bbai_license_data['organization'] ) ) {
 				$bbai_license_plan = strtolower( $bbai_license_data['organization']['plan'] ?? 'free' );
-				if ( $bbai_license_plan !== 'free' ) {
+				if ( 'free' !== $bbai_license_plan ) {
 					$bbai_plan_slug = $bbai_license_plan;
 				}
 			} elseif ( $bbai_is_authenticated ) {
 				// For authenticated users without license, try to get plan from usage stats
 				require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 				$bbai_usage_stats = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display( false );
-				if ( isset( $bbai_usage_stats['plan'] ) && $bbai_usage_stats['plan'] !== 'free' ) {
+				if ( isset( $bbai_usage_stats['plan'] ) && 'free' !== $bbai_usage_stats['plan'] ) {
 					$bbai_plan_slug = $bbai_usage_stats['plan'];
 				}
 			}
 
-			$bbai_is_agency = ( $bbai_plan_slug === 'agency' );
-			$bbai_is_pro    = ( $bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency' );
+			$bbai_is_agency = ( 'agency' === $bbai_plan_slug );
+			$bbai_is_pro    = ( 'pro' === $bbai_plan_slug || 'agency' === $bbai_plan_slug );
 
 			// Visible primary navigation only includes the main product workflow areas.
 			$bbai_tabs = array(
@@ -2812,14 +2812,14 @@ class Core {
 				// Determine current tab from URL
 	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 				$bbai_page_input   = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'bbai';
-				$bbai_current_page = $bbai_page_input ?: 'bbai';
+				$bbai_current_page = $bbai_page_input ? $bbai_page_input : 'bbai';
 				$tab_from_page     = $bbai_page_to_tab[ $bbai_current_page ] ?? 'dashboard';
 				$tab_from_page     = $bbai_tab_aliases[ $tab_from_page ] ?? $tab_from_page;
 
 				// Use tab from URL parameter if provided, otherwise use page slug mapping
 	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 				$bbai_tab_input     = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
-				$bbai_requested_tab = $bbai_tab_input !== '' ? $bbai_tab_input : $tab_from_page;
+				$bbai_requested_tab = '' !== $bbai_tab_input ? $bbai_tab_input : $tab_from_page;
 				$bbai_requested_tab = $bbai_tab_aliases[ $bbai_requested_tab ] ?? $bbai_requested_tab;
 
 			if ( 'debug' === $bbai_requested_tab && $bbai_can_show_debug_tab ) {
@@ -2954,14 +2954,14 @@ class Core {
 							if ( $bbai_has_license && ! $bbai_is_authenticated ) {
 								$bbai_license_data = $this->api_client->get_license_data();
 								$org_name          = isset( $bbai_license_data['organization']['name'] ) ? (string) $bbai_license_data['organization']['name'] : '';
-								$connected_email   = $org_name ?: __( 'License Active', 'beepbeep-ai-alt-text-generator' );
+								$connected_email   = $org_name ? $org_name : __( 'License Active', 'beepbeep-ai-alt-text-generator' );
 							}
 							?>
 							<!-- Compact Account Bar in Header -->
 							<div class="bbai-header-account-bar">
 								<span class="bbai-header-account-email"><?php echo esc_html( is_string( $connected_email ) ? $connected_email : __( 'Connected', 'beepbeep-ai-alt-text-generator' ) ); ?></span>
 								<span class="bbai-header-plan-badge"><?php echo esc_html( is_string( $plan_label ) ? $plan_label : ucfirst( $bbai_plan_slug ?? 'free' ) ); ?></span>
-								<?php if ( $bbai_plan_slug === 'free' && ! $bbai_has_license && $bbai_tab !== 'dashboard' ) : ?>
+								<?php if ( 'free' === $bbai_plan_slug && ! $bbai_has_license && 'dashboard' !== $bbai_tab ) : ?>
 									<button type="button" class="bbai-header-upgrade-btn" data-action="show-upgrade-modal">
 										<?php esc_html_e( 'Upgrade', 'beepbeep-ai-alt-text-generator' ); ?>
 									</button>
@@ -3006,12 +3006,12 @@ class Core {
 			</div>
 			
 			<!-- Main Content Container - uniform width across all tabs -->
-			<div class="bbai-container bbai-content-shell<?php echo ( isset( $bbai_tab ) && $bbai_tab === 'dashboard' ) ? ' bbai-dashboard-shell' : ''; ?>">
+			<div class="bbai-container bbai-content-shell<?php echo ( isset( $bbai_tab ) && 'dashboard' === $bbai_tab ) ? ' bbai-dashboard-shell' : ''; ?>">
 
 			<?php
 			// Ensure usage stats for banner when on dashboard.
 			if (
-				( $bbai_tab === 'dashboard' || $bbai_tab === 'library' || $bbai_tab === 'analytics' || $bbai_tab === 'usage' ) &&
+				( 'dashboard' === $bbai_tab || 'library' === $bbai_tab || 'analytics' === $bbai_tab || 'usage' === $bbai_tab ) &&
 				( ! isset( $bbai_usage_stats ) || ! is_array( $bbai_usage_stats ) )
 			) {
 				$bbai_usage_stats = Usage_Helper::get_usage( $this->api_client, (bool) $bbai_has_connected_account );
@@ -3019,7 +3019,7 @@ class Core {
 			// Usage limit banner - dashboard only, when monthly limit reached.
 			$bbai_banner_limit_reached = false;
 			if (
-				$bbai_tab === 'dashboard' &&
+				'dashboard' === $bbai_tab &&
 				isset( $bbai_usage_stats ) &&
 				is_array( $bbai_usage_stats ) &&
 				$bbai_has_connected_account
@@ -3034,7 +3034,7 @@ class Core {
 			/* Banner is rendered inside dashboard-body.php when on dashboard tab */
 			?>
 
-			<?php if ( $bbai_tab === 'dashboard' ) : ?>
+			<?php if ( 'dashboard' === $bbai_tab ) : ?>
 				<?php
 				$bbai_dashboard_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-tab.php';
 				bbai_render_layout_template(
@@ -3045,7 +3045,7 @@ class Core {
 				);
 				?>
 
-<?php elseif ( $bbai_tab === 'library' && $bbai_has_connected_account ) : ?>
+<?php elseif ( 'library' === $bbai_tab && $bbai_has_connected_account ) : ?>
 	<?php
 	$bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
 	bbai_render_layout_template(
@@ -3056,7 +3056,7 @@ class Core {
 	);
 	?>
 
-<?php elseif ( $bbai_tab === 'help' || $bbai_page_slug === 'bbai-guide' ) : ?>
+<?php elseif ( 'help' === $bbai_tab || 'bbai-guide' === $bbai_page_slug ) : ?>
 			<?php
 			$bbai_guide_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/guide-tab.php';
 			bbai_render_layout_template(
@@ -3067,7 +3067,7 @@ class Core {
 			);
 			?>
 
-<?php elseif ( $bbai_tab === 'usage' && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
+<?php elseif ( 'usage' === $bbai_tab && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
 	<?php
 	$bbai_credit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/credit-usage-tab.php';
 	bbai_render_layout_template(
@@ -3077,7 +3077,7 @@ class Core {
 		$this
 	);
 	?>
-<?php elseif ( $bbai_tab === 'agency-overview' && $bbai_is_agency ) : ?>
+<?php elseif ( 'agency-overview' === $bbai_tab && $bbai_is_agency ) : ?>
 	<?php
 	$bbai_agency_overview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/agency-overview-tab.php';
 	if ( file_exists( $bbai_agency_overview_partial ) ) {
@@ -3086,7 +3086,7 @@ class Core {
 		esc_html_e( 'Agency overview content unavailable.', 'beepbeep-ai-alt-text-generator' );
 	}
 	?>
-<?php elseif ( $bbai_tab === 'analytics' && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
+<?php elseif ( 'analytics' === $bbai_tab && ( $bbai_is_authenticated || $bbai_has_license ) ) : ?>
 	<?php
 	// Ensure usage_stats is available for analytics tab
 	if ( ! isset( $bbai_usage_stats ) ) {
@@ -3101,7 +3101,7 @@ class Core {
 	);
 	?>
 
-<?php elseif ( $bbai_tab === 'ui-kit' && $this->can_show_ui_kit_page() ) : ?>
+<?php elseif ( 'ui-kit' === $bbai_tab && $this->can_show_ui_kit_page() ) : ?>
 	<?php
 	$bbai_ui_kit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/ui-kit-tab.php';
 	if ( file_exists( $bbai_ui_kit_partial ) ) {
@@ -3111,7 +3111,7 @@ class Core {
 	}
 	?>
 
-<?php elseif ( $bbai_tab === 'settings' ) : ?>
+<?php elseif ( 'settings' === $bbai_tab ) : ?>
 			<?php
 			$bbai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-tab.php';
 			bbai_render_layout_template(
@@ -3122,7 +3122,7 @@ class Core {
 			);
 			?>
 
-			<?php elseif ( $bbai_tab === 'admin' && $bbai_is_pro_for_admin ) : ?>
+			<?php elseif ( 'admin' === $bbai_tab && $bbai_is_pro_for_admin ) : ?>
 			<!-- Admin Tab - Debug Logs and Settings for Pro and Agency -->
 				<?php
 				// Check if user is authenticated via API (JWT token or license) OR has admin session
@@ -3405,7 +3405,7 @@ class Core {
 		$parent_input = get_post_field( 'post_title', wp_get_post_parent_id( $attachment_id ) );
 		$parent       = is_string( $parent_input ) ? $parent_input : '';
 		$lang_input   = $opts['language'] ?? 'en-GB';
-		if ( $lang_input === 'custom' && ! empty( $opts['language_custom'] ) ) {
+		if ( 'custom' === $lang_input && ! empty( $opts['language_custom'] ) ) {
 			$lang = sanitize_text_field( $opts['language_custom'] );
 		} else {
 			$lang = $lang_input;
@@ -3732,11 +3732,11 @@ class Core {
 	}
 
 	private function get_alt_coverage_scan_stage_message( int $processed_images, int $total_images, string $status = 'running' ): string {
-		if ( $status === 'complete' ) {
+		if ( 'complete' === $status ) {
 			return __( 'Scan complete.', 'beepbeep-ai-alt-text-generator' );
 		}
 
-		if ( $status === 'finalizing' ) {
+		if ( 'finalizing' === $status ) {
 			return __( 'Preparing your coverage summary.', 'beepbeep-ai-alt-text-generator' );
 		}
 
@@ -3768,22 +3768,22 @@ class Core {
 
 		return array(
 			'job_id'           => (string) ( $scan_state['job_id'] ?? '' ),
-			'done'             => $status === 'complete',
+			'done'             => 'complete' === $status,
 			'status'           => $status,
 			'progress_percent' => max( 0, min( 100, $progress_percent ) ),
 			'processed_images' => $processed_images,
 			'total_images'     => $total_images,
 			'stage_message'    => $stage_message,
-			'message'          => $status === 'complete'
+			'message'          => 'complete' === $status
 				? __( 'Media library scan complete.', 'beepbeep-ai-alt-text-generator' )
 				: __( 'Scanning your media library.', 'beepbeep-ai-alt-text-generator' ),
-			'payload'          => $status === 'complete' ? $coverage_payload : array(),
+			'payload'          => 'complete' === $status ? $coverage_payload : array(),
 		);
 	}
 
 	private function persist_alt_coverage_scan_job( array $scan_state ): void {
 		$job_id = (string) ( $scan_state['job_id'] ?? '' );
-		if ( $job_id === '' ) {
+		if ( '' === $job_id ) {
 			return;
 		}
 
@@ -3791,7 +3791,7 @@ class Core {
 	}
 
 	private function get_alt_coverage_scan_job( string $job_id ): ?array {
-		if ( $job_id === '' ) {
+		if ( '' === $job_id ) {
 			return null;
 		}
 
@@ -3833,7 +3833,7 @@ class Core {
 
 	private function process_alt_coverage_scan_job_batch( array $scan_state ): array {
 		$status = (string) ( $scan_state['status'] ?? 'running' );
-		if ( $status === 'complete' ) {
+		if ( 'complete' === $status ) {
 			return $scan_state;
 		}
 
@@ -3861,7 +3861,7 @@ class Core {
 			$scan_state['processed_images']   = max( 0, (int) ( $scan_state['processed_images'] ?? 0 ) ) + 1;
 			$scan_state['last_attachment_id'] = $attachment_id;
 
-			if ( $alt_text === '' ) {
+			if ( '' === $alt_text ) {
 				$scan_state['images_missing_alt'] = max( 0, (int) ( $scan_state['images_missing_alt'] ?? 0 ) ) + 1;
 				continue;
 			}
@@ -3888,7 +3888,7 @@ class Core {
 			if ( $attached_file ) {
 				$base_name = pathinfo( $attached_file, PATHINFO_FILENAME );
 				if (
-					$base_name !== ''
+					'' !== $base_name
 					&& $this->normalize_alt_coverage_compare_value( $alt_text ) === $this->normalize_alt_coverage_compare_value( $base_name )
 				) {
 					$scan_state['filename_only_count'] = max( 0, (int) ( $scan_state['filename_only_count'] ?? 0 ) ) + 1;
@@ -4031,13 +4031,13 @@ class Core {
 					if ( ( $norm_state['status'] ?? '' ) === 'weak' ) {
 						++$needs_review_count;
 					}
-					if ( $id > 0 && $alt !== '' ) {
+					if ( $id > 0 && '' !== $alt ) {
 						$file = get_attached_file( $id );
 						if ( $file ) {
 							$base      = pathinfo( $file, PATHINFO_FILENAME );
 							$norm_alt  = $this->normalize_alt_coverage_compare_value( $alt );
 							$norm_base = $this->normalize_alt_coverage_compare_value( $base );
-							if ( $norm_base !== '' && $norm_alt === $norm_base ) {
+							if ( '' !== $norm_base && $norm_alt === $norm_base ) {
 								++$filename_only_count;
 							}
 						}
@@ -4171,7 +4171,7 @@ class Core {
 		}
 
 		$job_id = sanitize_text_field( wp_unslash( $_POST['job_id'] ?? '' ) );
-		if ( $job_id === '' ) {
+		if ( '' === $job_id ) {
 			wp_send_json_error( array( 'message' => __( 'Missing scan job.', 'beepbeep-ai-alt-text-generator' ) ), 400 );
 			return;
 		}
@@ -4253,7 +4253,8 @@ class Core {
 		$date_format       = is_string( $date_format_input ) && ! empty( $date_format_input ) ? $date_format_input : 'Y-m-d';
 		$time_format       = is_string( $time_format_input ) && ! empty( $time_format_input ) ? $time_format_input : 'H:i:s';
 		$generated         = $generated_input ? mysql2date( $date_format . ' ' . $time_format, $generated_input ) : '';
-		$source_key        = sanitize_key( get_post_meta( $attachment_id, '_bbai_source', true ) ?: 'unknown' );
+		$source_meta       = get_post_meta( $attachment_id, '_bbai_source', true );
+		$source_key        = sanitize_key( $source_meta ? $source_meta : 'unknown' );
 		if ( ! $source_key ) {
 			$source_key = 'unknown';
 		}
@@ -4303,7 +4304,7 @@ class Core {
 		}
 
 		$alt = trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) );
-		if ( $alt === '' ) {
+		if ( '' === $alt ) {
 			return array();
 		}
 
@@ -4329,7 +4330,7 @@ class Core {
 			}
 
 			$alt = trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) );
-			if ( $alt === '' ) {
+			if ( '' === $alt ) {
 				continue;
 			}
 
@@ -4364,11 +4365,11 @@ class Core {
 		$approved_hash = (string) get_post_meta( $attachment_id, '_bbai_user_approved_hash', true );
 		$approved_at   = (string) get_post_meta( $attachment_id, '_bbai_user_approved_at', true );
 
-		if ( $approved_hash === '' || $approved_at === '' ) {
+		if ( '' === $approved_hash || '' === $approved_at ) {
 			return null;
 		}
 
-		if ( $current_alt !== '' ) {
+		if ( '' !== $current_alt ) {
 			$current_hash = $this->hash_alt_text( $current_alt );
 			if ( ! hash_equals( $approved_hash, $current_hash ) ) {
 				$this->clear_user_approval_meta( $attachment_id );
@@ -4524,7 +4525,7 @@ class Core {
 			$attachment_id = isset( $row['ID'] ) ? intval( $row['ID'] ) : 0;
 			$alt_text      = isset( $row['alt_text'] ) ? (string) $row['alt_text'] : '';
 
-			if ( $attachment_id <= 0 || $alt_text === '' ) {
+			if ( $attachment_id <= 0 || '' === $alt_text ) {
 				continue;
 			}
 
@@ -4658,14 +4659,15 @@ class Core {
 		$metadata      = wp_get_attachment_metadata( $attachment_id );
 		$width         = isset( $metadata['width'] ) ? (int) $metadata['width'] : 0;
 		$height        = isset( $metadata['height'] ) ? (int) $metadata['height'] : 0;
-		$mime_type     = get_post_mime_type( $attachment_id ) ?: '';
+		$mime_type_raw = get_post_mime_type( $attachment_id );
+		$mime_type     = $mime_type_raw ? $mime_type_raw : '';
 		$context       = $this->build_generation_context_for_attachment( $attachment_id );
 		$row_state     = array(
 			'status'        => '',
 			'user_approved' => false,
 		);
 
-		if ( $alt_text !== '' ) {
+		if ( '' !== $alt_text ) {
 			$row_state = $this->get_library_workspace_row_state(
 				(object) array(
 					'ID'       => $attachment_id,
@@ -4675,10 +4677,10 @@ class Core {
 		}
 
 		$status_hint = 'missing_alt';
-		if ( $alt_text !== '' ) {
+		if ( '' !== $alt_text ) {
 			$status_hint = ( ( $row_state['status'] ?? '' ) === 'weak' ) ? 'needs_review' : 'complete';
 		}
-		$current_state = $this->map_media_inventory_sync_state( $status_hint, $alt_text !== '', ! empty( $approved_hash ) || ! empty( $row_state['user_approved'] ) );
+		$current_state = $this->map_media_inventory_sync_state( $status_hint, '' !== $alt_text, ! empty( $approved_hash ) || ! empty( $row_state['user_approved'] ) );
 
 		$created_at = get_post_time( 'c', true, $attachment_id );
 		$updated_at = get_post_modified_time( 'c', true, $attachment_id );
@@ -4707,13 +4709,13 @@ class Core {
 			'state_hint'    => $status_hint,
 			'current_state' => $current_state,
 			'currentState'  => $current_state,
-			'has_alt'       => $alt_text !== '',
+			'has_alt'       => '' !== $alt_text,
 			'user_approved' => ! empty( $approved_hash ) || ! empty( $row_state['user_approved'] ),
 			'source'        => $source_value,
 			'image_url'     => $image_url ? esc_url_raw( $image_url ) : '',
 			'imageUrl'      => $image_url ? esc_url_raw( $image_url ) : '',
 			'uploaded_at'   => is_string( $created_at ) ? $created_at : '',
-			'updated_at'    => is_string( $updated_at ) && $updated_at !== '' ? $updated_at : ( is_string( $created_at ) ? $created_at : '' ),
+			'updated_at'    => is_string( $updated_at ) && '' !== $updated_at ? $updated_at : ( is_string( $created_at ) ? $created_at : '' ),
 		);
 	}
 
@@ -4898,7 +4900,7 @@ class Core {
 		$quality_class    = isset( $row_state['quality_class'] ) ? sanitize_html_class( (string) $row_state['quality_class'] ) : 'poor';
 		$quality_label    = isset( $row_state['quality_label'] ) ? (string) $row_state['quality_label'] : __( 'Weak', 'beepbeep-ai-alt-text-generator' );
 		$quality_score    = isset( $row_state['quality_score'] ) ? max( 0, min( 100, (int) $row_state['quality_score'] ) ) : 0;
-		$score_tier       = isset( $row_state['score_tier'] ) ? sanitize_html_class( (string) $row_state['score_tier'] ) : ( $status === 'optimized' ? 'good' : ( $status === 'weak' ? 'review' : 'missing' ) );
+		$score_tier       = isset( $row_state['score_tier'] ) ? sanitize_html_class( (string) $row_state['score_tier'] ) : ( 'optimized' === $status ? 'good' : ( 'weak' === $status ? 'review' : 'missing' ) );
 		$is_user_approved = ! empty( $row_state['user_approved'] );
 		$has_alt          = ! empty( $row_state['has_alt'] );
 		$clean_alt        = isset( $row_state['clean_alt'] ) ? trim( (string) $row_state['clean_alt'] ) : $clean_alt;
@@ -4953,7 +4955,7 @@ class Core {
 			);
 		}
 
-		$quality_tooltip = $status === 'missing'
+		$quality_tooltip = 'missing' === $status
 			? __( 'Generate ALT text to improve accessibility and image SEO.', 'beepbeep-ai-alt-text-generator' )
 			: sprintf(
 				/* translators: %s: quality score. */
@@ -5029,7 +5031,7 @@ class Core {
 		$cache_key = 'bbai_usage_rows_' . md5( $limit . '|' . ( $include_all ? 'all' : 'slice' ) );
 		if ( ! $include_all ) {
 			$cached = wp_cache_get( $cache_key, 'bbai' );
-			if ( $cached !== false ) {
+			if ( false !== $cached ) {
 				return $cached;
 			}
 		}
@@ -5103,7 +5105,7 @@ class Core {
 					$metadata = maybe_unserialize( $row['thumbnail_metadata'] );
 					if ( isset( $metadata['sizes']['thumbnail']['file'] ) ) {
 						$dir       = dirname( $metadata['file'] );
-						$thumb_url = $upload_dir['baseurl'] . '/' . ( $dir !== '.' ? $dir . '/' : '' ) . $metadata['sizes']['thumbnail']['file'];
+						$thumb_url = $upload_dir['baseurl'] . '/' . ( '.' !== $dir ? $dir . '/' : '' ) . $metadata['sizes']['thumbnail']['file'];
 					} elseif ( ! empty( $row['guid'] ) ) {
 						$thumb_url = $row['guid'];
 					}
@@ -5125,7 +5127,7 @@ class Core {
 					'generated'          => $generated,
 					'thumb'              => $thumb_url,
 					'details_url'        => add_query_arg( 'item', $row['ID'], admin_url( 'upload.php' ) ) . '#attachment_alt',
-					'view_url'           => get_permalink( $row['ID'] ) ?: $row['guid'],
+					'view_url'           => get_permalink( $row['ID'] ) ? get_permalink( $row['ID'] ) : $row['guid'],
 				);
 			},
 			$rows
@@ -5173,13 +5175,13 @@ class Core {
 
 	private function format_source_label( $key ) {
 		$map = $this->get_source_meta_map();
-		$key = sanitize_key( $key ?: 'unknown' );
+		$key = sanitize_key( $key ? $key : 'unknown' );
 		return $map[ $key ]['label'] ?? $map['unknown']['label'];
 	}
 
 	private function format_source_description( $key ) {
 		$map = $this->get_source_meta_map();
-		$key = sanitize_key( $key ?: 'unknown' );
+		$key = sanitize_key( $key ? $key : 'unknown' );
 		return $map[ $key ]['description'] ?? $map['unknown']['description'];
 	}
 
@@ -5191,7 +5193,7 @@ class Core {
 	private function bbai_init_wp_filesystem() {
 		global $wp_filesystem;
 
-		if ( is_object( $wp_filesystem ) && isset( $wp_filesystem->method ) && $wp_filesystem->method === 'direct' ) {
+		if ( is_object( $wp_filesystem ) && isset( $wp_filesystem->method ) && 'direct' === $wp_filesystem->method ) {
 			return $wp_filesystem;
 		}
 
@@ -5202,16 +5204,15 @@ class Core {
 
 		$direct = new \WP_Filesystem_Direct( null );
 
-		// Only populate the global if nothing else has been set.
 		if ( ! is_object( $wp_filesystem ) ) {
-			$wp_filesystem = $direct;
+			$wp_filesystem = $direct; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- intentionally bootstraps the WP_Filesystem global.
 		}
 
 		return $direct;
 	}
 
 	private function redact_api_token( $message ) {
-		if ( ! is_string( $message ) || $message === '' ) {
+		if ( ! is_string( $message ) || '' === $message ) {
 			return $message;
 		}
 
@@ -5244,7 +5245,7 @@ class Core {
 
 	private function extract_json_object( string $content ) {
 		$content = trim( $content );
-		if ( $content === '' ) {
+		if ( '' === $content ) {
 			return null;
 		}
 
@@ -5254,10 +5255,10 @@ class Core {
 			$content = trim( $content );
 		}
 
-		if ( $content !== '' && is_string( $content ) && isset( $content[0] ) && $content[0] !== '{' ) {
+		if ( '' !== $content && is_string( $content ) && isset( $content[0] ) && '{' !== $content[0] ) {
 			$start = strpos( (string) $content, '{' );
 			$end   = strrpos( (string) $content, '}' );
-			if ( $start !== false && $end !== false && $end > $start ) {
+			if ( false !== $start && false !== $end && $end > $start ) {
 				$content = substr( $content, $start, $end - $start + 1 );
 			}
 		}
@@ -5324,7 +5325,7 @@ class Core {
 		}
 
 		$size = filesize( $file );
-		if ( $size === false || $size <= 0 ) {
+		if ( false === $size || $size <= 0 ) {
 			return new \WP_Error( 'inline_image_size', __( 'Unable to read the image size for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
@@ -5342,7 +5343,7 @@ class Core {
 
 		$fs       = $this->bbai_init_wp_filesystem();
 		$contents = ( is_object( $fs ) && method_exists( $fs, 'get_contents' ) ) ? $fs->get_contents( $file ) : false;
-		if ( $contents === false ) {
+		if ( false === $contents ) {
 			return new \WP_Error( 'inline_image_read_failed', __( 'Unable to read the image file for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
@@ -5370,7 +5371,7 @@ class Core {
 
 	private function review_alt_text_with_model( int $attachment_id, string $alt, string $image_strategy, $image_payload_used, array $opts, string $api_key ) {
 		$alt = trim( (string) $alt );
-		if ( $alt === '' ) {
+		if ( '' === $alt ) {
 			return new \WP_Error( 'review_skipped', __( 'ALT text is empty; skipped review.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 
@@ -5382,7 +5383,7 @@ class Core {
 
 		$image_payload = $image_payload_used;
 		if ( ! $image_payload ) {
-			if ( $image_strategy === 'inline' ) {
+			if ( 'inline' === $image_strategy ) {
 				$inline = $this->build_inline_image_payload( $attachment_id );
 				if ( ! is_wp_error( $inline ) ) {
 					$image_payload = $inline['payload'];
@@ -5487,7 +5488,7 @@ class Core {
 		$data    = is_array( $decoded ) ? $decoded : array();
 
 		if ( $code >= 300 || empty( $data['choices'][0]['message']['content'] ) ) {
-			$api_message = isset( $data['error']['message'] ) ? $data['error']['message'] : ( $raw_body ?: 'OpenAI review failed.' );
+			$api_message = isset( $data['error']['message'] ) ? $data['error']['message'] : ( $raw_body ? $raw_body : 'OpenAI review failed.' );
 			$api_message = $this->redact_api_token( $api_message );
 			return new \WP_Error(
 				'review_api_error',
@@ -5535,7 +5536,7 @@ class Core {
 		if ( ! empty( $parsed['issues'] ) && is_array( $parsed['issues'] ) ) {
 			foreach ( $parsed['issues'] as $issue ) {
 				$issue = sanitize_text_field( $issue );
-				if ( $issue !== '' ) {
+				if ( '' !== $issue ) {
 					$issues[] = $issue;
 				}
 			}
@@ -5571,7 +5572,7 @@ class Core {
 		update_post_meta( $attachment_id, '_bbai_tokens_completion', $usage_summary['completion'] );
 		update_post_meta( $attachment_id, '_bbai_tokens_total', $usage_summary['total'] );
 
-		if ( $image_strategy === 'remote' ) {
+		if ( 'remote' === $image_strategy ) {
 			delete_post_meta( $attachment_id, '_bbai_image_reference' );
 		} else {
 			update_post_meta( $attachment_id, '_bbai_image_reference', $image_strategy );
@@ -5616,12 +5617,12 @@ class Core {
 	 */
 	private function build_local_stub_alt_text( int $attachment_id, array $context ): string {
 		$filename   = isset( $context['filename'] ) ? (string) $context['filename'] : '';
-		$base_raw   = $filename !== '' ? (string) pathinfo( $filename, PATHINFO_FILENAME ) : '';
+		$base_raw   = '' !== $filename ? (string) pathinfo( $filename, PATHINFO_FILENAME ) : '';
 		$title      = isset( $context['title'] ) ? trim( (string) $context['title'] ) : '';
 		$fn_lower   = strtolower( $filename );
 		$base_lower = strtolower( $base_raw );
 
-		$title_is_filename = $title !== '' && $base_raw !== '' && strcasecmp( $title, $base_raw ) === 0;
+		$title_is_filename = '' !== $title && '' !== $base_raw && strcasecmp( $title, $base_raw ) === 0;
 
 		// UI captures — describe what’s on screen, not the file name.
 		if ( preg_match( '/screenshot|screen[-_]?grab|screencap|screencapture|ui[-_]?mock/i', $fn_lower ) ) {
@@ -5645,7 +5646,7 @@ class Core {
 			return __( 'Photograph of an indoor or outdoor scene with visible architecture, surfaces, and lighting; subject is centered in the frame.', 'beepbeep-ai-alt-text-generator' );
 		}
 
-		if ( $title !== '' && ! $title_is_filename ) {
+		if ( '' !== $title && ! $title_is_filename ) {
 			return sprintf(
 				/* translators: %s: image title from the media library */
 				__( 'Photograph related to: %s', 'beepbeep-ai-alt-text-generator' ),
@@ -5653,8 +5654,8 @@ class Core {
 			);
 		}
 
-		$humanized = $base_raw !== '' ? sanitize_text_field( str_replace( array( '-', '_' ), ' ', $base_raw ) ) : '';
-		if ( $humanized !== '' && strlen( $humanized ) >= 8 && $hyphen_count < 3 ) {
+		$humanized = '' !== $base_raw ? sanitize_text_field( str_replace( array( '-', '_' ), ' ', $base_raw ) ) : '';
+		if ( '' !== $humanized && strlen( $humanized ) >= 8 && $hyphen_count < 3 ) {
 			return sprintf(
 				/* translators: %s: short label derived from the file name */
 				__( 'Image depicting: %s', 'beepbeep-ai-alt-text-generator' ),
@@ -5687,7 +5688,7 @@ class Core {
 			return trim( BBAI_OPENAI_API_KEY );
 		}
 		$opt = get_option( 'bbai_openai_api_key', '' );
-		if ( is_string( $opt ) && $opt !== '' ) {
+		if ( is_string( $opt ) && '' !== $opt ) {
 			return trim( $opt );
 		}
 
@@ -5702,7 +5703,7 @@ class Core {
 	 */
 	private function generate_alt_text_via_openai_vision( int $attachment_id, array $context, string $model, string $api_key ) {
 		$model = sanitize_text_field( $model );
-		if ( $model === '' ) {
+		if ( '' === $model ) {
 			$model = 'gpt-4o';
 		}
 
@@ -5796,7 +5797,7 @@ class Core {
 		$data = is_array( $data ) ? $data : array();
 
 		if ( $code >= 300 || empty( $data['choices'][0]['message']['content'] ) ) {
-			$msg = isset( $data['error']['message'] ) ? (string) $data['error']['message'] : ( $raw !== '' ? $raw : __( 'OpenAI request failed.', 'beepbeep-ai-alt-text-generator' ) );
+			$msg = isset( $data['error']['message'] ) ? (string) $data['error']['message'] : ( '' !== $raw ? $raw : __( 'OpenAI request failed.', 'beepbeep-ai-alt-text-generator' ) );
 
 			return new \WP_Error( 'openai_vision_http', $this->redact_api_token( $msg ), array( 'status' => $code ) );
 		}
@@ -5804,7 +5805,7 @@ class Core {
 		$content = trim( (string) $data['choices'][0]['message']['content'] );
 		$content = trim( $content, " \t\n\r\0\x0B\"'" );
 		$content = preg_replace( '/\s+/u', ' ', $content );
-		if ( $content === '' ) {
+		if ( '' === $content ) {
 			return new \WP_Error( 'openai_vision_empty', __( 'OpenAI returned no alt text.', 'beepbeep-ai-alt-text-generator' ) );
 		}
 		if ( strlen( $content ) > 420 ) {
@@ -5851,9 +5852,9 @@ class Core {
 			$scored = \BBAI_Alt_Quality_Scorer::score( $alt, $ctx );
 			$lib    = isset( $scored['status'] ) ? (string) $scored['status'] : 'needs_review';
 			$status = 'weak';
-			if ( $lib === 'optimized' ) {
+			if ( 'optimized' === $lib ) {
 				$status = 'good';
-			} elseif ( $lib === 'missing' ) {
+			} elseif ( 'missing' === $lib ) {
 				$status = 'critical';
 			}
 			$review_result['score']   = (int) ( $scored['score'] ?? 60 );
@@ -5862,7 +5863,7 @@ class Core {
 			$review_result['summary'] = ! empty( $scored['suggestions'][0] ) ? sanitize_text_field( (string) $scored['suggestions'][0] ) : $review_result['summary'];
 			if ( ! empty( $scored['issues'] ) && is_array( $scored['issues'] ) ) {
 				foreach ( array_slice( $scored['issues'], 0, 6 ) as $issue ) {
-					if ( is_string( $issue ) && $issue !== '' ) {
+					if ( is_string( $issue ) && '' !== $issue ) {
 						$review_result['issues'][] = sanitize_text_field( $issue );
 					}
 				}
@@ -5944,9 +5945,9 @@ class Core {
 			$parent_id = (int) $attachment->post_parent;
 			if ( $parent_id > 0 ) {
 				$parent_type = get_post_type( $parent_id );
-				if ( $parent_type === 'product' ) {
+				if ( 'product' === $parent_type ) {
 					$product_id = $parent_id;
-				} elseif ( $parent_type === 'product_variation' ) {
+				} elseif ( 'product_variation' === $parent_type ) {
 					$product_id = (int) wp_get_post_parent_id( $parent_id );
 				}
 			}
@@ -6065,7 +6066,7 @@ class Core {
 		$user_id = get_current_user_id();
 
 		// For AJAX/REST calls, try to get user from nonce/authentication
-		if ( $user_id <= 0 && ( $source === 'ajax' || $source === 'inline' || $source === 'manual' ) ) {
+		if ( $user_id <= 0 && ( 'ajax' === $source || 'inline' === $source || 'manual' === $source ) ) {
 			// Check if we're in a REST API context
 			if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
 				// REST API should have authenticated user via cookie/nonce
@@ -6076,7 +6077,7 @@ class Core {
 		}
 
 		// Set to 0 for system/automated operations only
-		if ( $user_id <= 0 || $source === 'auto' || $source === 'queue' || $source === 'wpcli' ) {
+		if ( $user_id <= 0 || 'auto' === $source || 'queue' === $source || 'wpcli' === $source ) {
 			$user_id = 0; // Track as "System" for anonymous/automated operations
 		}
 
@@ -6104,7 +6105,7 @@ class Core {
 					if ( $bbai_reset_date ) {
 						try {
 							$reset_ts = strtotime( $bbai_reset_date );
-							if ( $reset_ts !== false ) {
+							if ( false !== $reset_ts ) {
 								$bbai_formatted_date = date_i18n( 'F j, Y', $reset_ts );
 								$reset_message       = sprintf(
 									/* translators: 1: reset date */
@@ -6113,7 +6114,7 @@ class Core {
 								);
 							}
 						} catch ( \Exception $e ) {
-							// Keep default message if date parsing fails
+							unset( $e ); // Keep default message if date parsing fails.
 						}
 					}
 
@@ -6127,9 +6128,7 @@ class Core {
 					);
 				}
 			} catch ( \Exception $e ) {
-				// If quota check fails due to error, don't block generation
-				// Backend will handle usage limits
-				// Silent failure - generation will proceed
+				unset( $e ); // Quota check failure does not block generation; backend enforces limits.
 			}
 		}
 
@@ -6161,7 +6160,7 @@ class Core {
 
 		$direct_openai_enabled = defined( 'BBAI_ENABLE_DIRECT_OPENAI' ) && true === BBAI_ENABLE_DIRECT_OPENAI;
 		$openai_key            = $direct_openai_enabled ? $this->resolve_openai_api_key_for_direct_generation() : '';
-		$use_openai_direct     = $direct_openai_enabled && $openai_key !== '' && apply_filters(
+		$use_openai_direct     = $direct_openai_enabled && '' !== $openai_key && apply_filters(
 			'bbai_use_openai_direct_generation',
 			false,
 			(int) $attachment_id,
@@ -6310,9 +6309,9 @@ class Core {
 			}
 			$status_code    = ( is_array( $error_data ) && isset( $error_data['status_code'] ) ) ? intval( $error_data['status_code'] ) : 0;
 			$is_quota_error = (
-				$error_code === 'limit_reached' ||
-				$error_code === 'quota_exhausted' ||
-				$error_code === 'quota_check_mismatch' ||
+				'limit_reached' === $error_code ||
+				'quota_exhausted' === $error_code ||
+				'quota_check_mismatch' === $error_code ||
 				in_array( $api_error_code, array( 'quota_exhausted', 'quota_exceeded', 'limit_reached', 'quota_check_mismatch' ), true ) ||
 				strpos( $error_message_lower, 'quota exceeded' ) !== false ||
 				strpos( $error_message_lower, 'quota exhausted' ) !== false ||
@@ -6324,10 +6323,8 @@ class Core {
 				in_array( $status_code, array( 402, 429 ), true )
 			);
 
-			// If it's a quota_check_mismatch error (from API client cache check), allow retry
-			if ( $error_code === 'quota_check_mismatch' ) {
-				// This is from our cache validation - suggest retry but still return the error
-				// The frontend should handle retry based on the error code
+			// phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf -- quota_check_mismatch: frontend handles retry.
+			if ( 'quota_check_mismatch' === $error_code ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
 			} elseif ( $is_quota_error ) {
 				// Anonymous trial: backend often returns 402/quota before local trial is exhausted.
 				// Retry a few times so partial batches can consume real trial slots.
@@ -6423,7 +6420,7 @@ class Core {
 						$log_context['normalized_api_error_code'] = $api_error_code;
 					}
 					$log_context['quota_event'] = $is_quota_error;
-					$is_quota_mismatch          = ( $error_code === 'quota_check_mismatch' || $api_error_code === 'quota_check_mismatch' );
+					$is_quota_mismatch          = ( 'quota_check_mismatch' === $error_code || 'quota_check_mismatch' === $api_error_code );
 					if ( $is_quota_mismatch ) {
 						$log_level   = 'warning';
 						$log_message = 'Quota status mismatch detected; retry advised';
@@ -6691,7 +6688,7 @@ class Core {
 		// Update license data if user has a license
 		if ( $bbai_has_license && ! empty( $bbai_usage_data ) ) {
 			$existing_license = $this->api_client->get_license_data() ?? array();
-			$updated_license  = $existing_license ?: array();
+			$updated_license  = $existing_license ? $existing_license : array();
 			$organization     = $updated_license['organization'] ?? array();
 
 			// Persist the normalized quota model used by the backend /usage endpoint.
@@ -6727,7 +6724,7 @@ class Core {
 				$organization['creditsRemaining'] = max( 0, intval( $organization['remaining'] ) );
 			}
 
-			unset( $organization[ 'token' . 'Limit' ], $organization[ 'tokens' . 'Remaining' ] );
+			unset( $organization['tokenLimit'], $organization['tokensRemaining'] ); // phpcs:ignore Generic.Strings.UnnecessaryStringConcat.Found
 
 			// Log the update for debugging
 			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
@@ -6788,7 +6785,7 @@ class Core {
 			$issues = array();
 			if ( ! empty( $review['issues'] ) && is_array( $review['issues'] ) ) {
 				foreach ( $review['issues'] as $issue ) {
-					if ( is_string( $issue ) && $issue !== '' ) {
+					if ( is_string( $issue ) && '' !== $issue ) {
 						$issues[] = sanitize_text_field( $issue );
 					}
 				}
@@ -6857,7 +6854,7 @@ class Core {
 
 		// Log usage event for multi-user visualization
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-helpers.php';
-		$action_type = $regenerate ? 'regenerate' : ( $source === 'bulk' || $source === 'bulk-regenerate' ? 'bulk' : 'generate' );
+		$action_type = $regenerate ? 'regenerate' : ( 'bulk' === $source || 'bulk-regenerate' === $source ? 'bulk' : 'generate' );
 		$tokens_used = isset( $usage_summary['total'] ) ? intval( $usage_summary['total'] ) : ( isset( $usage_summary['total_tokens'] ) ? intval( $usage_summary['total_tokens'] ) : 1 );
 		$context     = array(
 			'image_id' => $attachment_id,
@@ -7049,7 +7046,7 @@ class Core {
 				continue;
 			}
 
-			if ( $sanitizer === 'absint' ) {
+			if ( 'absint' === $sanitizer ) {
 				$sanitized[ $key ] = absint( $value );
 				continue;
 			}
@@ -7087,7 +7084,7 @@ class Core {
 					continue;
 				}
 
-				if ( $sanitizer === 'absint' ) {
+				if ( 'absint' === $sanitizer ) {
 					$org_sanitized[ $key ] = absint( $value );
 					continue;
 				}
@@ -7134,7 +7131,7 @@ class Core {
 			return;
 		}
 
-		if ( isset( $args[0] ) && $args[0] === 'reset-usage' ) {
+		if ( isset( $args[0] ) && 'reset-usage' === $args[0] ) {
 			$this->wpcli_reset_usage();
 			return;
 		}
@@ -7505,7 +7502,7 @@ class Core {
 
 		update_option( 'bbai_last_upgrade_event', $event, false );
 
-		if ( $event_name === 'upgrade_cta_clicked' ) {
+		if ( 'upgrade_cta_clicked' === $event_name ) {
 			update_option( 'bbai_last_upgrade_click', $event, false );
 			do_action( 'bbai_upgrade_clicked', $event );
 		}
@@ -7692,15 +7689,15 @@ class Core {
 			$user_message = $error_message;
 
 			// Handle specific error codes with better messages
-			if ( $error_code === 'missing_alt_text' ) {
+			if ( 'missing_alt_text' === $error_code ) {
 				$user_message = __( 'The API returned a response but no alt text was generated. This may be a temporary issue. Please try again.', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( $error_code === 'api_response_invalid' ) {
+			} elseif ( 'api_response_invalid' === $error_code ) {
 				$user_message = __( 'The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( $error_code === 'quota_check_mismatch' ) {
+			} elseif ( 'quota_check_mismatch' === $error_code ) {
 				$user_message = __( 'Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( $error_code === 'bbai_trial_exhausted' ) {
+			} elseif ( 'bbai_trial_exhausted' === $error_code ) {
 				$user_message = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_exhausted_message();
-			} elseif ( $error_code === 'limit_reached' || $error_code === 'quota_exhausted' ) {
+			} elseif ( 'limit_reached' === $error_code || 'quota_exhausted' === $error_code ) {
 				$bbai_reset_date = null;
 				if ( is_array( $error_data ) && isset( $error_data['usage'] ) && is_array( $error_data['usage'] ) ) {
 					$bbai_reset_date = $error_data['usage']['resetDate'] ?? null;
@@ -7711,7 +7708,7 @@ class Core {
 				if ( $bbai_reset_date ) {
 					try {
 						$reset_ts = strtotime( $bbai_reset_date );
-						if ( $reset_ts !== false ) {
+						if ( false !== $reset_ts ) {
 							$bbai_formatted_date = date_i18n( 'F j, Y', $reset_ts );
 							$user_message        = sprintf(
 								/* translators: 1: reset date */
@@ -7720,12 +7717,12 @@ class Core {
 							);
 						}
 					} catch ( \Exception $e ) {
-						// Keep default message if date parsing fails
+						unset( $e ); // Keep default message if date parsing fails.
 					}
 				}
-			} elseif ( $error_code === 'api_timeout' ) {
+			} elseif ( 'api_timeout' === $error_code ) {
 				$user_message = __( 'The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( $error_code === 'api_unreachable' ) {
+			} elseif ( 'api_unreachable' === $error_code ) {
 				$user_message = __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' );
 			}
 
@@ -7742,7 +7739,7 @@ class Core {
 			$retry_after     = 0;
 			if ( is_array( $error_data ) && isset( $error_data['retry_after'] ) ) {
 				$retry_after = absint( $error_data['retry_after'] );
-			} elseif ( $error_code === 'quota_check_mismatch' ) {
+			} elseif ( 'quota_check_mismatch' === $error_code ) {
 				$retry_after = 3;
 			}
 
@@ -7750,7 +7747,7 @@ class Core {
 				$err_kind = 'generation_error';
 				if ( in_array( $error_code, array( 'api_timeout', 'api_unreachable', 'network_error' ), true ) ) {
 					$err_kind = 'network_error';
-				} elseif ( strpos( (string) $error_code, 'api' ) === 0 || $error_code === 'server_error' ) {
+				} elseif ( strpos( (string) $error_code, 'api' ) === 0 || 'server_error' === $error_code ) {
 					$err_kind = 'api_error';
 				}
 				bbai_telemetry_emit(
@@ -7833,7 +7830,7 @@ class Core {
 					'warning',
 					'No usage data available after regeneration, using cached fallback',
 					array(
-						'updated_usage_was_null' => $updated_usage === null,
+						'updated_usage_was_null' => null === $updated_usage,
 						'final_usage'            => $updated_usage,
 					),
 					'generation'
@@ -7894,14 +7891,14 @@ class Core {
 				'altText'       => $alt_for_json, // Also include camelCase for compatibility
 				'attachment_id' => $attachment_id,
 				'request_key'   => $request_key,
-				'usage'         => $updated_usage ?: null, // Include updated usage in response
+				'usage'         => $updated_usage ? $updated_usage : null, // Include updated usage in response
 				'meta'          => $response_meta,
 				'stats'         => $response_stats,
 				'data'          => array(
 					'alt_text'    => $alt_for_json,
 					'altText'     => $alt_for_json,
 					'request_key' => $request_key,
-					'usage'       => $updated_usage ?: null,
+					'usage'       => $updated_usage ? $updated_usage : null,
 					'meta'        => $response_meta,
 					'stats'       => $response_stats,
 				),
@@ -7967,11 +7964,8 @@ class Core {
 				$error_code = $usage->get_error_code();
 				// If it's an auth error, allow queueing to proceed (backend will handle it)
 				// Don't block queueing on temporary auth issues
-				if ( $error_code === 'auth_required' || $error_code === 'user_not_found' ) {
-					// Allow queueing - authentication can be handled later during processing
-				} else {
-					// For other errors (server issues, etc.), still allow queueing
-					// The backend will handle usage limits during processing
+				if ( 'auth_required' === $error_code || 'user_not_found' === $error_code ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf -- auth errors do not block queueing.
+				} else { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedElse -- other errors also do not block queueing.
 				}
 			} elseif ( ! $usage || ( $usage['remaining'] ?? 0 ) <= 0 ) {
 				// Only block if we have a valid usage response showing limit reached
@@ -8066,26 +8060,21 @@ class Core {
 						'active_job' => $job_state['job'],
 					)
 				);
+			} elseif ( 'bulk-regenerate' === $source ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'No images queued. Images may already be processing or have alt text. Refresh the page to see current status.', 'beepbeep-ai-alt-text-generator' ),
+						'code'    => 'already_queued',
+					)
+				);
+				return;
 			} else {
-				// For regeneration, if nothing was queued, it might mean they're already completed
-				// Check if images already have alt text and suggest direct regeneration instead
-
-				if ( $source === 'bulk-regenerate' ) {
-					wp_send_json_error(
-						array(
-							'message' => __( 'No images queued. Images may already be processing or have alt text. Refresh the page to see current status.', 'beepbeep-ai-alt-text-generator' ),
-							'code'    => 'already_queued',
-						)
-					);
-					return;
-				} else {
-					wp_send_json_error(
-						array(
-							'message' => __( 'Failed to queue images. They may already be queued or processing.', 'beepbeep-ai-alt-text-generator' ),
-						)
-					);
-					return;
-				}
+				wp_send_json_error(
+					array(
+						'message' => __( 'Failed to queue images. They may already be queued or processing.', 'beepbeep-ai-alt-text-generator' ),
+					)
+				);
+				return;
 			}
 		} catch ( \Exception $e ) {
 			// Return proper JSON error instead of letting WordPress output HTML
@@ -8190,7 +8179,8 @@ class Core {
 			$samples[] = array(
 				'id'    => (int) $id,
 				'thumb' => $thumb ? esc_url_raw( $thumb ) : '',
-				'title' => sanitize_text_field( get_the_title( $id ) ?: sprintf( /* translators: %d: attachment ID */ __( 'Image #%d', 'beepbeep-ai-alt-text-generator' ), $id ) ),
+				/* translators: %d: attachment ID */
+				'title' => sanitize_text_field( get_the_title( $id ) ? get_the_title( $id ) : sprintf( __( 'Image #%d', 'beepbeep-ai-alt-text-generator' ), $id ) ),
 			);
 		}
 
@@ -8247,7 +8237,7 @@ class Core {
 
 		$alt_source = null;
 		$alt_text   = $this->extract_alt_text_from_response( $api_response, $alt_source );
-		if ( $alt_text === '' ) {
+		if ( '' === $alt_text ) {
 			return new \WP_Error(
 				'missing_alt_text',
 				__( 'The API response did not include preview alt text.', 'beepbeep-ai-alt-text-generator' ),
@@ -8332,7 +8322,8 @@ class Core {
 			$previews[] = array(
 				'id'       => (int) $attachment_id,
 				'thumb'    => $thumb ? esc_url_raw( $thumb ) : '',
-				'title'    => sanitize_text_field( get_the_title( $attachment_id ) ?: sprintf( /* translators: %d: attachment ID */ __( 'Image #%d', 'beepbeep-ai-alt-text-generator' ), $attachment_id ) ),
+				/* translators: %d: attachment ID */
+				'title'    => sanitize_text_field( get_the_title( $attachment_id ) ? get_the_title( $attachment_id ) : sprintf( __( 'Image #%d', 'beepbeep-ai-alt-text-generator' ), $attachment_id ) ),
 				'alt_text' => wp_strip_all_tags( (string) $preview ),
 			);
 		}
@@ -8539,19 +8530,19 @@ class Core {
 				$code    = $result->get_error_code();
 				$message = $result->get_error_message();
 
-				if ( $code === 'bbai_automation_unavailable' ) {
+				if ( 'bbai_automation_unavailable' === $code ) {
 					Queue::mark_complete( $job->id );
 					continue;
 				}
 
-				if ( $code === 'limit_reached' ) {
+				if ( 'limit_reached' === $code ) {
 					Queue::mark_retry( $job->id, $message );
 					Queue::schedule_processing( apply_filters( 'bbai_queue_limit_delay', HOUR_IN_SECONDS ) );
 					break;
 				}
 
-				if ( $code === 'bbai_trial_exhausted' ) {
-					Queue::mark_failed( $job->id, $message ?: $bbai_trial_message );
+				if ( 'bbai_trial_exhausted' === $code ) {
+					Queue::mark_failed( $job->id, $message ? $message : $bbai_trial_message );
 					$bbai_trial_blocked = true;
 					break;
 				}
@@ -8685,7 +8676,7 @@ class Core {
 	}
 
 	public function handle_post_save( $post_ID, $post, $update ) {
-		if ( $post instanceof \WP_Post && $post->post_type === 'attachment' ) {
+		if ( $post instanceof \WP_Post && 'attachment' === $post->post_type ) {
 			$this->invalidate_stats_cache();
 			if ( $update ) {
 				if ( $this->queue_attachment( $post_ID, 'save' ) ) {
@@ -8696,7 +8687,7 @@ class Core {
 	}
 
 	private function get_account_summary( ?array $bbai_usage_stats = null ) {
-		if ( $this->account_summary !== null ) {
+		if ( null !== $this->account_summary ) {
 			return $this->account_summary;
 		}
 
@@ -8763,7 +8754,7 @@ class Core {
 		if ( is_wp_error( $result ) ) {
 			$error_code = $result->get_error_code();
 			$error_data = $result->get_error_data();
-			if ( $error_code === 'site_has_license' || $error_code === 'SITE_HAS_LICENSE' ) {
+			if ( 'site_has_license' === $error_code || 'SITE_HAS_LICENSE' === $error_code ) {
 				$existing_email = '';
 				if ( is_array( $error_data ) && isset( $error_data['existing_email'] ) ) {
 					$existing_email = sanitize_email( (string) $error_data['existing_email'] );
@@ -8779,7 +8770,7 @@ class Core {
 				return;
 			}
 
-			if ( $error_code === 'invite_required' ) {
+			if ( 'invite_required' === $error_code ) {
 				$invite_url = '';
 				if ( is_array( $error_data ) && isset( $error_data['invite_url'] ) ) {
 					$invite_url = esc_url_raw( (string) $error_data['invite_url'] );
@@ -9048,7 +9039,7 @@ class Core {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
-					'message' => $result->get_error_message() ?: __( 'Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator' ),
+					'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator' ),
 				)
 			);
 			return;
@@ -9097,7 +9088,7 @@ class Core {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
-					'message' => $result->get_error_message() ?: __( 'Failed to disconnect site', 'beepbeep-ai-alt-text-generator' ),
+					'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Failed to disconnect site', 'beepbeep-ai-alt-text-generator' ),
 				)
 			);
 			return;
@@ -9117,13 +9108,13 @@ class Core {
 	private function is_admin_authenticated() {
 		// Check if we have a valid admin session
 		$admin_session = get_transient( 'bbai_admin_session_' . get_current_user_id() );
-		if ( $admin_session === false || empty( $admin_session ) ) {
+		if ( false === $admin_session || empty( $admin_session ) ) {
 			return false;
 		}
 
 		// Verify session hasn't expired (24 hours)
 		$session_time = get_transient( 'bbai_admin_session_time_' . get_current_user_id() );
-		if ( $session_time === false || ( time() - intval( $session_time ) ) > ( 24 * HOUR_IN_SECONDS ) ) {
+		if ( false === $session_time || ( time() - intval( $session_time ) ) > ( 24 * HOUR_IN_SECONDS ) ) {
 			$this->clear_admin_session();
 			return false;
 		}
@@ -9170,7 +9161,7 @@ class Core {
 
 		if ( $bbai_has_license && $bbai_license_data && isset( $bbai_license_data['organization'] ) ) {
 			$bbai_license_plan = strtolower( $bbai_license_data['organization']['plan'] ?? 'free' );
-			$bbai_is_agency    = ( $bbai_license_plan === 'agency' );
+			$bbai_is_agency    = ( 'agency' === $bbai_license_plan );
 		}
 
 		if ( ! $bbai_is_agency ) {
@@ -9210,7 +9201,7 @@ class Core {
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
-					'message' => $result->get_error_message() ?: __( 'Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator' ),
+					'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Login failed. Please check your credentials.', 'beepbeep-ai-alt-text-generator' ),
 				)
 			);
 			return;
@@ -9338,11 +9329,11 @@ class Core {
 		$raw_checkout_url      = ( ! is_wp_error( $result ) && is_array( $result ) && isset( $result['url'] ) && is_string( $result['url'] ) )
 			? esc_url_raw( $result['url'] )
 			: '';
-		$fallback_used         = $resolved_checkout_url !== '' && $resolved_checkout_url !== $raw_checkout_url;
+		$fallback_used         = '' !== $resolved_checkout_url && $resolved_checkout_url !== $raw_checkout_url;
 
-		if ( is_wp_error( $result ) || $resolved_checkout_url === '' ) {
+		if ( is_wp_error( $result ) || '' === $resolved_checkout_url ) {
 			$fallback_checkout_url = $this->get_checkout_fallback_url( $plan_hint, $price_id );
-			if ( $fallback_checkout_url !== '' ) {
+			if ( '' !== $fallback_checkout_url ) {
 				wp_send_json_success(
 					array(
 						'url'        => $fallback_checkout_url,
@@ -9392,7 +9383,7 @@ class Core {
 				$bbai_license_data = $this->api_client->get_license_data();
 				if ( $bbai_license_data && isset( $bbai_license_data['organization'] ) ) {
 					$bbai_license_plan  = strtolower( $bbai_license_data['organization']['plan'] ?? 'free' );
-					$has_agency_license = ( $bbai_license_plan === 'agency' || $bbai_license_plan === 'pro' );
+					$has_agency_license = ( 'agency' === $bbai_license_plan || 'pro' === $bbai_license_plan );
 				}
 			}
 		}
@@ -9758,7 +9749,7 @@ class Core {
 			)
 		);
 
-		if ( ! is_string( $mysql ) || $mysql === '' ) {
+		if ( ! is_string( $mysql ) || '' === $mysql ) {
 			return null;
 		}
 
@@ -9963,7 +9954,7 @@ class Core {
 	private function get_active_licensed_bulk_job_status_for_user( int $user_id ): ?array {
 		$job_id = get_user_meta( $user_id, self::ACTIVE_LICENSED_JOB_META, true );
 		$job_id = is_string( $job_id ) ? trim( $job_id ) : '';
-		if ( $job_id === '' ) {
+		if ( '' === $job_id ) {
 			return null;
 		}
 
@@ -10065,7 +10056,7 @@ class Core {
 	 */
 	private function is_api_job_status_terminal( array $job ): bool {
 		$s = isset( $job['status'] ) ? strtolower( (string) $job['status'] ) : '';
-		if ( $s === '' && isset( $job['state'] ) ) {
+		if ( '' === $s && isset( $job['state'] ) ) {
 			$s = strtolower( (string) $job['state'] );
 		}
 
@@ -10099,7 +10090,7 @@ class Core {
 		}
 
 		$root_status = isset( $job['status'] ) ? strtolower( (string) $job['status'] ) : '';
-		if ( $root_status === '' && isset( $job['state'] ) ) {
+		if ( '' === $root_status && isset( $job['state'] ) ) {
 			$root_status = strtolower( (string) $job['state'] );
 		}
 
@@ -10225,14 +10216,14 @@ class Core {
 		}
 
 		$status = isset( $item['status'] ) ? strtolower( (string) $item['status'] ) : '';
-		if ( $status !== '' && ! in_array( $status, array( 'completed', 'complete', 'success', 'succeeded' ), true ) ) {
+		if ( '' !== $status && ! in_array( $status, array( 'completed', 'complete', 'success', 'succeeded' ), true ) ) {
 			return false;
 		}
 
 		$api_response = $this->normalize_job_item_to_api_response( $item );
 		$alt_src      = null;
 		$alt_text     = $this->extract_alt_text_from_response( $api_response, $alt_src );
-		if ( $alt_text === '' ) {
+		if ( '' === $alt_text ) {
 			return false;
 		}
 
@@ -10297,7 +10288,7 @@ class Core {
 
 		if ( $bbai_has_license && ! empty( $bbai_usage_data ) ) {
 			$existing_license = $this->api_client->get_license_data() ?? array();
-			$updated_license  = $existing_license ?: array();
+			$updated_license  = $existing_license ? $existing_license : array();
 			$organization     = $updated_license['organization'] ?? array();
 			if ( isset( $bbai_usage_data['limit'] ) ) {
 				$organization['limit'] = intval( $bbai_usage_data['limit'] );
@@ -10375,7 +10366,7 @@ class Core {
 			$issues = array();
 			if ( ! empty( $review['issues'] ) && is_array( $review['issues'] ) ) {
 				foreach ( $review['issues'] as $issue ) {
-					if ( is_string( $issue ) && $issue !== '' ) {
+					if ( is_string( $issue ) && '' !== $issue ) {
 						$issues[] = sanitize_text_field( $issue );
 					}
 				}
@@ -10485,7 +10476,7 @@ class Core {
 				$attachment_ids = array_map( 'absint', wp_unslash( $_POST['attachment_ids'] ) );
 			} else {
 				$raw_json = sanitize_text_field( wp_unslash( $_POST['attachment_ids'] ) );
-				if ( $raw_json !== '' ) {
+				if ( '' !== $raw_json ) {
 					$decoded = json_decode( $raw_json, true );
 					if ( is_array( $decoded ) ) {
 						$attachment_ids = array_map( 'absint', $decoded );
@@ -10513,7 +10504,7 @@ class Core {
 			return;
 		}
 
-		$regenerate        = ! empty( $_POST['regenerate'] ) && (string) $_POST['regenerate'] !== '0' && (string) $_POST['regenerate'] !== 'false';
+		$regenerate        = ! empty( $_POST['regenerate'] ) && (string) '0' !== $_POST['regenerate'] && (string) 'false' !== $_POST['regenerate'];
 		$generation_source = isset( $_POST['generation_source'] ) ? sanitize_key( (string) wp_unslash( $_POST['generation_source'] ) ) : 'bulk';
 
 		Queue::clear_for_attachments( $attachment_ids );
@@ -10569,7 +10560,7 @@ class Core {
 
 		$job_id = $created['jobId'] ?? $created['job_id'] ?? $created['id'] ?? '';
 		$job_id = is_string( $job_id ) ? $job_id : ( is_scalar( $job_id ) ? (string) $job_id : '' );
-		if ( $job_id === '' ) {
+		if ( '' === $job_id ) {
 			wp_send_json_error( array( 'message' => __( 'Job created but no job id was returned.', 'beepbeep-ai-alt-text-generator' ) ), 500 );
 			return;
 		}
@@ -10641,14 +10632,14 @@ class Core {
 
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
 		$job_id = trim( $job_id );
-		if ( $job_id === '' ) {
+		if ( '' === $job_id ) {
 			wp_send_json_error( array( 'message' => __( 'Missing job id.', 'beepbeep-ai-alt-text-generator' ) ), 400 );
 			return;
 		}
 
 		$owner_key = 'bbai_job_owner_' . md5( $job_id );
 		$owner     = get_transient( $owner_key );
-		if ( $owner === false || (int) $owner !== (int) get_current_user_id() ) {
+		if ( false === $owner || get_current_user_id() !== (int) $owner ) {
 			wp_send_json_error(
 				array(
 					'message' => __( 'This job cannot be accessed.', 'beepbeep-ai-alt-text-generator' ),
@@ -11529,7 +11520,8 @@ class Core {
 
 				// Pass through trial exhausted data.
 				if ( 'bbai_trial_exhausted' === $code ) {
-					$data = array_merge( $data, $result->get_error_data() ?: array() );
+					$error_data = $result->get_error_data();
+					$data       = array_merge( $data, $error_data ? $error_data : array() );
 				}
 
 				if ( $retry_attempts > 0 ) {
@@ -11791,7 +11783,7 @@ class Core {
 		}
 
 		$time = strtotime( $timestamp );
-		if ( $time === false || $time <= 0 ) {
+		if ( false === $time || $time <= 0 ) {
 			return __( 'Just now', 'beepbeep-ai-alt-text-generator' );
 		}
 
@@ -11846,7 +11838,7 @@ class Core {
 		$rate_limit_key   = 'bbai_contact_limit_' . $user_id . '_' . $current_hour;
 		$submission_count = get_transient( $rate_limit_key );
 
-		if ( $submission_count !== false && intval( $submission_count ) >= 3 ) {
+		if ( false !== $submission_count && intval( $submission_count ) >= 3 ) {
 			wp_send_json_error(
 				array(
 					'message' => __( 'Rate limit exceeded. Please wait before submitting another message.', 'beepbeep-ai-alt-text-generator' ),
@@ -11901,17 +11893,17 @@ class Core {
 			$error_message = $backend_response->get_error_message();
 
 			// Provide more helpful error messages based on error type
-			if ( $error_code === 'auth_required' || $error_code === 'license_required' ) {
+			if ( 'auth_required' === $error_code || 'license_required' === $error_code ) {
 				$user_message = __( 'Unable to send message. Please ensure you are logged in and try again.', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( $error_code === 'api_unreachable' || $error_code === 'api_timeout' ) {
+			} elseif ( 'api_unreachable' === $error_code || 'api_timeout' === $error_code ) {
 				$user_message = __( 'Unable to connect to the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( $error_code === 'contact_email_failed' ) {
-				$user_message = $error_message ?: __( 'Failed to send message. Please try again later.', 'beepbeep-ai-alt-text-generator' );
+			} elseif ( 'contact_email_failed' === $error_code ) {
+				$user_message = $error_message ? $error_message : __( 'Failed to send message. Please try again later.', 'beepbeep-ai-alt-text-generator' );
 			} else {
 				$user_message = sprintf(
 					/* translators: 1: error message */
 					__( 'Unable to send message: %s', 'beepbeep-ai-alt-text-generator' ),
-					$error_message ?: __( 'Unknown error', 'beepbeep-ai-alt-text-generator' )
+					$error_message ? $error_message : __( 'Unknown error', 'beepbeep-ai-alt-text-generator' )
 				);
 			}
 
@@ -11935,12 +11927,12 @@ class Core {
 
 		$contact_data['site_url']    = get_site_url();
 		$contact_data['site_hash']   = $site_hash;
-		$contact_data['license_key'] = $bbai_license_key ?: null;
+		$contact_data['license_key'] = $bbai_license_key ? $bbai_license_key : null;
 
 		\BeepBeepAI\AltTextGenerator\Contact_Submissions::save_submission( $contact_data );
 
 		// Increment rate limit counter
-		if ( $submission_count === false ) {
+		if ( false === $submission_count ) {
 			set_transient( $rate_limit_key, 1, HOUR_IN_SECONDS );
 		} else {
 			set_transient( $rate_limit_key, intval( $submission_count ) + 1, HOUR_IN_SECONDS );
@@ -12178,7 +12170,7 @@ class Core {
 		}
 
 		$alt_text = $this->extract_alt_text_from_array( $api_response, $source );
-		if ( $alt_text !== '' ) {
+		if ( '' !== $alt_text ) {
 			return $alt_text;
 		}
 
@@ -12187,7 +12179,7 @@ class Core {
 			if ( isset( $api_response[ $key ] ) && is_array( $api_response[ $key ] ) ) {
 				$nested_source = null;
 				$alt_text      = $this->extract_alt_text_from_array( $api_response[ $key ], $nested_source );
-				if ( $alt_text !== '' ) {
+				if ( '' !== $alt_text ) {
 					$source = $key . ( $nested_source ? ':' . $nested_source : '' );
 					return $alt_text;
 				}
@@ -12242,17 +12234,17 @@ class Core {
 	 */
 	private function normalize_alt_text( string $value, &$source = null ): string {
 		$value = trim( $value );
-		if ( $value === '' ) {
+		if ( '' === $value ) {
 			return '';
 		}
 
 		// If the response is JSON, attempt to pull alt text from it.
-		if ( isset( $value[0] ) && $value[0] === '{' ) {
+		if ( isset( $value[0] ) && '{' === $value[0] ) {
 			$decoded = json_decode( $value, true );
 			if ( is_array( $decoded ) ) {
 				$nested_source = null;
 				$alt_text      = $this->extract_alt_text_from_array( $decoded, $nested_source );
-				if ( $alt_text !== '' ) {
+				if ( '' !== $alt_text ) {
 					$source = 'json:' . ( $source ?? 'text' ) . ( $nested_source ? ':' . $nested_source : '' );
 					return $alt_text;
 				}
@@ -12264,8 +12256,8 @@ class Core {
 		if ( strlen( $value ) >= 2 ) {
 			$first = $value[0];
 			$last  = $value[ strlen( $value ) - 1 ];
-			if ( ( $first === '"' && $last === '"' ) || ( $first === "'" && $last === "'" ) ) {
-				if ( $first === '"' ) {
+			if ( ( '"' === $first && '"' === $last ) || ( "'" === $first && "'" === $last ) ) {
+				if ( '"' === $first ) {
 					$decoded_string = json_decode( $value, true );
 					if ( is_string( $decoded_string ) && trim( $decoded_string ) !== '' ) {
 						$value  = trim( $decoded_string );
@@ -12276,9 +12268,9 @@ class Core {
 				if ( strlen( $value ) >= 2 ) {
 					$first = $value[0];
 					$last  = $value[ strlen( $value ) - 1 ];
-					if ( ( $first === '"' && $last === '"' ) || ( $first === "'" && $last === "'" ) ) {
+					if ( ( '"' === $first && '"' === $last ) || ( "'" === $first && "'" === $last ) ) {
 						$unwrapped = trim( substr( $value, 1, -1 ) );
-						if ( $unwrapped !== '' ) {
+						if ( '' !== $unwrapped ) {
 							$value  = $unwrapped;
 							$source = 'quoted:' . ( $source ?? 'text' );
 						}

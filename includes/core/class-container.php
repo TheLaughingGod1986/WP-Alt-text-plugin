@@ -218,7 +218,7 @@ class Container {
 	 *
 	 * @return array<string> Service names.
 	 */
-	public function getRegistered(): array {
+	public function get_registered(): array {
 		return array_keys( $this->services );
 	}
 }

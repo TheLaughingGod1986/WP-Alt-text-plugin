@@ -37,7 +37,7 @@ class Usage_Tracker {
 	 * @return int
 	 */
 	public static function calculate_days_until_reset( int $reset_timestamp, ?int $current_timestamp = null ): int {
-		$now                 = $current_timestamp !== null ? (int) $current_timestamp : (int) current_time( 'timestamp' );
+		$now                 = null !== $current_timestamp ? (int) $current_timestamp : (int) current_time( 'timestamp' );
 		$seconds_until_reset = max( 0, $reset_timestamp - $now );
 		return self::seconds_to_days_until_reset( $seconds_until_reset );
 	}
@@ -172,7 +172,7 @@ class Usage_Tracker {
 		}
 
 		$cached = get_transient( self::CACHE_KEY );
-		if ( $cached !== false && is_array( $cached ) ) {
+		if ( false !== $cached && is_array( $cached ) ) {
 			return self::normalize_usage_payload( $cached );
 		}
 
@@ -522,7 +522,7 @@ class Usage_Tracker {
 		}
 
 		$cached = get_transient( self::CACHE_KEY );
-		if ( $cached !== false && is_array( $cached ) && ! $force_refresh ) {
+		if ( false !== $cached && is_array( $cached ) && ! $force_refresh ) {
 			return self::normalize_usage_payload( $cached );
 		}
 
@@ -689,7 +689,7 @@ class Usage_Tracker {
 	public static function get_upgrade_url() {
 		$default = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
 		$stored  = get_option( 'bbai_upgrade_url', $default );
-		return apply_filters( 'bbai_upgrade_url', $stored ?: $default );
+		return apply_filters( 'bbai_upgrade_url', $stored ? $stored : $default );
 	}
 
 	/**

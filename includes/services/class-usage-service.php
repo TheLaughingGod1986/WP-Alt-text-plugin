@@ -170,7 +170,7 @@ class Usage_Service {
 			$data = get_transient( 'bbai_token_notice' );
 		}
 
-		return $data ?: null;
+		return $data ? $data : null;
 	}
 
 	/**

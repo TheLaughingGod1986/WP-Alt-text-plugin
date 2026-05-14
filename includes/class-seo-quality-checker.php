@@ -177,7 +177,7 @@ class BBAI_SEO_Quality_Checker {
 	public static function create_badge( $text ) {
 		$quality = self::calculate_quality( $text );
 
-		if ( $quality['badge'] === 'missing' ) {
+		if ( 'missing' === $quality['badge'] ) {
 			return '';
 		}
 
@@ -247,7 +247,7 @@ class BBAI_SEO_Quality_Checker {
 		$lines[]            = sprintf( '%s %s', $descriptive_status, $descriptive_label );
 
 		// Add tip for non-A grades
-		if ( $quality['grade'] !== 'A' ) {
+		if ( 'A' !== $quality['grade'] ) {
 			$lines[] = '';
 			$lines[] = __( 'Tip: Regenerate for better SEO', 'beepbeep-ai-alt-text-generator' );
 		}
@@ -269,7 +269,7 @@ class BBAI_SEO_Quality_Checker {
 		$quality = self::calculate_quality( $text );
 
 		// For missing alt text, return a dash indicator
-		if ( $quality['badge'] === 'missing' ) {
+		if ( 'missing' === $quality['badge'] ) {
 			return '<span class="bbai-seo-unified-badge bbai-seo-unified-badge--empty" data-bbai-tooltip="' . esc_attr__( 'No alt text', 'beepbeep-ai-alt-text-generator' ) . '">—</span>';
 		}
 

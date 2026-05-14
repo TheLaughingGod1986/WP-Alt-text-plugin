@@ -43,7 +43,7 @@ if ( ! defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) ) {
 	}
 	define(
 		'BEEPBEEP_AI_LOCAL_ALT_STUB',
-		$bbai_stub_host !== '' && 1 === preg_match( '/^(localhost|127\.0\.0\.1)(:\d+)?$/', $bbai_stub_host )
+		'' !== $bbai_stub_host && 1 === preg_match( '/^(localhost|127\.0\.0\.1)(:\d+)?$/', $bbai_stub_host )
 	);
 }
 

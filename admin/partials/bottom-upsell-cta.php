@@ -37,7 +37,7 @@ $bbai_remaining     = isset( $bbai_usage_stats['limit'], $bbai_usage_stats['used
 
 // Determine what to show
 $bbai_show_upsell         = ! $bbai_is_agency;
-$bbai_headline_override   = isset( $bbai_bottom_upsell_headline ) && is_string( $bbai_bottom_upsell_headline ) && $bbai_bottom_upsell_headline !== ''
+$bbai_headline_override   = isset( $bbai_bottom_upsell_headline ) && is_string( $bbai_bottom_upsell_headline ) && '' !== $bbai_bottom_upsell_headline
 	? $bbai_bottom_upsell_headline
 	: '';
 $bbai_bottom_upsell_class = ! empty( $bbai_bottom_upsell_compact ) ? ' bbai-bottom-upsell-cta--compact' : '';
@@ -69,7 +69,7 @@ $bbai_bottom_upsell_class = ! empty( $bbai_bottom_upsell_compact ) ? ' bbai-bott
 			<div class="bbai-upgrade-card__grid">
 				<div class="bbai-upgrade-card__value">
 					<h3 id="upgrade-headline" class="bbai-upgrade-card__title">
-						<?php echo esc_html( $bbai_headline_override !== '' ? $bbai_headline_override : __( 'Never think about ALT text again', 'beepbeep-ai-alt-text-generator' ) ); ?>
+						<?php echo esc_html( '' !== $bbai_headline_override ? $bbai_headline_override : __( 'Never think about ALT text again', 'beepbeep-ai-alt-text-generator' ) ); ?>
 					</h3>
 					<p class="bbai-upgrade-card__description"><?php esc_html_e( 'Automate AI text generation and scale image optimisation', 'beepbeep-ai-alt-text-generator' ); ?></p>
 
@@ -157,7 +157,7 @@ $bbai_bottom_upsell_class = ! empty( $bbai_bottom_upsell_compact ) ? ' bbai-bott
 
 			<!-- Title -->
 			<h3 id="upgrade-headline" class="bbai-card-title">
-				<?php echo esc_html( $bbai_headline_override !== '' ? $bbai_headline_override : __( 'Scale with Agency', 'beepbeep-ai-alt-text-generator' ) ); ?>
+				<?php echo esc_html( '' !== $bbai_headline_override ? $bbai_headline_override : __( 'Scale with Agency', 'beepbeep-ai-alt-text-generator' ) ); ?>
 			</h3>
 
 			<!-- Subtitle -->
