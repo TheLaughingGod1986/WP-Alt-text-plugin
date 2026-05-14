@@ -191,6 +191,7 @@
                 url: ajaxUrl,
                 method: 'POST',
                 dataType: 'json',
+                timeout: 120000,
                 data: {
                     action: 'beepbeepai_inline_generate',
                     attachment_ids: [id],

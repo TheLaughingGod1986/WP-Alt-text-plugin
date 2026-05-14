@@ -539,7 +539,10 @@ class API_Client_V2 {
         // Use longer timeout for generation requests (OpenAI can take time) and for cold-start-sensitive endpoints (Render free tier)
         if ($timeout === null) {
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
-            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
+            $is_generate_endpoint = $endpoint_str && (
+                ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) ||
+                strpos($endpoint_str, 'alt-text') !== false
+            ) && strpos($endpoint_str, '/api/') === false;
             $is_cold_start_endpoint = $endpoint_str && (strpos($endpoint_str, '/auth/') !== false || strpos($endpoint_str, '/billing/') !== false);
             if ($is_generate_endpoint) {
                 $timeout = 90;
@@ -654,7 +657,10 @@ class API_Client_V2 {
             if ($error_message_str && strpos($error_message_str, 'timeout') !== false) {
                 // Provide more specific message for generation timeouts
                 $endpoint_str = is_string($endpoint) ? $endpoint : '';
-                $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
+                $is_generate_endpoint = $endpoint_str && (
+                    ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) ||
+                    strpos($endpoint_str, 'alt-text') !== false
+                ) && strpos($endpoint_str, '/api/') === false;
                 $is_auth_endpoint = $endpoint_str && strpos($endpoint_str, '/auth/') !== false;
                 $is_billing_endpoint = $endpoint_str && strpos($endpoint_str, '/billing/') !== false;
                 
@@ -898,7 +904,10 @@ class API_Client_V2 {
             
             // Check for generate endpoint (with or without leading slash)
             $endpoint_str = is_string($endpoint) ? $endpoint : '';
-            $is_generate_endpoint = $endpoint_str && ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) && strpos($endpoint_str, '/api/') === false;
+            $is_generate_endpoint = $endpoint_str && (
+                ((strpos($endpoint_str, '/generate') !== false) || (strpos($endpoint_str, 'generate') !== false)) ||
+                strpos($endpoint_str, 'alt-text') !== false
+            ) && strpos($endpoint_str, '/api/') === false;
             $is_checkout_endpoint = strpos($endpoint_str, '/billing/checkout') !== false;
             
             if ($is_checkout_endpoint) {
