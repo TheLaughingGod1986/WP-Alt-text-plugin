@@ -297,6 +297,29 @@
                 var requestedCount = saved.requested_count  || saved.total || 0;
 
                 if (completedCount === 0 && failedCount === 0) {
+                    // Queue is IDLE with no evidence of completed work.  Before
+                    // declaring the job vanished, check two conditions:
+                    //
+                    // 1. In-browser sequential generation is running on THIS tab —
+                    //    it never touches the WP queue, so IDLE is expected.
+                    //    The inlineSyncUnsub subscriber keeps localStorage current.
+                    //
+                    // 2. Grace period: the job started less than 60 s ago — the
+                    //    queue row may not exist yet (server-side jobs can take a
+                    //    few seconds to appear) or the user clicked "Run in
+                    //    background" before any image finished.
+                    if (global.bbaiJobState && global.bbaiJobState.getState().running) {
+                        // In-browser generation active — keep polling, don't wipe.
+                        scheduleNextPoll();
+                        return;
+                    }
+                    var jobAge = Date.now() - (saved.started_at || saved.last_checked_at || 0);
+                    if (jobAge < 60000) {
+                        // Too early to declare failure — give the server time.
+                        scheduleNextPoll();
+                        return;
+                    }
+
                     // Queue emptied with no evidence of work — unexpected disappearance.
                     telemetry('generation_recovery_failed', {
                         reason:      'job_vanished',
@@ -497,6 +520,10 @@
     }
 
     // ─── Intercept "Run in background" button ──────────────────────────────────────
+    // inlineSyncUnsub holds the active bbaiJobState subscriber that relays
+    // in-browser progress to localStorage + other tabs while the modal is hidden.
+    var inlineSyncUnsub = null;
+
     function bindRunInBackground() {
         document.addEventListener('click', function (evt) {
             var target = evt.target;
@@ -533,7 +560,56 @@
 
             broadcast('job_started', jobData);
 
-            // Ensure polling is running.
+            // Subscribe to bbaiJobState and relay every tick to localStorage + other
+            // tabs.  This is the authoritative source of truth for in-browser (non-
+            // queue) sequential generation which is invisible to the REST queue endpoint.
+            if (global.bbaiJobState) {
+                if (inlineSyncUnsub) { inlineSyncUnsub(); }
+                inlineSyncUnsub = global.bbaiJobState.subscribe(function (s) {
+                    // Stop listening once we reach idle (modal reset or new job).
+                    if (s.status === 'idle') {
+                        if (inlineSyncUnsub) { inlineSyncUnsub(); inlineSyncUnsub = null; }
+                        return;
+                    }
+
+                    var saved = storageRead(STORAGE_JOB_KEY) || {};
+                    var updated = {
+                        job_id:          saved.job_id          || jobData.job_id,
+                        source_page:     saved.source_page     || jobData.source_page,
+                        started_at:      saved.started_at      || jobData.started_at,
+                        requested_count: saved.requested_count || s.total || 0,
+                        done:            s.progress   || 0,
+                        total:           s.total      || saved.total || 0,
+                        completed_count: s.successes  || 0,
+                        failed_count:    s.failures   || 0,
+                        last_checked_at: Date.now()
+                    };
+
+                    if (s.status === 'complete' || (s.progress >= s.total && s.total > 0 && !s.running)) {
+                        updated.status = 'complete';
+                        updated.state  = 'COMPLETED';
+                        storageWrite(STORAGE_JOB_KEY, updated);
+                        storageDel(STORAGE_DISMISSED_KEY);
+                        broadcast('job_complete', updated);
+                        if (inlineSyncUnsub) { inlineSyncUnsub(); inlineSyncUnsub = null; }
+                    } else if (s.status === 'error' || s.status === 'quota') {
+                        updated.status = 'failed';
+                        updated.state  = 'FAILED';
+                        storageWrite(STORAGE_JOB_KEY, updated);
+                        storageDel(STORAGE_DISMISSED_KEY);
+                        broadcast('job_complete', updated);
+                        if (inlineSyncUnsub) { inlineSyncUnsub(); inlineSyncUnsub = null; }
+                    } else {
+                        updated.status = 'processing';
+                        updated.state  = 'PROCESSING';
+                        storageWrite(STORAGE_JOB_KEY, updated);
+                        broadcast('job_update', updated);
+                    }
+                });
+            }
+
+            // Start polling so server-side (licensed bulk) jobs are also tracked.
+            // For pure in-browser jobs the subscriber above keeps state current.
             if (!isPrimary) {
                 claimPrimary();
             } else if (!pollTimer) {
