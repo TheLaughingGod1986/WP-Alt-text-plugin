@@ -1,44 +1,60 @@
 /**
  * Background Job Persistence Layer
  *
- * Polls /bbai/v1/queue on every plugin admin page so generation progress
- * survives navigation, page refreshes, and multiple browser tabs.
+ * Polls /bbai/v1/queue on every BeepBeep AI admin page so generation progress
+ * survives navigation, page refresh, and multiple browser tabs.
  *
- * Responsibilities:
- *  - Poll the REST queue endpoint (source of truth)
- *  - Persist recovery state to localStorage
- *  - Coordinate multi-tab polling via BroadcastChannel / storage events
- *  - Sync window.bbaiJobState so the floating widget stays up-to-date
- *  - Intercept "Run in background" clicks for telemetry
- *  - Handle ?bbai_reopen_progress=1 to reopen the modal on return
- *  - Emit telemetry events throughout
+ * State machine:
+ *   idle → queued / processing → complete | failed
+ *
+ * Terminal states (complete / failed) persist in localStorage until:
+ *   - the user explicitly dismisses the widget, or
+ *   - a new job starts (overwrite), or
+ *   - the 24-hour TTL expires.
+ *
+ * Dismiss persists across page loads: STORAGE_DISMISSED_KEY is written and
+ * read on every init().  It is cleared only when a new job starts or the job
+ * reaches a terminal state (so the user always sees the final outcome).
+ *
+ * Multi-tab:
+ *   Primary tab holds a localStorage heartbeat and polls every 10 s.
+ *   Secondary tabs listen via BroadcastChannel (fallback: 30 s slow poll).
+ *   If the primary heartbeat goes stale (>18 s), any secondary takes over.
+ *
+ * Broadcast message types:
+ *   primary_claim – tab elected as primary poller
+ *   job_started   – new job began (clears dismissed flag on all tabs)
+ *   job_update    – progress from primary → secondaries
+ *   job_complete  – terminal state reached (clears dismissed, all tabs show)
+ *   job_dismissed – user dismissed widget (all tabs hide)
  *
  * @package BeepBeep_AI
- * @since 5.2.0
+ * @since 5.2.1
  */
 (function (global) {
     'use strict';
 
-    // ─── Constants ──────────────────────────────────────────────────────────────
+    // ─── Constants ────────────────────────────────────────────────────────────────
     var STORAGE_JOB_KEY       = 'bbai_background_job';
     var STORAGE_DISMISSED_KEY = 'bbai_job_dismissed';
     var PRIMARY_TAB_KEY       = 'bbai_primary_tab';
     var PRIMARY_HEARTBEAT_KEY = 'bbai_primary_heartbeat';
-    var PRIMARY_TTL_MS        = 18000;   // 18 s – tab considered dead after this
-    var POLL_INTERVAL_MS      = 10000;   // 10 s primary poll
-    var SECONDARY_POLL_MS     = 30000;   // 30 s secondary (fallback when no BC)
-    var HEARTBEAT_INTERVAL_MS = 8000;    // 8 s heartbeat refresh
+    var PRIMARY_TTL_MS        = 18000;        // tab considered dead after 18 s
+    var POLL_INTERVAL_MS      = 10000;        // primary poll every 10 s
+    var SECONDARY_POLL_MS     = 30000;        // secondary fallback poll
+    var HEARTBEAT_INTERVAL_MS = 8000;         // primary heartbeat refresh
+    var COMPLETE_TTL_MS       = 86400000;     // 24 h – discard stale complete state
     var CHANNEL_NAME          = 'bbai_job_sync';
     var REOPEN_PARAM          = 'bbai_reopen_progress';
 
-    // ─── Module state ────────────────────────────────────────────────────────────
+    // ─── Module state ─────────────────────────────────────────────────────────────
     var pollTimer      = null;
     var heartbeatTimer = null;
     var isPrimary      = false;
     var bc             = null;
     var tabId          = 'tab_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 
-    // ─── Storage helpers ─────────────────────────────────────────────────────────
+    // ─── Storage helpers ──────────────────────────────────────────────────────────
     function storageRead(key) {
         try { return JSON.parse(global.localStorage.getItem(key) || 'null'); }
         catch (e) { return null; }
@@ -46,7 +62,7 @@
 
     function storageWrite(key, val) {
         try { global.localStorage.setItem(key, JSON.stringify(val)); }
-        catch (e) { /* quota or private browsing */ }
+        catch (e) { /* private browsing / quota */ }
     }
 
     function storageDel(key) {
@@ -54,7 +70,7 @@
         catch (e) {}
     }
 
-    // ─── BroadcastChannel ────────────────────────────────────────────────────────
+    // ─── BroadcastChannel ─────────────────────────────────────────────────────────
     function setupBroadcastChannel() {
         if (!global.BroadcastChannel) { return; }
         try {
@@ -64,7 +80,7 @@
                 var msg = evt.data;
 
                 if (msg.type === 'primary_claim' && msg.tabId !== tabId) {
-                    // Another tab became primary — yield if we were primary.
+                    // Another tab took over — yield if we were primary.
                     if (isPrimary) {
                         isPrimary = false;
                         stopPolling();
@@ -73,14 +89,27 @@
                     }
                 }
 
-                if (msg.type === 'job_update') {
-                    applyJobUpdate(msg.payload, false);
+                if (msg.type === 'job_started' && msg.payload) {
+                    // New job started on another tab — clear dismissed, restore widget.
+                    storageDel(STORAGE_DISMISSED_KEY);
+                    mergeAndApply(msg.payload, false);
                 }
 
-                if (msg.type === 'job_cleared') {
-                    storageDel(STORAGE_JOB_KEY);
+                if (msg.type === 'job_update' && msg.payload) {
+                    // Progress update from primary.
+                    mergeAndApply(msg.payload, false);
+                }
+
+                if (msg.type === 'job_complete' && msg.payload) {
+                    // Job reached a terminal state — always re-show (clears dismissed).
                     storageDel(STORAGE_DISMISSED_KEY);
-                    syncJobState(null);
+                    mergeAndApply(msg.payload, false);
+                }
+
+                if (msg.type === 'job_dismissed') {
+                    // User dismissed on another tab — mirror here.
+                    storageWrite(STORAGE_DISMISSED_KEY, { dismissed_at: Date.now() });
+                    forceHideWidget();
                 }
             };
         } catch (e) {
@@ -94,7 +123,7 @@
         catch (e) {}
     }
 
-    // ─── Primary tab election ────────────────────────────────────────────────────
+    // ─── Primary-tab election ──────────────────────────────────────────────────────
     function claimPrimary() {
         isPrimary = true;
         storageWrite(PRIMARY_TAB_KEY, tabId);
@@ -105,11 +134,11 @@
     }
 
     function tryClaimPrimary() {
-        var storedTabId  = storageRead(PRIMARY_TAB_KEY);
-        var lastBeat     = storageRead(PRIMARY_HEARTBEAT_KEY) || 0;
-        var isStale      = (Date.now() - lastBeat) > PRIMARY_TTL_MS;
+        var storedId = storageRead(PRIMARY_TAB_KEY);
+        var lastBeat = storageRead(PRIMARY_HEARTBEAT_KEY) || 0;
+        var isStale  = (Date.now() - lastBeat) > PRIMARY_TTL_MS;
 
-        if (!storedTabId || storedTabId === tabId || isStale) {
+        if (!storedId || storedId === tabId || isStale) {
             claimPrimary();
         } else {
             isPrimary = false;
@@ -131,7 +160,7 @@
         }
     }
 
-    // ─── REST config resolution ──────────────────────────────────────────────────
+    // ─── REST config ──────────────────────────────────────────────────────────────
     function getRestUrl() {
         var cfg = global.BBAI || global.BBAI_DASH || {};
         if (cfg.restQueue) { return cfg.restQueue; }
@@ -144,20 +173,15 @@
         var cfg = global.BBAI || global.BBAI_DASH || {};
         return cfg.nonce ||
             (global.alttextai_ajax && global.alttextai_ajax.nonce) ||
-            (global.bbai_ajax && global.bbai_ajax.nonce) || null;
+            (global.bbai_ajax      && global.bbai_ajax.nonce)      || null;
     }
 
     function getAdminUrl() {
-        if (global.bbai_ajax && global.bbai_ajax.admin_url) {
-            return global.bbai_ajax.admin_url;
-        }
-        if (global.bbai_env && global.bbai_env.admin_url) {
-            return global.bbai_env.admin_url;
-        }
-        return '';
+        return (global.bbai_ajax && global.bbai_ajax.admin_url) ||
+               (global.bbai_env  && global.bbai_env.admin_url)  || '';
     }
 
-    // ─── Polling ─────────────────────────────────────────────────────────────────
+    // ─── Polling ──────────────────────────────────────────────────────────────────
     function startPolling() {
         stopPolling();
         doPoll();
@@ -170,18 +194,31 @@
         }
     }
 
+    function scheduleNextPoll() {
+        if (!isPrimary) { return; }
+        var saved  = storageRead(STORAGE_JOB_KEY);
+        var active = saved && (saved.status === 'processing' || saved.status === 'queued');
+        // Only reschedule while actively processing; terminal states stop polling.
+        if (active) {
+            pollTimer = setTimeout(doPoll, POLL_INTERVAL_MS);
+        }
+    }
+
     function scheduleSecondaryFallback() {
-        // Secondary tabs poll at a reduced rate in case BroadcastChannel is absent.
+        // Secondary tab fallback: only needed when BroadcastChannel is absent.
+        // Check whether the primary is still alive; if not, take over.
         if (pollTimer) { return; }
+        var saved = storageRead(STORAGE_JOB_KEY);
+        if (!saved || (saved.status !== 'processing' && saved.status !== 'queued')) {
+            return; // No active job – no polling needed.
+        }
         pollTimer = setTimeout(function () {
             pollTimer = null;
-            // Re-check primary before polling.
             var lastBeat = storageRead(PRIMARY_HEARTBEAT_KEY) || 0;
             if ((Date.now() - lastBeat) > PRIMARY_TTL_MS) {
-                claimPrimary(); // Primary died — take over.
+                claimPrimary(); // Primary died – take over.
             } else {
-                doPoll();
-                scheduleSecondaryFallback();
+                scheduleSecondaryFallback(); // Primary alive – re-arm.
             }
         }, SECONDARY_POLL_MS);
     }
@@ -198,15 +235,13 @@
 
         xhr.onload = function () {
             if (xhr.status >= 200 && xhr.status < 300) {
-                try {
-                    handlePollResponse(JSON.parse(xhr.responseText));
-                } catch (e) { scheduleNextPoll(); }
+                try { handlePollResponse(JSON.parse(xhr.responseText)); }
+                catch (e) { scheduleNextPoll(); }
             } else if (xhr.status === 401 || xhr.status === 403) {
-                // Session expired — stop silently.
                 stopPolling();
-                stopHeartbeat();
+                stopHeartbeat(); // Auth lost — stop silently.
             } else {
-                scheduleNextPoll();
+                scheduleNextPoll(); // Transient error — retry.
             }
         };
 
@@ -215,135 +250,222 @@
         xhr.send();
     }
 
-    function scheduleNextPoll() {
-        if (!isPrimary) { return; }
-        var saved = storageRead(STORAGE_JOB_KEY);
-        var active = saved && (saved.status === 'processing' || saved.status === 'queued');
-        pollTimer = setTimeout(doPoll, active ? POLL_INTERVAL_MS : POLL_INTERVAL_MS * 3);
-    }
-
-    // ─── Poll response parsing ────────────────────────────────────────────────────
+    // ─── Poll response parsing ─────────────────────────────────────────────────────
     function handlePollResponse(data) {
         var jobState  = (data.job_state  || 'IDLE').toUpperCase();
         var activeJob = data.active_job  || null;
         var stats     = data.stats       || {};
-
-        var payload = null;
+        var payload   = null;
 
         if (jobState !== 'IDLE' && activeJob) {
-            payload = buildPayloadFromActiveJob(activeJob, jobState, stats);
-        } else if (stats.pending > 0 || stats.processing > 0) {
-            // Active queue rows without a formal active_job record.
-            var total = (stats.pending || 0) + (stats.processing || 0);
-            var done  = stats.completed_recent || 0;
+            // Licensed bulk job API or formally tracked WP queue job.
+            payload = buildActivePayload(activeJob, jobState, stats);
+
+        } else if ((stats.pending || 0) > 0 || (stats.processing || 0) > 0) {
+            // Queue has rows but no formal active_job record.
+            var qTotal = (stats.pending || 0) + (stats.processing || 0);
+            var qDone  = stats.completed_recent || 0;
             payload = {
-                status: stats.processing > 0 ? 'processing' : 'queued',
-                done:   done,
-                total:  Math.max(total, done),
-                state:  stats.processing > 0 ? 'PROCESSING' : 'QUEUED',
+                status:          (stats.processing || 0) > 0 ? 'processing' : 'queued',
+                done:            qDone,
+                total:           qTotal + qDone,
+                completed_count: qDone,
+                failed_count:    stats.failed || 0,
+                state:           (stats.processing || 0) > 0 ? 'PROCESSING' : 'QUEUED',
                 last_checked_at: Date.now()
             };
+
         } else {
-            // Queue is idle.  If we had an active job, figure out what happened.
+            // Queue is idle — determine what happened to a saved job.
             var saved = storageRead(STORAGE_JOB_KEY);
-            if (saved && (saved.status === 'processing' || saved.status === 'queued')) {
-                // It just finished — mark complete.
-                var completedCount = stats.completed_recent || saved.done || saved.total || 0;
+
+            if (!saved) {
+                // Nothing was running. Nothing to do.
+                if (isPrimary) { stopPolling(); }
+                return;
+            }
+
+            if (saved.status === 'complete' || saved.status === 'failed') {
+                // Already in a terminal state — do NOT wipe it; just stop polling.
+                if (isPrimary) { stopPolling(); }
+                return;
+            }
+
+            if (saved.status === 'processing' || saved.status === 'queued') {
+                var completedCount = stats.completed_recent || 0;
+                var failedCount    = stats.failed           || 0;
+                var requestedCount = saved.requested_count  || saved.total || 0;
+
+                if (completedCount === 0 && failedCount === 0) {
+                    // Queue emptied with no evidence of work — unexpected disappearance.
+                    telemetry('generation_recovery_failed', {
+                        reason:      'job_vanished',
+                        job_id:      saved.job_id,
+                        source_page: saved.source_page
+                    });
+                    storageDel(STORAGE_JOB_KEY);
+                    syncJobStateToIdle();
+                    if (isPrimary) {
+                        stopPolling();
+                        broadcast('job_update', null);
+                    }
+                    return;
+                }
+
+                // Normal completion (possibly with some failures).
+                var isAllFailed = (failedCount > 0 && completedCount === 0);
                 payload = {
-                    status: 'complete',
-                    done:   completedCount,
-                    total:  saved.total || completedCount,
-                    state:  'COMPLETED',
+                    status:          isAllFailed ? 'failed' : 'complete',
+                    done:            completedCount,
+                    total:           requestedCount || (completedCount + failedCount),
+                    requested_count: requestedCount,
+                    completed_count: completedCount,
+                    failed_count:    failedCount,
+                    state:           'COMPLETED',
                     last_checked_at: Date.now()
                 };
+
+                if (isPrimary) {
+                    stopPolling();
+                    broadcast('job_complete', payload);
+                    // Clear dismissed so completion is always visible.
+                    storageDel(STORAGE_DISMISSED_KEY);
+                }
             }
         }
 
-        applyJobUpdate(payload, true);
-
-        if (isPrimary) {
-            broadcast('job_update', payload);
-            scheduleNextPoll();
+        if (payload) {
+            mergeAndApply(payload, true);
+            if (isPrimary &&
+                payload.status !== 'complete' &&
+                payload.status !== 'failed') {
+                broadcast('job_update', payload);
+                scheduleNextPoll();
+            }
         }
     }
 
-    function buildPayloadFromActiveJob(job, jobState, stats) {
-        var total = Math.max(1, job.total || (stats.pending || 0) + (stats.processing || 0) || 1);
-        var done  = Math.max(0, Math.min(job.done || 0, total));
+    function buildActivePayload(job, jobState, stats) {
+        var total = Math.max(1,
+            job.total ||
+            (stats.pending || 0) + (stats.processing || 0) ||
+            1
+        );
+        var done = Math.max(0, Math.min(job.done || 0, total));
         return {
             status:          jobState === 'QUEUED' ? 'queued' : 'processing',
             done:            done,
             total:           total,
+            requested_count: total,
+            completed_count: done,
+            failed_count:    stats.failed || 0,
             state:           jobState,
             eta_seconds:     job.eta_seconds || null,
             last_checked_at: Date.now()
         };
     }
 
-    // ─── Apply job update ─────────────────────────────────────────────────────────
-    function applyJobUpdate(payload, fromPoll) {
-        if (!payload) {
-            // Job ended.
-            var saved = storageRead(STORAGE_JOB_KEY);
-            if (saved && fromPoll && (saved.status === 'processing' || saved.status === 'queued')) {
-                telemetry('generation_recovery_failed', { reason: 'job_gone_on_poll' });
+    // ─── Apply a job update ───────────────────────────────────────────────────────
+    function mergeAndApply(payload, fromPoll) {
+        // fromPoll is used for recovery_failed logic (no longer triggers on mere null).
+        void fromPoll;
+
+        var existing = storageRead(STORAGE_JOB_KEY) || {};
+
+        // Discard stale terminal states older than COMPLETE_TTL_MS.
+        if (existing.status === 'complete' || existing.status === 'failed') {
+            var age = Date.now() - (existing.last_checked_at || existing.started_at || 0);
+            if (age > COMPLETE_TTL_MS) {
+                storageDel(STORAGE_JOB_KEY);
+                storageDel(STORAGE_DISMISSED_KEY);
+                existing = {};
             }
-            storageDel(STORAGE_JOB_KEY);
-            syncJobState(null);
-            return;
         }
 
-        // Merge with stored state (preserve started_at).
-        var existing = storageRead(STORAGE_JOB_KEY) || {};
+        // Build merged record — preserve job identity fields from localStorage.
         var merged = {
+            job_id:          existing.job_id          || payload.job_id          || ('job_' + Date.now()),
             status:          payload.status,
-            done:            payload.done,
-            total:           payload.total,
+            done:            nvl(payload.done,            existing.done            || 0),
+            total:           nvl(payload.total,           existing.total           || 0),
+            requested_count: nvl(payload.requested_count, existing.requested_count || payload.total || 0),
+            completed_count: nvl(payload.completed_count, existing.completed_count || payload.done  || 0),
+            failed_count:    nvl(payload.failed_count,    existing.failed_count    || 0),
+            source_page:     existing.source_page || getPageSlug(),
             state:           payload.state,
             started_at:      existing.started_at || Date.now(),
             last_checked_at: payload.last_checked_at || Date.now()
         };
+
         storageWrite(STORAGE_JOB_KEY, merged);
 
-        syncJobState(merged);
-        maybeShowIndicator(merged);
+        // Reaching a terminal state always clears the dismissed flag so the
+        // user sees the final outcome (success or failure).
+        if (merged.status === 'complete' || merged.status === 'failed') {
+            storageDel(STORAGE_DISMISSED_KEY);
+        }
+
+        var dismissed = storageRead(STORAGE_DISMISSED_KEY);
+        if (!dismissed) {
+            syncJobState(merged);
+            telemetry('generation_global_indicator_shown', {
+                status:          merged.status,
+                done:            merged.done,
+                total:           merged.total,
+                completed_count: merged.completed_count,
+                failed_count:    merged.failed_count,
+                source_page:     merged.source_page
+            });
+        }
+    }
+
+    // null-tolerant value selector (picks first non-null value)
+    function nvl(a, b) {
+        return (a !== null && a !== undefined) ? a : b;
     }
 
     // ─── Sync window.bbaiJobState ─────────────────────────────────────────────────
+    // Uses .update() — NOT .complete() — to avoid triggering job-state.js's
+    // 8-second auto-dismiss timer for backend-recovered states.
     function syncJobState(data) {
         if (!global.bbaiJobState) { return; }
 
-        var currentState = global.bbaiJobState.getState();
+        var cur = global.bbaiJobState.getState();
 
-        if (!data) {
-            // Only reset if modal is not actively showing.
-            if (!currentState.modalVisible && currentState.status !== 'idle') {
-                global.bbaiJobState.reset();
-            }
-            return;
-        }
-
-        // Don't overwrite state while a live in-browser generation is ticking.
-        if (currentState.modalVisible && currentState.running) { return; }
+        // Don't clobber a live in-browser generation that has the modal open.
+        if (cur.modalVisible && cur.running) { return; }
 
         var total      = data.total || 0;
         var done       = data.done  || 0;
         var percentage = total > 0 ? Math.round((done / total) * 100) : 0;
 
         if (data.status === 'complete') {
-            if (!currentState.running) {
+            if (!cur.running) {
                 global.bbaiJobState.update({
                     running:      false,
                     status:       'complete',
                     progress:     done,
                     total:        total,
                     percentage:   100,
-                    successes:    done,
+                    successes:    data.completed_count || done,
+                    failures:     data.failed_count    || 0,
+                    modalVisible: false
+                });
+            }
+        } else if (data.status === 'failed') {
+            if (!cur.running) {
+                global.bbaiJobState.update({
+                    running:      false,
+                    status:       'error',
+                    progress:     done,
+                    total:        total,
+                    percentage:   percentage,
+                    successes:    data.completed_count || done,
+                    failures:     data.failed_count    || 0,
                     modalVisible: false
                 });
             }
         } else if (data.status === 'processing' || data.status === 'queued') {
-            // Only update if not already actively running (browser-side loop).
             global.bbaiJobState.update({
                 running:      true,
                 status:       'processing',
@@ -351,109 +473,103 @@
                 total:        total,
                 percentage:   percentage,
                 label:        'Generating ALT text…',
-                modalVisible: currentState.modalVisible
+                successes:    data.completed_count || 0,
+                failures:     data.failed_count    || 0,
+                modalVisible: cur.modalVisible
             });
         }
     }
 
-    // ─── Global indicator management ─────────────────────────────────────────────
-    // The primary indicator is the floating job-widget already created by job-widget.js.
-    // We emit the standard bbaiJobState updates so it renders correctly.
-    // Additionally we track when to show/hide based on dismiss state.
-
-    function maybeShowIndicator(data) {
-        var dismissed = storageRead(STORAGE_DISMISSED_KEY);
-
-        // After completion the indicator should reappear even if previously dismissed.
-        if (data.status === 'complete') {
-            storageDel(STORAGE_DISMISSED_KEY);
-            telemetry('generation_global_indicator_shown', {
-                status: 'complete',
-                done:   data.done,
-                total:  data.total
-            });
-            return;
+    function syncJobStateToIdle() {
+        if (!global.bbaiJobState) { return; }
+        var cur = global.bbaiJobState.getState();
+        // Don't reset if the progress modal is currently open.
+        if (!cur.modalVisible) {
+            global.bbaiJobState.reset();
         }
-
-        // Don't re-show while actively dismissed for a running job.
-        if (dismissed && dismissed.status !== 'complete') { return; }
-
-        telemetry('generation_global_indicator_shown', {
-            status: data.status,
-            done:   data.done,
-            total:  data.total
-        });
     }
 
-    // ─── Intercept "Run in background" ───────────────────────────────────────────
+    // Hard-hide the widget without relying on bbaiJobState update chain.
+    function forceHideWidget() {
+        if (global.bbaiJobState) { global.bbaiJobState.reset(); }
+        var w = document.getElementById('bbai-job-widget');
+        if (w) { w.hidden = true; }
+    }
+
+    // ─── Intercept "Run in background" button ──────────────────────────────────────
     function bindRunInBackground() {
         document.addEventListener('click', function (evt) {
             var target = evt.target;
             if (!target || !target.closest) { return; }
-            var btn = target.closest('[data-bbai-bulk-progress-background]');
-            if (!btn) { return; }
+            if (!target.closest('[data-bbai-bulk-progress-background]')) { return; }
 
-            var current = global.bbaiJobState ? global.bbaiJobState.getState() : null;
+            var cur      = global.bbaiJobState ? global.bbaiJobState.getState() : null;
+            var existing = storageRead(STORAGE_JOB_KEY) || {};
+
+            // Snapshot current in-memory state into localStorage immediately.
+            var jobData = {
+                job_id:          existing.job_id || ('job_' + Date.now()),
+                status:          'processing',
+                done:            cur ? (cur.progress  || 0) : 0,
+                total:           cur ? (cur.total      || 0) : 0,
+                requested_count: cur ? (cur.total      || 0) : 0,
+                completed_count: cur ? (cur.successes  || cur.progress || 0) : 0,
+                failed_count:    cur ? (cur.failures   || 0) : 0,
+                source_page:     getPageSlug(),
+                state:           'PROCESSING',
+                started_at:      existing.started_at || Date.now(),
+                last_checked_at: Date.now()
+            };
+
+            storageWrite(STORAGE_JOB_KEY, jobData);
+            storageDel(STORAGE_DISMISSED_KEY); // New background event — clear old dismiss.
+
             telemetry('generation_backgrounded', {
-                done:        current ? current.progress : 0,
-                total:       current ? current.total    : 0,
-                source_page: getPageSlug()
+                done:        jobData.done,
+                total:       jobData.total,
+                source_page: jobData.source_page,
+                job_id:      jobData.job_id
             });
 
-            // Clear any previous dismiss so the widget becomes visible.
-            storageDel(STORAGE_DISMISSED_KEY);
+            broadcast('job_started', jobData);
 
-            // Persist current in-memory state immediately so recovery works.
-            if (current && current.running) {
-                var existing = storageRead(STORAGE_JOB_KEY) || {};
-                storageWrite(STORAGE_JOB_KEY, {
-                    status:          'processing',
-                    done:            current.progress || 0,
-                    total:           current.total    || 0,
-                    state:           'PROCESSING',
-                    started_at:      existing.started_at || Date.now(),
-                    last_checked_at: Date.now()
-                });
+            // Ensure polling is running.
+            if (!isPrimary) {
+                claimPrimary();
+            } else if (!pollTimer) {
+                startPolling();
             }
         }, true);
     }
 
-    // ─── "View progress" cross-page handling ─────────────────────────────────────
-    // job-widget.js has its own View handler, but it only opens the modal if it
-    // already exists in the DOM.  We intercept via capture phase so we can redirect
-    // to the dashboard when necessary.
+    // ─── "View progress" cross-page handling ──────────────────────────────────────
+    // Intercepts clicks in capture phase before job-widget.js's own handler.
     function bindViewProgressButton() {
         document.addEventListener('click', function (evt) {
             var target = evt.target;
             if (!target || !target.closest) { return; }
-            var btn = target.closest('.bbai-job-widget__view');
-            if (!btn) { return; }
+            if (!target.closest('.bbai-job-widget__view')) { return; }
 
-            var modal = document.getElementById('bbai-bulk-progress-modal');
-
-            if (modal) {
-                // Modal exists (live generation in progress on this page).
-                telemetry('generation_resumed', { via: 'view_progress', same_page: true });
-                telemetry('generation_modal_reopened', { from_page: getPageSlug() });
-                // Let job-widget.js own handler proceed.
-                return;
-            }
-
-            // Navigate to dashboard to reopen modal.
-            evt.preventDefault();
-            evt.stopPropagation();
-            if (typeof evt.stopImmediatePropagation === 'function') {
-                evt.stopImmediatePropagation();
-            }
-
-            telemetry('generation_resumed', { via: 'view_progress', same_page: false });
-            telemetry('generation_modal_reopened', { from_page: getPageSlug() });
-
+            var modal    = document.getElementById('bbai-bulk-progress-modal');
             var saved    = storageRead(STORAGE_JOB_KEY);
             var adminUrl = getAdminUrl();
 
-            if (saved && saved.status === 'complete') {
-                // Jump to library for review.
+            if (modal) {
+                // Modal exists in current page — let job-widget.js handle it.
+                telemetry('generation_resumed',       { via: 'view_progress', same_page: true });
+                telemetry('generation_modal_reopened', { from_page: getPageSlug() });
+                return;
+            }
+
+            // No modal — navigate.
+            evt.preventDefault();
+            evt.stopPropagation();
+            if (evt.stopImmediatePropagation) { evt.stopImmediatePropagation(); }
+
+            telemetry('generation_resumed',       { via: 'view_progress', same_page: false });
+            telemetry('generation_modal_reopened', { from_page: getPageSlug() });
+
+            if (saved && (saved.status === 'complete' || saved.status === 'failed')) {
                 global.location.assign(adminUrl + '?page=bbai&tab=library');
             } else {
                 global.location.assign(adminUrl + '?page=bbai&' + REOPEN_PARAM + '=1');
@@ -461,25 +577,23 @@
         }, true);
     }
 
-    // ─── Intercept dismiss on job-widget ─────────────────────────────────────────
+    // ─── Dismiss handling ──────────────────────────────────────────────────────────
+    // Catches bubbled click from the widget's × button (job-widget.js hides the DOM
+    // element first, then this fires at the document level).
     function bindDismissButton() {
         document.addEventListener('click', function (evt) {
             var target = evt.target;
             if (!target || !target.closest) { return; }
             if (!target.closest('.bbai-job-widget__close')) { return; }
 
-            var saved = storageRead(STORAGE_JOB_KEY);
-            if (saved) {
-                storageWrite(STORAGE_DISMISSED_KEY, {
-                    status:       saved.status,
-                    dismissed_at: Date.now()
-                });
-            }
-            broadcast('job_cleared', null);
+            storageWrite(STORAGE_DISMISSED_KEY, { dismissed_at: Date.now() });
+            broadcast('job_dismissed', null);
+            // Reset bbaiJobState so the widget stays hidden if something re-renders.
+            if (global.bbaiJobState) { global.bbaiJobState.reset(); }
         });
     }
 
-    // ─── Handle ?bbai_reopen_progress=1 on dashboard ─────────────────────────────
+    // ─── Handle ?bbai_reopen_progress=1 ──────────────────────────────────────────
     function maybeReopenOnDashboard() {
         if (global.location.search.indexOf(REOPEN_PARAM + '=1') === -1) { return; }
 
@@ -489,72 +603,78 @@
             return;
         }
 
-        // Immediately poll backend to get fresh status.
+        // Verify with backend before reopening.
         var url   = getRestUrl();
         var nonce = getRestNonce();
-        if (!url || !nonce) { return; }
+
+        function proceed(jobState) {
+            if (jobState && (jobState.status === 'processing' || jobState.status === 'queued')) {
+                waitForModalAndOpen(jobState);
+            } else if (jobState && jobState.status === 'complete') {
+                telemetry('generation_resume_success', { via: 'url_reopen_complete' });
+                // Widget already visible via syncJobState — nothing more needed.
+            } else {
+                telemetry('generation_recovery_failed', { reason: 'job_gone_on_reopen' });
+            }
+        }
+
+        if (!url || !nonce) {
+            proceed(saved); // Can't verify — proceed optimistically from saved state.
+            return;
+        }
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', url + '?_=' + Date.now());
         xhr.setRequestHeader('X-WP-Nonce', nonce);
         xhr.timeout = 10000;
-        xhr.onload  = function () {
+        xhr.onload = function () {
             var data;
-            try { data = JSON.parse(xhr.responseText); } catch (e) { return; }
+            try { data = JSON.parse(xhr.responseText); }
+            catch (e) { proceed(saved); return; }
             handlePollResponse(data);
-
-            // Wait for the generation modal to be injected by bbai-admin.js (up to 5 s).
-            var attempts    = 0;
-            var maxAttempts = 20;
-            var interval    = setInterval(function () {
-                attempts++;
-                var modal = document.getElementById('bbai-bulk-progress-modal');
-                var fresh = storageRead(STORAGE_JOB_KEY);
-
-                if (modal && fresh) {
-                    clearInterval(interval);
-
-                    if (fresh.status === 'processing' || fresh.status === 'queued') {
-                        modal.classList.add('active');
-                        document.body.style.overflow = 'hidden';
-                        if (global.bbaiJobState) {
-                            global.bbaiJobState.update({ modalVisible: true });
-                        }
-                        telemetry('generation_resume_success', { via: 'url_reopen' });
-                    } else if (fresh.status === 'complete') {
-                        // Nothing more to show in the progress modal.
-                        telemetry('generation_resume_success', { via: 'url_reopen_complete' });
-                    }
-                    return;
-                }
-
-                if (!fresh) {
-                    // Backend confirmed idle while we were waiting.
-                    clearInterval(interval);
-                    telemetry('generation_recovery_failed', { reason: 'job_gone_during_reopen' });
-                    return;
-                }
-
-                if (attempts >= maxAttempts) {
-                    clearInterval(interval);
-                    telemetry('generation_recovery_failed', { reason: 'modal_not_created' });
-                }
-            }, 250);
+            proceed(storageRead(STORAGE_JOB_KEY));
         };
-        xhr.onerror = xhr.ontimeout = function () {
-            telemetry('generation_recovery_failed', { reason: 'poll_failed_on_reopen' });
-        };
+        xhr.onerror = xhr.ontimeout = function () { proceed(saved); };
         xhr.send();
+    }
+
+    function waitForModalAndOpen(jobState) {
+        var attempts    = 0;
+        var maxAttempts = 20; // 5 s at 250 ms intervals
+        var interval    = setInterval(function () {
+            attempts++;
+            var modal = document.getElementById('bbai-bulk-progress-modal');
+
+            if (modal) {
+                clearInterval(interval);
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                if (global.bbaiJobState) {
+                    global.bbaiJobState.update({ modalVisible: true });
+                }
+                telemetry('generation_resume_success', {
+                    via:    'url_reopen',
+                    status: jobState.status
+                });
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                // Modal never appeared — widget is still visible, which is acceptable.
+                telemetry('generation_recovery_failed', { reason: 'modal_not_created_on_reopen' });
+            }
+        }, 250);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
     function getPageSlug() {
         try {
-            var params = new URLSearchParams(global.location.search);
-            return params.get('page') || 'unknown';
+            var p = new URLSearchParams(global.location.search);
+            return p.get('page') || 'unknown';
         } catch (e) {
-            var match = global.location.search.match(/[?&]page=([^&]*)/);
-            return match ? decodeURIComponent(match[1]) : 'unknown';
+            var m = global.location.search.match(/[?&]page=([^&]*)/);
+            return m ? decodeURIComponent(m[1]) : 'unknown';
         }
     }
 
@@ -564,27 +684,45 @@
         }
     }
 
-    // ─── Initialise ───────────────────────────────────────────────────────────────
+    // ─── Stale-TTL cleanup ────────────────────────────────────────────────────────
+    function cleanupStaleTTL() {
+        var saved = storageRead(STORAGE_JOB_KEY);
+        if (!saved) { return; }
+        if (saved.status !== 'complete' && saved.status !== 'failed') { return; }
+        var ts  = saved.last_checked_at || saved.started_at || 0;
+        var age = Date.now() - ts;
+        if (age > COMPLETE_TTL_MS) {
+            storageDel(STORAGE_JOB_KEY);
+            storageDel(STORAGE_DISMISSED_KEY);
+        }
+    }
+
+    // ─── Init ─────────────────────────────────────────────────────────────────────
     function init() {
+        cleanupStaleTTL();
         setupBroadcastChannel();
         bindRunInBackground();
         bindViewProgressButton();
         bindDismissButton();
 
-        // Recover and show saved state immediately (before first poll).
-        var saved = storageRead(STORAGE_JOB_KEY);
-        if (saved && (saved.status === 'processing' || saved.status === 'queued' || saved.status === 'complete')) {
-            var dismissed = storageRead(STORAGE_DISMISSED_KEY);
-            if (!dismissed || dismissed.status !== saved.status) {
-                syncJobState(saved);
-            }
+        var saved     = storageRead(STORAGE_JOB_KEY);
+        var dismissed = storageRead(STORAGE_DISMISSED_KEY);
+
+        // Restore widget state from localStorage immediately (before first poll).
+        // Skip if the user had explicitly dismissed the widget.
+        if (saved && !dismissed) {
+            syncJobState(saved);
         }
 
-        // Handle ?bbai_reopen_progress=1.
+        // Handle ?bbai_reopen_progress=1 URL parameter.
         maybeReopenOnDashboard();
 
-        // Elect primary polling tab.
-        tryClaimPrimary();
+        // Start polling only if there is an active job to track.
+        if (saved && (saved.status === 'processing' || saved.status === 'queued')) {
+            tryClaimPrimary();
+        }
+        // Terminal or absent states don't need polling; polling restarts when
+        // the user clicks "Run in background" (bindRunInBackground → claimPrimary).
     }
 
     if (document.readyState === 'loading') {
@@ -593,18 +731,23 @@
         init();
     }
 
-    // ─── Public API (for debugging) ───────────────────────────────────────────────
+    // ─── Public API (debugging / integration) ────────────────────────────────────
     global.bbaiBackgroundJob = {
-        poll:       doPoll,
-        getState:   function () { return storageRead(STORAGE_JOB_KEY); },
-        clear:      function () {
+        poll:      doPoll,
+        getState:  function () { return storageRead(STORAGE_JOB_KEY); },
+        dismiss:   function () {
+            storageWrite(STORAGE_DISMISSED_KEY, { dismissed_at: Date.now() });
+            broadcast('job_dismissed', null);
+            forceHideWidget();
+        },
+        clear:     function () {
             storageDel(STORAGE_JOB_KEY);
             storageDel(STORAGE_DISMISSED_KEY);
             stopPolling();
-            broadcast('job_cleared', null);
+            syncJobStateToIdle();
         },
-        isPrimary:  function () { return isPrimary; },
-        tabId:      tabId
+        isPrimary: function () { return isPrimary; },
+        tabId:     tabId
     };
 
 })(window);

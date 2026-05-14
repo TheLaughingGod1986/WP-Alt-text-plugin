@@ -76,9 +76,15 @@
             }
         });
 
-        // Close → dismiss widget (does NOT cancel job)
+        // Close → dismiss widget (does NOT cancel job).
+        // Persist the dismissed state via bbaiBackgroundJob.dismiss() so it
+        // survives page navigation.  Fall back to local hide if the module
+        // hasn't loaded yet (defensive).
         $widget.on('click', '.bbai-job-widget__close', function () {
             $widget.prop('hidden', true);
+            if (window.bbaiBackgroundJob && typeof window.bbaiBackgroundJob.dismiss === 'function') {
+                window.bbaiBackgroundJob.dismiss();
+            }
         });
     }
 
