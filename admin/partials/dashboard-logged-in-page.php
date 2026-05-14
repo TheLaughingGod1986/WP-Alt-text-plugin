@@ -101,115 +101,125 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	>
 		<article class="bbai-li-insight-card bbai-stat-card primary">
 			<div class="bbai-stat-card-top">
-			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Accessibility', 'beepbeep-ai-alt-text-generator' ); ?></h3>
-			<?php if ( 100 === $bbai_li_cov && $bbai_li_lib_n > 0 ) : ?>
-				<span class="bbai-li-insight-pill bbai-li-insight-pill--success"><?php esc_html_e( 'All images optimised 🎉', 'beepbeep-ai-alt-text-generator' ); ?></span>
-			<?php endif; ?>
-			<p
-				class="bbai-li-insight-card__value"
-				data-bbai-li-insight-coverage
-			><?php
-			echo esc_html( sprintf(
-				/* translators: 1: percentage (0-100) */
-				__( '%1$s%% of images accessible', 'beepbeep-ai-alt-text-generator' ),
-				(string) $bbai_li_cov
-			) );
-			?></p>
+				<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Accessibility', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+				<div class="bbai-li-badge-row">
+					<?php if ( 100 === $bbai_li_cov && $bbai_li_lib_n > 0 ) : ?>
+						<span class="bbai-li-insight-pill bbai-li-insight-pill--success"><?php esc_html_e( 'All images optimised 🎉', 'beepbeep-ai-alt-text-generator' ); ?></span>
+					<?php endif; ?>
+				</div>
+				<p
+					class="bbai-li-insight-card__value"
+					data-bbai-li-insight-coverage
+				><?php
+				echo esc_html( sprintf(
+					/* translators: 1: percentage (0-100) */
+					__( '%1$s%% of images accessible', 'beepbeep-ai-alt-text-generator' ),
+					(string) $bbai_li_cov
+				) );
+				?></p>
 			</div>
 			<div class="bbai-stat-card-bottom">
-				<p class="bbai-li-insight-card__desc"><?php
-				echo ( 100 === $bbai_li_cov && $bbai_li_lib_n > 0 )
-					? esc_html__( 'Every image has useful ALT text.', 'beepbeep-ai-alt-text-generator' )
-					: esc_html__( 'Accessibility coverage is improving.', 'beepbeep-ai-alt-text-generator' );
-				?></p>
-				<p class="bbai-li-insight-card__meta" data-bbai-li-insight-coverage-meta><?php
-				echo $bbai_li_lib_n > 0
-					? esc_html( sprintf(
-						/* translators: 1: images with ALT text, 2: total images. */
-						__( '%1$s of %2$s images covered', 'beepbeep-ai-alt-text-generator' ),
-						number_format_i18n( $bbai_li_with ),
-						number_format_i18n( $bbai_li_lib_n )
-					) )
-					: esc_html__( 'Run a scan to measure coverage.', 'beepbeep-ai-alt-text-generator' );
-				?></p>
-				<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep coverage at 100% as you upload.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<div class="bbai-stat-card-body">
+					<p class="bbai-li-insight-card__desc"><?php
+					echo ( 100 === $bbai_li_cov && $bbai_li_lib_n > 0 )
+						? esc_html__( 'Every image has useful ALT text.', 'beepbeep-ai-alt-text-generator' )
+						: esc_html__( 'Accessibility coverage is improving.', 'beepbeep-ai-alt-text-generator' );
+					?></p>
+					<p class="bbai-li-insight-card__meta" data-bbai-li-insight-coverage-meta><?php
+					echo $bbai_li_lib_n > 0
+						? esc_html( sprintf(
+							/* translators: 1: images with ALT text, 2: total images. */
+							__( '%1$s of %2$s images covered', 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $bbai_li_with ),
+							number_format_i18n( $bbai_li_lib_n )
+						) )
+						: esc_html__( 'Run a scan to measure coverage.', 'beepbeep-ai-alt-text-generator' );
+					?></p>
+					<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep coverage at 100% as you upload.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				</div>
 				<a
 					href="#"
 					class="bbai-li-insight-card__cta"
 					data-action="show-upgrade-modal"
 				><?php esc_html_e( 'Automate new uploads', 'beepbeep-ai-alt-text-generator' ); ?></a>
-				</div>
-			</article>
+			</div>
+		</article>
 		<article class="bbai-li-insight-card bbai-stat-card secondary">
 			<div class="bbai-stat-card-top">
-			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Time saved', 'beepbeep-ai-alt-text-generator' ); ?></h3>
-			<p
-				class="bbai-li-insight-card__value"
-				data-bbai-li-insight-mins
-			><?php
-			if ( $bbai_li_mins > 0 ) {
-				printf(
-					/* translators: %s: estimated minutes (integer, formatted) */
-					esc_html( _n( '%s min saved', '%s mins saved', $bbai_li_mins, 'beepbeep-ai-alt-text-generator' ) ),
-					esc_html( number_format_i18n( $bbai_li_mins ) )
-				);
-			} else {
-				esc_html_e( '~0 mins saved', 'beepbeep-ai-alt-text-generator' );
-			}
-			?></p>
+				<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Time saved', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+				<div class="bbai-li-badge-row" aria-hidden="true"></div>
+				<p
+					class="bbai-li-insight-card__value"
+					data-bbai-li-insight-mins
+				><?php
+				if ( $bbai_li_mins > 0 ) {
+					printf(
+						/* translators: %s: estimated minutes (integer, formatted) */
+						esc_html( _n( '%s min saved', '%s mins saved', $bbai_li_mins, 'beepbeep-ai-alt-text-generator' ) ),
+						esc_html( number_format_i18n( $bbai_li_mins ) )
+					);
+				} else {
+					esc_html_e( '~0 mins saved', 'beepbeep-ai-alt-text-generator' );
+				}
+				?></p>
 			</div>
 			<div class="bbai-stat-card-bottom">
-				<p class="bbai-li-insight-card__desc"><?php
-				echo $bbai_li_mins > 0
-					? esc_html__( 'Manual ALT writing avoided.', 'beepbeep-ai-alt-text-generator' )
-					: esc_html__( 'Generate ALT in bulk to see time saved here.', 'beepbeep-ai-alt-text-generator' );
-				?></p>
-				<p class="bbai-li-insight-card__meta"><?php esc_html_e( 'Estimated from 2 mins per image.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-				<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Turn on automation to keep saving time.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<div class="bbai-stat-card-body">
+					<p class="bbai-li-insight-card__desc"><?php
+					echo $bbai_li_mins > 0
+						? esc_html__( 'Manual ALT writing avoided.', 'beepbeep-ai-alt-text-generator' )
+						: esc_html__( 'Generate ALT in bulk to see time saved here.', 'beepbeep-ai-alt-text-generator' );
+					?></p>
+					<p class="bbai-li-insight-card__meta"><?php esc_html_e( 'Estimated from 2 mins per image.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Turn on automation to keep saving time.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				</div>
 				<a
 					href="#"
 					class="bbai-li-insight-card__cta"
 					data-action="show-upgrade-modal"
 				><?php esc_html_e( 'Enable automation', 'beepbeep-ai-alt-text-generator' ); ?></a>
-				</div>
-			</article>
+			</div>
+		</article>
 		<article class="bbai-li-insight-card bbai-stat-card tertiary">
 			<div class="bbai-stat-card-top">
-			<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'SEO', 'beepbeep-ai-alt-text-generator' ); ?></h3>
-			<p
-				class="bbai-li-insight-card__value"
-				data-bbai-li-insight-optimized
-			><?php
-			echo esc_html(
-				sprintf(
-					/* translators: %s: number of images (formatted) */
-					_n( '%s image optimised', '%s images optimised', $bbai_li_opt, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_li_opt )
-				)
-			);
-			?></p>
+				<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'SEO', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+				<div class="bbai-li-badge-row" aria-hidden="true"></div>
+				<p
+					class="bbai-li-insight-card__value"
+					data-bbai-li-insight-optimized
+				><?php
+				echo esc_html(
+					sprintf(
+						/* translators: %s: number of images (formatted) */
+						_n( '%s image optimised', '%s images optimised', $bbai_li_opt, 'beepbeep-ai-alt-text-generator' ),
+						number_format_i18n( $bbai_li_opt )
+					)
+				);
+				?></p>
 			</div>
 			<div class="bbai-stat-card-bottom">
-				<p class="bbai-li-insight-card__desc"><?php
-				echo $bbai_li_opt > 0
-					? esc_html__( 'Search engines can understand more of your media.', 'beepbeep-ai-alt-text-generator' )
-					: esc_html__( 'Generate ALT text to start improving rankings.', 'beepbeep-ai-alt-text-generator' );
-				?></p>
-				<p class="bbai-li-insight-card__meta" data-bbai-li-insight-seo-meta><?php
-				echo esc_html( sprintf(
-					/* translators: %s: number of optimised images. */
-					_n( '%s search-ready image', '%s search-ready images', $bbai_li_opt, 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_li_opt )
-				) );
-				?></p>
-				<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep future uploads SEO-ready automatically.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-					<a
-						href="#"
-						class="bbai-li-insight-card__cta"
-						data-action="show-upgrade-modal"
-					><?php esc_html_e( 'Automate future images', 'beepbeep-ai-alt-text-generator' ); ?></a>
-					</div>
-			</article>
+				<div class="bbai-stat-card-body">
+					<p class="bbai-li-insight-card__desc"><?php
+					echo $bbai_li_opt > 0
+						? esc_html__( 'Search engines can understand more of your media.', 'beepbeep-ai-alt-text-generator' )
+						: esc_html__( 'Generate ALT text to start improving rankings.', 'beepbeep-ai-alt-text-generator' );
+					?></p>
+					<p class="bbai-li-insight-card__meta" data-bbai-li-insight-seo-meta><?php
+					echo esc_html( sprintf(
+						/* translators: %s: number of optimised images. */
+						_n( '%s search-ready image', '%s search-ready images', $bbai_li_opt, 'beepbeep-ai-alt-text-generator' ),
+						number_format_i18n( $bbai_li_opt )
+					) );
+					?></p>
+					<p class="bbai-li-insight-card__support"><?php esc_html_e( 'Keep future uploads SEO-ready automatically.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				</div>
+				<a
+					href="#"
+					class="bbai-li-insight-card__cta"
+					data-action="show-upgrade-modal"
+				><?php esc_html_e( 'Automate future images', 'beepbeep-ai-alt-text-generator' ); ?></a>
+			</div>
+		</article>
 	</section>
 
 </section>

@@ -5311,6 +5311,36 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta:focus-visible 
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-bottom {
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Spacer row so the optional success pill in card 1 doesn't shift the value down */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-badge-row {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-badge-row .bbai-li-insight-pill {
+    margin-top: 0;
+}
+
+/* Value sits directly below the badge row — reduce its own top margin */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-badge-row + .bbai-li-insight-card__value {
+    margin-top: 8px;
+}
+
+/* Body text (desc + meta + support) grows to fill available space */
+body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-body {
+    flex: 1;
+}
+
+/* CTA always anchored to bottom of card */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
+    margin-top: 18px;
+    align-self: stretch;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-status-line {
