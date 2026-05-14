@@ -29,12 +29,11 @@ $bbai_trial_preview_rows = ( isset( $this ) && is_object( $this ) && method_exis
 $bbai_trial_preview_rows  = is_array( $bbai_trial_preview_rows ) ? $bbai_trial_preview_rows : [];
 $bbai_trial_preview_total  = max( 0, (int) ( $bbai_state_total_images ?? count( $bbai_trial_preview_rows ) ) );
 $bbai_trial_preview_extra  = max( 0, $bbai_trial_preview_total - count( $bbai_trial_preview_rows ) );
-$bbai_trial_preview_generation_locked = true;
+// Only lock generation once trial credits are exhausted.
+$bbai_trial_preview_generation_locked = $bbai_trial_exhausted;
 
-// Locked preview copy: trial-complete variant is conversion-first and non-repetitive.
-$bbai_locked_preview_overlay_copy   = $bbai_trial_exhausted
-	? __( 'Create a free account to review, edit, and optimise all your images in one place.', 'beepbeep-ai-alt-text-generator' )
-	: __( 'Create a free account to review and fix all remaining images.', 'beepbeep-ai-alt-text-generator' );
+// Locked preview copy: only used when overlay is shown (trial exhausted).
+$bbai_locked_preview_overlay_copy   = __( 'Create a free account to review, edit, and optimise all your images in one place.', 'beepbeep-ai-alt-text-generator' );
 $bbai_locked_preview_context_line   = '';
 $bbai_locked_preview_waiting_line   = $bbai_guest_preview_actionable > 0
 	? sprintf(
@@ -49,7 +48,7 @@ $bbai_trial_lib_card_row_path = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/compone
 $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-locked-overlay-card.php';
 ?>
 <section
-	class="bbai-dashboard-trial-preview bbai-dashboard-trial-preview--guest-locked<?php echo $bbai_trial_exhausted ? ' bbai-dashboard-trial-preview--exhausted' : ''; ?>"
+	class="bbai-dashboard-trial-preview<?php echo $bbai_trial_exhausted ? ' bbai-dashboard-trial-preview--guest-locked bbai-dashboard-trial-preview--exhausted' : ''; ?>"
 	id="library"
 	data-bbai-trial-preview="1"
 	data-bbai-trial-preview-limit="3"
@@ -68,7 +67,9 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 	<?php endif; ?>
 
 	<div class="bbai-dashboard-locked-preview__shell bbai-dashboard-trial-preview__shell">
+		<?php if ( $bbai_trial_exhausted ) : ?>
 		<div class="bbai-dashboard-trial-preview__blur-wrap" aria-hidden="true" inert>
+		<?php endif; ?>
 			<?php if ( ! empty( $bbai_trial_preview_rows ) && is_readable( $bbai_trial_lib_card_row_path ) ) : ?>
 				<div class="bbai-dashboard-trial-preview__list" role="list" data-bbai-trial-preview-list>
 					<?php foreach ( $bbai_trial_preview_rows as $bbai_preview_row ) : ?>
@@ -109,16 +110,19 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 					?>
 				</div>
 			<?php endif; ?>
+		<?php if ( $bbai_trial_exhausted ) : ?>
 		</div>
+		<?php endif; ?>
 
 		<p class="bbai-dashboard-trial-preview__waiting-label" aria-hidden="true">
 			<?php echo esc_html( $bbai_locked_preview_waiting_line ); ?>
 		</p>
 
+		<?php if ( $bbai_trial_exhausted ) : ?>
 		<div class="bbai-dashboard-locked-preview__fade" aria-hidden="true"></div>
-
 		<?php if ( is_readable( $bbai_trial_locked_overlay ) ) : ?>
 			<?php require $bbai_trial_locked_overlay; ?>
+		<?php endif; ?>
 		<?php endif; ?>
 	</div>
 

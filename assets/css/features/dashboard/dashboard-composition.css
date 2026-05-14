@@ -298,3 +298,34 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
         padding: 16px !important;
     }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DASHBOARD HEADER — MOBILE
+   Must use !important to override the base rules above.
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 782px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding-bottom: 16px !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__heading {
+        font-size: 20px !important;
+        white-space: normal !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__subtitle {
+        font-size: 13px !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__right {
+        width: 100% !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__status-pill {
+        width: auto !important;
+    }
+}
