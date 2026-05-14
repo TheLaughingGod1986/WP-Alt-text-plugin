@@ -1282,12 +1282,14 @@ class API_Client_V2 {
      * Includes retry logic for Render free tier cold starts (services sleep after inactivity)
      */
     public function get_user_info() {
-        // Increased timeout for Render free tier cold starts (can take 30-60 seconds)
-        $auth_timeout = apply_filters('bbai_auth_me_timeout', 45);
-        $auth_timeout = max(15, (int) $auth_timeout);
-        
-        $max_retries = 2;
-        $retry_delay = 3; // seconds between retries
+        // Keep timeout short so it doesn't block alt text generation AJAX requests.
+        // Render cold starts are handled by the 90s timeout in generate_alt_text() itself.
+        $auth_timeout = apply_filters('bbai_auth_me_timeout', 10);
+        $auth_timeout = max(5, (int) $auth_timeout);
+
+        // No retries here — the generation retry loop handles cold-start recovery.
+        $max_retries = 0;
+        $retry_delay = 3; // seconds between retries (unused at max_retries=0, kept for clarity)
         
         for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
             if ($attempt > 0) {
@@ -2184,8 +2186,10 @@ class API_Client_V2 {
                                 ['requires_auth' => true]
                             );
                         }
-                        // For server errors, network issues, etc., don't clear token
-                        // Just proceed with generation attempt - backend will handle it
+                        // For server errors, network issues, etc., don't clear token.
+                        // Set a short cooldown so the next request doesn't re-run
+                        // this slow auth check while the backend is still warming up.
+                        set_transient('bbai_token_last_check', time(), MINUTE_IN_SECONDS);
                     } else {
                         // Token is valid, cache for 5 minutes
                         set_transient('bbai_token_last_check', time(), 5 * MINUTE_IN_SECONDS);
