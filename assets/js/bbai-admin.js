@@ -6269,6 +6269,42 @@
             : 'all';
     }
 
+    /**
+     * After an approval empties the current page of filtered items, navigate to
+     * alt_page=1 so the remaining matching items (on other server-paginated pages)
+     * are loaded automatically instead of leaving the user on a blank filtered view.
+     */
+    function maybeReloadPageForRemainingFilteredItems() {
+        if (!getLibraryWorkspaceRoot()) {
+            return;
+        }
+        var activeFilter = getLibraryActiveFilter();
+        if (activeFilter === 'all') {
+            return;
+        }
+        var rows = document.querySelectorAll('.bbai-library-row');
+        var matchingOnPage = 0;
+        for (var i = 0; i < rows.length; i++) {
+            if (getLibraryReviewState(rows[i]) === activeFilter) {
+                matchingOnPage++;
+            }
+        }
+        if (matchingOnPage > 0) {
+            return;
+        }
+        var counts = getLibraryWorkspaceCountsSnapshot();
+        var globalCount = activeFilter === 'weak' ? counts.weak
+            : activeFilter === 'missing' ? counts.missing
+            : activeFilter === 'optimized' ? counts.optimized
+            : 0;
+        if (globalCount <= 0) {
+            return;
+        }
+        var url = new URL(window.location.href);
+        url.searchParams.set('alt_page', '1');
+        window.location.href = url.toString();
+    }
+
     function getLibrarySearchTerm() {
         var input = document.getElementById('bbai-library-search');
         return input ? String(input.value || '').trim().toLowerCase() : '';
@@ -14314,6 +14350,7 @@
                 }
 
                 updateLibrarySelectionState();
+                maybeReloadPageForRemainingFilteredItems();
 
                 if (bbaiLibraryPreviewModal && bbaiLibraryPreviewModal.classList.contains('is-visible')) {
                     var modalAttachmentId = parseInt(bbaiLibraryPreviewModal.getAttribute('data-attachment-id') || '', 10);
@@ -16340,6 +16377,7 @@
                 }
 
                 clearLibrarySelection();
+                maybeReloadPageForRemainingFilteredItems();
 
                 if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
                     window.bbaiPushToast(
