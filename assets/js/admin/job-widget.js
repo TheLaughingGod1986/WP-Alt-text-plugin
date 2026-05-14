@@ -118,7 +118,7 @@
 
         if (state.status === 'complete') {
             var count = state.successes || state.progress || 0;
-            statusEl.text(count + ' image' + (count !== 1 ? 's' : '') + ' optimised. Review suggestions.');
+            statusEl.text(count + ' image' + (count !== 1 ? 's' : '') + ' optimised');
             $widget.find('.bbai-job-widget__progress-text').text('Generation complete');
             $widget.find('.bbai-job-widget__eta').text('');
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');

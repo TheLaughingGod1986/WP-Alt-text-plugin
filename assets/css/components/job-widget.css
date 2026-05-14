@@ -122,24 +122,28 @@
     padding: 6px 12px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--bbai-primary, #2563eb);
-    background: var(--bbai-bg-secondary, #f3f4f6);
-    border: 1px solid var(--bbai-border, rgba(0, 0, 0, 0.08));
+    color: #2563eb !important;
+    background: #f3f4f6 !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
     border-radius: 6px;
     cursor: pointer;
     text-align: center;
+    box-shadow: none !important;
     transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .bbai-job-widget__view:hover {
-    background: var(--bbai-gray-200, #e5e7eb);
-    border-color: var(--bbai-primary, #2563eb);
+    background: #e5e7eb !important;
+    border-color: #2563eb !important;
 }
 
 .bbai-job-widget--complete .bbai-job-widget__view {
-    color: var(--bbai-success, #16a34a);
+    background: #16a34a !important;
+    color: #fff !important;
+    border-color: transparent !important;
 }
 
 .bbai-job-widget--complete .bbai-job-widget__view:hover {
-    border-color: var(--bbai-success, #16a34a);
+    background: #15803d !important;
+    border-color: transparent !important;
 }
