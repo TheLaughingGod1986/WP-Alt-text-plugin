@@ -88,8 +88,20 @@
         });
     }
 
+    function isOnDashboardPage() {
+        return !!document.querySelector('[data-bbai-logged-in-dashboard]');
+    }
+
     function render(state) {
         if (!$widget) return;
+
+        // When a job completes and the user is already on the dashboard page, the
+        // dashboard itself updates to show the result — the floating widget is
+        // redundant and should stay hidden.
+        if (state.status === 'complete' && isOnDashboardPage()) {
+            $widget.prop('hidden', true);
+            return;
+        }
 
         // Show widget when: job running but modal hidden, OR job just completed/failed
         var shouldShow = !state.modalVisible && (
@@ -125,6 +137,10 @@
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--error')
                    .addClass('bbai-job-widget--complete');
             viewBtn.text('Review images');
+            // Force white text via inline style — WordPress admin button resets
+            // can beat even !important class rules; inline style always wins.
+            viewBtn[0].style.setProperty('color', '#ffffff', 'important');
+            viewBtn[0].style.setProperty('background-color', '#16a34a', 'important');
         } else if (state.status === 'quota') {
             statusEl.text('Generation paused or failed.');
             $widget.find('.bbai-job-widget__progress-text').text(
@@ -135,6 +151,8 @@
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--complete')
                    .addClass('bbai-job-widget--error');
+            viewBtn[0].style.removeProperty('color');
+            viewBtn[0].style.removeProperty('background-color');
             viewBtn.text('Resume status check');
         } else if (state.status === 'error') {
             statusEl.text('Generation paused or failed.');
@@ -145,6 +163,8 @@
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--complete')
                    .addClass('bbai-job-widget--error');
+            viewBtn[0].style.removeProperty('color');
+            viewBtn[0].style.removeProperty('background-color');
             viewBtn.text('Resume status check');
         } else {
             var done  = state.progress || 0;
@@ -157,6 +177,8 @@
             $widget.find('.bbai-job-widget__bar-fill').css('width', state.percentage + '%');
             $widget.removeClass('bbai-job-widget--complete bbai-job-widget--error')
                    .addClass('bbai-job-widget--processing');
+            viewBtn[0].style.removeProperty('color');
+            viewBtn[0].style.removeProperty('background-color');
             viewBtn.text('View progress');
         }
     }
