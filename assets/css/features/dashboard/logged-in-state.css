@@ -5243,6 +5243,11 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__value {
     letter-spacing: 0;
 }
 
+/* Primary card value ("X% of images accessible") is a longer string — scale down to prevent wrapping */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card.primary .bbai-li-insight-card__value {
+    font-size: clamp(20px, 1.7vw, 26px);
+}
+
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card.tertiary .bbai-li-insight-card__value {
     font-size: clamp(28px, 2.4vw, 36px);
     color: #334155;
@@ -5365,6 +5370,19 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-body {
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
     margin-top: 18px;
     align-self: stretch;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta::after {
+    content: " →";
+    opacity: 0.55;
+    transition: opacity 0.14s ease, transform 0.14s ease;
+    display: inline-block;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta:hover::after,
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta:focus-visible::after {
+    opacity: 1;
+    transform: translateX(3px);
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-status-line {
