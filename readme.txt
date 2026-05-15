@@ -7,7 +7,7 @@ Tags: ai alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.4
+Stable tag: 4.6.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -133,6 +133,12 @@ Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
 == Changelog ==
+
+= 4.6.5 =
+* Cleaned up browser console output: removed unconditional USAGE CHECK and generation result debug logs, gated approve-all logging behind BBAI_DEBUG flag.
+* Fixed PostHog 401 retry flood: added on_xhr_error handler to opt out of capturing on Unauthorized responses, preventing the network tab from filling with repeated failed requests.
+* Fixed aria-hidden accessibility warning: blur focused element before setting aria-hidden on modal close.
+* Added coloured icon circles to the three dashboard insight cards (Accessibility, Time Saved, SEO) to match the intended design.
 
 = 4.6.4 =
 * Fixed background generation persistence so progress survives page navigation, refreshes, and multi-tab sessions across all plugin pages.
