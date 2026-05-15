@@ -277,8 +277,10 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
 @media (max-width: 900px) {
     body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
         gap: 14px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-grid--top {
         grid-template-columns: minmax(0, 1fr) !important;
     }
 }
@@ -327,5 +329,23 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
 
     body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__status-pill {
         width: auto !important;
+    }
+
+    /* Reset button min-widths so they don't overflow on narrow phones */
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-primary {
+        min-width: 0 !important;
+    }
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary {
+        min-width: 0 !important;
+    }
+
+    /* Collapse insight cards to 1 column and release forced min-height */
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
+        grid-template-columns: 1fr !important;
+    }
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card {
+        min-height: 0 !important;
+        padding: 16px 18px !important;
     }
 }
