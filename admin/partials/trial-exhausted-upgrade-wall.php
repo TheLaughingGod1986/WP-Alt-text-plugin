@@ -15,29 +15,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $bbai_product_state_model = isset( $bbai_product_state_model ) && is_array( $bbai_product_state_model )
 	? $bbai_product_state_model
-	: [];
+	: array();
 
 if ( empty( $bbai_product_state_model['flags']['show_exhausted_upgrade_wall'] ) ) {
 	return;
 }
 
-$bbai_trial_upgrade_context = isset( $bbai_trial_upgrade_context ) ? sanitize_key( (string) $bbai_trial_upgrade_context ) : 'dashboard';
-$bbai_trial_copy            = isset( $bbai_product_state_model['copy'] ) && is_array( $bbai_product_state_model['copy'] )
+$bbai_trial_upgrade_context   = isset( $bbai_trial_upgrade_context ) ? sanitize_key( (string) $bbai_trial_upgrade_context ) : 'dashboard';
+$bbai_trial_copy              = isset( $bbai_product_state_model['copy'] ) && is_array( $bbai_product_state_model['copy'] )
 	? $bbai_product_state_model['copy']
-	: [];
-$bbai_trial_snapshot        = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
+	: array();
+$bbai_trial_snapshot          = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
 	? $bbai_product_state_model['trial']
-	: [];
-$bbai_trial_missing_count   = isset( $bbai_trial_upgrade_missing_count ) ? max( 0, (int) $bbai_trial_upgrade_missing_count ) : 0;
-$bbai_trial_weak_count      = isset( $bbai_trial_upgrade_weak_count ) ? max( 0, (int) $bbai_trial_upgrade_weak_count ) : 0;
-$bbai_trial_remaining_work  = $bbai_trial_missing_count + $bbai_trial_weak_count;
+	: array();
+$bbai_trial_missing_count     = isset( $bbai_trial_upgrade_missing_count ) ? max( 0, (int) $bbai_trial_upgrade_missing_count ) : 0;
+$bbai_trial_weak_count        = isset( $bbai_trial_upgrade_weak_count ) ? max( 0, (int) $bbai_trial_upgrade_weak_count ) : 0;
+$bbai_trial_remaining_work    = $bbai_trial_missing_count + $bbai_trial_weak_count;
 $bbai_trial_primary_cta_label = sprintf(
 	/* translators: %s: remaining image count. */
 	__( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
 	number_format_i18n( $bbai_trial_remaining_work )
 );
 
-$bbai_trial_metrics = [];
+$bbai_trial_metrics = array();
 if ( $bbai_trial_remaining_work > 0 ) {
 	$bbai_trial_metrics[] = sprintf(
 		/* translators: %s: number of images that still need attention. */

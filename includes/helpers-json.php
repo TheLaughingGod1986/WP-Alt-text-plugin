@@ -25,7 +25,7 @@ if ( ! function_exists( 'bbai_json_decode_array' ) ) {
 	 * @return array|null Returns sanitized array on success, null on failure.
 	 */
 	function bbai_json_decode_array( $json_string, array $sanitize_map = array(), $sanitize_all = true ) {
-		if ( ! is_string( $json_string ) || $json_string === '' ) {
+		if ( ! is_string( $json_string ) || '' === $json_string ) {
 			return null;
 		}
 

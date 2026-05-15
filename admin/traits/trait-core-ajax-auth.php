@@ -9,399 +9,434 @@
 
 namespace BeepBeepAI\AltTextGenerator\Traits;
 
-if (!defined('ABSPATH')) { exit; }
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; }
 
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 
 trait Core_Ajax_Auth {
 
-    /**
-     * AJAX handler: User registration
-     * Prevents multiple free accounts per site
-     */
-    public function ajax_register() {
-        // Set error handler to catch all errors
+	/**
+	 * AJAX handler: User registration
+	 * Prevents multiple free accounts per site
+	 */
+	public function ajax_register() {
+		// Set error handler to catch all errors
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Intentional error-to-exception conversion for AJAX safety.
-        set_error_handler(function($errno, $errstr, $errfile, $errline) {
-            throw new \ErrorException(
-                esc_html(sanitize_text_field((string) $errstr)),
-                0,
-                absint($errno),
-                esc_html(sanitize_text_field((string) $errfile)),
-                absint($errline)
-            );
-	        });
-	
-			        try {
-			            \bbai_debug_log( 'ajax_register started' );
-			            $action = 'beepbeepai_nonce';
-			            if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-			                restore_error_handler();
-			                wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-			                return;
-			            }
-			            \bbai_debug_log( 'ajax_register nonce verified' );
+		set_error_handler(
+			function ( $errno, $errstr, $errfile, $errline ) {
+				throw new \ErrorException(
+					esc_html( sanitize_text_field( (string) $errstr ) ),
+					0,
+					absint( $errno ),
+					esc_html( sanitize_text_field( (string) $errfile ) ),
+					absint( $errline )
+				);
+			}
+		);
 
-		            if (!current_user_can('manage_options')) {
-		                wp_send_json_error(['message' => __('Only administrators can connect accounts.', 'beepbeep-ai-alt-text-generator')]);
-		                return;
-		            }
+		try {
+			\bbai_debug_log( 'ajax_register started' );
+			$action = 'beepbeepai_nonce';
+			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+				restore_error_handler();
+				wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+				return;
+			}
+			\bbai_debug_log( 'ajax_register nonce verified' );
 
-		            $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
-		            $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
-		            $password = is_string($password_input) ? $password_input : '';
+			if ( ! current_user_can( 'manage_options' ) ) {
+						wp_send_json_error( array( 'message' => __( 'Only administrators can connect accounts.', 'beepbeep-ai-alt-text-generator' ) ) );
+						return;
+			}
 
-		            if (empty($email) || empty($password)) {
-		                wp_send_json_error(['message' => __('Email and password are required', 'beepbeep-ai-alt-text-generator')]);
-		                return;
-		            }
+						$email          = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+						$password_input = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+						$password       = is_string( $password_input ) ? $password_input : '';
 
-		            \bbai_debug_log( 'ajax_register calling API register' );
-		            $result = $this->api_client->register($email, $password);
-		            \bbai_debug_log(
-		                'ajax_register API result',
-		                [
-		                    'is_error' => is_wp_error( $result ),
-		                ]
-		            );
+			if ( empty( $email ) || empty( $password ) ) {
+				wp_send_json_error( array( 'message' => __( 'Email and password are required', 'beepbeep-ai-alt-text-generator' ) ) );
+				return;
+			}
 
-	            if (is_wp_error($result)) {
-	                $error_code = $result->get_error_code();
-	                $error_message = $result->get_error_message();
-                $error_data = $result->get_error_data();
+						\bbai_debug_log( 'ajax_register calling API register' );
+						$result = $this->api_client->register( $email, $password );
+						\bbai_debug_log(
+							'ajax_register API result',
+							array(
+								'is_error' => is_wp_error( $result ),
+							)
+						);
 
-                // Handle site already has license (credit sharing)
-	                if ($error_code === 'site_has_license' || $error_code === 'SITE_HAS_LICENSE') {
-	                    $existing_email = isset($error_data['existing_email']) ? $error_data['existing_email'] : '';
-	                    wp_send_json_error([
-	                        'message' => sprintf(
-                            /* translators: 1: existing account email, if available */
-                            __('This site is already connected to an account%s. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator'),
-                            $existing_email ? ' (' . $existing_email . ')' : ''
-                        ),
-	                        'code' => 'site_has_license',
-	                        'existing_email' => $existing_email
-	                    ]);
-	                    return;
-	                }
+			if ( is_wp_error( $result ) ) {
+				$error_code     = $result->get_error_code();
+				$error_message  = $result->get_error_message();
+					$error_data = $result->get_error_data();
 
-	                if ($error_code === 'free_plan_exists' || (is_string($error_message) && strpos(strtolower($error_message), 'free plan') !== false)) {
-	                    wp_send_json_error([
-	                        'message' => __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
-	                        'code' => 'free_plan_exists'
-	                    ]);
-	                    return;
-	                }
+					// Handle site already has license (credit sharing)
+				if ( 'site_has_license' === $error_code || 'SITE_HAS_LICENSE' === $error_code ) {
+					$existing_email = isset( $error_data['existing_email'] ) ? $error_data['existing_email'] : '';
+					wp_send_json_error(
+						array(
+							'message'        => sprintf(
+							/* translators: 1: existing account email, if available */
+								__( 'This site is already connected to an account%s. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
+								$existing_email ? ' (' . $existing_email . ')' : ''
+							),
+							'code'           => 'site_has_license',
+							'existing_email' => $existing_email,
+						)
+					);
+					return;
+				}
 
-	                if ($error_code === 'invite_required') {
-	                    $invite_url = '';
-	                    if (is_array($error_data) && isset($error_data['invite_url'])) {
-	                        $invite_url = esc_url_raw((string) $error_data['invite_url']);
-	                    }
-	                    wp_send_json_error([
-	                        'message' => $error_message,
-	                        'code' => 'invite_required',
-	                        'invite_url' => $invite_url,
-	                    ]);
-	                    return;
-	                }
+				if ( 'free_plan_exists' === $error_code || ( is_string( $error_message ) && strpos( strtolower( $error_message ), 'free plan' ) !== false ) ) {
+					wp_send_json_error(
+						array(
+							'message' => __( 'A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator' ),
+							'code'    => 'free_plan_exists',
+						)
+					);
+					return;
+				}
 
-	                wp_send_json_error([
-	                    'message' => $error_message,
-	                    'code' => is_string($error_code) ? strtolower($error_code) : '',
-	                ]);
-	                return;
-	            }
+				if ( 'invite_required' === $error_code ) {
+					$invite_url = '';
+					if ( is_array( $error_data ) && isset( $error_data['invite_url'] ) ) {
+						$invite_url = esc_url_raw( (string) $error_data['invite_url'] );
+					}
+					wp_send_json_error(
+						array(
+							'message'    => $error_message,
+							'code'       => 'invite_required',
+							'invite_url' => $invite_url,
+						)
+					);
+					return;
+				}
 
-            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
-            \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
+				wp_send_json_error(
+					array(
+						'message' => $error_message,
+						'code'    => is_string( $error_code ) ? strtolower( $error_code ) : '',
+					)
+				);
+						return;
+			}
 
-            if ( function_exists( 'bbai_telemetry_emit' ) ) {
-                bbai_telemetry_emit( 'account_created', [ 'source' => 'ajax_register' ] );
-            }
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
+			\BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
 
-            wp_send_json_success([
-                'message' => __('Account created successfully', 'beepbeep-ai-alt-text-generator'),
-	                'user' => $result['user'] ?? null
-	            ]);
-		        } catch (\Throwable $e) {
-		            \bbai_debug_log(
-		                'ajax_register exception',
-		                [
-		                    'error' => $e->getMessage(),
-		                    'file'  => basename( $e->getFile() ),
-		                    'line'  => (int) $e->getLine(),
-		                ]
-		            );
-	            $error_message = sanitize_text_field($e->getMessage());
-	            $error_file = sanitize_text_field(basename($e->getFile()));
-	            $error_line = (int) $e->getLine();
-	            restore_error_handler();
-	            wp_send_json_error([
-	                'message' => 'Registration error: ' . $error_message,
-	                'file' => $error_file,
-	                'line' => $error_line
-	            ]);
-	            return;
-	        }
-	        restore_error_handler();
-	    }
+			if ( function_exists( 'bbai_telemetry_emit' ) ) {
+				bbai_telemetry_emit( 'account_created', array( 'source' => 'ajax_register' ) );
+			}
 
-    /**
-     * AJAX handler: User login
-     */
-		    public function ajax_login() {
-		        $action = 'beepbeepai_nonce';
-		        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-		            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-		            return;
-		        }
-		        if (!$this->user_can_manage()) {
-		            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
-		            return;
-		        }
+			wp_send_json_success(
+				array(
+					'message' => __( 'Account created successfully', 'beepbeep-ai-alt-text-generator' ),
+					'user'    => $result['user'] ?? null,
+				)
+			);
+		} catch ( \Throwable $e ) {
+			\bbai_debug_log(
+				'ajax_register exception',
+				array(
+					'error' => $e->getMessage(),
+					'file'  => basename( $e->getFile() ),
+					'line'  => (int) $e->getLine(),
+				)
+			);
+			$error_message = sanitize_text_field( $e->getMessage() );
+			$error_file    = sanitize_text_field( basename( $e->getFile() ) );
+			$error_line    = (int) $e->getLine();
+			restore_error_handler();
+			wp_send_json_error(
+				array(
+					'message' => 'Registration error: ' . $error_message,
+					'file'    => $error_file,
+					'line'    => $error_line,
+				)
+			);
+			return;
+		}
+			restore_error_handler();
+	}
 
-		        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
-		        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
-		        $password = is_string($password_input) ? $password_input : '';
+	/**
+	 * AJAX handler: User login
+	 */
+	public function ajax_login() {
+		$action = 'beepbeepai_nonce';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+			return;
+		}
+		if ( ! $this->user_can_manage() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
 
-	        if (empty($email) || empty($password)) {
-	            wp_send_json_error(['message' => __('Email and password are required', 'beepbeep-ai-alt-text-generator')]);
-	            return;
-	        }
+		$email          = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$password_input = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+		$password       = is_string( $password_input ) ? $password_input : '';
 
-        $result = $this->api_client->login($email, $password);
+		if ( empty( $email ) || empty( $password ) ) {
+				wp_send_json_error( array( 'message' => __( 'Email and password are required', 'beepbeep-ai-alt-text-generator' ) ) );
+				return;
+		}
 
-	        if (is_wp_error($result)) {
-	            $error_code = $result->get_error_code();
-	            $error_data = $result->get_error_data();
-	            if ($error_code === 'site_has_license' || $error_code === 'SITE_HAS_LICENSE') {
-	                $existing_email = '';
-	                if (is_array($error_data) && isset($error_data['existing_email'])) {
-	                    $existing_email = sanitize_email((string) $error_data['existing_email']);
-	                }
-	                wp_send_json_error([
-	                    'message' => $result->get_error_message(),
-	                    'code' => 'site_has_license',
-	                    'existing_email' => $existing_email,
-	                ]);
-	                return;
-	            }
+				$result = $this->api_client->login( $email, $password );
 
-	            if ($error_code === 'invite_required') {
-	                $invite_url = '';
-	                if (is_array($error_data) && isset($error_data['invite_url'])) {
-	                    $invite_url = esc_url_raw((string) $error_data['invite_url']);
-	                }
+		if ( is_wp_error( $result ) ) {
+			$error_code = $result->get_error_code();
+			$error_data = $result->get_error_data();
+			if ( 'site_has_license' === $error_code || 'SITE_HAS_LICENSE' === $error_code ) {
+				$existing_email = '';
+				if ( is_array( $error_data ) && isset( $error_data['existing_email'] ) ) {
+					$existing_email = sanitize_email( (string) $error_data['existing_email'] );
+				}
+				wp_send_json_error(
+					array(
+						'message'        => $result->get_error_message(),
+						'code'           => 'site_has_license',
+						'existing_email' => $existing_email,
+					)
+				);
+				return;
+			}
 
-	                wp_send_json_error([
-	                    'message' => $result->get_error_message(),
-	                    'code' => 'invite_required',
-	                    'invite_url' => $invite_url,
-	                ]);
-	                return;
-	            }
+			if ( 'invite_required' === $error_code ) {
+				$invite_url = '';
+				if ( is_array( $error_data ) && isset( $error_data['invite_url'] ) ) {
+					$invite_url = esc_url_raw( (string) $error_data['invite_url'] );
+				}
 
-	            wp_send_json_error([
-	                'message' => $result->get_error_message(),
-	                'code' => is_string($error_code) ? strtolower($error_code) : '',
-	            ]);
-	            return;
-	        }
+				wp_send_json_error(
+					array(
+						'message'    => $result->get_error_message(),
+						'code'       => 'invite_required',
+						'invite_url' => $invite_url,
+					)
+				);
+				return;
+			}
 
-        wp_send_json_success([
-            'message' => __('Logged in successfully', 'beepbeep-ai-alt-text-generator'),
-            'user' => $result['user'] ?? null
-        ]);
-    }
+			wp_send_json_error(
+				array(
+					'message' => $result->get_error_message(),
+					'code'    => is_string( $error_code ) ? strtolower( $error_code ) : '',
+				)
+			);
+			return;
+		}
 
-    /**
-     * AJAX handler: User logout
-     * Clears authentication token, license key, and all cached data
-     */
-		    public function ajax_logout() {
-		        $action = 'beepbeepai_nonce';
-		        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-		            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-		            return;
-		        }
-		        if (!$this->user_can_manage()) {
-		            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
-		            return;
-		        }
+				wp_send_json_success(
+					array(
+						'message' => __( 'Logged in successfully', 'beepbeep-ai-alt-text-generator' ),
+						'user'    => $result['user'] ?? null,
+					)
+				);
+	}
 
-        $this->api_client->clear_token();
-        $this->api_client->clear_license_key();
+	/**
+	 * AJAX handler: User logout
+	 * Clears authentication token, license key, and all cached data
+	 */
+	public function ajax_logout() {
+		$action = 'beepbeepai_nonce';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+			return;
+		}
+		if ( ! $this->user_can_manage() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
 
-        delete_option('opptibbai_user_data');
-        delete_option('opptibbai_site_id');
+		$this->api_client->clear_token();
+		$this->api_client->clear_license_key();
 
-        Usage_Tracker::clear_cache();
-        delete_transient('bbai_usage_cache');
-        delete_transient('opptibbai_usage_cache');
-        delete_transient('opptibbai_token_last_check');
+		delete_option( 'opptibbai_user_data' );
+		delete_option( 'opptibbai_site_id' );
 
-        wp_send_json_success([
-            'message' => __('Logged out successfully', 'beepbeep-ai-alt-text-generator'),
-            'redirect' => admin_url('admin.php?page=bbai')
-        ]);
-    }
+		Usage_Tracker::clear_cache();
+		delete_transient( 'bbai_usage_cache' );
+		delete_transient( 'opptibbai_usage_cache' );
+		delete_transient( 'opptibbai_token_last_check' );
 
-    /**
-     * Handle logout via form submission (admin-post handler)
-     */
-    public function handle_logout() {
-        $action = 'bbai_logout_action';
-        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['bbai_logout_nonce'] ?? '' ) ), $action ) ) {
-            wp_die(esc_html__('Security check failed', 'beepbeep-ai-alt-text-generator'));
-        }
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Logged out successfully', 'beepbeep-ai-alt-text-generator' ),
+				'redirect' => admin_url( 'admin.php?page=bbai' ),
+			)
+		);
+	}
 
-        if (!$this->user_can_manage()) {
-            wp_die(esc_html__('Unauthorized', 'beepbeep-ai-alt-text-generator'));
-        }
+	/**
+	 * Handle logout via form submission (admin-post handler)
+	 */
+	public function handle_logout() {
+		$action = 'bbai_logout_action';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['bbai_logout_nonce'] ?? '' ) ), $action ) ) {
+			wp_die( esc_html__( 'Security check failed', 'beepbeep-ai-alt-text-generator' ) );
+		}
 
-        $this->api_client->clear_token();
-        $this->api_client->clear_license_key();
+		if ( ! $this->user_can_manage() ) {
+			wp_die( esc_html__( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) );
+		}
 
-        delete_transient('bbai_usage_cache');
-        delete_transient('opptibbai_usage_cache');
+		$this->api_client->clear_token();
+		$this->api_client->clear_license_key();
 
-        wp_safe_redirect(add_query_arg('nocache', time(), admin_url('admin.php?page=bbai')));
-        exit;
-    }
+		delete_transient( 'bbai_usage_cache' );
+		delete_transient( 'opptibbai_usage_cache' );
 
-    /**
-     * AJAX handler: Disconnect account
-     */
-		    public function ajax_disconnect_account() {
-		        $action = 'beepbeepai_nonce';
-		        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-		            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-		            return;
-		        }
+		wp_safe_redirect( add_query_arg( 'nocache', time(), admin_url( 'admin.php?page=bbai' ) ) );
+		exit;
+	}
 
-	        if (!$this->user_can_manage()) {
-	            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
-	            return;
-	        }
+	/**
+	 * AJAX handler: Disconnect account
+	 */
+	public function ajax_disconnect_account() {
+		$action = 'beepbeepai_nonce';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+			return;
+		}
 
-        $this->api_client->clear_token();
-        $this->api_client->clear_license_key();
+		if ( ! $this->user_can_manage() ) {
+				wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
+				return;
+		}
 
-        delete_option('opptibbai_user_data');
-        delete_option('opptibbai_site_id');
+				$this->api_client->clear_token();
+				$this->api_client->clear_license_key();
 
-        Usage_Tracker::clear_cache();
-        delete_transient('bbai_usage_cache');
-        delete_transient('opptibbai_usage_cache');
-        delete_transient('opptibbai_token_last_check');
+				delete_option( 'opptibbai_user_data' );
+				delete_option( 'opptibbai_site_id' );
 
-        wp_send_json_success([
-            'message' => __('Account disconnected. Please sign in again to reconnect.', 'beepbeep-ai-alt-text-generator'),
-        ]);
-    }
+				Usage_Tracker::clear_cache();
+				delete_transient( 'bbai_usage_cache' );
+				delete_transient( 'opptibbai_usage_cache' );
+				delete_transient( 'opptibbai_token_last_check' );
 
-    /**
-     * AJAX handler: Get user info
-     */
-		    public function ajax_get_user_info() {
-		        $action = 'beepbeepai_nonce';
-		        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-		            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-		            return;
-		        }
-		        if (!$this->user_can_manage()) {
-		            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
-		            return;
-		        }
+				wp_send_json_success(
+					array(
+						'message' => __( 'Account disconnected. Please sign in again to reconnect.', 'beepbeep-ai-alt-text-generator' ),
+					)
+				);
+	}
 
-	        if (!$this->api_client->is_authenticated()) {
-	            wp_send_json_error([
-	                'message' => __('Not authenticated', 'beepbeep-ai-alt-text-generator'),
-	                'code' => 'not_authenticated'
-	            ]);
-	            return;
-	        }
+	/**
+	 * AJAX handler: Get user info
+	 */
+	public function ajax_get_user_info() {
+		$action = 'beepbeepai_nonce';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+			return;
+		}
+		if ( ! $this->user_can_manage() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
 
-        $user_info = $this->api_client->get_user_info();
-        $usage = $this->api_client->get_usage();
+		if ( ! $this->api_client->is_authenticated() ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Not authenticated', 'beepbeep-ai-alt-text-generator' ),
+						'code'    => 'not_authenticated',
+					)
+				);
+				return;
+		}
 
-	        if (is_wp_error($user_info)) {
-	            wp_send_json_error(['message' => $user_info->get_error_message()]);
-	            return;
-	        }
+				$user_info = $this->api_client->get_user_info();
+				$usage     = $this->api_client->get_usage();
 
-        wp_send_json_success([
-            'user' => $user_info,
-            'usage' => is_wp_error($usage) ? null : $usage
-        ]);
-    }
+		if ( is_wp_error( $user_info ) ) {
+			wp_send_json_error( array( 'message' => $user_info->get_error_message() ) );
+			return;
+		}
 
-    /**
-     * AJAX handler: Forgot password
-     */
-	    public function ajax_forgot_password() {
-	        $action = 'beepbeepai_nonce';
-	        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-	            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-	            return;
-	        }
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
+				wp_send_json_success(
+					array(
+						'user'  => $user_info,
+						'usage' => is_wp_error( $usage ) ? null : $usage,
+					)
+				);
+	}
 
-        $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+	/**
+	 * AJAX handler: Forgot password
+	 */
+	public function ajax_forgot_password() {
+		$action = 'beepbeepai_nonce';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+			return;
+		}
+		if ( ! $this->user_can_manage() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
 
-        if (empty($email)) {
-            wp_send_json_error(['message' => __('Email is required', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
+		$email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 
-        $result = $this->api_client->forgot_password($email);
+		if ( empty( $email ) ) {
+			wp_send_json_error( array( 'message' => __( 'Email is required', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
 
-        if (is_wp_error($result)) {
-            wp_send_json_error(['message' => $result->get_error_message()]);
-            return;
-        }
+		$result = $this->api_client->forgot_password( $email );
 
-        wp_send_json_success([
-            'message' => __('If an account exists with this email, you will receive password reset instructions.', 'beepbeep-ai-alt-text-generator')
-        ]);
-    }
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			return;
+		}
 
-    /**
-     * AJAX handler: Reset password
-     */
-	    public function ajax_reset_password() {
-	        $action = 'beepbeepai_nonce';
-	        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-	            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
-	            return;
-	        }
-        if (!$this->user_can_manage()) {
-            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
+		wp_send_json_success(
+			array(
+				'message' => __( 'If an account exists with this email, you will receive password reset instructions.', 'beepbeep-ai-alt-text-generator' ),
+			)
+		);
+	}
 
-		        $token = isset($_POST['token']) ? sanitize_text_field(wp_unslash($_POST['token'])) : '';
-		        $password_input = isset($_POST['password']) ? wp_unslash($_POST['password']) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
-		        $password = is_string($password_input) ? $password_input : '';
+	/**
+	 * AJAX handler: Reset password
+	 */
+	public function ajax_reset_password() {
+		$action = 'beepbeepai_nonce';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+			return;
+		}
+		if ( ! $this->user_can_manage() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
 
-        if (empty($token) || empty($password)) {
-            wp_send_json_error(['message' => __('Token and password are required', 'beepbeep-ai-alt-text-generator')]);
-            return;
-        }
+			$token          = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : '';
+			$password_input = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
+			$password       = is_string( $password_input ) ? $password_input : '';
 
-        $result = $this->api_client->reset_password($token, $password);
+		if ( empty( $token ) || empty( $password ) ) {
+			wp_send_json_error( array( 'message' => __( 'Token and password are required', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
 
-        if (is_wp_error($result)) {
-            wp_send_json_error(['message' => $result->get_error_message()]);
-            return;
-        }
+		$result = $this->api_client->reset_password( $token, $password );
 
-        wp_send_json_success([
-            'message' => __('Password reset successfully. You can now log in.', 'beepbeep-ai-alt-text-generator')
-        ]);
-    }
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			return;
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Password reset successfully. You can now log in.', 'beepbeep-ai-alt-text-generator' ),
+			)
+		);
+	}
 }

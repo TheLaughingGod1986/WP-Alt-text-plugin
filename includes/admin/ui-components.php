@@ -5,8 +5,8 @@
  * @package BeepBeep_AI
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
@@ -15,13 +15,12 @@ if (!defined('ABSPATH')) {
  * @param string $component File name without .php (e.g. 'stat-card', 'sidebar-card').
  * @param array  $args      Component arguments.
  */
-function bbai_ui_render(string $component, array $args = []): void
-{
-    $file = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/' . $component . '.php';
-    if (!is_readable($file)) {
-        return;
-    }
+function bbai_ui_render( string $component, array $args = array() ): void {
+	$file = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/' . $component . '.php';
+	if ( ! is_readable( $file ) ) {
+		return;
+	}
     // phpcs:ignore WordPress.PHP.DontExtract.extract_extract -- Local scope for partial templates only.
-    extract(['bbai_ui' => $args], EXTR_SKIP);
-    include $file;
+	extract( array( 'bbai_ui' => $args ), EXTR_SKIP );
+	include $file;
 }

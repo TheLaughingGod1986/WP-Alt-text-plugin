@@ -8,17 +8,17 @@
  * @since 6.0.0
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-return [
-    [
-        'name' => 'Alex R.',
-        'role' => __('Verified Store Owner', 'beepbeep-ai-alt-text-generator'),
-        'company' => '',
-        'avatar' => 'assets/img/testimonials/jessica.svg',
-        'quote' => 'Reliable alt text generation that helped us clean up accessibility issues quickly across a large media library.',
-        'rating' => 5,
-    ],
-];
+return array(
+	array(
+		'name'    => 'Alex R.',
+		'role'    => __( 'Verified Store Owner', 'beepbeep-ai-alt-text-generator' ),
+		'company' => '',
+		'avatar'  => 'assets/img/testimonials/jessica.svg',
+		'quote'   => 'Reliable alt text generation that helped us clean up accessibility issues quickly across a large media library.',
+		'rating'  => 5,
+	),
+);

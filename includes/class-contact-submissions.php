@@ -9,12 +9,12 @@
 
 namespace BeepBeepAI\AltTextGenerator;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 class Contact_Submissions {
-	const TABLE_SLUG = 'bbai_contact_submissions';
+	const TABLE_SLUG               = 'bbai_contact_submissions';
 	private static $table_verified = false;
 
 	/**
@@ -31,7 +31,7 @@ class Contact_Submissions {
 	 * Create the contact submissions table if it doesn't exist.
 	 */
 	public static function create_table() {
-		if (self::$table_verified) {
+		if ( self::$table_verified ) {
 			return;
 		}
 
@@ -66,7 +66,7 @@ class Contact_Submissions {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
-		dbDelta($sql);
+		dbDelta( $sql );
 		self::$table_verified = true;
 	}
 
@@ -88,32 +88,32 @@ class Contact_Submissions {
 	 * }
 	 * @return int|false Submission ID on success, false on failure.
 	 */
-	public static function save_submission($data) {
+	public static function save_submission( $data ) {
 		global $wpdb;
 
-		$table_name = esc_sql( self::table() );
-		$user_id = get_current_user_id();
+		$table_name        = esc_sql( self::table() );
+		$user_id           = get_current_user_id();
 		$license_key_input = isset( $data['license_key'] ) ? sanitize_text_field( $data['license_key'] ) : '';
-		$license_key_hash  = $license_key_input !== '' ? wp_hash( $license_key_input ) : null;
+		$license_key_hash  = '' !== $license_key_input ? wp_hash( $license_key_input ) : null;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->insert(
 			$table_name,
-			[
-				'user_id'       => $user_id,
-				'name'          => sanitize_text_field($data['name'] ?? ''),
-				'email'         => sanitize_email($data['email'] ?? ''),
-				'subject'       => sanitize_text_field($data['subject'] ?? ''),
-				'message'       => sanitize_textarea_field($data['message'] ?? ''),
-				'wp_version'    => sanitize_text_field($data['wp_version'] ?? null),
-				'plugin_version' => sanitize_text_field($data['plugin_version'] ?? null),
-				'site_url'      => esc_url_raw($data['site_url'] ?? null),
-				'site_hash'     => sanitize_text_field($data['site_hash'] ?? null),
-				'license_key'   => $license_key_hash,
-				'status'        => 'new',
-				'created_at'    => current_time('mysql'),
-			],
-			['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+			array(
+				'user_id'        => $user_id,
+				'name'           => sanitize_text_field( $data['name'] ?? '' ),
+				'email'          => sanitize_email( $data['email'] ?? '' ),
+				'subject'        => sanitize_text_field( $data['subject'] ?? '' ),
+				'message'        => sanitize_textarea_field( $data['message'] ?? '' ),
+				'wp_version'     => sanitize_text_field( $data['wp_version'] ?? null ),
+				'plugin_version' => sanitize_text_field( $data['plugin_version'] ?? null ),
+				'site_url'       => esc_url_raw( $data['site_url'] ?? null ),
+				'site_hash'      => sanitize_text_field( $data['site_hash'] ?? null ),
+				'license_key'    => $license_key_hash,
+				'status'         => 'new',
+				'created_at'     => current_time( 'mysql' ),
+			),
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( $result ) {
@@ -142,19 +142,19 @@ class Contact_Submissions {
 	 *     @type int    $pages     Total number of pages.
 	 * }
 	 */
-	public static function get_submissions( $args = [] ) {
+	public static function get_submissions( $args = array() ) {
 		global $wpdb;
 
-		$defaults = [
+		$defaults = array(
 			'per_page' => 20,
 			'page'     => 1,
 			'status'   => '',
 			'search'   => '',
 			'orderby'  => 'created_at',
 			'order'    => 'DESC',
-		];
+		);
 
-		$args     = wp_parse_args( $args, $defaults );
+		$args = wp_parse_args( $args, $defaults );
 
 		$cache_suffix = 'list_' . md5( wp_json_encode( $args ) );
 		$cached       = BBAI_Cache::get( 'contact', $cache_suffix );
@@ -181,14 +181,14 @@ class Contact_Submissions {
 		$search_like = '%' . $wpdb->esc_like( $search_term ) . '%';
 
 		// Validate orderby — strict allowlist mapping to real column names.
-		$allowed_orderby = [
+		$allowed_orderby = array(
 			'created_at' => 'created_at',
 			'name'       => 'name',
 			'email'      => 'email',
 			'status'     => 'status',
-		];
-		$orderby_input = ( isset( $args['orderby'] ) && is_string( $args['orderby'] ) ) ? sanitize_key( $args['orderby'] ) : '';
-		$orderby     = isset( $allowed_orderby[ $orderby_input ] ) ? $allowed_orderby[ $orderby_input ] : 'created_at';
+		);
+		$orderby_input   = ( isset( $args['orderby'] ) && is_string( $args['orderby'] ) ) ? sanitize_key( $args['orderby'] ) : '';
+		$orderby         = isset( $allowed_orderby[ $orderby_input ] ) ? $allowed_orderby[ $orderby_input ] : 'created_at';
 
 		$order = ( ! empty( $args['order'] ) && is_string( $args['order'] ) && strtoupper( $args['order'] ) === 'ASC' )
 			? 'ASC'
@@ -214,65 +214,65 @@ class Contact_Submissions {
 				)
 			);
 
-			if ( 'ASC' === $order ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$items = $wpdb->get_results(
-					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-					$wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END ASC, CASE WHEN %s = 'name' THEN name END ASC, CASE WHEN %s = 'email' THEN email END ASC, CASE WHEN %s = 'status' THEN status END ASC LIMIT %d OFFSET %d",
-						$status,
-						'',
-						$status,
-						$search_term,
-						'',
-						$search_like,
-						$search_like,
-						$search_like,
-						$search_like,
-						$orderby,
-						$orderby,
-						$orderby,
-						$orderby,
-						$per_page,
-						$offset
-					),
-					OBJECT
-				);
-			} else {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$items = $wpdb->get_results(
-					// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-					$wpdb->prepare(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-						"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END DESC, CASE WHEN %s = 'name' THEN name END DESC, CASE WHEN %s = 'email' THEN email END DESC, CASE WHEN %s = 'status' THEN status END DESC LIMIT %d OFFSET %d",
-						$status,
-						'',
-						$status,
-						$search_term,
-						'',
-						$search_like,
-						$search_like,
-						$search_like,
-						$search_like,
-						$orderby,
-						$orderby,
-						$orderby,
-						$orderby,
-						$per_page,
-						$offset
-					),
-					OBJECT
-				);
-			}
+		if ( 'ASC' === $order ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$items = $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+					"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END ASC, CASE WHEN %s = 'name' THEN name END ASC, CASE WHEN %s = 'email' THEN email END ASC, CASE WHEN %s = 'status' THEN status END ASC LIMIT %d OFFSET %d",
+					$status,
+					'',
+					$status,
+					$search_term,
+					'',
+					$search_like,
+					$search_like,
+					$search_like,
+					$search_like,
+					$orderby,
+					$orderby,
+					$orderby,
+					$orderby,
+					$per_page,
+					$offset
+				),
+				OBJECT
+			);
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$items = $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
+					"SELECT * FROM `{$table}` WHERE (%s = %s OR status = %s) AND (%s = %s OR name LIKE %s OR email LIKE %s OR subject LIKE %s OR message LIKE %s) ORDER BY CASE WHEN %s = 'created_at' THEN created_at END DESC, CASE WHEN %s = 'name' THEN name END DESC, CASE WHEN %s = 'email' THEN email END DESC, CASE WHEN %s = 'status' THEN status END DESC LIMIT %d OFFSET %d",
+					$status,
+					'',
+					$status,
+					$search_term,
+					'',
+					$search_like,
+					$search_like,
+					$search_like,
+					$search_like,
+					$orderby,
+					$orderby,
+					$orderby,
+					$orderby,
+					$per_page,
+					$offset
+				),
+				OBJECT
+			);
+		}
 
 		$pages = $total > 0 ? ceil( $total / $per_page ) : 0;
 
-		$result = [
-			'items' => $items ?: [],
+		$result = array(
+			'items' => $items ? $items : array(),
 			'total' => $total,
 			'pages' => $pages,
-		];
+		);
 
 		BBAI_Cache::set( 'contact', $cache_suffix, $result, BBAI_Cache::DEFAULT_TTL );
 
@@ -285,22 +285,22 @@ class Contact_Submissions {
 	 * @param int $id Submission ID.
 	 * @return object|null Submission object or null if not found.
 	 */
-		public static function get_submission($id) {
-			global $wpdb;
-			$id = absint($id);
-			$table = esc_sql( self::table() );
+	public static function get_submission( $id ) {
+		global $wpdb;
+		$id    = absint( $id );
+		$table = esc_sql( self::table() );
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			$submission = $wpdb->get_row(
-				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					"SELECT * FROM `{$table}` WHERE id = %d",
-					$id
-				),
-				OBJECT
-			);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$submission = $wpdb->get_row(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT * FROM `{$table}` WHERE id = %d",
+				$id
+			),
+			OBJECT
+		);
 
-		return $submission ?: null;
+		return $submission ? $submission : null;
 	}
 
 	/**
@@ -310,31 +310,31 @@ class Contact_Submissions {
 	 * @param string $status New status (new, read, replied).
 	 * @return bool True on success, false on failure.
 	 */
-	public static function update_status($id, $status) {
+	public static function update_status( $id, $status ) {
 		global $wpdb;
 
-		$table_name = self::table();
-		$id = absint($id);
-		$allowed_statuses = ['new', 'read', 'replied'];
-		$status = in_array($status, $allowed_statuses, true) ? $status : 'new';
+		$table_name       = self::table();
+		$id               = absint( $id );
+		$allowed_statuses = array( 'new', 'read', 'replied' );
+		$status           = in_array( $status, $allowed_statuses, true ) ? $status : 'new';
 
-		$update_data = ['status' => $status];
+		$update_data = array( 'status' => $status );
 
-			if ($status === 'read' && $status !== 'replied') {
-				$update_data['read_at'] = current_time('mysql');
-				} elseif ($status === 'replied') {
-					$update_data['replied_at'] = current_time('mysql');
-					$table = esc_sql( self::table() );
-					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-					$read_at = $wpdb->get_var(
-						$wpdb->prepare(
-							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-							"SELECT read_at FROM `{$table}` WHERE id = %d",
-							$id
-						)
-					);
+		if ( 'read' === $status && 'replied' !== $status ) {
+			$update_data['read_at'] = current_time( 'mysql' );
+		} elseif ( 'replied' === $status ) {
+			$update_data['replied_at'] = current_time( 'mysql' );
+			$table                     = esc_sql( self::table() );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$read_at = $wpdb->get_var(
+				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT read_at FROM `{$table}` WHERE id = %d",
+					$id
+				)
+			);
 			if ( empty( $read_at ) ) {
-				$update_data['read_at'] = current_time('mysql');
+				$update_data['read_at'] = current_time( 'mysql' );
 			}
 		}
 
@@ -342,16 +342,16 @@ class Contact_Submissions {
 		$result = $wpdb->update(
 			$table_name,
 			$update_data,
-			['id' => $id],
-			['%s', '%s'],
-			['%d']
+			array( 'id' => $id ),
+			array( '%s', '%s' ),
+			array( '%d' )
 		);
 
 		if ( false !== $result ) {
 			BBAI_Cache::bump( 'contact' );
 		}
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**
@@ -360,24 +360,24 @@ class Contact_Submissions {
 	 * @param int $id Submission ID.
 	 * @return bool True on success, false on failure.
 	 */
-	public static function delete_submission($id) {
+	public static function delete_submission( $id ) {
 		global $wpdb;
 
 		$table_name = self::table();
-		$id = absint($id);
+		$id         = absint( $id );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$result = $wpdb->delete(
 			$table_name,
-			['id' => $id],
-			['%d']
+			array( 'id' => $id ),
+			array( '%d' )
 		);
 
 		if ( false !== $result ) {
 			BBAI_Cache::bump( 'contact' );
 		}
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**
@@ -408,4 +408,4 @@ class Contact_Submissions {
 
 		return $result;
 	}
-	}
+}

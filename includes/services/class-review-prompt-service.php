@@ -40,8 +40,8 @@ class Review_Prompt_Service {
 
 	// ── Snooze durations ─────────────────────────────────────────────────────
 
-	const SNOOZE_DISMISS_DAYS      = 7;
-	const SNOOZE_REMIND_LATER_DAYS = 14;
+	const SNOOZE_DISMISS_DAYS          = 7;
+	const SNOOZE_REMIND_LATER_DAYS     = 14;
 	const SNOOZE_ALREADY_REVIEWED_DAYS = 90;
 
 	// ── WP.org review URL ────────────────────────────────────────────────────
@@ -62,8 +62,8 @@ class Review_Prompt_Service {
 	 * @param array{total?: int, optimised?: int} $ctx Live coverage counts.
 	 * @return bool
 	 */
-	public static function is_eligible( array $ctx = [] ): bool {
-		$total     = max( 0, (int) ( $ctx['total']    ?? 0 ) );
+	public static function is_eligible( array $ctx = array() ): bool {
+		$total     = max( 0, (int) ( $ctx['total'] ?? 0 ) );
 		$optimised = max( 0, (int) ( $ctx['optimised'] ?? 0 ) );
 
 		// Milestone 1: ≥50 % of detected library optimised.
@@ -99,7 +99,7 @@ class Review_Prompt_Service {
 	 * @param array $ctx Live coverage counts.
 	 * @return bool
 	 */
-	public static function should_show( array $ctx = [] ): bool {
+	public static function should_show( array $ctx = array() ): bool {
 		if ( ! self::is_eligible( $ctx ) ) {
 			return false;
 		}
@@ -181,8 +181,8 @@ class Review_Prompt_Service {
 	 * @param array $ctx Live coverage counts (total, optimised).
 	 * @return array<string,mixed>
 	 */
-	public static function get_localized_data( array $ctx = [] ): array {
-		return [
+	public static function get_localized_data( array $ctx = array() ): array {
+		return array(
 			'shouldShow'      => self::should_show( $ctx ),
 			'isEligible'      => self::is_eligible( $ctx ),
 			'alreadyReviewed' => (bool) get_option( self::OPT_ALREADY_REVIEWED, false ),
@@ -190,7 +190,7 @@ class Review_Prompt_Service {
 			'reviewUrl'       => self::REVIEW_URL,
 			'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 			'nonce'           => wp_create_nonce( 'beepbeepai_nonce' ),
-		];
+		);
 	}
 
 	// ──────────────────────────────────────────────────────────────────────────
@@ -201,8 +201,8 @@ class Review_Prompt_Service {
 	 * @return string[]
 	 */
 	private static function get_active_days(): array {
-		$days = get_option( self::OPT_ACTIVE_DAYS, [] );
-		return is_array( $days ) ? $days : [];
+		$days = get_option( self::OPT_ACTIVE_DAYS, array() );
+		return is_array( $days ) ? $days : array();
 	}
 
 	private static function record_active_day(): void {

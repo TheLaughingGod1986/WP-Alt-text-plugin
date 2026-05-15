@@ -113,11 +113,11 @@ class Usage_Service {
 		$opts    = get_option( self::OPTION_KEY, array() );
 		$current = $opts['usage'] ?? $this->default_usage();
 
-		$current['prompt']       += $prompt;
-		$current['completion']   += $completion;
-		$current['total']        += $total;
-		$current['requests']     += 1;
-		$current['last_request']  = current_time( 'mysql' );
+		$current['prompt']      += $prompt;
+		$current['completion']  += $completion;
+		$current['total']       += $total;
+		$current['requests']    += 1;
+		$current['last_request'] = current_time( 'mysql' );
 
 		$opts['usage']            = $current;
 		$opts['token_alert_sent'] = $opts['token_alert_sent'] ?? false;
@@ -170,7 +170,7 @@ class Usage_Service {
 			$data = get_transient( 'bbai_token_notice' );
 		}
 
-		return $data ?: null;
+		return $data ? $data : null;
 	}
 
 	/**

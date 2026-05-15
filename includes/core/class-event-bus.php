@@ -34,7 +34,7 @@ class Event_Bus {
 	 * @param int      $priority Priority (lower number = higher priority).
 	 * @return callable Unsubscribe function.
 	 */
-	public function on(string $event, callable $callback, int $priority = 10): callable {
+	public function on( string $event, callable $callback, int $priority = 10 ): callable {
 		if ( ! isset( $this->listeners[ $event ] ) ) {
 			$this->listeners[ $event ] = array();
 		}
@@ -71,7 +71,7 @@ class Event_Bus {
 	 * @param int      $priority Priority.
 	 * @return callable Unsubscribe function.
 	 */
-	public function once(string $event, callable $callback, int $priority = 10): callable {
+	public function once( string $event, callable $callback, int $priority = 10 ): callable {
 		$unsubscribe = null;
 
 		$wrapper = function ( $data ) use ( $callback, &$unsubscribe ) {
@@ -95,7 +95,7 @@ class Event_Bus {
 	 * @param callable|null $callback Specific callback to remove, or null to remove all.
 	 * @return void
 	 */
-	public function off(string $event, ?callable $callback = null): void {
+	public function off( string $event, ?callable $callback = null ): void {
 		if ( ! isset( $this->listeners[ $event ] ) ) {
 			return;
 		}
@@ -129,7 +129,7 @@ class Event_Bus {
 	 * @param mixed  $data  Event data.
 	 * @return void
 	 */
-	public function emit(string $event, $data = null): void {
+	public function emit( string $event, $data = null ): void {
 		if ( ! isset( $this->listeners[ $event ] ) ) {
 			return;
 		}
@@ -144,9 +144,9 @@ class Event_Bus {
 						'error',
 						"Error in event listener for '{$event}': {$e->getMessage()}",
 						array(
-							'event'      => $event,
-							'error'      => $e->getMessage(),
-							'trace'      => $e->getTraceAsString(),
+							'event' => $event,
+							'error' => $e->getMessage(),
+							'trace' => $e->getTraceAsString(),
 						)
 					);
 				}
@@ -165,7 +165,7 @@ class Event_Bus {
 	 * @param mixed  $data  Event data.
 	 * @return void
 	 */
-	public function emit_async(string $event, $data = null): void {
+	public function emit_async( string $event, $data = null ): void {
 		// Use WordPress action scheduler if available.
 		if ( function_exists( 'as_enqueue_async_action' ) ) {
 			as_enqueue_async_action(
@@ -208,7 +208,7 @@ class Event_Bus {
 	 * @param string $event Event name.
 	 * @return int Listener count.
 	 */
-	public function listener_count(string $event): int {
+	public function listener_count( string $event ): int {
 		return isset( $this->listeners[ $event ] ) ? count( $this->listeners[ $event ] ) : 0;
 	}
 

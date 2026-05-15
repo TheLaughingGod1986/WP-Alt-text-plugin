@@ -7,6 +7,7 @@
 
 # Dependencies / tooling
 node_modules/
+vendor/
 .playwright-cli/
 .playwright-mcp/
 

@@ -21,8 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_li_props      = $bbai_li_state['surface']['props'] ?? [];
-$bbai_li_last_run   = $bbai_li_props['last_run_at'] ?? null;
+$bbai_li_props        = $bbai_li_state['surface']['props'] ?? array();
+$bbai_li_last_run     = $bbai_li_props['last_run_at'] ?? null;
 $bbai_li_last_run_fmt = '';
 if ( $bbai_li_last_run ) {
 	$bbai_li_last_run_fmt = date_i18n(
@@ -31,7 +31,7 @@ if ( $bbai_li_last_run ) {
 	);
 }
 
-$bbai_it_rows          = is_array( $bbai_it_rows ?? null ) ? $bbai_it_rows : [];
+$bbai_it_rows          = is_array( $bbai_it_rows ?? null ) ? $bbai_it_rows : array();
 $bbai_it_server_render = ! empty( $bbai_it_server_render );
 $bbai_it_library_url   = admin_url( 'admin.php?page=bbai-library' );
 ?>
@@ -81,11 +81,12 @@ $bbai_it_library_url   = admin_url( 'admin.php?page=bbai-library' );
 			</tr>
 		</thead>
 		<tbody>
-			<?php foreach ( $bbai_it_rows as $bbai_it_row ) :
+			<?php
+			foreach ( $bbai_it_rows as $bbai_it_row ) :
 				$bbai_rid    = absint( $bbai_it_row['id'] ?? 0 );
 				$bbai_rfile  = (string) ( $bbai_it_row['filename'] ?? '' );
 				$bbai_rthumb = (string) ( $bbai_it_row['thumb_url'] ?? '' );
-			?>
+				?>
 			<tr class="bbai-li-image-table__row" data-attachment-id="<?php echo esc_attr( (string) $bbai_rid ); ?>">
 				<td class="bbai-li-image-table__col-thumb">
 					<?php if ( $bbai_rthumb ) : ?>
@@ -100,7 +101,19 @@ $bbai_it_library_url   = admin_url( 'admin.php?page=bbai-library' );
 				</td>
 				<td class="bbai-li-image-table__col-action">
 					<a
-						href="<?php echo esc_url( add_query_arg( [ 'page' => 'bbai-library', 'attachment_id' => $bbai_rid ], admin_url( 'admin.php' ) ) ); ?>"
+						href="
+						<?php
+						echo esc_url(
+							add_query_arg(
+								array(
+									'page'          => 'bbai-library',
+									'attachment_id' => $bbai_rid,
+								),
+								admin_url( 'admin.php' )
+							)
+						);
+						?>
+								"
 						class="bbai-li-image-table__row-btn button button-secondary"
 					><?php esc_html_e( 'View', 'beepbeep-ai-alt-text-generator' ); ?></a>
 				</td>
@@ -111,7 +124,7 @@ $bbai_it_library_url   = admin_url( 'admin.php?page=bbai-library' );
 	<?php elseif ( $bbai_it_server_render ) : ?>
 		<p class="bbai-li-image-table__empty"><?php esc_html_e( 'No images optimised yet.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 	<?php else : ?>
-	<?php /* JS-only fallback feed (legacy — JS controller writes <li> entries) */ ?>
+		<?php /* JS-only fallback feed (legacy — JS controller writes <li> entries) */ ?>
 	<ul
 		class="bbai-li-feed bbai-li-feed--recent"
 		data-bbai-li-recent-activity="1"

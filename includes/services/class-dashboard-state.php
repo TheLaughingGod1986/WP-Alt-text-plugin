@@ -48,18 +48,18 @@ class Dashboard_State {
 	 * @return array<string, mixed>
 	 */
 	public static function resolve( array $args ): array {
-		$trial_status   = self::normalize_trial_status( $args['trial_status'] ?? [] );
-		$is_guest_trial = ! empty( $args['is_guest_trial'] ) || ! empty( $trial_status['should_gate'] );
-		$is_premium     = ! empty( $args['is_premium'] );
-		$usage_stats    = self::normalize_usage_stats( $args['usage_stats'] ?? [], $trial_status, $is_guest_trial, $is_premium );
-		$runtime_state  = self::normalize_runtime_state( $args['runtime_state'] ?? self::RUNTIME_IDLE );
-		$missing_count  = max( 0, (int) ( $args['missing_count'] ?? 0 ) );
-		$weak_count     = max( 0, (int) ( $args['weak_count'] ?? 0 ) );
-		$total_count    = max( 0, (int) ( $args['total_count'] ?? 0 ) );
+		$trial_status     = self::normalize_trial_status( $args['trial_status'] ?? array() );
+		$is_guest_trial   = ! empty( $args['is_guest_trial'] ) || ! empty( $trial_status['should_gate'] );
+		$is_premium       = ! empty( $args['is_premium'] );
+		$usage_stats      = self::normalize_usage_stats( $args['usage_stats'] ?? array(), $trial_status, $is_guest_trial, $is_premium );
+		$runtime_state    = self::normalize_runtime_state( $args['runtime_state'] ?? self::RUNTIME_IDLE );
+		$missing_count    = max( 0, (int) ( $args['missing_count'] ?? 0 ) );
+		$weak_count       = max( 0, (int) ( $args['weak_count'] ?? 0 ) );
+		$total_count      = max( 0, (int) ( $args['total_count'] ?? 0 ) );
 		$actionable_model = self::resolve_actionable_state( $missing_count, $weak_count, $total_count );
 		$actionable       = $actionable_model['actionable_count'] > 0;
-		$base_state     = self::resolve_base_state( $is_guest_trial, $trial_status );
-		$resolved_state = self::resolve_display_state( $base_state, $runtime_state );
+		$base_state       = self::resolve_base_state( $is_guest_trial, $trial_status );
+		$resolved_state   = self::resolve_display_state( $base_state, $runtime_state );
 
 		$generate_available = $is_guest_trial
 			? ! $trial_status['exhausted']
@@ -70,10 +70,10 @@ class Dashboard_State {
 			: strtolower( (string) ( $args['plan_slug'] ?? $usage_stats['plan'] ?? 'free' ) );
 
 		$upgrade_path = Upgrade_Path_Resolver::resolve(
-			[
+			array(
 				'is_guest_trial' => $is_guest_trial,
 				'plan_slug'      => $plan_slug_for_ladder,
-			]
+			)
 		);
 
 		// One locked monetisation mode: matches upgrade ladder (no generic "upgrade").
@@ -90,11 +90,11 @@ class Dashboard_State {
 			}
 		}
 
-		return [
+		return array(
 			'state'            => $resolved_state,
 			'base_state'       => $base_state,
 			'runtime_state'    => $runtime_state,
-			'supported_states' => [
+			'supported_states' => array(
 				self::STATE_LOGGED_OUT_TRIAL_AVAILABLE,
 				self::STATE_LOGGED_OUT_TRIAL_RUNNING,
 				self::STATE_LOGGED_OUT_TRIAL_EXHAUSTED,
@@ -102,21 +102,21 @@ class Dashboard_State {
 				self::STATE_GENERATION_RUNNING,
 				self::STATE_GENERATION_COMPLETE,
 				self::STATE_GENERATION_FAILED,
-			],
+			),
 			'trial'            => $trial_status,
 			'usage'            => $usage_stats,
 			'actionable'       => $actionable_model,
-			'flags'            => [
-				'is_guest_trial'             => $is_guest_trial,
-				'is_premium'                 => $is_premium,
-				'has_actionable_images'      => $actionable,
-				'generate_enabled'           => $generate_available && $actionable,
-				'generate_available'         => $generate_available,
-				'lock_generation_actions'    => ! $generate_available && ( $is_guest_trial || ! $is_premium ),
-				'show_trial_helper_copy'     => $is_guest_trial && ! $trial_status['exhausted'],
-				'show_exhausted_upgrade_wall'=> $base_state === self::STATE_LOGGED_OUT_TRIAL_EXHAUSTED,
-			],
-			'cta'              => [
+			'flags'            => array(
+				'is_guest_trial'              => $is_guest_trial,
+				'is_premium'                  => $is_premium,
+				'has_actionable_images'       => $actionable,
+				'generate_enabled'            => $generate_available && $actionable,
+				'generate_available'          => $generate_available,
+				'lock_generation_actions'     => ! $generate_available && ( $is_guest_trial || ! $is_premium ),
+				'show_trial_helper_copy'      => $is_guest_trial && ! $trial_status['exhausted'],
+				'show_exhausted_upgrade_wall' => self::STATE_LOGGED_OUT_TRIAL_EXHAUSTED === $base_state,
+			),
+			'cta'              => array(
 				'primary_mode' => self::resolve_primary_cta_mode(
 					$base_state,
 					(string) $actionable_model['state'],
@@ -124,10 +124,10 @@ class Dashboard_State {
 					$generate_available
 				),
 				'locked_mode'  => $locked_cta_mode,
-			],
+			),
 			'upgrade_path'     => $upgrade_path,
 			'copy'             => self::build_copy( $trial_status ),
-		];
+		);
 	}
 
 	/**
@@ -151,13 +151,13 @@ class Dashboard_State {
 			$state = self::ACTIONABLE_STATE_REVIEW;
 		}
 
-		return [
+		return array(
 			'state'            => $state,
 			'actionable_count' => $actionable_count,
 			'missing_count'    => $missing_count,
 			'review_count'     => $weak_count,
 			'total_count'      => $total_count,
-		];
+		);
 	}
 
 	/**
@@ -177,7 +177,7 @@ class Dashboard_State {
 			? max( 0, (int) $trial_status['remaining'] )
 			: max( 0, $limit - $used );
 
-		return [
+		return array(
 			'is_trial'           => array_key_exists( 'is_trial', $trial_status ) ? ! empty( $trial_status['is_trial'] ) : true,
 			'should_gate'        => ! empty( $trial_status['should_gate'] ),
 			'limit'              => $limit,
@@ -188,7 +188,7 @@ class Dashboard_State {
 			'anon_id'            => sanitize_text_field( (string) ( $trial_status['anon_id'] ?? '' ) ),
 			'identity_key'       => sanitize_key( (string) ( $trial_status['identity_key'] ?? '' ) ),
 			'monthly_free_limit' => Trial_Quota::get_free_account_monthly_limit(),
-		];
+		);
 	}
 
 	/**
@@ -207,15 +207,15 @@ class Dashboard_State {
 			$remaining = max( 0, (int) $trial_status['remaining'] );
 			$plan      = 'anonymous_trial';
 		} else {
-			$used = max( 0, (int) ( $usage_stats['credits_used'] ?? $usage_stats['creditsUsed'] ?? $usage_stats['used'] ?? 0 ) );
+			$used  = max( 0, (int) ( $usage_stats['credits_used'] ?? $usage_stats['creditsUsed'] ?? $usage_stats['used'] ?? 0 ) );
 			$limit = 50;
 			foreach (
-				[
+				array(
 					$usage_stats['credits_total'] ?? null,
 					$usage_stats['creditsTotal'] ?? null,
 					$usage_stats['creditsLimit'] ?? null,
 					$usage_stats['limit'] ?? null,
-				] as $candidate
+				) as $candidate
 			) {
 				if ( null !== $candidate && '' !== $candidate && (int) $candidate > 0 ) {
 					$limit = max( 1, (int) $candidate );
@@ -231,13 +231,13 @@ class Dashboard_State {
 			$plan = sanitize_key( (string) ( $usage_stats['plan'] ?? $usage_stats['plan_type'] ?? 'free' ) );
 		}
 
-		return [
-			'used'      => $used,
-			'limit'     => $limit,
-			'remaining' => $remaining,
-			'plan'      => $plan,
-			'is_premium'=> $is_premium,
-		];
+		return array(
+			'used'       => $used,
+			'limit'      => $limit,
+			'remaining'  => $remaining,
+			'plan'       => $plan,
+			'is_premium' => $is_premium,
+		);
 	}
 
 	/**
@@ -268,12 +268,12 @@ class Dashboard_State {
 
 		return in_array(
 			$runtime_state,
-			[
+			array(
 				self::RUNTIME_IDLE,
 				self::STATE_GENERATION_RUNNING,
 				self::STATE_GENERATION_COMPLETE,
 				self::STATE_GENERATION_FAILED,
-			],
+			),
 			true
 		)
 			? $runtime_state
@@ -343,8 +343,8 @@ class Dashboard_State {
 	 */
 	public static function resolve_funnel_state( array $model ): string {
 		$runtime   = $model['runtime_state'] ?? self::RUNTIME_IDLE;
-		$flags     = $model['flags'] ?? [];
-		$usage     = $model['usage'] ?? [];
+		$flags     = $model['flags'] ?? array();
+		$usage     = $model['usage'] ?? array();
 		$remaining = (int) ( $usage['remaining'] ?? 0 );
 
 		// Credits exhausted — monetisation moment takes priority.
@@ -373,7 +373,7 @@ class Dashboard_State {
 		$total   = (int) ( $model['_total_images'] ?? 0 );
 
 		// All images optimized.
-		if ( $total > 0 && $missing === 0 && $weak === 0 ) {
+		if ( $total > 0 && 0 === $missing && 0 === $weak ) {
 			return self::FUNNEL_COMPLETE;
 		}
 
@@ -397,7 +397,7 @@ class Dashboard_State {
 		$trial_used    = max( 0, min( $trial_limit, (int) $trial_status['used'] ) );
 		$monthly_limit = max( 1, (int) $trial_status['monthly_free_limit'] );
 
-		return [
+		return array(
 			'exhausted_eyebrow' => __( 'Free trial complete', 'beepbeep-ai-alt-text-generator' ),
 			'exhausted_title'   => sprintf(
 				/* translators: 1: used count, 2: limit count */
@@ -425,6 +425,6 @@ class Dashboard_State {
 				number_format_i18n( $trial_used ),
 				number_format_i18n( $trial_limit )
 			),
-		];
+		);
 	}
 }

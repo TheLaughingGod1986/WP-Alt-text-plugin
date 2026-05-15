@@ -10,25 +10,25 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use Exception;
 use Error;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 class Usage_Helper {
-    /**
-     * WP_DEBUG-only structured logging for quota/usage debugging.
-     *
-     * @param string               $event Short event name.
-     * @param array<string, mixed> $data  Context payload.
-     * @return void
-     */
-    private static function debug_log(string $event, array $data = []): void {
-        if ( ! defined('WP_DEBUG') || ! WP_DEBUG ) {
-            return;
-        }
+	/**
+	 * WP_DEBUG-only structured logging for quota/usage debugging.
+	 *
+	 * @param string               $event Short event name.
+	 * @param array<string, mixed> $data  Context payload.
+	 * @return void
+	 */
+	private static function debug_log( string $event, array $data = array() ): void {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return;
+		}
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-        error_log('[BBAI usage_helper] ' . $event . ' ' . wp_json_encode($data));
-    }
+		error_log( '[BBAI usage_helper] ' . $event . ' ' . wp_json_encode( $data ) );
+	}
 	/**
 	 * Resolve the current anonymous-trial credit limit.
 	 *
@@ -55,11 +55,11 @@ class Usage_Helper {
 	 * @return bool
 	 */
 	private static function should_infer_anonymous_trial( array $live_usage, array $quota, int $limit, string $plan, string $auth_state, string $quota_type ): bool {
-		$plan = strtolower( trim( $plan ) );
+		$plan       = strtolower( trim( $plan ) );
 		$auth_state = strtolower( trim( $auth_state ) );
 		$quota_type = strtolower( trim( $quota_type ) );
 
-		if ( 'anonymous' === $auth_state || 'trial' === $quota_type || in_array( $plan, [ 'trial', 'anonymous_trial' ], true ) ) {
+		if ( 'anonymous' === $auth_state || 'trial' === $quota_type || in_array( $plan, array( 'trial', 'anonymous_trial' ), true ) ) {
 			return true;
 		}
 
@@ -70,21 +70,21 @@ class Usage_Helper {
 			return true;
 		}
 
-		if ( in_array( $plan, [ 'pro', 'growth', 'agency', 'enterprise' ], true ) || 'paid' === $quota_type ) {
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) || 'paid' === $quota_type ) {
 			return false;
 		}
 
 		$source = strtolower( trim( (string) ( $live_usage['source'] ?? '' ) ) );
-		if ( in_array( $source, [ 'anonymous_trial', 'local_trial_snapshot' ], true ) ) {
+		if ( in_array( $source, array( 'anonymous_trial', 'local_trial_snapshot' ), true ) ) {
 			return true;
 		}
 
-		if ( ! in_array( $source, [ 'local_snapshot', 'local_trial_snapshot' ], true ) ) {
+		if ( ! in_array( $source, array( 'local_snapshot', 'local_trial_snapshot' ), true ) ) {
 			return false;
 		}
 
 		$has_reset_signal = false;
-		foreach ( [ 'resetDate', 'reset_date' ] as $key ) {
+		foreach ( array( 'resetDate', 'reset_date' ) as $key ) {
 			$usage_value = isset( $live_usage[ $key ] ) ? trim( (string) $live_usage[ $key ] ) : '';
 			$quota_value = isset( $quota[ $key ] ) ? trim( (string) $quota[ $key ] ) : '';
 			if ( '' !== $usage_value || '' !== $quota_value ) {
@@ -94,7 +94,7 @@ class Usage_Helper {
 		}
 
 		if ( ! $has_reset_signal ) {
-			foreach ( [ 'reset_timestamp', 'resetTimestamp', 'reset_ts', 'days_until_reset', 'daysUntilReset' ] as $key ) {
+			foreach ( array( 'reset_timestamp', 'resetTimestamp', 'reset_ts', 'days_until_reset', 'daysUntilReset' ) as $key ) {
 				if (
 					( array_key_exists( $key, $live_usage ) && is_numeric( $live_usage[ $key ] ) )
 					|| ( array_key_exists( $key, $quota ) && is_numeric( $quota[ $key ] ) )
@@ -139,411 +139,435 @@ class Usage_Helper {
 		return $remaining <= max( 1, (int) $threshold ) ? 'near_limit' : 'active';
 	}
 
-    /**
-     * Guest / anonymous trial usage snapshot.
-     *
-     * @return array
-     */
-    public static function get_guest_trial_usage(): array {
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+	/**
+	 * Guest / anonymous trial usage snapshot.
+	 *
+	 * @return array
+	 */
+	public static function get_guest_trial_usage(): array {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
 
-        $trial_status = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
-        $used = max(0, (int) ($trial_status['credits_used'] ?? $trial_status['used'] ?? 0));
-        $limit = max(1, (int) ($trial_status['credits_total'] ?? $trial_status['limit'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit()));
-        $remaining = max(0, (int) ($trial_status['credits_remaining'] ?? $trial_status['remaining'] ?? max(0, $limit - $used)));
-        $percentage = $limit > 0 ? min(100, max(0, ($used / $limit) * 100)) : 0;
-        $quota_state = (string) ($trial_status['quota_state'] ?? self::determine_quota_state($remaining, $limit, true));
-        $free_plan_offer = max(0, (int) ($trial_status['free_plan_offer'] ?? 50));
-        $low_credit_threshold = max(0, (int) ($trial_status['low_credit_threshold'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_low_credit_threshold()));
+		$trial_status         = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_status();
+		$used                 = max( 0, (int) ( $trial_status['credits_used'] ?? $trial_status['used'] ?? 0 ) );
+		$limit                = max( 1, (int) ( $trial_status['credits_total'] ?? $trial_status['limit'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() ) );
+		$remaining            = max( 0, (int) ( $trial_status['credits_remaining'] ?? $trial_status['remaining'] ?? max( 0, $limit - $used ) ) );
+		$percentage           = $limit > 0 ? min( 100, max( 0, ( $used / $limit ) * 100 ) ) : 0;
+		$quota_state          = (string) ( $trial_status['quota_state'] ?? self::determine_quota_state( $remaining, $limit, true ) );
+		$free_plan_offer      = max( 0, (int) ( $trial_status['free_plan_offer'] ?? 50 ) );
+		$low_credit_threshold = max( 0, (int) ( $trial_status['low_credit_threshold'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_low_credit_threshold() ) );
 
-        return array_merge($trial_status, [
-            'used' => $used,
-            'limit' => $limit,
-            'remaining' => $remaining,
-            'percentage' => $percentage,
-            'percentage_display' => Usage_Tracker::format_percentage_label($percentage),
-            'plan' => 'trial',
-            'plan_type' => 'trial',
-            'plan_label' => __('Free trial', 'beepbeep-ai-alt-text-generator'),
-            'source' => 'anonymous_trial',
-            'is_trial' => true,
-            'trial_exhausted' => !empty($trial_status['exhausted']),
-            'trial_near_limit' => 'near_limit' === $quota_state,
-            'remaining_free_images' => $remaining,
-            'auth_state' => 'anonymous',
-            'quota_type' => 'trial',
-            'quota_state' => $quota_state,
-            'low_credit_threshold' => $low_credit_threshold,
-            'signup_required' => !empty($trial_status['signup_required']) || $remaining <= 0,
-            'upgrade_required' => false,
-            'free_plan_offer' => $free_plan_offer,
-            'credits_used' => $used,
-            'credits_total' => $limit,
-            'credits_remaining' => $remaining,
-            'quota' => [
-                'used' => $used,
-                'limit' => $limit,
-                'remaining' => $remaining,
-                'plan_type' => 'trial',
-                'auth_state' => 'anonymous',
-                'quota_type' => 'trial',
-                'quota_state' => $quota_state,
-                'low_credit_threshold' => $low_credit_threshold,
-                'signup_required' => !empty($trial_status['signup_required']) || $remaining <= 0,
-                'upgrade_required' => false,
-                'free_plan_offer' => $free_plan_offer,
-                'credits_used' => $used,
-                'credits_total' => $limit,
-                'credits_remaining' => $remaining,
-                'trial_near_limit' => 'near_limit' === $quota_state,
-            ],
-            'creditsUsed' => $used,
-            'creditsTotal' => $limit,
-            'creditsLimit' => $limit,
-            'creditsRemaining' => $remaining,
-            'anon_id' => $trial_status['anon_id'] ?? '',
-            'identity_key' => $trial_status['identity_key'] ?? '',
-        ]);
-    }
+		return array_merge(
+			$trial_status,
+			array(
+				'used'                  => $used,
+				'limit'                 => $limit,
+				'remaining'             => $remaining,
+				'percentage'            => $percentage,
+				'percentage_display'    => Usage_Tracker::format_percentage_label( $percentage ),
+				'plan'                  => 'trial',
+				'plan_type'             => 'trial',
+				'plan_label'            => __( 'Free trial', 'beepbeep-ai-alt-text-generator' ),
+				'source'                => 'anonymous_trial',
+				'is_trial'              => true,
+				'trial_exhausted'       => ! empty( $trial_status['exhausted'] ),
+				'trial_near_limit'      => 'near_limit' === $quota_state,
+				'remaining_free_images' => $remaining,
+				'auth_state'            => 'anonymous',
+				'quota_type'            => 'trial',
+				'quota_state'           => $quota_state,
+				'low_credit_threshold'  => $low_credit_threshold,
+				'signup_required'       => ! empty( $trial_status['signup_required'] ) || $remaining <= 0,
+				'upgrade_required'      => false,
+				'free_plan_offer'       => $free_plan_offer,
+				'credits_used'          => $used,
+				'credits_total'         => $limit,
+				'credits_remaining'     => $remaining,
+				'quota'                 => array(
+					'used'                 => $used,
+					'limit'                => $limit,
+					'remaining'            => $remaining,
+					'plan_type'            => 'trial',
+					'auth_state'           => 'anonymous',
+					'quota_type'           => 'trial',
+					'quota_state'          => $quota_state,
+					'low_credit_threshold' => $low_credit_threshold,
+					'signup_required'      => ! empty( $trial_status['signup_required'] ) || $remaining <= 0,
+					'upgrade_required'     => false,
+					'free_plan_offer'      => $free_plan_offer,
+					'credits_used'         => $used,
+					'credits_total'        => $limit,
+					'credits_remaining'    => $remaining,
+					'trial_near_limit'     => 'near_limit' === $quota_state,
+				),
+				'creditsUsed'           => $used,
+				'creditsTotal'          => $limit,
+				'creditsLimit'          => $limit,
+				'creditsRemaining'      => $remaining,
+				'anon_id'               => $trial_status['anon_id'] ?? '',
+				'identity_key'          => $trial_status['identity_key'] ?? '',
+			)
+		);
+	}
 
-    /**
-     * Fetch usage stats, preferring live API when a connected account exists.
-     *
-     * @param  object $api_client           API client instance.
-     * @param  bool   $has_connected_account Whether the site is connected to an account/license.
-     * @return array
-     */
-    public static function get_usage($api_client, bool $has_connected_account = false): array {
-        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+	/**
+	 * Fetch usage stats, preferring live API when a connected account exists.
+	 *
+	 * @param  object $api_client           API client instance.
+	 * @param  bool   $has_connected_account Whether the site is connected to an account/license.
+	 * @return array
+	 */
+	public static function get_usage( $api_client, bool $has_connected_account = false ): array {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 
-        // No connected SaaS account: always use local Trial_Quota for credits. Otherwise a stale JWT
-        // can make can_fetch true and pull remote quota, so the guest hero never reaches
-        // "You've used all N free generations" + locked-library (exhausted) when the local trial is done.
-        if ( ! $has_connected_account ) {
-            return self::get_guest_trial_usage();
-        }
-
-        $live_usage = null;
-        $has_backend_usage = false;
-        $usage_stats = Usage_Tracker::get_local_usage_snapshot();
-        $can_fetch = false;
-
-        try {
-            $can_fetch = $has_connected_account
-                || (is_object($api_client) && method_exists($api_client, 'is_authenticated') && $api_client->is_authenticated())
-                || (is_object($api_client) && method_exists($api_client, 'has_active_license') && $api_client->has_active_license());
-
-            if ($can_fetch) {
-                self::debug_log('before_get_usage', [
-                    'has_connected_account' => $has_connected_account,
-                    'can_fetch' => $can_fetch,
-                    'local_snapshot' => [
-                        'source' => $usage_stats['source'] ?? null,
-                        'used' => $usage_stats['used'] ?? null,
-                        'limit' => $usage_stats['limit'] ?? null,
-                        'remaining' => $usage_stats['remaining'] ?? null,
-                    ],
-                ]);
-                $live_usage = $api_client->get_usage();
-                if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                    $source = strtolower(trim((string) ($live_usage['source'] ?? 'remote_usage')));
-                    if ('generation_success' === $source) {
-                        return self::normalize_usage($usage_stats, $live_usage);
-                    }
-                    $has_backend_usage = !in_array($source, ['local_snapshot', 'local_trial_snapshot'], true);
-                    if ($has_backend_usage) {
-                        $local_source = strtolower(trim((string) ($usage_stats['source'] ?? '')));
-                        $local_used = max(0, (int) ($usage_stats['used'] ?? $usage_stats['credits_used'] ?? $usage_stats['creditsUsed'] ?? 0));
-                        $live_used = max(0, (int) ($live_usage['used'] ?? $live_usage['credits_used'] ?? $live_usage['creditsUsed'] ?? 0));
-                        $local_limit = max(1, (int) ($usage_stats['limit'] ?? $usage_stats['credits_total'] ?? $usage_stats['creditsTotal'] ?? 1));
-                        $live_limit = max(1, (int) ($live_usage['limit'] ?? $live_usage['credits_total'] ?? $live_usage['creditsTotal'] ?? $live_usage['creditsLimit'] ?? $local_limit));
-
-                        // Successful generation can be reflected locally before the backend usage
-                        // endpoint catches up. Do not let a stale lower backend count erase that
-                        // post-generation dashboard state; backend wins again once it reaches it.
-                        if ('generation_success' === $local_source && $local_used > $live_used && $local_limit === $live_limit) {
-                            self::debug_log('keeping_generation_success_usage', [
-                                'local_used' => $local_used,
-                                'live_used' => $live_used,
-                                'limit' => $local_limit,
-                            ]);
-                            return $usage_stats;
-                        }
-
-                        $local_history_used = Usage_Tracker::get_local_successful_generations_this_month();
-                        if ($local_history_used > $live_used && $local_limit === $live_limit) {
-                            $history_usage = Usage_Tracker::record_local_generation_history_usage($local_history_used, $live_usage);
-                            if (is_array($history_usage)) {
-                                self::debug_log('using_local_generation_history_usage', [
-                                    'local_history_used' => $local_history_used,
-                                    'live_used' => $live_used,
-                                    'limit' => $local_limit,
-                                ]);
-                                return self::normalize_usage($usage_stats, $history_usage);
-                            }
-                        }
-
-                        Usage_Tracker::update_usage($live_usage);
-                    }
-                }
-            }
-        } catch (Exception $e) {
-            $usage_stats = Usage_Tracker::get_local_usage_snapshot();
-            self::debug_log('exception', [
-                'message' => $e->getMessage(),
-                'has_connected_account' => $has_connected_account,
-                'can_fetch' => $can_fetch,
-            ]);
-        } catch (Error $e) {
-            $usage_stats = Usage_Tracker::get_local_usage_snapshot();
-            self::debug_log('error', [
-                'message' => $e->getMessage(),
-                'has_connected_account' => $has_connected_account,
-                'can_fetch' => $can_fetch,
-            ]);
-        }
-
-		if ($has_backend_usage && isset($live_usage) && is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-            $usage_stats = self::normalize_usage($usage_stats, $live_usage);
-            self::debug_log('after_get_usage_backend', [
-                'live_source' => $live_usage['source'] ?? null,
-                'normalized' => [
-                    'source' => $usage_stats['source'] ?? null,
-                    'used' => $usage_stats['used'] ?? null,
-                    'limit' => $usage_stats['limit'] ?? null,
-                    'remaining' => $usage_stats['remaining'] ?? null,
-                    'plan' => $usage_stats['plan'] ?? null,
-                    'quota_type' => $usage_stats['quota_type'] ?? null,
-                ],
-            ]);
-
-			if (defined('WP_DEBUG') && WP_DEBUG) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log('[BBAI DEBUG] Usage_Helper output: ' . wp_json_encode($usage_stats));
-			}
-            return $usage_stats;
-        }
-
-        // Local trial is a fallback only when backend/account usage truth is unavailable.
-        if ( class_exists( Trial_Quota::class ) && Trial_Quota::is_trial_user() ) {
-            return self::get_guest_trial_usage();
-        }
-
-        if (!$can_fetch) {
-            return self::get_guest_trial_usage();
-        }
-
-		self::debug_log('after_get_usage_fallback', [
-            'has_connected_account' => $has_connected_account,
-            'can_fetch' => $can_fetch,
-            'has_backend_usage' => $has_backend_usage,
-            'live_usage_type' => is_wp_error($live_usage) ? 'wp_error' : (is_array($live_usage) ? 'array' : gettype($live_usage)),
-            'live_source' => is_array($live_usage) ? ($live_usage['source'] ?? null) : null,
-            'returning_local_snapshot' => [
-                'source' => $usage_stats['source'] ?? null,
-                'used' => $usage_stats['used'] ?? null,
-                'limit' => $usage_stats['limit'] ?? null,
-                'remaining' => $usage_stats['remaining'] ?? null,
-            ],
-        ]);
-
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log('[BBAI DEBUG] Usage_Helper output: ' . wp_json_encode($usage_stats));
+		// No connected SaaS account: always use local Trial_Quota for credits. Otherwise a stale JWT
+		// can make can_fetch true and pull remote quota, so the guest hero never reaches
+		// "You've used all N free generations" + locked-library (exhausted) when the local trial is done.
+		if ( ! $has_connected_account ) {
+			return self::get_guest_trial_usage();
 		}
-        return $usage_stats;
-    }
 
-    /**
-     * Normalize usage stats with API data.
-     *
-     * Runtime quota comes from the normalized usage API payload. Do not read
-     * deprecated account/license quota fields here.
-     *
-     * @param  array      $usage_stats Cached usage.
-     * @param  array|null $live_usage  Live usage from API.
-     * @return array
-     */
-    public static function normalize_usage(array $usage_stats, ?array $live_usage = null): array {
-        if (!is_array($live_usage) || empty($live_usage)) {
-            return $usage_stats;
-        }
+		$live_usage        = null;
+		$has_backend_usage = false;
+		$usage_stats       = Usage_Tracker::get_local_usage_snapshot();
+		$can_fetch         = false;
 
-        $quota = is_array($live_usage['quota'] ?? null) ? $live_usage['quota'] : [];
-        $read_number = static function (array $source, array $keys, $default = null) {
-            foreach ($keys as $key) {
-                if (!array_key_exists($key, $source)) {
-                    continue;
-                }
+		try {
+			$can_fetch = $has_connected_account
+				|| ( is_object( $api_client ) && method_exists( $api_client, 'is_authenticated' ) && $api_client->is_authenticated() )
+				|| ( is_object( $api_client ) && method_exists( $api_client, 'has_active_license' ) && $api_client->has_active_license() );
 
-                $value = $source[$key];
-                if (is_numeric($value)) {
-                    return (float) $value;
-                }
-            }
+			if ( $can_fetch ) {
+				self::debug_log(
+					'before_get_usage',
+					array(
+						'has_connected_account' => $has_connected_account,
+						'can_fetch'             => $can_fetch,
+						'local_snapshot'        => array(
+							'source'    => $usage_stats['source'] ?? null,
+							'used'      => $usage_stats['used'] ?? null,
+							'limit'     => $usage_stats['limit'] ?? null,
+							'remaining' => $usage_stats['remaining'] ?? null,
+						),
+					)
+				);
+				$live_usage = $api_client->get_usage();
+				if ( is_array( $live_usage ) && ! empty( $live_usage ) && ! is_wp_error( $live_usage ) ) {
+					$source = strtolower( trim( (string) ( $live_usage['source'] ?? 'remote_usage' ) ) );
+					if ( 'generation_success' === $source ) {
+						return self::normalize_usage( $usage_stats, $live_usage );
+					}
+					$has_backend_usage = ! in_array( $source, array( 'local_snapshot', 'local_trial_snapshot' ), true );
+					if ( $has_backend_usage ) {
+						$local_source = strtolower( trim( (string) ( $usage_stats['source'] ?? '' ) ) );
+						$local_used   = max( 0, (int) ( $usage_stats['used'] ?? $usage_stats['credits_used'] ?? $usage_stats['creditsUsed'] ?? 0 ) );
+						$live_used    = max( 0, (int) ( $live_usage['used'] ?? $live_usage['credits_used'] ?? $live_usage['creditsUsed'] ?? 0 ) );
+						$local_limit  = max( 1, (int) ( $usage_stats['limit'] ?? $usage_stats['credits_total'] ?? $usage_stats['creditsTotal'] ?? 1 ) );
+						$live_limit   = max( 1, (int) ( $live_usage['limit'] ?? $live_usage['credits_total'] ?? $live_usage['creditsTotal'] ?? $live_usage['creditsLimit'] ?? $local_limit ) );
 
-            return $default;
-        };
-        $read_string = static function (array $source, array $keys, string $default = ''): string {
-            foreach ($keys as $key) {
-                if (!array_key_exists($key, $source)) {
-                    continue;
-                }
+						// Successful generation can be reflected locally before the backend usage
+						// endpoint catches up. Do not let a stale lower backend count erase that
+						// post-generation dashboard state; backend wins again once it reaches it.
+						if ( 'generation_success' === $local_source && $local_used > $live_used && $local_limit === $live_limit ) {
+							self::debug_log(
+								'keeping_generation_success_usage',
+								array(
+									'local_used' => $local_used,
+									'live_used'  => $live_used,
+									'limit'      => $local_limit,
+								)
+							);
+							return $usage_stats;
+						}
 
-                $value = $source[$key];
-                if (is_string($value) && '' !== trim($value)) {
-                    return trim($value);
-                }
-            }
+						$local_history_used = Usage_Tracker::get_local_successful_generations_this_month();
+						if ( $local_history_used > $live_used && $local_limit === $live_limit ) {
+							$history_usage = Usage_Tracker::record_local_generation_history_usage( $local_history_used, $live_usage );
+							if ( is_array( $history_usage ) ) {
+								self::debug_log(
+									'using_local_generation_history_usage',
+									array(
+										'local_history_used' => $local_history_used,
+										'live_used' => $live_used,
+										'limit'     => $local_limit,
+									)
+								);
+								return self::normalize_usage( $usage_stats, $history_usage );
+							}
+						}
 
-            return $default;
-        };
+						Usage_Tracker::update_usage( $live_usage );
+					}
+				}
+			}
+		} catch ( Exception $e ) {
+			$usage_stats = Usage_Tracker::get_local_usage_snapshot();
+			self::debug_log(
+				'exception',
+				array(
+					'message'               => $e->getMessage(),
+					'has_connected_account' => $has_connected_account,
+					'can_fetch'             => $can_fetch,
+				)
+			);
+		} catch ( Error $e ) {
+			$usage_stats = Usage_Tracker::get_local_usage_snapshot();
+			self::debug_log(
+				'error',
+				array(
+					'message'               => $e->getMessage(),
+					'has_connected_account' => $has_connected_account,
+					'can_fetch'             => $can_fetch,
+				)
+			);
+		}
 
-        $used = $read_number($live_usage, ['credits_used', 'creditsUsed', 'used'], null);
-        if (null === $used) {
-            $used = $read_number($quota, ['credits_used', 'creditsUsed', 'used'], $usage_stats['used'] ?? 0);
-        }
-        $used = max(0, intval($used));
+		if ( $has_backend_usage && isset( $live_usage ) && is_array( $live_usage ) && ! empty( $live_usage ) && ! is_wp_error( $live_usage ) ) {
+			$usage_stats = self::normalize_usage( $usage_stats, $live_usage );
+			self::debug_log(
+				'after_get_usage_backend',
+				array(
+					'live_source' => $live_usage['source'] ?? null,
+					'normalized'  => array(
+						'source'     => $usage_stats['source'] ?? null,
+						'used'       => $usage_stats['used'] ?? null,
+						'limit'      => $usage_stats['limit'] ?? null,
+						'remaining'  => $usage_stats['remaining'] ?? null,
+						'plan'       => $usage_stats['plan'] ?? null,
+						'quota_type' => $usage_stats['quota_type'] ?? null,
+					),
+				)
+			);
 
-        $limit = $read_number($live_usage, ['credits_total', 'creditsTotal', 'creditsLimit', 'limit'], null);
-        if (null === $limit) {
-            $limit = $read_number($quota, ['credits_total', 'creditsTotal', 'creditsLimit', 'limit'], $usage_stats['limit'] ?? 1);
-        }
-        $limit = max(1, intval($limit));
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( '[BBAI DEBUG] Usage_Helper output: ' . wp_json_encode( $usage_stats ) );
+			}
+			return $usage_stats;
+		}
 
-        $remaining = $read_number($live_usage, ['credits_remaining', 'creditsRemaining', 'remaining'], null);
-        if (null === $remaining) {
-            $remaining = $read_number($quota, ['credits_remaining', 'creditsRemaining', 'remaining'], null);
-        }
-        if (null === $remaining) {
-            $remaining = max(0, $limit - $used);
-        }
-        $remaining = max(0, intval($remaining));
+		// Local trial is a fallback only when backend/account usage truth is unavailable.
+		if ( class_exists( Trial_Quota::class ) && Trial_Quota::is_trial_user() ) {
+			return self::get_guest_trial_usage();
+		}
 
-        $usage_stats['used'] = $used;
-        $usage_stats['limit'] = $limit;
-        $usage_stats['remaining'] = $remaining;
-        $usage_stats['credits_used'] = $used;
-        $usage_stats['credits_total'] = $limit;
-        $usage_stats['credits_remaining'] = $remaining;
-        $usage_stats['creditsUsed'] = $used;
-        $usage_stats['creditsTotal'] = $limit;
-        $usage_stats['creditsLimit'] = $limit;
-        $usage_stats['creditsRemaining'] = $remaining;
+		if ( ! $can_fetch ) {
+			return self::get_guest_trial_usage();
+		}
 
-        $percentage = $limit > 0 ? (($used / $limit) * 100) : 0;
-        $usage_stats['percentage'] = min(100, max(0, $percentage));
-        $usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label($usage_stats['percentage']);
+		self::debug_log(
+			'after_get_usage_fallback',
+			array(
+				'has_connected_account'    => $has_connected_account,
+				'can_fetch'                => $can_fetch,
+				'has_backend_usage'        => $has_backend_usage,
+				'live_usage_type'          => is_wp_error( $live_usage ) ? 'wp_error' : ( is_array( $live_usage ) ? 'array' : gettype( $live_usage ) ),
+				'live_source'              => is_array( $live_usage ) ? ( $live_usage['source'] ?? null ) : null,
+				'returning_local_snapshot' => array(
+					'source'    => $usage_stats['source'] ?? null,
+					'used'      => $usage_stats['used'] ?? null,
+					'limit'     => $usage_stats['limit'] ?? null,
+					'remaining' => $usage_stats['remaining'] ?? null,
+				),
+			)
+		);
 
-        $auth_state = $read_string($live_usage, ['auth_state'], $read_string($quota, ['auth_state'], 'authenticated'));
-        $quota_type = $read_string($live_usage, ['quota_type'], $read_string($quota, ['quota_type'], ''));
-        $plan = $read_string($live_usage, ['plan_type', 'plan'], $read_string($quota, ['plan_type', 'plan'], ''));
-        if ('' === $plan && ('anonymous' === $auth_state || 'trial' === $quota_type)) {
-            $plan = 'trial';
-        }
-        if ('' === $plan) {
-            $plan = (string) ($usage_stats['plan_type'] ?? ($usage_stats['plan'] ?? 'free'));
-        }
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[BBAI DEBUG] Usage_Helper output: ' . wp_json_encode( $usage_stats ) );
+		}
+		return $usage_stats;
+	}
 
-        $inferred_trial = self::should_infer_anonymous_trial($live_usage, $quota, $limit, $plan, $auth_state, $quota_type);
-        if ($inferred_trial) {
-            $auth_state = 'anonymous';
-            $quota_type = 'trial';
-            if ('' === $plan || in_array($plan, ['free', 'trial', 'anonymous_trial'], true)) {
-                $plan = 'trial';
-            }
-        }
+	/**
+	 * Normalize usage stats with API data.
+	 *
+	 * Runtime quota comes from the normalized usage API payload. Do not read
+	 * deprecated account/license quota fields here.
+	 *
+	 * @param  array      $usage_stats Cached usage.
+	 * @param  array|null $live_usage  Live usage from API.
+	 * @return array
+	 */
+	public static function normalize_usage( array $usage_stats, ?array $live_usage = null ): array {
+		if ( ! is_array( $live_usage ) || empty( $live_usage ) ) {
+			return $usage_stats;
+		}
 
-        $usage_stats['source'] = $live_usage['source'] ?? 'remote_usage';
-        $usage_stats['plan'] = $plan;
-        $usage_stats['plan_type'] = $plan;
-        $usage_stats['plan_label'] = isset($live_usage['plan_label']) && is_string($live_usage['plan_label']) && '' !== trim($live_usage['plan_label'])
-            ? $live_usage['plan_label']
-            : ('trial' === $plan ? __('Free trial', 'beepbeep-ai-alt-text-generator') : ucfirst($plan));
-        $usage_stats['is_free'] = in_array($plan, ['free', 'trial'], true);
-        $usage_stats['is_pro'] = in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true);
-        if ('' === $quota_type) {
-            $quota_type = 'trial' === $plan
-                ? 'trial'
-                : (in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'paid' : 'monthly_account');
-        }
-        $usage_stats['auth_state'] = $auth_state;
-        $usage_stats['quota_type'] = $quota_type;
-        $usage_stats['quota_state'] = isset($live_usage['quota_state']) && is_string($live_usage['quota_state']) && '' !== trim($live_usage['quota_state'])
-            ? $live_usage['quota_state']
-            : self::determine_quota_state($remaining, $limit, 'trial' === $quota_type);
-        $usage_stats['low_credit_threshold'] = isset($live_usage['low_credit_threshold'])
-            ? max(0, (int) $live_usage['low_credit_threshold'])
-            : ('trial' === $quota_type
-                ? ( function_exists('\BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold')
-                    ? max(0, (int) \BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold($limit))
-                    : min(2, max(1, $limit - 1)) )
-                : 10);
-        $usage_stats['signup_required'] = isset($live_usage['signup_required'])
-            ? (bool) $live_usage['signup_required']
-            : ('trial' === $quota_type && $remaining <= 0);
-        $usage_stats['upgrade_required'] = isset($live_usage['upgrade_required'])
-            ? (bool) $live_usage['upgrade_required']
-            : ('trial' === $quota_type ? false : (!$usage_stats['is_pro'] && $remaining <= 0));
-        $usage_stats['free_plan_offer'] = max(0, (int) ($live_usage['free_plan_offer'] ?? $usage_stats['free_plan_offer'] ?? 50));
-        $usage_stats['is_trial'] = isset($live_usage['is_trial'])
-            ? (bool) $live_usage['is_trial']
-            : ('trial' === $plan || 'trial' === $quota_type || 'anonymous' === $auth_state || $inferred_trial);
-        $usage_stats['trial_exhausted'] = isset($live_usage['trial_exhausted'])
-            ? (bool) $live_usage['trial_exhausted']
-            : ($usage_stats['is_trial'] && $remaining <= 0);
+		$quota       = is_array( $live_usage['quota'] ?? null ) ? $live_usage['quota'] : array();
+		$read_number = static function ( array $source, array $keys, $default = null ) {
+			foreach ( $keys as $key ) {
+				if ( ! array_key_exists( $key, $source ) ) {
+					continue;
+				}
 
-        if ('trial' === $quota_type && !isset($live_usage['resetDate']) && !isset($live_usage['reset_date']) && !isset($live_usage['reset_timestamp'])) {
-            unset($usage_stats['resetDate'], $usage_stats['reset_date'], $usage_stats['reset_timestamp'], $usage_stats['seconds_until_reset']);
-            $usage_stats['days_until_reset'] = null;
-            $usage_stats['daysUntilReset'] = null;
-        } elseif (isset($live_usage['resetDate'])) {
-            $usage_stats['resetDate'] = $live_usage['resetDate'];
-        }
-        if (isset($live_usage['reset_timestamp'])) {
-            $usage_stats['reset_timestamp'] = $live_usage['reset_timestamp'];
-            $usage_stats['reset_date'] = date_i18n('F j, Y', $live_usage['reset_timestamp']);
-        } elseif (isset($live_usage['resetDate']) || isset($live_usage['reset_date'])) {
-            $reset_value = $live_usage['resetDate'] ?? $live_usage['reset_date'];
-            $parsed_ts = strtotime((string) $reset_value);
-            if ($parsed_ts > 0) {
-                $usage_stats['reset_timestamp'] = $parsed_ts;
-                $usage_stats['reset_date'] = date_i18n('F j, Y', $parsed_ts);
-                $usage_stats['resetDate'] = date_i18n('Y-m-d', $parsed_ts);
-            }
-        }
+				$value = $source[ $key ];
+				if ( is_numeric( $value ) ) {
+					return (float) $value;
+				}
+			}
 
-        if (!isset($usage_stats['resetDate']) && isset($usage_stats['reset_timestamp'])) {
-            $usage_stats['resetDate'] = date_i18n('Y-m-d', (int) $usage_stats['reset_timestamp']);
-        }
+			return $default;
+		};
+		$read_string = static function ( array $source, array $keys, string $default = '' ): string {
+			foreach ( $keys as $key ) {
+				if ( ! array_key_exists( $key, $source ) ) {
+					continue;
+				}
 
-        if (isset($usage_stats['reset_timestamp']) && is_numeric($usage_stats['reset_timestamp'])) {
-            $reset_timestamp = max(0, (int) $usage_stats['reset_timestamp']);
-            $now = (int) current_time('timestamp');
-            $seconds_until_reset = max(0, $reset_timestamp - $now);
-            $usage_stats['seconds_until_reset'] = $seconds_until_reset;
-            $usage_stats['days_until_reset'] = Usage_Tracker::seconds_to_days_until_reset($seconds_until_reset);
-        }
+				$value = $source[ $key ];
+				if ( is_string( $value ) && '' !== trim( $value ) ) {
+					return trim( $value );
+				}
+			}
 
-        $usage_stats['quota'] = array_merge(
-            is_array($usage_stats['quota'] ?? null) ? $usage_stats['quota'] : [],
-            [
-                'used' => $used,
-                'limit' => $limit,
-                'remaining' => $remaining,
-                'plan_type' => $plan,
-                'auth_state' => $usage_stats['auth_state'],
-                'quota_type' => $usage_stats['quota_type'],
-                'quota_state' => $usage_stats['quota_state'],
-                'low_credit_threshold' => $usage_stats['low_credit_threshold'],
-                'signup_required' => $usage_stats['signup_required'],
-                'upgrade_required' => $usage_stats['upgrade_required'],
-                'free_plan_offer' => $usage_stats['free_plan_offer'],
-                'is_trial' => $usage_stats['is_trial'],
-                'trial_exhausted' => $usage_stats['trial_exhausted'],
-            ]
-        );
+			return $default;
+		};
 
-        return $usage_stats;
-    }
+		$used = $read_number( $live_usage, array( 'credits_used', 'creditsUsed', 'used' ), null );
+		if ( null === $used ) {
+			$used = $read_number( $quota, array( 'credits_used', 'creditsUsed', 'used' ), $usage_stats['used'] ?? 0 );
+		}
+		$used = max( 0, intval( $used ) );
+
+		$limit = $read_number( $live_usage, array( 'credits_total', 'creditsTotal', 'creditsLimit', 'limit' ), null );
+		if ( null === $limit ) {
+			$limit = $read_number( $quota, array( 'credits_total', 'creditsTotal', 'creditsLimit', 'limit' ), $usage_stats['limit'] ?? 1 );
+		}
+		$limit = max( 1, intval( $limit ) );
+
+		$remaining = $read_number( $live_usage, array( 'credits_remaining', 'creditsRemaining', 'remaining' ), null );
+		if ( null === $remaining ) {
+			$remaining = $read_number( $quota, array( 'credits_remaining', 'creditsRemaining', 'remaining' ), null );
+		}
+		if ( null === $remaining ) {
+			$remaining = max( 0, $limit - $used );
+		}
+		$remaining = max( 0, intval( $remaining ) );
+
+		$usage_stats['used']              = $used;
+		$usage_stats['limit']             = $limit;
+		$usage_stats['remaining']         = $remaining;
+		$usage_stats['credits_used']      = $used;
+		$usage_stats['credits_total']     = $limit;
+		$usage_stats['credits_remaining'] = $remaining;
+		$usage_stats['creditsUsed']       = $used;
+		$usage_stats['creditsTotal']      = $limit;
+		$usage_stats['creditsLimit']      = $limit;
+		$usage_stats['creditsRemaining']  = $remaining;
+
+		$percentage                        = $limit > 0 ? ( ( $used / $limit ) * 100 ) : 0;
+		$usage_stats['percentage']         = min( 100, max( 0, $percentage ) );
+		$usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label( $usage_stats['percentage'] );
+
+		$auth_state = $read_string( $live_usage, array( 'auth_state' ), $read_string( $quota, array( 'auth_state' ), 'authenticated' ) );
+		$quota_type = $read_string( $live_usage, array( 'quota_type' ), $read_string( $quota, array( 'quota_type' ), '' ) );
+		$plan       = $read_string( $live_usage, array( 'plan_type', 'plan' ), $read_string( $quota, array( 'plan_type', 'plan' ), '' ) );
+		if ( '' === $plan && ( 'anonymous' === $auth_state || 'trial' === $quota_type ) ) {
+			$plan = 'trial';
+		}
+		if ( '' === $plan ) {
+			$plan = (string) ( $usage_stats['plan_type'] ?? ( $usage_stats['plan'] ?? 'free' ) );
+		}
+
+		$inferred_trial = self::should_infer_anonymous_trial( $live_usage, $quota, $limit, $plan, $auth_state, $quota_type );
+		if ( $inferred_trial ) {
+			$auth_state = 'anonymous';
+			$quota_type = 'trial';
+			if ( '' === $plan || in_array( $plan, array( 'free', 'trial', 'anonymous_trial' ), true ) ) {
+				$plan = 'trial';
+			}
+		}
+
+		$usage_stats['source']     = $live_usage['source'] ?? 'remote_usage';
+		$usage_stats['plan']       = $plan;
+		$usage_stats['plan_type']  = $plan;
+		$usage_stats['plan_label'] = isset( $live_usage['plan_label'] ) && is_string( $live_usage['plan_label'] ) && '' !== trim( $live_usage['plan_label'] )
+			? $live_usage['plan_label']
+			: ( 'trial' === $plan ? __( 'Free trial', 'beepbeep-ai-alt-text-generator' ) : ucfirst( $plan ) );
+		$usage_stats['is_free']    = in_array( $plan, array( 'free', 'trial' ), true );
+		$usage_stats['is_pro']     = in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+		if ( '' === $quota_type ) {
+			$quota_type = 'trial' === $plan
+				? 'trial'
+				: ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'paid' : 'monthly_account' );
+		}
+		$usage_stats['auth_state']           = $auth_state;
+		$usage_stats['quota_type']           = $quota_type;
+		$usage_stats['quota_state']          = isset( $live_usage['quota_state'] ) && is_string( $live_usage['quota_state'] ) && '' !== trim( $live_usage['quota_state'] )
+			? $live_usage['quota_state']
+			: self::determine_quota_state( $remaining, $limit, 'trial' === $quota_type );
+		$usage_stats['low_credit_threshold'] = isset( $live_usage['low_credit_threshold'] )
+			? max( 0, (int) $live_usage['low_credit_threshold'] )
+			: ( 'trial' === $quota_type
+				? ( function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold' )
+					? max( 0, (int) \BeepBeepAI\AltTextGenerator\bbai_get_trial_near_limit_threshold( $limit ) )
+					: min( 2, max( 1, $limit - 1 ) ) )
+				: 10 );
+		$usage_stats['signup_required']      = isset( $live_usage['signup_required'] )
+			? (bool) $live_usage['signup_required']
+			: ( 'trial' === $quota_type && $remaining <= 0 );
+		$usage_stats['upgrade_required']     = isset( $live_usage['upgrade_required'] )
+			? (bool) $live_usage['upgrade_required']
+			: ( 'trial' === $quota_type ? false : ( ! $usage_stats['is_pro'] && $remaining <= 0 ) );
+		$usage_stats['free_plan_offer']      = max( 0, (int) ( $live_usage['free_plan_offer'] ?? $usage_stats['free_plan_offer'] ?? 50 ) );
+		$usage_stats['is_trial']             = isset( $live_usage['is_trial'] )
+			? (bool) $live_usage['is_trial']
+			: ( 'trial' === $plan || 'trial' === $quota_type || 'anonymous' === $auth_state || $inferred_trial );
+		$usage_stats['trial_exhausted']      = isset( $live_usage['trial_exhausted'] )
+			? (bool) $live_usage['trial_exhausted']
+			: ( $usage_stats['is_trial'] && $remaining <= 0 );
+
+		if ( 'trial' === $quota_type && ! isset( $live_usage['resetDate'] ) && ! isset( $live_usage['reset_date'] ) && ! isset( $live_usage['reset_timestamp'] ) ) {
+			unset( $usage_stats['resetDate'], $usage_stats['reset_date'], $usage_stats['reset_timestamp'], $usage_stats['seconds_until_reset'] );
+			$usage_stats['days_until_reset'] = null;
+			$usage_stats['daysUntilReset']   = null;
+		} elseif ( isset( $live_usage['resetDate'] ) ) {
+			$usage_stats['resetDate'] = $live_usage['resetDate'];
+		}
+		if ( isset( $live_usage['reset_timestamp'] ) ) {
+			$usage_stats['reset_timestamp'] = $live_usage['reset_timestamp'];
+			$usage_stats['reset_date']      = date_i18n( 'F j, Y', $live_usage['reset_timestamp'] );
+		} elseif ( isset( $live_usage['resetDate'] ) || isset( $live_usage['reset_date'] ) ) {
+			$reset_value = $live_usage['resetDate'] ?? $live_usage['reset_date'];
+			$parsed_ts   = strtotime( (string) $reset_value );
+			if ( $parsed_ts > 0 ) {
+				$usage_stats['reset_timestamp'] = $parsed_ts;
+				$usage_stats['reset_date']      = date_i18n( 'F j, Y', $parsed_ts );
+				$usage_stats['resetDate']       = date_i18n( 'Y-m-d', $parsed_ts );
+			}
+		}
+
+		if ( ! isset( $usage_stats['resetDate'] ) && isset( $usage_stats['reset_timestamp'] ) ) {
+			$usage_stats['resetDate'] = date_i18n( 'Y-m-d', (int) $usage_stats['reset_timestamp'] );
+		}
+
+		if ( isset( $usage_stats['reset_timestamp'] ) && is_numeric( $usage_stats['reset_timestamp'] ) ) {
+			$reset_timestamp                    = max( 0, (int) $usage_stats['reset_timestamp'] );
+			$now                                = (int) current_time( 'timestamp' );
+			$seconds_until_reset                = max( 0, $reset_timestamp - $now );
+			$usage_stats['seconds_until_reset'] = $seconds_until_reset;
+			$usage_stats['days_until_reset']    = Usage_Tracker::seconds_to_days_until_reset( $seconds_until_reset );
+		}
+
+		$usage_stats['quota'] = array_merge(
+			is_array( $usage_stats['quota'] ?? null ) ? $usage_stats['quota'] : array(),
+			array(
+				'used'                 => $used,
+				'limit'                => $limit,
+				'remaining'            => $remaining,
+				'plan_type'            => $plan,
+				'auth_state'           => $usage_stats['auth_state'],
+				'quota_type'           => $usage_stats['quota_type'],
+				'quota_state'          => $usage_stats['quota_state'],
+				'low_credit_threshold' => $usage_stats['low_credit_threshold'],
+				'signup_required'      => $usage_stats['signup_required'],
+				'upgrade_required'     => $usage_stats['upgrade_required'],
+				'free_plan_offer'      => $usage_stats['free_plan_offer'],
+				'is_trial'             => $usage_stats['is_trial'],
+				'trial_exhausted'      => $usage_stats['trial_exhausted'],
+			)
+		);
+
+		return $usage_stats;
+	}
 }

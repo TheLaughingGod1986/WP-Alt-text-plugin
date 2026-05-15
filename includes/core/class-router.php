@@ -60,7 +60,7 @@ class Router {
 	 * @param bool   $auth       Require authentication (default true).
 	 * @return void
 	 */
-	public function ajax(string $action, string $controller, string $method, bool $auth = true): void {
+	public function ajax( string $action, string $controller, string $method, bool $auth = true ): void {
 		$this->ajax_routes[ $action ] = array(
 			'controller' => $controller,
 			'method'     => $method,
@@ -80,7 +80,7 @@ class Router {
 	 * @param callable|null $permission_callback Permission callback (default requires manage_options).
 	 * @return void
 	 */
-	public function rest(string $route, string $controller, string $method, string $methods = 'POST', ?callable $permission_callback = null): void {
+	public function rest( string $route, string $controller, string $method, string $methods = 'POST', ?callable $permission_callback = null ): void {
 		$this->rest_routes[ $route ] = array(
 			'controller'          => $controller,
 			'method'              => $method,
@@ -123,13 +123,13 @@ class Router {
 	 * @param array  $route  Route configuration.
 	 * @return void
 	 */
-		private function handle_ajax(string $action, array $route): void {
-			try {
-				// Verify nonce.
-				if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-					wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
-					return;
-				}
+	private function handle_ajax( string $action, array $route ): void {
+		try {
+			// Verify nonce.
+			if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+				return;
+			}
 
 			// Check authentication if required.
 			if ( $route['auth'] && ! is_user_logged_in() ) {
@@ -148,17 +148,17 @@ class Router {
 			$result = $controller->$method();
 
 			wp_send_json_success( $result );
-			} catch ( \Throwable $e ) {
-				wp_send_json_error(
-					array(
-						'message' => $e->getMessage(),
-						'code'    => $e->getCode(),
-					),
-					500
-				);
-				return;
-			}
+		} catch ( \Throwable $e ) {
+			wp_send_json_error(
+				array(
+					'message' => $e->getMessage(),
+					'code'    => $e->getCode(),
+				),
+				500
+			);
+			return;
 		}
+	}
 
 	/**
 	 * Register REST API routes.

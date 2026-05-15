@@ -43,7 +43,7 @@ if ( ! defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) ) {
 	}
 	define(
 		'BEEPBEEP_AI_LOCAL_ALT_STUB',
-		$bbai_stub_host !== '' && 1 === preg_match( '/^(localhost|127\.0\.0\.1)(:\d+)?$/', $bbai_stub_host )
+		'' !== $bbai_stub_host && 1 === preg_match( '/^(localhost|127\.0\.0\.1)(:\d+)?$/', $bbai_stub_host )
 	);
 }
 
@@ -61,7 +61,7 @@ if ( ! function_exists( 'bbai_is_authenticated' ) ) {
 		$token        = get_option( 'beepbeepai_jwt_token', '' );
 		$legacy_token = get_option( 'opptibbai_jwt_token', '' );
 		$license_key  = get_option( 'beepbeepai_license_key', '' );
-		$license_data = get_option( 'beepbeepai_license_data', [] );
+		$license_data = get_option( 'beepbeepai_license_data', array() );
 
 		if ( ! empty( $token ) || ! empty( $legacy_token ) || ! empty( $license_key ) || ! empty( $license_data ) ) {
 			return true;
@@ -97,7 +97,7 @@ if ( ! function_exists( 'bbai_enqueue_logged_out_styles' ) ) {
 		wp_enqueue_style(
 			'bbai-logged-out',
 			BEEPBEEP_AI_PLUGIN_URL . $css_rel,
-			[],
+			array(),
 			file_exists( $css_path ) ? filemtime( $css_path ) : BEEPBEEP_AI_VERSION
 		);
 	}
@@ -130,7 +130,7 @@ if ( ! function_exists( 'bbai_enable_wp_json_fallback_route' ) ) {
 			return;
 		}
 
-		$request_uri = $request_uri_raw;
+		$request_uri  = $request_uri_raw;
 		$request_path = wp_parse_url( $request_uri, PHP_URL_PATH );
 		if ( ! is_string( $request_path ) || '' === $request_path ) {
 			return;
@@ -273,10 +273,10 @@ if ( ! function_exists( 'beepbeepai_activate' ) ) {
 		if ( is_multisite() && $network_wide ) {
 			$current_blog_id = get_current_blog_id();
 			$site_ids        = get_sites(
-				[
+				array(
 					'fields' => 'ids',
 					'number' => 0,
-				]
+				)
 			);
 
 			foreach ( $site_ids as $site_id ) {
@@ -312,10 +312,10 @@ if ( ! function_exists( 'beepbeepai_deactivate' ) ) {
 		if ( is_multisite() && $network_wide ) {
 			$current_blog_id = get_current_blog_id();
 			$site_ids        = get_sites(
-				[
+				array(
 					'fields' => 'ids',
 					'number' => 0,
-				]
+				)
 			);
 
 			foreach ( $site_ids as $site_id ) {
@@ -371,4 +371,4 @@ function beepbeepai_run() {
 beepbeepai_run();
 
 // Check for DB schema upgrades on admin pages (handles plugin updates without reactivation).
-add_action( 'admin_init', [ '\BeepBeepAI\AltTextGenerator\DB_Schema', 'maybe_upgrade' ] );
+add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\DB_Schema', 'maybe_upgrade' ) );

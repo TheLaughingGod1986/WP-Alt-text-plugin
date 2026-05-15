@@ -28,7 +28,7 @@ if ( ! function_exists( 'bbai_calculate_alt_quality_score' ) ) {
 		if ( ! class_exists( 'BBAI_Alt_Quality_Scorer' ) ) {
 			$scorer_path = defined( 'BEEPBEEP_AI_PLUGIN_DIR' )
 				? BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-alt-quality-scorer.php'
-				: dirname( __FILE__ ) . '/class-alt-quality-scorer.php';
+				: __DIR__ . '/class-alt-quality-scorer.php';
 			if ( file_exists( $scorer_path ) ) {
 				require_once $scorer_path;
 			}
@@ -78,7 +78,7 @@ if ( ! function_exists( 'bbai_calculate_alt_quality' ) ) {
 		if ( ! class_exists( 'BBAI_Alt_Quality_Scorer' ) ) {
 			$scorer_path = defined( 'BEEPBEEP_AI_PLUGIN_DIR' )
 				? BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-alt-quality-scorer.php'
-				: dirname( __FILE__ ) . '/class-alt-quality-scorer.php';
+				: __DIR__ . '/class-alt-quality-scorer.php';
 			if ( file_exists( $scorer_path ) ) {
 				require_once $scorer_path;
 			}

@@ -125,21 +125,21 @@ class Trial_Quota {
 		$free_plan_offer = self::get_free_plan_offer();
 		$quota_state     = self::get_quota_state();
 
-		return [
-			'auth_state'        => 'anonymous',
-			'quota_type'        => 'trial',
-			'quota_state'       => $quota_state,
-			'credits_total'     => $limit,
-			'credits_used'      => $used,
-			'credits_remaining' => $remaining,
+		return array(
+			'auth_state'           => 'anonymous',
+			'quota_type'           => 'trial',
+			'quota_state'          => $quota_state,
+			'credits_total'        => $limit,
+			'credits_used'         => $used,
+			'credits_remaining'    => $remaining,
 			'low_credit_threshold' => self::get_low_credit_threshold(),
-			'signup_required'   => $remaining <= 0,
-			'upgrade_required'  => false,
-			'free_plan_offer'   => $free_plan_offer,
-			'plan'              => 'trial',
-			'plan_type'         => 'trial',
-			'plan_label'        => __( 'Free trial', 'beepbeep-ai-alt-text-generator' ),
-		];
+			'signup_required'      => $remaining <= 0,
+			'upgrade_required'     => false,
+			'free_plan_offer'      => $free_plan_offer,
+			'plan'                 => 'trial',
+			'plan_type'            => 'trial',
+			'plan_label'           => __( 'Free trial', 'beepbeep-ai-alt-text-generator' ),
+		);
 	}
 
 	/**
@@ -217,7 +217,7 @@ class Trial_Quota {
 	 * @return void
 	 */
 	public static function begin_claimed_generation(): void {
-		self::$claimed_generation_depth++;
+		++self::$claimed_generation_depth;
 	}
 
 	/**
@@ -227,7 +227,7 @@ class Trial_Quota {
 	 */
 	public static function end_claimed_generation(): void {
 		if ( self::$claimed_generation_depth > 0 ) {
-			self::$claimed_generation_depth--;
+			--self::$claimed_generation_depth;
 		}
 	}
 
@@ -363,8 +363,8 @@ class Trial_Quota {
 				return false;
 			}
 
-			$stored_token  = get_option( 'beepbeepai_jwt_token', '' );
-			$legacy_token  = get_option( 'opptibbai_jwt_token', '' );
+			$stored_token   = get_option( 'beepbeepai_jwt_token', '' );
+			$legacy_token   = get_option( 'opptibbai_jwt_token', '' );
 			$stored_license = $api->get_license_key();
 			if ( ! empty( $stored_token ) || ! empty( $legacy_token ) || ! empty( $stored_license ) ) {
 				return false;
@@ -396,14 +396,14 @@ class Trial_Quota {
 			self::get_exhausted_message(),
 			array_merge(
 				$contract,
-				[
-				'code'      => 'bbai_trial_exhausted',
-				'remaining' => 0,
-				'remaining_free_images' => 0,
-				'limit'     => $limit,
-				'used'      => self::get_used(),
-				'site_hash' => self::get_site_hash(),
-				]
+				array(
+					'code'                  => 'bbai_trial_exhausted',
+					'remaining'             => 0,
+					'remaining_free_images' => 0,
+					'limit'                 => $limit,
+					'used'                  => self::get_used(),
+					'site_hash'             => self::get_site_hash(),
+				)
 			)
 		);
 	}
@@ -418,23 +418,23 @@ class Trial_Quota {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
 		}
 
-		$site_hash     = self::get_site_hash();
-		$anon_id       = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_anon_id' ) ? bbai_get_anon_id() : '';
-		$identity_key  = bbai_get_trial_identity_key( $site_hash, $anon_id );
+		$site_hash    = self::get_site_hash();
+		$anon_id      = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_anon_id' ) ? bbai_get_anon_id() : '';
+		$identity_key = bbai_get_trial_identity_key( $site_hash, $anon_id );
 
 		return array_merge(
 			self::build_contract(),
-			[
-			'is_trial'      => self::is_trial_user(),
-			'limit'         => self::get_limit(),
-			'used'          => self::get_used(),
-			'remaining'     => self::get_remaining(),
-			'remaining_free_images' => self::get_remaining(),
-			'exhausted'     => self::is_exhausted(),
-			'site_hash'     => $site_hash,
-			'anon_id'       => $anon_id,
-			'identity_key'  => $identity_key,
-			]
+			array(
+				'is_trial'              => self::is_trial_user(),
+				'limit'                 => self::get_limit(),
+				'used'                  => self::get_used(),
+				'remaining'             => self::get_remaining(),
+				'remaining_free_images' => self::get_remaining(),
+				'exhausted'             => self::is_exhausted(),
+				'site_hash'             => $site_hash,
+				'anon_id'               => $anon_id,
+				'identity_key'          => $identity_key,
+			)
 		);
 	}
 

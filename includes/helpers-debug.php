@@ -114,7 +114,7 @@ if ( ! function_exists( 'bbai_debug_log' ) ) {
 				JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
 			);
 
-			if ( is_string( $json ) && $json !== '' ) {
+			if ( is_string( $json ) && '' !== $json ) {
 				$line .= ' ' . str_replace( array( "\r", "\n" ), ' ', $json );
 			}
 		}

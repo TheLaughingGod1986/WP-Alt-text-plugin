@@ -8,19 +8,19 @@
  * @package BeepBeep_AI
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-$bbai_ib = isset($bbai_inline_banner) && is_array($bbai_inline_banner) ? $bbai_inline_banner : [];
-if ('' === trim((string) ($bbai_ib['title'] ?? ''))) {
-    return;
+$bbai_ib = isset( $bbai_inline_banner ) && is_array( $bbai_inline_banner ) ? $bbai_inline_banner : array();
+if ( '' === trim( (string) ( $bbai_ib['title'] ?? '' ) ) ) {
+	return;
 }
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
 
-$bbai_ui = [
-    'command_hero' => bbai_banner_inline_payload_to_command_hero($bbai_ib),
-];
+$bbai_ui = array(
+	'command_hero' => bbai_banner_inline_payload_to_command_hero( $bbai_ib ),
+);
 
 require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/status-banner.php';

@@ -6,7 +6,7 @@
 
 namespace BeepBeepAI\AltTextGenerator\Usage;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -19,9 +19,9 @@ if (!defined('ABSPATH')) {
  * @param array  $context Optional context data (image_id, post_id, etc.).
  * @return int|false The ID of the inserted record, or false on failure.
  */
-function record_usage_event($user_id, $tokens_used, $action_type = 'generate', $context = []) {
+function record_usage_event( $user_id, $tokens_used, $action_type = 'generate', $context = array() ) {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-logs.php';
-	return Usage_Logs::record_usage_event($user_id, $tokens_used, $action_type, $context);
+	return Usage_Logs::record_usage_event( $user_id, $tokens_used, $action_type, $context );
 }
 
 /**
@@ -50,8 +50,7 @@ function get_monthly_usage_by_user() {
  * @param array $filters Filter options (user_id, date_from, date_to, action_type, per_page, page).
  * @return array Events with pagination info.
  */
-function get_usage_events($filters = []) {
+function get_usage_events( $filters = array() ) {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/usage/class-usage-logs.php';
-	return Usage_Logs::get_usage_events($filters);
+	return Usage_Logs::get_usage_events( $filters );
 }
-

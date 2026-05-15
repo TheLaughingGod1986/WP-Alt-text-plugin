@@ -9,170 +9,170 @@
 
 namespace BeepBeepAI\AltTextGenerator;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 class Onboarding {
-    const META_KEY_COMPLETED = 'bbai_onboarding_completed';
-    const META_KEY_MILESTONES = 'bbai_milestones';
-    const META_KEY_PREFERENCES = 'bbai_preferences';
-    const META_KEY_LAST_SEEN = 'bbai_last_seen';
+	const META_KEY_COMPLETED   = 'bbai_onboarding_completed';
+	const META_KEY_MILESTONES  = 'bbai_milestones';
+	const META_KEY_PREFERENCES = 'bbai_preferences';
+	const META_KEY_LAST_SEEN   = 'bbai_last_seen';
 
-    /**
-     * Check if user has completed onboarding
-     *
-     * @param int|null $user_id User ID, defaults to current user
-     * @return bool
-     */
-    public static function is_completed($user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Check if user has completed onboarding
+	 *
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return bool
+	 */
+	public static function is_completed( $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return false;
-        }
+		if ( ! $user_id ) {
+			return false;
+		}
 
-        return (bool) get_user_meta($user_id, self::META_KEY_COMPLETED, true);
-    }
+		return (bool) get_user_meta( $user_id, self::META_KEY_COMPLETED, true );
+	}
 
-    /**
-     * Mark onboarding as completed
-     *
-     * @param int|null $user_id User ID, defaults to current user
-     * @return bool
-     */
-    public static function mark_completed($user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Mark onboarding as completed
+	 *
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return bool
+	 */
+	public static function mark_completed( $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return false;
-        }
+		if ( ! $user_id ) {
+			return false;
+		}
 
-        return update_user_meta($user_id, self::META_KEY_COMPLETED, true);
-    }
+		return update_user_meta( $user_id, self::META_KEY_COMPLETED, true );
+	}
 
-    /**
-     * Reset onboarding (for testing or re-showing)
-     *
-     * @param int|null $user_id User ID, defaults to current user
-     * @return bool
-     */
-    public static function reset($user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Reset onboarding (for testing or re-showing)
+	 *
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return bool
+	 */
+	public static function reset( $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return false;
-        }
+		if ( ! $user_id ) {
+			return false;
+		}
 
-        return delete_user_meta($user_id, self::META_KEY_COMPLETED);
-    }
+		return delete_user_meta( $user_id, self::META_KEY_COMPLETED );
+	}
 
-    /**
-     * Get user milestones
-     *
-     * @param int|null $user_id User ID, defaults to current user
-     * @return array
-     */
-    public static function get_milestones($user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Get user milestones
+	 *
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return array
+	 */
+	public static function get_milestones( $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return [];
-        }
+		if ( ! $user_id ) {
+			return array();
+		}
 
-        $milestones = get_user_meta($user_id, self::META_KEY_MILESTONES, true);
-        return is_array($milestones) ? $milestones : [];
-    }
+		$milestones = get_user_meta( $user_id, self::META_KEY_MILESTONES, true );
+		return is_array( $milestones ) ? $milestones : array();
+	}
 
-    /**
-     * Add milestone
-     *
-     * @param string $milestone Milestone key (e.g., 'first_generation', '100_images')
-     * @param int|null $user_id User ID, defaults to current user
-     * @return bool
-     */
-    public static function add_milestone($milestone, $user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Add milestone
+	 *
+	 * @param string $milestone Milestone key (e.g., 'first_generation', '100_images')
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return bool
+	 */
+	public static function add_milestone( $milestone, $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return false;
-        }
+		if ( ! $user_id ) {
+			return false;
+		}
 
-        $milestones = self::get_milestones($user_id);
-        if (!in_array($milestone, $milestones, true)) {
-            $milestones[] = $milestone;
-            return update_user_meta($user_id, self::META_KEY_MILESTONES, $milestones);
-        }
+		$milestones = self::get_milestones( $user_id );
+		if ( ! in_array( $milestone, $milestones, true ) ) {
+			$milestones[] = $milestone;
+			return update_user_meta( $user_id, self::META_KEY_MILESTONES, $milestones );
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    /**
-     * Get user preferences
-     *
-     * @param int|null $user_id User ID, defaults to current user
-     * @return array
-     */
-    public static function get_preferences($user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Get user preferences
+	 *
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return array
+	 */
+	public static function get_preferences( $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return [];
-        }
+		if ( ! $user_id ) {
+			return array();
+		}
 
-        $prefs = get_user_meta($user_id, self::META_KEY_PREFERENCES, true);
-        return is_array($prefs) ? $prefs : [];
-    }
+		$prefs = get_user_meta( $user_id, self::META_KEY_PREFERENCES, true );
+		return is_array( $prefs ) ? $prefs : array();
+	}
 
-    /**
-     * Update user preference
-     *
-     * @param string $key Preference key
-     * @param mixed $value Preference value
-     * @param int|null $user_id User ID, defaults to current user
-     * @return bool
-     */
-    public static function set_preference($key, $value, $user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Update user preference
+	 *
+	 * @param string $key Preference key
+	 * @param mixed $value Preference value
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return bool
+	 */
+	public static function set_preference( $key, $value, $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return false;
-        }
+		if ( ! $user_id ) {
+			return false;
+		}
 
-        $prefs = self::get_preferences($user_id);
-        $prefs[$key] = $value;
-        return update_user_meta($user_id, self::META_KEY_PREFERENCES, $prefs);
-    }
+		$prefs         = self::get_preferences( $user_id );
+		$prefs[ $key ] = $value;
+		return update_user_meta( $user_id, self::META_KEY_PREFERENCES, $prefs );
+	}
 
-    /**
-     * Update last seen timestamp
-     *
-     * @param int|null $user_id User ID, defaults to current user
-     * @return bool
-     */
-    public static function update_last_seen($user_id = null) {
-        if (!$user_id) {
-            $user_id = get_current_user_id();
-        }
+	/**
+	 * Update last seen timestamp
+	 *
+	 * @param int|null $user_id User ID, defaults to current user
+	 * @return bool
+	 */
+	public static function update_last_seen( $user_id = null ) {
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
 
-        if (!$user_id) {
-            return false;
-        }
+		if ( ! $user_id ) {
+			return false;
+		}
 
-        return update_user_meta($user_id, self::META_KEY_LAST_SEEN, current_time('mysql'));
-    }
+		return update_user_meta( $user_id, self::META_KEY_LAST_SEEN, current_time( 'mysql' ) );
+	}
 }

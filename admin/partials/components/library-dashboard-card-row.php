@@ -19,7 +19,7 @@ if ( empty( $bbai_preview_row ) || ! is_array( $bbai_preview_row ) ) {
 }
 
 $bbai_dash_card_mode = isset( $bbai_dash_card_mode ) ? (string) $bbai_dash_card_mode : 'trial';
-if ( ! in_array( $bbai_dash_card_mode, [ 'trial', 'connected' ], true ) ) {
+if ( ! in_array( $bbai_dash_card_mode, array( 'trial', 'connected' ), true ) ) {
 	$bbai_dash_card_mode = 'trial';
 }
 
@@ -28,46 +28,46 @@ if ( $bbai_attachment_id <= 0 ) {
 	return;
 }
 
-$bbai_status = isset( $bbai_preview_row['status'] ) ? sanitize_key( (string) $bbai_preview_row['status'] ) : 'missing';
-$bbai_status_label = isset( $bbai_preview_row['status_label'] ) ? (string) $bbai_preview_row['status_label'] : __( 'Missing', 'beepbeep-ai-alt-text-generator' );
-$bbai_quality_class = isset( $bbai_preview_row['quality_class'] ) ? sanitize_html_class( (string) $bbai_preview_row['quality_class'] ) : 'poor';
-$bbai_quality_label = isset( $bbai_preview_row['quality_label'] ) ? (string) $bbai_preview_row['quality_label'] : __( 'Weak', 'beepbeep-ai-alt-text-generator' );
-$bbai_quality_score = isset( $bbai_preview_row['quality_score'] ) ? max( 0, (int) $bbai_preview_row['quality_score'] ) : 0;
-$bbai_score_tier = isset( $bbai_preview_row['score_tier'] ) ? sanitize_html_class( (string) $bbai_preview_row['score_tier'] ) : ( 'optimized' === $bbai_status ? 'good' : ( 'weak' === $bbai_status ? 'review' : 'missing' ) );
-$bbai_clean_alt = isset( $bbai_preview_row['clean_alt'] ) ? trim( (string) $bbai_preview_row['clean_alt'] ) : '';
-$bbai_has_alt = '' !== $bbai_clean_alt;
-$bbai_thumb_url = isset( $bbai_preview_row['thumb_url'] ) ? (string) $bbai_preview_row['thumb_url'] : '';
-$bbai_image_url = isset( $bbai_preview_row['image_url'] ) ? (string) $bbai_preview_row['image_url'] : '';
-$bbai_image_title = isset( $bbai_preview_row['image_title'] ) ? (string) $bbai_preview_row['image_title'] : '';
-$bbai_display_filename = isset( $bbai_preview_row['display_filename'] ) ? (string) $bbai_preview_row['display_filename'] : $bbai_image_title;
-$bbai_file_meta = isset( $bbai_preview_row['file_meta'] ) ? (string) $bbai_preview_row['file_meta'] : '';
-$bbai_last_updated = isset( $bbai_preview_row['last_updated'] ) ? (string) $bbai_preview_row['last_updated'] : '';
-$bbai_row_state_rank = isset( $bbai_preview_row['row_state_rank'] ) ? (int) $bbai_preview_row['row_state_rank'] : ( 'missing' === $bbai_status ? 0 : ( 'weak' === $bbai_status ? 1 : 2 ) );
-$bbai_quality_tooltip = isset( $bbai_preview_row['quality_tooltip'] ) ? (string) $bbai_preview_row['quality_tooltip'] : '';
-$bbai_created_ts = isset( $bbai_preview_row['created_ts'] ) ? (int) $bbai_preview_row['created_ts'] : 0;
-$bbai_updated_ts = isset( $bbai_preview_row['updated_ts'] ) ? (int) $bbai_preview_row['updated_ts'] : 0;
-$bbai_file_size_bytes = isset( $bbai_preview_row['file_size_bytes'] ) ? (int) $bbai_preview_row['file_size_bytes'] : 0;
-$bbai_filename_sort = isset( $bbai_preview_row['filename_sort'] ) ? (string) $bbai_preview_row['filename_sort'] : strtolower( $bbai_display_filename );
-$bbai_alt_preview = $bbai_has_alt ? wp_html_excerpt( $bbai_clean_alt, 160, '…' ) : '';
-$bbai_alt_preview_id = 'bbai-dashboard-card-alt-' . $bbai_attachment_id;
+$bbai_status               = isset( $bbai_preview_row['status'] ) ? sanitize_key( (string) $bbai_preview_row['status'] ) : 'missing';
+$bbai_status_label         = isset( $bbai_preview_row['status_label'] ) ? (string) $bbai_preview_row['status_label'] : __( 'Missing', 'beepbeep-ai-alt-text-generator' );
+$bbai_quality_class        = isset( $bbai_preview_row['quality_class'] ) ? sanitize_html_class( (string) $bbai_preview_row['quality_class'] ) : 'poor';
+$bbai_quality_label        = isset( $bbai_preview_row['quality_label'] ) ? (string) $bbai_preview_row['quality_label'] : __( 'Weak', 'beepbeep-ai-alt-text-generator' );
+$bbai_quality_score        = isset( $bbai_preview_row['quality_score'] ) ? max( 0, (int) $bbai_preview_row['quality_score'] ) : 0;
+$bbai_score_tier           = isset( $bbai_preview_row['score_tier'] ) ? sanitize_html_class( (string) $bbai_preview_row['score_tier'] ) : ( 'optimized' === $bbai_status ? 'good' : ( 'weak' === $bbai_status ? 'review' : 'missing' ) );
+$bbai_clean_alt            = isset( $bbai_preview_row['clean_alt'] ) ? trim( (string) $bbai_preview_row['clean_alt'] ) : '';
+$bbai_has_alt              = '' !== $bbai_clean_alt;
+$bbai_thumb_url            = isset( $bbai_preview_row['thumb_url'] ) ? (string) $bbai_preview_row['thumb_url'] : '';
+$bbai_image_url            = isset( $bbai_preview_row['image_url'] ) ? (string) $bbai_preview_row['image_url'] : '';
+$bbai_image_title          = isset( $bbai_preview_row['image_title'] ) ? (string) $bbai_preview_row['image_title'] : '';
+$bbai_display_filename     = isset( $bbai_preview_row['display_filename'] ) ? (string) $bbai_preview_row['display_filename'] : $bbai_image_title;
+$bbai_file_meta            = isset( $bbai_preview_row['file_meta'] ) ? (string) $bbai_preview_row['file_meta'] : '';
+$bbai_last_updated         = isset( $bbai_preview_row['last_updated'] ) ? (string) $bbai_preview_row['last_updated'] : '';
+$bbai_row_state_rank       = isset( $bbai_preview_row['row_state_rank'] ) ? (int) $bbai_preview_row['row_state_rank'] : ( 'missing' === $bbai_status ? 0 : ( 'weak' === $bbai_status ? 1 : 2 ) );
+$bbai_quality_tooltip      = isset( $bbai_preview_row['quality_tooltip'] ) ? (string) $bbai_preview_row['quality_tooltip'] : '';
+$bbai_created_ts           = isset( $bbai_preview_row['created_ts'] ) ? (int) $bbai_preview_row['created_ts'] : 0;
+$bbai_updated_ts           = isset( $bbai_preview_row['updated_ts'] ) ? (int) $bbai_preview_row['updated_ts'] : 0;
+$bbai_file_size_bytes      = isset( $bbai_preview_row['file_size_bytes'] ) ? (int) $bbai_preview_row['file_size_bytes'] : 0;
+$bbai_filename_sort        = isset( $bbai_preview_row['filename_sort'] ) ? (string) $bbai_preview_row['filename_sort'] : strtolower( $bbai_display_filename );
+$bbai_alt_preview          = $bbai_has_alt ? wp_html_excerpt( $bbai_clean_alt, 160, '…' ) : '';
+$bbai_alt_preview_id       = 'bbai-dashboard-card-alt-' . $bbai_attachment_id;
 $bbai_has_long_alt_preview = function_exists( 'mb_strlen' ) ? mb_strlen( $bbai_clean_alt ) > 160 : strlen( $bbai_clean_alt ) > 160;
 
-$bbai_primary_action = 'preview-image';
-$bbai_primary_label = __( 'Done', 'beepbeep-ai-alt-text-generator' );
-$bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--done';
-$bbai_primary_title = __( 'Preview this ALT text', 'beepbeep-ai-alt-text-generator' );
+$bbai_primary_action        = 'preview-image';
+$bbai_primary_label         = __( 'Done', 'beepbeep-ai-alt-text-generator' );
+$bbai_primary_class         = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--done';
+$bbai_primary_title         = __( 'Preview this ALT text', 'beepbeep-ai-alt-text-generator' );
 $bbai_primary_modal_context = 'optimized';
 
 if ( 'connected' === $bbai_dash_card_mode ) {
 	if ( 'missing' === $bbai_status ) {
 		$bbai_primary_action = 'regenerate-single';
-		$bbai_primary_label = __( 'Fix', 'beepbeep-ai-alt-text-generator' );
-		$bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--generate';
-		$bbai_primary_title = __( 'Fix this image', 'beepbeep-ai-alt-text-generator' );
+		$bbai_primary_label  = __( 'Fix', 'beepbeep-ai-alt-text-generator' );
+		$bbai_primary_class  = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--generate';
+		$bbai_primary_title  = __( 'Fix this image', 'beepbeep-ai-alt-text-generator' );
 	} elseif ( 'weak' === $bbai_status ) {
-		$bbai_primary_label = __( 'Review', 'beepbeep-ai-alt-text-generator' );
-		$bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--review';
-		$bbai_primary_title = __( 'Review generated ALT text', 'beepbeep-ai-alt-text-generator' );
+		$bbai_primary_label         = __( 'Review', 'beepbeep-ai-alt-text-generator' );
+		$bbai_primary_class         = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--review';
+		$bbai_primary_title         = __( 'Review generated ALT text', 'beepbeep-ai-alt-text-generator' );
 		$bbai_primary_modal_context = 'review';
 	}
 } else {
@@ -76,25 +76,25 @@ if ( 'connected' === $bbai_dash_card_mode ) {
 	if ( 'missing' === $bbai_status ) {
 		if ( $bbai_trial_preview_generation_locked ) {
 			$bbai_trial_preview_remaining_count = isset( $bbai_state_missing_count ) ? max( 0, (int) $bbai_state_missing_count ) : 0;
-			$bbai_primary_action = 'show-dashboard-auth';
-			$bbai_primary_label = sprintf(
+			$bbai_primary_action                = 'show-dashboard-auth';
+			$bbai_primary_label                 = sprintf(
 				/* translators: %s: remaining image count. */
 				__( 'Fix your %s remaining images', 'beepbeep-ai-alt-text-generator' ),
 				number_format_i18n( $bbai_trial_preview_remaining_count )
 			);
-			$bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--locked';
-			$bbai_primary_title = $bbai_primary_label;
+			$bbai_primary_class         = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--locked';
+			$bbai_primary_title         = $bbai_primary_label;
 			$bbai_primary_modal_context = 'fix';
 		} else {
 			$bbai_primary_action = 'regenerate-single';
-			$bbai_primary_label = __( 'Fix', 'beepbeep-ai-alt-text-generator' );
-			$bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--generate';
-			$bbai_primary_title = __( 'Fix this image', 'beepbeep-ai-alt-text-generator' );
+			$bbai_primary_label  = __( 'Fix', 'beepbeep-ai-alt-text-generator' );
+			$bbai_primary_class  = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--generate';
+			$bbai_primary_title  = __( 'Fix this image', 'beepbeep-ai-alt-text-generator' );
 		}
 	} elseif ( 'weak' === $bbai_status ) {
-		$bbai_primary_label = __( 'Review', 'beepbeep-ai-alt-text-generator' );
-		$bbai_primary_class = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--review';
-		$bbai_primary_title = __( 'Review generated ALT text', 'beepbeep-ai-alt-text-generator' );
+		$bbai_primary_label         = __( 'Review', 'beepbeep-ai-alt-text-generator' );
+		$bbai_primary_class         = 'bbai-dashboard-trial-preview__action bbai-dashboard-trial-preview__action--review';
+		$bbai_primary_title         = __( 'Review generated ALT text', 'beepbeep-ai-alt-text-generator' );
 		$bbai_primary_modal_context = 'review';
 	}
 }

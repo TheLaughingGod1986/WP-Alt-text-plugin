@@ -40,7 +40,7 @@ class BBAI_Telemetry {
 	 * @param string $event_name snake_case name.
 	 * @param array  $properties Additional scalar metadata (sanitized).
 	 */
-	public static function emit( string $event_name, array $properties = [] ): void {
+	public static function emit( string $event_name, array $properties = array() ): void {
 		if ( ! apply_filters( 'bbai_telemetry_enabled', true ) ) {
 			return;
 		}
@@ -52,17 +52,17 @@ class BBAI_Telemetry {
 
 		$properties = self::sanitize_properties( $properties );
 
-		$envelope = [
-			'event'           => $event_name,
-			'timestamp'       => gmdate( 'c' ),
-			'timestamp_ms'    => (int) round( microtime( true ) * 1000 ),
-			'user_id'         => get_current_user_id(),
-			'page'            => self::resolve_page_slug(),
-			'plan_type'       => self::resolve_plan_type(),
-			'plugin_version'  => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
-			'site_id'         => self::resolve_site_id(),
-			'properties'      => $properties,
-		];
+		$envelope = array(
+			'event'          => $event_name,
+			'timestamp'      => gmdate( 'c' ),
+			'timestamp_ms'   => (int) round( microtime( true ) * 1000 ),
+			'user_id'        => get_current_user_id(),
+			'page'           => self::resolve_page_slug(),
+			'plan_type'      => self::resolve_plan_type(),
+			'plugin_version' => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+			'site_id'        => self::resolve_site_id(),
+			'properties'     => $properties,
+		);
 
 		/**
 		 * Fired for each telemetry event. Integrate PostHog, Segment, GA4, or custom sinks here.
@@ -83,7 +83,7 @@ class BBAI_Telemetry {
 	 */
 	public static function bump_session_images_processed( int $count ): void {
 		$count = max( 0, $count );
-		if ( $count === 0 ) {
+		if ( 0 === $count ) {
 			return;
 		}
 		$uid = get_current_user_id();
@@ -104,7 +104,7 @@ class BBAI_Telemetry {
 		if ( $uid <= 0 ) {
 			return;
 		}
-		$last = (int) get_user_meta( $uid, '_bbai_telemetry_last_active', true );
+		$last                                 = (int) get_user_meta( $uid, '_bbai_telemetry_last_active', true );
 		self::$inactive_days_at_session_start = $last > 0
 			? (int) floor( ( time() - $last ) / DAY_IN_SECONDS )
 			: 0;
@@ -143,7 +143,7 @@ class BBAI_Telemetry {
 	 * @param string $distinct_id Stable PostHog distinct id.
 	 * @param array  $properties  Event properties.
 	 */
-	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = [] ): void {
+	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = array() ): void {
 		$event_name  = sanitize_key( $event_name );
 		$distinct_id = sanitize_text_field( $distinct_id );
 		if ( '' === $event_name || '' === $distinct_id ) {
@@ -154,19 +154,19 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$api_key = self::get_posthog_api_key();
+		$api_key  = self::get_posthog_api_key();
 		$api_host = self::get_posthog_api_host();
 		if ( '' === $api_key || '' === $api_host ) {
 			return;
 		}
 
 		$payload = wp_json_encode(
-			[
+			array(
 				'api_key'     => $api_key,
 				'event'       => $event_name,
 				'distinct_id' => $distinct_id,
 				'properties'  => self::sanitize_properties( $properties ),
-			]
+			)
 		);
 
 		if ( ! is_string( $payload ) || '' === $payload ) {
@@ -175,15 +175,15 @@ class BBAI_Telemetry {
 
 		wp_remote_post(
 			$api_host . '/capture/',
-			[
+			array(
 				'timeout'     => 1,
 				'blocking'    => false,
-				'headers'     => [
+				'headers'     => array(
 					'Content-Type' => 'application/json',
-				],
+				),
 				'body'        => $payload,
 				'data_format' => 'body',
-			]
+			)
 		);
 	}
 
@@ -208,7 +208,7 @@ class BBAI_Telemetry {
 	 * @return array<string,scalar|array>
 	 */
 	private static function sanitize_properties( array $props ): array {
-		$out = [];
+		$out = array();
 		foreach ( $props as $k => $v ) {
 			$key = is_string( $k ) ? sanitize_key( $k ) : '';
 			if ( '' === $key || strlen( $key ) > 48 ) {
@@ -227,7 +227,7 @@ class BBAI_Telemetry {
 				continue;
 			}
 			if ( is_array( $v ) ) {
-				$nested = [];
+				$nested = array();
 				$i      = 0;
 				foreach ( $v as $nk => $nv ) {
 					if ( $i >= 12 ) {
@@ -274,7 +274,7 @@ class BBAI_Telemetry {
 		}
 		$stats = Usage_Tracker::get_stats_display();
 		$plan  = isset( $stats['plan'] ) ? sanitize_key( (string) $stats['plan'] ) : 'free';
-		if ( in_array( $plan, [ 'pro', 'growth', 'agency', 'enterprise' ], true ) ) {
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
 			return 'pro';
 		}
 		if ( 'free' === $plan ) {
@@ -286,18 +286,18 @@ class BBAI_Telemetry {
 	private static function resolve_page_slug(): string {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
-		$map  = [
-			'bbai'               => 'dashboard',
-			'bbai-library'       => 'alt_library',
-			'bbai-analytics'     => 'analytics',
-			'bbai-credit-usage'  => 'usage',
-			'bbai-settings'      => 'settings',
-			'bbai-debug'         => 'settings',
-			'bbai-guide'         => 'help',
-			'bbai-onboarding'    => 'onboarding',
-			'bbai-ui-kit'        => 'ui_kit',
+		$map  = array(
+			'bbai'                 => 'dashboard',
+			'bbai-library'         => 'alt_library',
+			'bbai-analytics'       => 'analytics',
+			'bbai-credit-usage'    => 'usage',
+			'bbai-settings'        => 'settings',
+			'bbai-debug'           => 'settings',
+			'bbai-guide'           => 'help',
+			'bbai-onboarding'      => 'onboarding',
+			'bbai-ui-kit'          => 'ui_kit',
 			'bbai-agency-overview' => 'agency_overview',
-		];
+		);
 		if ( isset( $map[ $page ] ) ) {
 			return $map[ $page ];
 		}
@@ -308,9 +308,9 @@ class BBAI_Telemetry {
 	 * @param array<string,mixed> $envelope Envelope to store.
 	 */
 	private static function push_ring( array $envelope ): void {
-		$ring = get_option( self::RING_OPTION, [] );
+		$ring = get_option( self::RING_OPTION, array() );
 		if ( ! is_array( $ring ) ) {
-			$ring = [];
+			$ring = array();
 		}
 		$ring[] = $envelope;
 		if ( count( $ring ) > self::RING_MAX ) {
@@ -326,6 +326,7 @@ class BBAI_Telemetry {
  * @param string               $event_name Event name (snake_case).
  * @param array<string,mixed> $properties  Optional properties.
  */
-function bbai_telemetry_emit( string $event_name, array $properties = [] ): void {
+// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed -- convenience wrapper kept in same file as its class.
+function bbai_telemetry_emit( string $event_name, array $properties = array() ): void {
 	BBAI_Telemetry::emit( $event_name, $properties );
 }

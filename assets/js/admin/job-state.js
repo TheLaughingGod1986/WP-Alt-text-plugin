@@ -130,11 +130,19 @@
             progress: state.total
         });
 
-        // Auto-dismiss widget after 8 seconds
+        // Auto-dismiss the widget after 8 seconds for in-browser generation.
+        // Skip if bbai-background-job.js owns a persistent complete state in
+        // localStorage — it handles its own dismiss lifecycle.
         autoDismissTimer = setTimeout(function () {
-            if (!state.running && (state.status === 'complete' || state.status === 'error' || state.status === 'quota')) {
-                reset();
-            }
+            if (state.running) { return; }
+            if (state.status !== 'complete' && state.status !== 'error' && state.status !== 'quota') { return; }
+            // Don't auto-dismiss if the background-job module has the terminal
+            // state persisted (it will remain visible until the user acts).
+            try {
+                var stored = JSON.parse(window.localStorage.getItem('bbai_background_job') || 'null');
+                if (stored && (stored.status === 'complete' || stored.status === 'failed')) { return; }
+            } catch (e) { /* ignore */ }
+            reset();
         }, 8000);
     }
 

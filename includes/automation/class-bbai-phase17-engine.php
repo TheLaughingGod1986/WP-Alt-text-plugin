@@ -23,10 +23,10 @@ class Phase17_Engine {
 		}
 		self::$bootstrapped = true;
 
-		add_action( 'admin_init', [ self::class, 'maybe_handle_dismiss' ], 5 );
-		add_action( 'bbai_telemetry_event', [ self::class, 'on_telemetry' ], 15, 1 );
-		add_action( 'admin_notices', [ self::class, 'maybe_automation_notice' ] );
-		add_action( 'admin_footer', [ self::class, 'render_assistant_mount' ], 99 );
+		add_action( 'admin_init', array( self::class, 'maybe_handle_dismiss' ), 5 );
+		add_action( 'bbai_telemetry_event', array( self::class, 'on_telemetry' ), 15, 1 );
+		add_action( 'admin_notices', array( self::class, 'maybe_automation_notice' ) );
+		add_action( 'admin_footer', array( self::class, 'render_assistant_mount' ), 99 );
 	}
 
 	/**
@@ -34,7 +34,7 @@ class Phase17_Engine {
 	 */
 	public static function on_telemetry( array $envelope ): void {
 		$event = isset( $envelope['event'] ) ? sanitize_key( (string) $envelope['event'] ) : '';
-		$props = isset( $envelope['properties'] ) && is_array( $envelope['properties'] ) ? $envelope['properties'] : [];
+		$props = isset( $envelope['properties'] ) && is_array( $envelope['properties'] ) ? $envelope['properties'] : array();
 
 		/**
 		 * Full Phase 17 hook for external automation (CRM, email, Slack).
@@ -60,7 +60,7 @@ class Phase17_Engine {
 			if ( isset( $props['scope'] ) && 'batch' === sanitize_key( (string) $props['scope'] ) && isset( $props['approved_count'] ) ) {
 				$delta = max( 1, absint( $props['approved_count'] ) );
 			}
-			$rcount = (int) get_user_meta( $uid, 'bbai_phase17_mark_reviewed_count', true );
+			$rcount  = (int) get_user_meta( $uid, 'bbai_phase17_mark_reviewed_count', true );
 			$rcount += $delta;
 			update_user_meta( $uid, 'bbai_phase17_mark_reviewed_count', $rcount );
 
@@ -71,17 +71,17 @@ class Phase17_Engine {
 					set_transient(
 						$review_key,
 						wp_json_encode(
-							[
+							array(
 								'text'  => __( 'You’ve been polishing ALT quality — thanks for taking accessibility seriously. If BeepBeep saves you time, a quick review on WordPress.org helps other site owners find the plugin.', 'beepbeep-ai-alt-text-generator' ),
 								'until' => time() + WEEK_IN_SECONDS,
 								'tier'  => 'review_prompt',
-								'links' => [
-									[
+								'links' => array(
+									array(
 										'url'   => 'https://wordpress.org/support/plugin/beepbeep-ai-alt-text-generator/reviews/#new-post',
 										'label' => __( 'Leave a review on WordPress.org', 'beepbeep-ai-alt-text-generator' ),
-									],
-								],
-							]
+									),
+								),
+							)
 						),
 						WEEK_IN_SECONDS
 					);
@@ -92,18 +92,18 @@ class Phase17_Engine {
 		// Library filter toward weak / needs-review → one-time nudge (tip only if no other tip is queued).
 		if ( 'filter_changed' === $event ) {
 			$state = isset( $props['filter_state'] ) ? sanitize_key( (string) $props['filter_state'] ) : '';
-			if ( in_array( $state, [ 'needs_review', 'weak' ], true ) && ! get_user_meta( $uid, 'bbai_phase17_filter_weak_nudge_done', true ) ) {
+			if ( in_array( $state, array( 'needs_review', 'weak' ), true ) && ! get_user_meta( $uid, 'bbai_phase17_filter_weak_nudge_done', true ) ) {
 				update_user_meta( $uid, 'bbai_phase17_filter_weak_nudge_done', 1 );
 				$nudge_key = 'bbai_phase17_admin_tip_' . $uid;
 				if ( false === get_transient( $nudge_key ) ) {
 					set_transient(
 						$nudge_key,
 						wp_json_encode(
-							[
+							array(
 								'text'  => __( 'Nice — you’re focusing on weaker ALT text. Regenerate row-by-row, use “Improve ALT” for a focused pass, or edit manually, then mark reviewed when it’s accurate.', 'beepbeep-ai-alt-text-generator' ),
 								'until' => time() + DAY_IN_SECONDS,
 								'tier'  => 'filter_needs_review',
-							]
+							)
 						),
 						DAY_IN_SECONDS
 					);
@@ -112,12 +112,12 @@ class Phase17_Engine {
 		}
 
 		// Engagement milestones (generation-related client events re-emitted server-side).
-		if ( in_array( $event, [ 'alt_generate_clicked', 'row_action_clicked', 'batch_complete', 'batchComplete' ], true ) ) {
+		if ( in_array( $event, array( 'alt_generate_clicked', 'row_action_clicked', 'batch_complete', 'batchComplete' ), true ) ) {
 			$count = (int) get_user_meta( $uid, 'bbai_phase17_gen_signal_count', true );
 			++$count;
 			update_user_meta( $uid, 'bbai_phase17_gen_signal_count', $count );
 
-			$milestones = apply_filters( 'bbai_phase17_engagement_milestones', [ 10, 25, 50, 100 ] );
+			$milestones = apply_filters( 'bbai_phase17_engagement_milestones', array( 10, 25, 50, 100 ) );
 			foreach ( (array) $milestones as $m ) {
 				$m = absint( $m );
 				if ( $m <= 0 ) {
@@ -142,10 +142,10 @@ class Phase17_Engine {
 				$payload = self::milestone_tip_payload( $m );
 				if ( ! empty( $payload['text'] ) || ! empty( $payload['links'] ) ) {
 					$data = array_merge(
-						[
+						array(
 							'until' => time() + DAY_IN_SECONDS,
 							'tier'  => 'milestone_' . $m,
-						],
+						),
 						$payload
 					);
 					set_transient(
@@ -180,29 +180,29 @@ class Phase17_Engine {
 	private static function milestone_tip_payload( int $m ): array {
 		switch ( $m ) {
 			case 10:
-				return [
+				return array(
 					'text' => __( 'Nice momentum — you’re using bulk ALT fixes. Enable on-upload automation in Settings if you want new images covered automatically (plan permitting).', 'beepbeep-ai-alt-text-generator' ),
-				];
+				);
 			case 25:
-				return [
+				return array(
 					'text' => __( 'You’ve run many generations: check the “Needs review” filter occasionally to keep quality high.', 'beepbeep-ai-alt-text-generator' ),
-				];
+				);
 			case 50:
-				return [
+				return array(
 					'text' => __( 'Strong usage. If credits feel tight, review Usage & plan — higher tiers are built for steady libraries and stores.', 'beepbeep-ai-alt-text-generator' ),
-				];
+				);
 			case 100:
-				return [
+				return array(
 					'text'  => __( 'Power-user territory. Consider periodic scans so new uploads never slip through.', 'beepbeep-ai-alt-text-generator' ),
-					'links' => [
-						[
+					'links' => array(
+						array(
 							'url'   => 'https://wordpress.org/support/plugin/beepbeep-ai-alt-text-generator/reviews/#new-post',
 							'label' => __( 'Share feedback on WordPress.org (optional)', 'beepbeep-ai-alt-text-generator' ),
-						],
-					],
-				];
+						),
+					),
+				);
 			default:
-				return [];
+				return array();
 		}
 	}
 
@@ -241,18 +241,18 @@ class Phase17_Engine {
 			delete_transient( $key );
 			return;
 		}
-		$text = isset( $data['text'] ) ? (string) $data['text'] : '';
-		$links = isset( $data['links'] ) && is_array( $data['links'] ) ? $data['links'] : [];
+		$text  = isset( $data['text'] ) ? (string) $data['text'] : '';
+		$links = isset( $data['links'] ) && is_array( $data['links'] ) ? $data['links'] : array();
 		if ( '' === $text && empty( $links ) ) {
 			delete_transient( $key );
 			return;
 		}
 		$dismiss = wp_nonce_url(
 			add_query_arg(
-				[
+				array(
 					'bbai_phase17_dismiss_tip' => '1',
 					'bbai_phase17_tip_kind'    => $kind,
-				],
+				),
 				self::current_return_url()
 			),
 			'bbai_phase17_dismiss_tip'

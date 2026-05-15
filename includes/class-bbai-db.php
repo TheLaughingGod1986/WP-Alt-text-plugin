@@ -256,15 +256,15 @@ class DB_Schema {
 	 * Ensure required class files are loaded.
 	 */
 	private static function require_table_classes() {
-		$base = defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ? BEEPBEEP_AI_PLUGIN_DIR : plugin_dir_path( dirname( __FILE__ ) );
+		$base = defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ? BEEPBEEP_AI_PLUGIN_DIR : plugin_dir_path( __DIR__ );
 
-		$files = [
+		$files = array(
 			'includes/class-queue.php',
 			'includes/class-debug-log.php',
 			'includes/class-credit-usage-logger.php',
 			'includes/usage/class-usage-logs.php',
 			'includes/class-contact-submissions.php',
-		];
+		);
 
 		foreach ( $files as $file ) {
 			$path = $base . $file;

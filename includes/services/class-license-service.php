@@ -149,7 +149,7 @@ class License_Service {
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
-				'message' => $result->get_error_message() ?: __( 'Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator' ),
+				'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Failed to fetch license site usage', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 
@@ -192,7 +192,7 @@ class License_Service {
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
-				'message' => $result->get_error_message() ?: __( 'Failed to disconnect site', 'beepbeep-ai-alt-text-generator' ),
+				'message' => $result->get_error_message() ? $result->get_error_message() : __( 'Failed to disconnect site', 'beepbeep-ai-alt-text-generator' ),
 			);
 		}
 

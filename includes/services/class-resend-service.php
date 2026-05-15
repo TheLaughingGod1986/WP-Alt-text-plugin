@@ -10,8 +10,8 @@
 
 namespace BeepBeepAI\AltTextGenerator;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
@@ -19,259 +19,279 @@ if (!defined('ABSPATH')) {
  */
 class Resend_Service {
 
-    /**
-     * Resend API endpoint
-     *
-     * @var string
-     */
-    private const API_ENDPOINT = 'https://api.resend.com/emails';
+	/**
+	 * Resend API endpoint
+	 *
+	 * @var string
+	 */
+	private const API_ENDPOINT = 'https://api.resend.com/emails';
 
-    /**
-     * Get Resend API key from multiple sources (constant, env var, or option)
-     *
-     * Priority order:
-     * 1. BBAI_RESEND_API_KEY constant (wp-config.php)
-     * 2. RESEND_API_KEY environment variable (server/host config)
-     * 3. WordPress option 'bbai_resend_api_key' (stored in database)
-     *
-     * @return string|false API key or false if not configured
-     */
-    private function get_api_key() {
-        // 1. Check WordPress constant (wp-config.php)
-        if (defined('BBAI_RESEND_API_KEY') && !empty(BBAI_RESEND_API_KEY)) {
-            return BBAI_RESEND_API_KEY;
-        }
+	/**
+	 * Get Resend API key from multiple sources (constant, env var, or option)
+	 *
+	 * Priority order:
+	 * 1. BBAI_RESEND_API_KEY constant (wp-config.php)
+	 * 2. RESEND_API_KEY environment variable (server/host config)
+	 * 3. WordPress option 'bbai_resend_api_key' (stored in database)
+	 *
+	 * @return string|false API key or false if not configured
+	 */
+	private function get_api_key() {
+		// 1. Check WordPress constant (wp-config.php)
+		if ( defined( 'BBAI_RESEND_API_KEY' ) && ! empty( BBAI_RESEND_API_KEY ) ) {
+			return BBAI_RESEND_API_KEY;
+		}
 
-        // 2. Check environment variable (server/host configuration)
-        $env_key = getenv('RESEND_API_KEY');
-        if (!empty($env_key)) {
-            return $env_key;
-        }
+		// 2. Check environment variable (server/host configuration)
+		$env_key = getenv( 'RESEND_API_KEY' );
+		if ( ! empty( $env_key ) ) {
+			return $env_key;
+		}
 
-        // 3. Check WordPress option (stored in database)
-        $option_key = get_option('bbai_resend_api_key', '');
-        if (!empty($option_key)) {
-            return $option_key;
-        }
+		// 3. Check WordPress option (stored in database)
+		$option_key = get_option( 'bbai_resend_api_key', '' );
+		if ( ! empty( $option_key ) ) {
+			return $option_key;
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    /**
-     * Get recipient email address from multiple sources
-     *
-     * Priority order:
-     * 1. BBAI_CONTACT_EMAIL constant
-     * 2. RESEND_CONTACT_EMAIL environment variable
-     * 3. WordPress option 'bbai_contact_email'
-     * 4. WordPress admin email as fallback
-     *
-     * @return string|false Email address or false if not configured
-     */
-    private function get_recipient_email() {
-        // 1. Check WordPress constant
-        if (defined('BBAI_CONTACT_EMAIL') && !empty(BBAI_CONTACT_EMAIL)) {
-            return BBAI_CONTACT_EMAIL;
-        }
+	/**
+	 * Get recipient email address from multiple sources
+	 *
+	 * Priority order:
+	 * 1. BBAI_CONTACT_EMAIL constant
+	 * 2. RESEND_CONTACT_EMAIL environment variable
+	 * 3. WordPress option 'bbai_contact_email'
+	 * 4. WordPress admin email as fallback
+	 *
+	 * @return string|false Email address or false if not configured
+	 */
+	private function get_recipient_email() {
+		// 1. Check WordPress constant
+		if ( defined( 'BBAI_CONTACT_EMAIL' ) && ! empty( BBAI_CONTACT_EMAIL ) ) {
+			return BBAI_CONTACT_EMAIL;
+		}
 
-        // 2. Check environment variable
-        $env_email = getenv('RESEND_CONTACT_EMAIL');
-        if (!empty($env_email) && is_email($env_email)) {
-            return $env_email;
-        }
+		// 2. Check environment variable
+		$env_email = getenv( 'RESEND_CONTACT_EMAIL' );
+		if ( ! empty( $env_email ) && is_email( $env_email ) ) {
+			return $env_email;
+		}
 
-        // 3. Check WordPress option
-        $option_email = get_option('bbai_contact_email', '');
-        if (!empty($option_email) && is_email($option_email)) {
-            return $option_email;
-        }
+		// 3. Check WordPress option
+		$option_email = get_option( 'bbai_contact_email', '' );
+		if ( ! empty( $option_email ) && is_email( $option_email ) ) {
+			return $option_email;
+		}
 
-        // 4. Fallback to WordPress admin email
-        $admin_email = get_option('admin_email');
-        if (!empty($admin_email) && is_email($admin_email)) {
-            return $admin_email;
-        }
+		// 4. Fallback to WordPress admin email
+		$admin_email = get_option( 'admin_email' );
+		if ( ! empty( $admin_email ) && is_email( $admin_email ) ) {
+			return $admin_email;
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    /**
-     * Send contact form email via Resend API
-     *
-     * @param array $data {
-     *     Contact form data.
-     *
-     *     @type string $name       User's name.
-     *     @type string $email      User's email.
-     *     @type string $subject    Email subject.
-     *     @type string $message    Message content.
-     *     @type string $wp_version WordPress version (optional).
-     *     @type string $plugin_version Plugin version (optional).
-     * }
-     * @return array|\WP_Error {
-     *     Success response or WP_Error on failure.
-     *
-     *     @type bool   $success Whether email was sent successfully.
-     *     @type string $message Response message.
-     *     @type string $id      Resend email ID if successful (optional).
-     * }
-     */
-    public function send_contact_email($data) {
-        $api_key = $this->get_api_key();
-        if (!$api_key) {
-            return new \WP_Error(
-                'resend_api_key_missing',
-                __('Resend API key is not configured. Please set BBAI_RESEND_API_KEY constant, RESEND_API_KEY environment variable, or store it in WordPress options.', 'beepbeep-ai-alt-text-generator')
-            );
-        }
+	/**
+	 * Send contact form email via Resend API
+	 *
+	 * @param array $data {
+	 *     Contact form data.
+	 *
+	 *     @type string $name       User's name.
+	 *     @type string $email      User's email.
+	 *     @type string $subject    Email subject.
+	 *     @type string $message    Message content.
+	 *     @type string $wp_version WordPress version (optional).
+	 *     @type string $plugin_version Plugin version (optional).
+	 * }
+	 * @return array|\WP_Error {
+	 *     Success response or WP_Error on failure.
+	 *
+	 *     @type bool   $success Whether email was sent successfully.
+	 *     @type string $message Response message.
+	 *     @type string $id      Resend email ID if successful (optional).
+	 * }
+	 */
+	public function send_contact_email( $data ) {
+		$api_key = $this->get_api_key();
+		if ( ! $api_key ) {
+			return new \WP_Error(
+				'resend_api_key_missing',
+				__( 'Resend API key is not configured. Please set BBAI_RESEND_API_KEY constant, RESEND_API_KEY environment variable, or store it in WordPress options.', 'beepbeep-ai-alt-text-generator' )
+			);
+		}
 
-        // Validate required fields
-        $required_fields = ['name', 'email', 'subject', 'message'];
-        foreach ($required_fields as $field) {
-            if (empty($data[$field])) {
-                return new \WP_Error(
-                    'missing_field',
-                    sprintf(
-                        /* translators: 1: field name */
-                        __('Required field "%s" is missing.', 'beepbeep-ai-alt-text-generator'),
-                        $field
-                    )
-                );
-            }
-        }
+		// Validate required fields
+		$required_fields = array( 'name', 'email', 'subject', 'message' );
+		foreach ( $required_fields as $field ) {
+			if ( empty( $data[ $field ] ) ) {
+				return new \WP_Error(
+					'missing_field',
+					sprintf(
+						/* translators: 1: field name */
+						__( 'Required field "%s" is missing.', 'beepbeep-ai-alt-text-generator' ),
+						$field
+					)
+				);
+			}
+		}
 
-        // Validate email format
-        if (!is_email($data['email'])) {
-            return new \WP_Error(
-                'invalid_email',
-                __('Invalid email address format.', 'beepbeep-ai-alt-text-generator')
-            );
-        }
+		// Validate email format
+		if ( ! is_email( $data['email'] ) ) {
+			return new \WP_Error(
+				'invalid_email',
+				__( 'Invalid email address format.', 'beepbeep-ai-alt-text-generator' )
+			);
+		}
 
-        // Get recipient email
-        $recipient_email = $this->get_recipient_email();
-        if (!$recipient_email) {
-            // Extract domain from API key if possible, or use a fallback
-            // For now, require BBAI_CONTACT_EMAIL to be set
-            return new \WP_Error(
-                'recipient_email_missing',
-                __('Contact email is not configured. Please set BBAI_CONTACT_EMAIL constant or configure in Resend.', 'beepbeep-ai-alt-text-generator')
-            );
-        }
+		// Get recipient email
+		$recipient_email = $this->get_recipient_email();
+		if ( ! $recipient_email ) {
+			// Extract domain from API key if possible, or use a fallback
+			// For now, require BBAI_CONTACT_EMAIL to be set
+			return new \WP_Error(
+				'recipient_email_missing',
+				__( 'Contact email is not configured. Please set BBAI_CONTACT_EMAIL constant or configure in Resend.', 'beepbeep-ai-alt-text-generator' )
+			);
+		}
 
-        // Build email HTML content
-        $html_content = $this->build_email_html($data);
+		// Build email HTML content
+		$html_content = $this->build_email_html( $data );
 
-        // Prepare request payload
-        $payload = [
-            'from' => 'BeepBeep AI Support <noreply@resend.dev>', // Default, should be configured in Resend
-            'to' => [$recipient_email],
-            'subject' => sprintf('[BeepBeep AI Support] %s', sanitize_text_field($data['subject'])),
-            'html' => $html_content,
-            'reply_to' => [
-                sanitize_email($data['email']) => sanitize_text_field($data['name'])
-            ]
-        ];
+		// Prepare request payload
+		$payload = array(
+			'from'     => 'BeepBeep AI Support <noreply@resend.dev>', // Default, should be configured in Resend
+			'to'       => array( $recipient_email ),
+			'subject'  => sprintf( '[BeepBeep AI Support] %s', sanitize_text_field( $data['subject'] ) ),
+			'html'     => $html_content,
+			'reply_to' => array(
+				sanitize_email( $data['email'] ) => sanitize_text_field( $data['name'] ),
+			),
+		);
 
-        // Log the request (optional, for debugging)
-        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            Debug_Log::log('info', 'Sending contact form email via Resend', [
-                'recipient' => $recipient_email,
-                'subject' => $payload['subject'],
-                'from_email' => $data['email']
-            ], 'contact');
-        }
+		// Log the request (optional, for debugging)
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			Debug_Log::log(
+				'info',
+				'Sending contact form email via Resend',
+				array(
+					'recipient'  => $recipient_email,
+					'subject'    => $payload['subject'],
+					'from_email' => $data['email'],
+				),
+				'contact'
+			);
+		}
 
-        // Make API request
-        $response = wp_remote_post(
-            self::API_ENDPOINT,
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $api_key,
-                    'Content-Type' => 'application/json',
-                ],
-                'body' => wp_json_encode($payload),
-                'timeout' => 30,
-                'sslverify' => true,
-            ]
-        );
+		// Make API request
+		$response = wp_remote_post(
+			self::API_ENDPOINT,
+			array(
+				'headers'   => array(
+					'Authorization' => 'Bearer ' . $api_key,
+					'Content-Type'  => 'application/json',
+				),
+				'body'      => wp_json_encode( $payload ),
+				'timeout'   => 30,
+				'sslverify' => true,
+			)
+		);
 
-        // Handle response
-        if (is_wp_error($response)) {
-            $error_message = $response->get_error_message();
-            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                Debug_Log::log('error', 'Resend API request failed', [
-                    'error' => $error_message
-                ], 'contact');
-            }
-            return new \WP_Error(
-                'resend_api_error',
-                sprintf(
-                    /* translators: 1: error message */
-                    __('Failed to send email: %s', 'beepbeep-ai-alt-text-generator'),
-                    $error_message
-                )
-            );
-        }
+		// Handle response
+		if ( is_wp_error( $response ) ) {
+			$error_message = $response->get_error_message();
+			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+				Debug_Log::log(
+					'error',
+					'Resend API request failed',
+					array(
+						'error' => $error_message,
+					),
+					'contact'
+				);
+			}
+			return new \WP_Error(
+				'resend_api_error',
+				sprintf(
+					/* translators: 1: error message */
+					__( 'Failed to send email: %s', 'beepbeep-ai-alt-text-generator' ),
+					$error_message
+				)
+			);
+		}
 
-        $status_code = wp_remote_retrieve_response_code($response);
-        $response_body = wp_remote_retrieve_body($response);
-        if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
-            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
-        }
-        $decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $response_body ) : null;
-        $response_data = is_array( $decoded ) ? $decoded : [];
+		$status_code   = wp_remote_retrieve_response_code( $response );
+		$response_body = wp_remote_retrieve_body( $response );
+		if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
+		}
+		$decoded       = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $response_body ) : null;
+		$response_data = is_array( $decoded ) ? $decoded : array();
 
-        if ($status_code !== 200 && $status_code !== 201) {
-            $error_message = isset($response_data['message']) ? $response_data['message'] : __('Unknown error', 'beepbeep-ai-alt-text-generator');
-            if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-                Debug_Log::log('error', 'Resend API returned error', [
-                    'status_code' => $status_code,
-                    'error' => $error_message,
-                    'response' => $response_data
-                ], 'contact');
-            }
-            return new \WP_Error(
-                'resend_api_error',
-                sprintf(
-                    /* translators: 1: error message */
-                    __('Email service error: %s', 'beepbeep-ai-alt-text-generator'),
-                    $error_message
-                )
-            );
-        }
+		if ( 200 !== $status_code && 201 !== $status_code ) {
+			$error_message = isset( $response_data['message'] ) ? $response_data['message'] : __( 'Unknown error', 'beepbeep-ai-alt-text-generator' );
+			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+				Debug_Log::log(
+					'error',
+					'Resend API returned error',
+					array(
+						'status_code' => $status_code,
+						'error'       => $error_message,
+						'response'    => $response_data,
+					),
+					'contact'
+				);
+			}
+			return new \WP_Error(
+				'resend_api_error',
+				sprintf(
+					/* translators: 1: error message */
+					__( 'Email service error: %s', 'beepbeep-ai-alt-text-generator' ),
+					$error_message
+				)
+			);
+		}
 
-        // Success
-        $email_id = isset($response_data['id']) ? $response_data['id'] : '';
-        if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
-            Debug_Log::log('info', 'Contact form email sent successfully via Resend', [
-                'email_id' => $email_id,
-                'recipient' => $recipient_email
-            ], 'contact');
-        }
+		// Success
+		$email_id = isset( $response_data['id'] ) ? $response_data['id'] : '';
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
+			Debug_Log::log(
+				'info',
+				'Contact form email sent successfully via Resend',
+				array(
+					'email_id'  => $email_id,
+					'recipient' => $recipient_email,
+				),
+				'contact'
+			);
+		}
 
-        return [
-            'success' => true,
-            'message' => __('Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator'),
-            'id' => $email_id
-        ];
-    }
+		return array(
+			'success' => true,
+			'message' => __( 'Your message has been sent successfully. We\'ll get back to you soon!', 'beepbeep-ai-alt-text-generator' ),
+			'id'      => $email_id,
+		);
+	}
 
-    /**
-     * Build HTML email content from form data
-     *
-     * @param array $data Contact form data.
-     * @return string HTML email content.
-     */
-    private function build_email_html($data) {
-        $name = esc_html($data['name']);
-        $email = esc_html($data['email']);
-        $subject = esc_html($data['subject']);
-        $message = nl2br(esc_html($data['message']));
-        $wp_version = isset($data['wp_version']) ? esc_html($data['wp_version']) : __('Not provided', 'beepbeep-ai-alt-text-generator');
-        $plugin_version = isset($data['plugin_version']) ? esc_html($data['plugin_version']) : __('Not provided', 'beepbeep-ai-alt-text-generator');
+	/**
+	 * Build HTML email content from form data
+	 *
+	 * @param array $data Contact form data.
+	 * @return string HTML email content.
+	 */
+	private function build_email_html( $data ) {
+		$name           = esc_html( $data['name'] );
+		$email          = esc_html( $data['email'] );
+		$subject        = esc_html( $data['subject'] );
+		$message        = nl2br( esc_html( $data['message'] ) );
+		$wp_version     = isset( $data['wp_version'] ) ? esc_html( $data['wp_version'] ) : __( 'Not provided', 'beepbeep-ai-alt-text-generator' );
+		$plugin_version = isset( $data['plugin_version'] ) ? esc_html( $data['plugin_version'] ) : __( 'Not provided', 'beepbeep-ai-alt-text-generator' );
 
-        $html = '<!DOCTYPE html>
+		$html = '<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -311,6 +331,6 @@ class Resend_Service {
 </body>
 </html>';
 
-        return $html;
-    }
+		return $html;
+	}
 }

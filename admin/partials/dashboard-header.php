@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_current_user    = wp_get_current_user();
-$bbai_display_name    = ( $bbai_current_user instanceof WP_User && '' !== $bbai_current_user->display_name )
+$bbai_current_user = wp_get_current_user();
+$bbai_display_name = ( $bbai_current_user instanceof WP_User && '' !== $bbai_current_user->display_name )
 	? $bbai_current_user->display_name
 	: __( 'there', 'beepbeep-ai-alt-text-generator' );
 ?>

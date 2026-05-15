@@ -61,7 +61,7 @@ class License_Controller {
 			);
 		}
 
-		$license_key     = isset( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '';
+		$license_key = isset( $_POST['license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['license_key'] ) ) : '';
 
 		return $this->license_service->activate( $license_key );
 	}
@@ -144,7 +144,7 @@ class License_Controller {
 			);
 		}
 
-		$site_id     = isset( $_POST['site_id'] ) ? sanitize_text_field( wp_unslash( $_POST['site_id'] ) ) : '';
+		$site_id = isset( $_POST['site_id'] ) ? sanitize_text_field( wp_unslash( $_POST['site_id'] ) ) : '';
 
 		return $this->license_service->disconnect_site( $site_id );
 	}
