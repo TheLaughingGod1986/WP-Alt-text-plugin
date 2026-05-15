@@ -143,7 +143,15 @@
     border-color: transparent !important;
 }
 
+/* ID-level specificity to beat WordPress admin button colour resets */
+#bbai-job-widget.bbai-job-widget--complete .bbai-job-widget__view,
+#bbai-job-widget.bbai-job-widget--complete .bbai-job-widget__view:link,
+#bbai-job-widget.bbai-job-widget--complete .bbai-job-widget__view:visited {
+    color: #ffffff !important;
+}
+
 .bbai-job-widget--complete .bbai-job-widget__view:hover {
     background: #15803d !important;
     border-color: transparent !important;
+    color: #ffffff !important;
 }
