@@ -18234,27 +18234,35 @@
             $modal.removeData('bbaiBulkStallTimer');
         }
 
+        // Snapshot of processed count at the time the current stall arm fired.
+        // Used to detect whether progress stalled between arming and firing.
+        var stallArmSnapshot = 0;
+
         function armStalledWatch() {
             clearStalledWatch();
+            stallArmSnapshot = successes + failures;
             var timerId = window.setTimeout(function() {
                 if (blockedByQuota) {
-                    return;
-                }
-                if (successes + failures > 0) {
                     return;
                 }
                 var st = getBulkProgressState($modal);
                 if (st.complete) {
                     return;
                 }
-                logBulkProgressSuccess(
-                    __('Still starting… Generation will continue. You can minimize this window and keep using the ALT Library.', 'beepbeep-ai-alt-text-generator')
-                );
-                dispatchAnalyticsEvent(
-                    'bulk_generation_stalled_fallback_shown',
-                    buildBulkProgressAnalyticsPayload(st)
-                );
-            }, 40000);
+                // No progress since we armed — log a reassurance message.
+                if ((successes + failures) === stallArmSnapshot) {
+                    var remaining = (st.total || 0) - (st.current || 0);
+                    logBulkProgressSuccess(
+                        remaining > 0
+                            ? __('Still working… one image is taking longer than usual. Generation will continue.', 'beepbeep-ai-alt-text-generator')
+                            : __('Still starting… Generation will continue. You can minimize this window and keep using the ALT Library.', 'beepbeep-ai-alt-text-generator')
+                    );
+                    dispatchAnalyticsEvent(
+                        'bulk_generation_stalled_fallback_shown',
+                        buildBulkProgressAnalyticsPayload(st)
+                    );
+                }
+            }, 35000);
             $modal.data('bbaiBulkStallTimer', timerId);
         }
 
@@ -18396,6 +18404,8 @@
                     if (rowEl && typeof window.bbaiSetRowDone === 'function') {
                         window.bbaiSetRowDone(rowEl);
                     }
+                    // Rearm stall watch so a hang on the NEXT image is detected.
+                    armStalledWatch();
 
                 })
                 .catch(function(error) {
@@ -18424,6 +18434,8 @@
                     if (window.bbaiJobState) {
                         window.bbaiJobState.tick({ success: false, title: message });
                     }
+                    // Rearm stall watch so a hang on the NEXT image is detected.
+                    armStalledWatch();
                     if (rowEl) {
                         rowEl.classList.remove('bbai-library-row--processing', 'bbai-library-row--bulk-queued');
                         rowEl.classList.add('bbai-library-row--bulk-failed');
