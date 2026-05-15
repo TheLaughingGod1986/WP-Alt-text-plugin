@@ -5315,6 +5315,30 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-bottom {
     flex-direction: column;
 }
 
+/* Icon circle at the top of each insight card */
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__icon--primary {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+}
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__icon--secondary {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+}
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__icon--tertiary {
+    background: rgba(124, 58, 237, 0.12);
+    color: #6d28d9;
+}
+
 /* Spacer row so the optional success pill in card 1 doesn't shift the value down */
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-badge-row {
     min-height: 32px;

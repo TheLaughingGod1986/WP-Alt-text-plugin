@@ -101,6 +101,9 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	>
 		<article class="bbai-li-insight-card bbai-stat-card primary">
 			<div class="bbai-stat-card-top">
+				<div class="bbai-li-insight-card__icon bbai-li-insight-card__icon--primary" aria-hidden="true">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="5" r="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 9.5V15M12 15L9 19M12 15L15 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 11.5C9.2 10.8 10.6 10.5 12 10.5C13.4 10.5 14.8 10.8 16 11.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+				</div>
 				<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Accessibility', 'beepbeep-ai-alt-text-generator' ); ?></h3>
 				<div class="bbai-li-badge-row">
 					<?php if ( 100 === $bbai_li_cov && $bbai_li_lib_n > 0 ) : ?>
@@ -156,6 +159,9 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 		</article>
 		<article class="bbai-li-insight-card bbai-stat-card secondary">
 			<div class="bbai-stat-card-top">
+				<div class="bbai-li-insight-card__icon bbai-li-insight-card__icon--secondary" aria-hidden="true">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7V12L15.5 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+				</div>
 				<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'Time saved', 'beepbeep-ai-alt-text-generator' ); ?></h3>
 				<div class="bbai-li-badge-row" aria-hidden="true"></div>
 				<p
@@ -196,6 +202,9 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 		</article>
 		<article class="bbai-li-insight-card bbai-stat-card tertiary">
 			<div class="bbai-stat-card-top">
+				<div class="bbai-li-insight-card__icon bbai-li-insight-card__icon--tertiary" aria-hidden="true">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 18V14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 18V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 18V12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 18V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 18V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+				</div>
 				<h3 class="bbai-li-insight-card__title"><?php esc_html_e( 'SEO', 'beepbeep-ai-alt-text-generator' ); ?></h3>
 				<div class="bbai-li-badge-row" aria-hidden="true"></div>
 				<p
