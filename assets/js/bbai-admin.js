@@ -2472,17 +2472,6 @@
                         source === 'credits_remaining_10_or_fewer' ||
                         source === 'generate_missing';
 
-                    if (window.console && typeof window.console.log === 'function') {
-                        window.console.log('USAGE CHECK', {
-                            used: used,
-                            limit: limit,
-                            remaining: remaining,
-                            isExhausted: isExhausted,
-                            reason: reason,
-                            source: source
-                        });
-                    }
-
                     // Upgrade modal must ONLY appear when credits are exhausted.
                     if (!isExhausted) {
                         return;
@@ -2516,16 +2505,6 @@
 
         // Hard gate: NEVER open the allowance/upgrade modal unless remainingCredits <= 0.
         if (remaining > 0) {
-            if (window.console && typeof window.console.log === 'function') {
-                window.console.log('USAGE CHECK', {
-                    used: canonical.usage.used,
-                    limit: canonical.usage.limit,
-                    remaining: remaining,
-                    isExhausted: false,
-                    reason: typeof reasonOrUsage === 'string' ? String(reasonOrUsage) : '',
-                    source: context && typeof context === 'object' ? String(context.source || '') : ''
-                });
-            }
             return false;
         }
 
@@ -2605,6 +2584,11 @@
     }
 
     function closeUpgradeModal() {
+        var active = document.activeElement;
+        if (active && typeof active.blur === 'function') {
+            active.blur();
+        }
+
         var lockedModal = bbaiLockedModalState.node;
         if (lockedModal) {
             lockedModal.classList.remove('is-visible');
@@ -3186,10 +3170,6 @@
                 used = isNaN(used) ? 0 : Math.max(0, used);
                 limit = isNaN(limit) ? 0 : Math.max(0, limit);
                 var isExhausted = limit > 0 && used >= limit;
-
-                if (window.console && typeof window.console.log === 'function') {
-                    window.console.log('USAGE CHECK', { used: used, limit: limit, isExhausted: isExhausted, errorCode: errorCode });
-                }
 
                 if (!isExhausted && errorCode !== 'bbai_trial_exhausted') {
                     if (typeof showNotification === 'function') {
@@ -14840,7 +14820,7 @@
     }
 
     function logApproveAll(eventName, context) {
-        if (!window.console || typeof window.console.log !== 'function') {
+        if (!window.BBAI_DEBUG || !window.console || typeof window.console.log !== 'function') {
             return;
         }
         window.console.log('[bbai-approve-all] ' + eventName, context || {});
@@ -18867,7 +18847,7 @@
             .done(function(response) {
                 // Handle successful HTTP response (status 200)
                 try {
-                    if (response && response.data) {
+                    if (window.BBAI_DEBUG && response && response.data) {
                         console.log('[BBAI] Generation result', response.data);
                     }
                     // Handle successful response
