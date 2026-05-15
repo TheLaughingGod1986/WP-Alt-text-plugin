@@ -475,7 +475,16 @@
                     autocapture: false,
                     capture_pageview: false,
                     capture_pageleave: false,
-                    disable_session_recording: true
+                    disable_session_recording: true,
+                    on_xhr_error: function(failedRequest) {
+                        if (failedRequest && failedRequest.status === 401) {
+                            logToConsole('warn', 'PostHog unauthorized (401) — disabling capture');
+                            var lib = getLibraryClient();
+                            if (lib && typeof lib.opt_out_capturing === 'function') {
+                                lib.opt_out_capturing();
+                            }
+                        }
+                    }
                 });
                 syncNamedInstance(library);
             } catch (error) {
