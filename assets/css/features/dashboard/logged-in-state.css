@@ -2373,8 +2373,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-header-manage-btn {
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
     position: relative;
-    gap: 32px;
-    --bbai-li-card-radius: 14px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard .bbai-command-hero-host {
@@ -2551,12 +2549,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
     justify-content: center;
     text-align: center;
     /* Let the donut + labels sit as a natural group; the card centres them */
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
-    width: 156px;
-    height: 156px;
-    margin-bottom: 16px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner {
@@ -3506,17 +3498,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-container.bbai-content-shell > .bba
     width: 100%;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
-    /* Reduce space between hero row and insight cards (section-to-section only). */
-    gap: 24px;
-    width: 100%;
-    max-width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
-}
-
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-shell {
     width: 100%;
     max-width: 1220px;
@@ -3588,17 +3569,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__title {
     min-height: 2.6em;
     display: flex;
     align-items: flex-start;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__value {
-    font-size: clamp(24px, 2.1vw, 30px);
-    font-weight: 700;
-    line-height: 1.2;
-    color: #111827;
-    margin: 16px 0 0;
-    letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
-    min-height: 1.2em;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__desc {
@@ -3755,11 +3725,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-li-free-plan
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-li-free-plan-upsell + .bbai-action-block {
     margin-top: 0;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
-    width: 230px;
-    height: 230px;
 }
 
 /* Thinner band + light entrance: avoid fighting PROCESSING spin */
@@ -4959,10 +4924,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-guest-hero__meta-note {
    Layout-only polish: compact cards, connected stats, lighter credit surface.
 ───────────────────────────────────────────────────────────────────────────── */
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
-    gap: 30px;
-}
-
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-shell {
     padding-left: 24px;
     padding-right: 24px;
@@ -4987,12 +4948,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
     gap: 7px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
-    width: 184px;
-    height: 184px;
-    margin-bottom: 6px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner {
@@ -5234,13 +5189,6 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__title {
     letter-spacing: 0.1em;
     line-height: 1.25;
     color: #94a3b8;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__value {
-    margin-top: 16px;
-    font-size: clamp(28px, 2.4vw, 36px);
-    line-height: 1.08;
-    letter-spacing: 0;
 }
 
 /* Primary card value ("X% of images accessible") is a longer string — scale down to prevent wrapping */
@@ -6150,9 +6098,14 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__label {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__value {
-    color: #0f172a !important;
+    font-size: clamp(28px, 2.4vw, 36px);
     font-weight: 760 !important;
+    line-height: 1.08;
+    color: #0f172a !important;
+    margin: 16px 0 0;
     letter-spacing: 0 !important;
+    font-variant-numeric: tabular-nums;
+    min-height: 1.2em;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__body {
