@@ -42,6 +42,7 @@
             '      <div class="bbai-job-widget__bar-fill" style="width:0%"></div>' +
             '    </div>' +
             '  </div>' +
+            '  <ul class="bbai-job-widget__log" aria-label="Recent images" aria-live="polite"></ul>' +
             '  <button type="button" class="bbai-job-widget__view">View</button>' +
             '</div>';
 
@@ -92,6 +93,34 @@
         return !!document.querySelector('[data-bbai-logged-in-dashboard]');
     }
 
+    var renderedLogLength = 0;
+
+    function renderWidgetLog(entries) {
+        if (!$widget) return;
+        var $log = $widget.find('.bbai-job-widget__log');
+        if (!$log.length) return;
+
+        // Only re-render when new entries arrive
+        if (entries.length === renderedLogLength) return;
+        renderedLogLength = entries.length;
+
+        $log.empty();
+        // Show most-recent last (bottom = newest), capped at 3 visible rows
+        var visible = entries.slice(-3);
+        for (var i = 0; i < visible.length; i++) {
+            var e = visible[i];
+            var icon = e.success ? '✓' : '✕';
+            var cls  = e.success ? 'bbai-job-widget__log-entry--ok' : 'bbai-job-widget__log-entry--err';
+            var title = String(e.title || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            $log.append(
+                '<li class="bbai-job-widget__log-entry ' + cls + '">' +
+                '  <span class="bbai-job-widget__log-icon" aria-hidden="true">' + icon + '</span>' +
+                '  <span class="bbai-job-widget__log-text">' + title + '</span>' +
+                '</li>'
+            );
+        }
+    }
+
     function render(state) {
         if (!$widget) return;
 
@@ -114,6 +143,7 @@
         // Hide when idle or modal is open during processing
         if (state.status === 'idle') {
             $widget.prop('hidden', true);
+            renderedLogLength = 0;
             return;
         }
 
@@ -181,6 +211,9 @@
             viewBtn[0].style.removeProperty('background-color');
             viewBtn.text('View progress');
         }
+
+        // Render recent log entries
+        renderWidgetLog(state.recentLog || []);
     }
 
     // Init when DOM ready

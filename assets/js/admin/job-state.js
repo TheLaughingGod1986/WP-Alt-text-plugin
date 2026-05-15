@@ -27,7 +27,8 @@
         startTime: null,
         eta: '',
         modalVisible: false,
-        lastImageTitle: ''
+        lastImageTitle: '',
+        recentLog: []          // last 5 { title, success, ts } entries
     };
 
     function notify() {
@@ -77,7 +78,8 @@
             startTime: Date.now(),
             eta: '',
             modalVisible: true,
-            lastImageTitle: ''
+            lastImageTitle: '',
+            recentLog: []
         });
     }
 
@@ -96,6 +98,11 @@
         } else {
             patch.failures = state.failures + 1;
         }
+
+        // Keep a rolling window of the last 5 entries for the floating widget log.
+        var entry = { title: patch.lastImageTitle, success: isSuccess, ts: Date.now() };
+        var log = state.recentLog.slice(-4).concat([entry]);
+        patch.recentLog = log;
 
         // ETA
         var elapsed = (Date.now() - (state.startTime || Date.now())) / 1000;
@@ -168,7 +175,8 @@
             startTime: null,
             eta: '',
             modalVisible: false,
-            lastImageTitle: ''
+            lastImageTitle: '',
+            recentLog: []
         });
     }
 
