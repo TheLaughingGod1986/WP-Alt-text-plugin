@@ -146,14 +146,15 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
-/* Primary button */
+/* Primary button — !important on colour/background to beat WP admin global button resets */
 .bbai-modal-button--primary {
-    background: #3B82F6;
-    color: #ffffff;
+    background: #3B82F6 !important;
+    color: #ffffff !important;
 }
 
 .bbai-modal-button--primary:hover {
-    background: #2563EB;
+    background: #2563EB !important;
+    color: #ffffff !important;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
@@ -164,42 +165,43 @@
 
 /* Error type primary button */
 .bbai-modal--error .bbai-modal-button--primary {
-    background: #EF4444;
+    background: #EF4444 !important;
 }
 
 .bbai-modal--error .bbai-modal-button--primary:hover {
-    background: #DC2626;
+    background: #DC2626 !important;
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 /* Warning type primary button */
 .bbai-modal--warning .bbai-modal-button--primary {
-    background: #F59E0B;
+    background: #F59E0B !important;
 }
 
 .bbai-modal--warning .bbai-modal-button--primary:hover {
-    background: #D97706;
+    background: #D97706 !important;
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 /* Success type primary button */
 .bbai-modal--success .bbai-modal-button--primary {
-    background: #10B981;
+    background: #10B981 !important;
 }
 
 .bbai-modal--success .bbai-modal-button--primary:hover {
-    background: #059669;
+    background: #059669 !important;
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 /* Secondary button */
 .bbai-modal-button--secondary {
-    background: #F3F4F6;
-    color: #374151;
+    background: #F3F4F6 !important;
+    color: #374151 !important;
 }
 
 .bbai-modal-button--secondary:hover {
-    background: #E5E7EB;
+    background: #E5E7EB !important;
+    color: #374151 !important;
     transform: translateY(-1px);
 }
 
