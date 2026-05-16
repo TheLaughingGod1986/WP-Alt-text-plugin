@@ -210,8 +210,9 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		);
 		$bbai_left_helper      = __( 'Based on your last scan.', 'beepbeep-ai-alt-text-generator' );
 	} else {
+		$bbai_donut_center_val = '0%';
 		$bbai_donut_center_sub = __( 'Coverage', 'beepbeep-ai-alt-text-generator' );
-		$bbai_left_helper      = __( 'Scan your media library in seconds. Find missing ALT text automatically.', 'beepbeep-ai-alt-text-generator' );
+		$bbai_left_helper      = '';
 	}
 
 	if ( $bbai_state_missing_count <= 0 && $bbai_state_weak_count > 0 ) {
@@ -335,17 +336,50 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					<span class="bbai-li-donut__helper-meta"><?php echo esc_html( $bbai_left_helper_meta ); ?></span>
 				<?php endif; ?>
 			</p>
-		<?php if ( 'fresh' === $bbai_guest_hero_variant ) : ?>
-		<p class="bbai-guest-donut-note"><?php esc_html_e( 'Works with your existing WordPress media library', 'beepbeep-ai-alt-text-generator' ); ?></p>
-		<?php endif; ?>
+		</div>
+
+	<?php if ( 'fresh' === $bbai_guest_hero_variant ) : ?>
+	<div class="bbai-guest-donut-card__extras">
+		<p class="bbai-guest-donut-card__title"><?php esc_html_e( 'Your images need ALT text', 'beepbeep-ai-alt-text-generator' ); ?></p>
+		<p class="bbai-guest-donut-card__desc"><?php esc_html_e( 'Scan your media library to find images missing ALT text and improve your site\'s SEO and accessibility.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+		<div class="bbai-guest-donut-card__tiles">
+			<div class="bbai-guest-donut-card__tile">
+				<span class="bbai-guest-donut-card__tile-icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+				</span>
+				<div class="bbai-guest-donut-card__tile-text">
+					<strong><?php esc_html_e( 'No setup required', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+					<span><?php esc_html_e( 'Get started in seconds', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				</div>
+			</div>
+			<div class="bbai-guest-donut-card__tile">
+				<span class="bbai-guest-donut-card__tile-icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+				</span>
+				<div class="bbai-guest-donut-card__tile-text">
+					<strong><?php esc_html_e( '100% Safe', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+					<span><?php esc_html_e( 'We never overwrite your content', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				</div>
+			</div>
 		</div>
 	</div>
+	<?php endif; ?>
+</div>
 
 	<div class="bbai-li-card bbai-li-card--content">
 
 		<div class="bbai-li-card-section bbai-li-card-section--intro">
 			<h1 id="bbai-guest-hero-heading" class="bbai-li-headline"><?php echo esc_html( $bbai_guest_title ); ?></h1>
+			<?php if ( 'fresh' === $bbai_guest_hero_variant ) : ?>
+			<ul class="bbai-guest-hero__checklist">
+				<li><?php printf( /* translators: %d: free trial limit */ esc_html__( 'Generate your first %d ALT texts for free', 'beepbeep-ai-alt-text-generator' ), (int) $bbai_gt_limit ); ?></li>
+				<li><?php esc_html_e( 'No credit card required', 'beepbeep-ai-alt-text-generator' ); ?></li>
+				<li><?php esc_html_e( 'AI suggestions you can review and approve', 'beepbeep-ai-alt-text-generator' ); ?></li>
+				<li><?php esc_html_e( 'Works with your existing WordPress media', 'beepbeep-ai-alt-text-generator' ); ?></li>
+			</ul>
+			<?php else : ?>
 			<p class="bbai-li-support"><?php echo esc_html( $bbai_guest_body ); ?></p>
+			<?php endif; ?>
 		</div>
 
 		<div class="bbai-li-card-section bbai-li-card-section--actions bbai-guest-hero__cta-block">
@@ -383,7 +417,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					><?php echo esc_html( $bbai_primary_register['label'] ); ?></a>
 
 					<?php if ( ! $bbai_show_generate_primary && 'fresh' === $bbai_guest_hero_variant ) : ?>
-					<p class="bbai-guest-hero__no-cc"><?php esc_html_e( 'No credit card required', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<p class="bbai-guest-hero__no-cc"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><?php esc_html_e( ' No credit card required', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					<?php endif; ?>
 
 					<p class="bbai-guest-hero__login">
@@ -403,7 +437,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 			</div>
 		</div>
 
-		<?php if ( 'exhausted' !== $bbai_guest_hero_variant ) : ?>
+		<?php if ( 'in_progress' === $bbai_guest_hero_variant ) : ?>
 			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
 				<p class="bbai-guest-hero__trial-line">
 					<span class="bbai-guest-hero__trial-line-main">
@@ -440,19 +474,37 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 			<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
 			</span>
-			<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Improve image SEO', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			<span class="bbai-trust-grid__text-group">
+				<strong class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Improve image SEO', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+				<span class="bbai-trust-grid__sub"><?php esc_html_e( 'Rank higher in search results', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			</span>
 		</div>
 		<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
 			<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
 			</span>
-			<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Boost accessibility', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			<span class="bbai-trust-grid__text-group">
+				<strong class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Improve accessibility', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+				<span class="bbai-trust-grid__sub"><?php esc_html_e( 'Make your site inclusive', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			</span>
 		</div>
 		<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
 			<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 			</span>
-			<span class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Save hours of manual writing', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			<span class="bbai-trust-grid__text-group">
+				<strong class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'Save hours of manual work', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+				<span class="bbai-trust-grid__sub"><?php esc_html_e( 'Let AI handle the repetitive stuff', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			</span>
+		</div>
+		<div class="bbai-dashboard-value-strip__item bbai-benefit-item bbai-trust-grid__item">
+			<span class="bbai-dashboard-value-strip__icon bbai-benefit-icon bbai-trust-grid__icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+			</span>
+			<span class="bbai-trust-grid__text-group">
+				<strong class="bbai-benefit-text bbai-trust-grid__text"><?php esc_html_e( 'You\'re always in control', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+				<span class="bbai-trust-grid__sub"><?php esc_html_e( 'Review and approve every suggestion', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			</span>
 		</div>
 	</div>
 <?php endif; ?>
