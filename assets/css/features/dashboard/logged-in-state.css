@@ -3541,8 +3541,11 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-top {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-bottom {
-    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     min-width: 0;
+    padding-top: 16px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-stats {
@@ -5312,11 +5315,13 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-badge-row + .bbai-li-insight-car
 /* Body text (desc + meta + support) grows to fill available space */
 body.toplevel_page_bbai.bbai-dashboard .bbai-stat-card-body {
     flex: 1;
+    min-width: 0;
 }
 
-/* CTA always anchored to bottom of card */
+/* CTA pinned to the bottom of the card — margin-top: auto consumes all leftover space */
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
-    margin-top: 18px;
+    margin-top: auto;
+    padding-top: 18px;
     align-self: stretch;
 }
 
