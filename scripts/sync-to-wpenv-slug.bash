@@ -14,18 +14,30 @@ set -euo pipefail
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLEAN_SRC_DIR="${SRC_DIR}/build/wpenv-plugin/beepbeep-ai-alt-text-generator/"
 
-# wp-env project hash for this repo (matches current docker container names).
-WP_ENV_HASH="06fe8883b07a5e21412cec8c726b075e"
+# Auto-detect the wp-env hash by finding any ~/.wp-env/<hash>/WordPress directory.
+# The hash changes whenever wp-env is recreated, so we detect it rather than
+# hardcoding it (a hardcoded hash breaks the sync on any other machine or after
+# a 'wp-env destroy && wp-env start').
+WP_ENV_HASH=""
+if [[ -d "${HOME}/.wp-env" ]]; then
+  for candidate in "${HOME}"/.wp-env/*/WordPress; do
+    if [[ -d "${candidate}" ]]; then
+      WP_ENV_HASH="$(basename "$(dirname "${candidate}")")"
+      break
+    fi
+  done
+fi
+
+if [[ -z "${WP_ENV_HASH}" ]]; then
+  echo "No wp-env WordPress directory found under ~/.wp-env/"
+  echo ""
+  echo "Start wp-env first (e.g. 'npx wp-env start' or 'wp-env start'), then re-run."
+  exit 1
+fi
 
 DEST_DIR="${HOME}/.wp-env/${WP_ENV_HASH}/WordPress/wp-content/plugins/beepbeep-ai-alt-text-generator/"
 
-if [[ ! -d "${HOME}/.wp-env/${WP_ENV_HASH}/WordPress" ]]; then
-  echo "wp-env WordPress directory not found at:"
-  echo "  ${HOME}/.wp-env/${WP_ENV_HASH}/WordPress"
-  echo ""
-  echo "Start wp-env first (e.g. 'wp-env start'), then re-run."
-  exit 1
-fi
+echo "Detected wp-env hash: ${WP_ENV_HASH}"
 
 mkdir -p "${CLEAN_SRC_DIR}" "${DEST_DIR}"
 

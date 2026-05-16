@@ -12,7 +12,7 @@ set -euo pipefail
 #   ./scripts/release.bash 4.6.2 "Short release note"
 #
 # Optional:
-#   BBAI_WP_ENV_HASH=...   (overrides the hash used by sync-to-wpenv-slug.bash)
+#   BBAI_WP_ENV_HASH=...   (no longer needed; the sync script auto-detects the hash)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_MAIN="${ROOT_DIR}/beepbeep-ai-alt-text-generator.php"
@@ -217,12 +217,6 @@ rsync -av --delete \
 
 echo "Syncing to wp-env"
 
-# Allow overriding the hash without editing the sync script.
-if [[ -n "${BBAI_WP_ENV_HASH:-}" ]]; then
-  # shellcheck disable=SC2016
-  perl -0pi -e 's/WP_ENV_HASH="[^"]+"/WP_ENV_HASH="'"${BBAI_WP_ENV_HASH}"'"/' "${SYNC_SCRIPT}"
-fi
-
 bash "${SYNC_SCRIPT}"
 
 echo "Verifying wp-env is running version ${VERSION}"
@@ -242,9 +236,8 @@ if command -v wp-env >/dev/null 2>&1; then
 fi
 
 if [[ "${verify_ok}" -ne 1 ]]; then
-  # Fallback: read the synced file header.
-  # sync-to-wpenv-slug.bash prints the destination; reconstruct it here too.
-  WP_ENV_HASH="$(perl -ne 'print $1 if /^WP_ENV_HASH="([^"]+)"/' "${SYNC_SCRIPT}")"
+  # Fallback: read the synced plugin file directly.
+  WP_ENV_HASH="$(ls -d "${HOME}"/.wp-env/*/WordPress 2>/dev/null | head -1 | sed 's|.*/\.wp-env/||;s|/WordPress.*||' || true)"
   dest="${HOME}/.wp-env/${WP_ENV_HASH}/WordPress/wp-content/plugins/beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php"
   if [[ -f "${dest}" ]]; then
     dest_ver="$(awk -F': ' '/\\* Version:/{print $2; exit}' "${dest}" | tr -d '\r\n' || true)"
