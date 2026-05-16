@@ -19396,6 +19396,18 @@
             var isSecondary = $(this).is('[data-bbai-bulk-progress-secondary]');
             var actionConfig = isSecondary ? ctaConfig.secondary : ctaConfig.primary;
 
+            // The render path overwrites ctaConfig (e.g. secondary becomes 'dismiss-completion')
+            // and stamps the resolved action onto data-bbai-bulk-progress-action.
+            // Use that attribute so the executed action always matches what the user sees.
+            var renderedAction = String($(this).attr('data-bbai-bulk-progress-action') || '');
+            if (renderedAction) {
+                actionConfig = {
+                    action: renderedAction,
+                    url: String($(this).attr('data-bbai-bulk-progress-url') || ''),
+                    label: actionConfig && actionConfig.label ? actionConfig.label : ''
+                };
+            }
+
             dispatchAnalyticsEvent(
                 'batch_generation_cta_clicked',
                 buildBulkProgressAnalyticsPayload(state, {
