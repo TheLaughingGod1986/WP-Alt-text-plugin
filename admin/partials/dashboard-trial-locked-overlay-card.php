@@ -47,8 +47,8 @@ $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exha
 			<button
 				type="button"
 				class="bbai-btn bbai-btn-primary bbai-dashboard-locked-preview__cta bbai-dashboard-locked-preview__cta--primary bbai-modal-primary"
-				data-action="show-auth-modal"
-				data-auth-tab="signup"
+				data-action="show-dashboard-auth"
+				data-auth-tab="register"
 				data-bbai-modal-context="library"
 				data-bbai-analytics-upgrade="library_overlay_create_account"
 				data-bbai-trial-complete-cta="<?php echo esc_attr( $bbai_trial_exhausted ? 'unlock_alt_library' : 'create_account' ); ?>"
