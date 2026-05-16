@@ -6,6 +6,10 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### Unreleased
 
+### 4.6.7 — 2026-05-16
+
+- **Fixed**: Fatal error on dashboard load caused by `self::null` typo in `Plan_Helpers::get_plan_data()` — corrected to `null !== self::$cached_plan_data`.
+
 ### 4.6.6 — 2026-05-16
 
 - **Changed**: Redesigned the logged-out/guest dashboard with a premium, high-converting layout — updated hero left card with donut chart and feature tiles, right card with benefit checklist, trust strip with four items and subtitles, and a full-width library preview table showing real AI suggestion previews.
