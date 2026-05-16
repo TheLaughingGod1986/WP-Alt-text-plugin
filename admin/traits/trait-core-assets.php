@@ -691,6 +691,16 @@ JS,
 			);
 		}
 
+		$guest_polish_css = 'assets/css/features/dashboard/guest-polish.css';
+		if ( file_exists( $base_path . $guest_polish_css ) ) {
+			wp_enqueue_style(
+				'bbai-guest-polish',
+				$base_url . $guest_polish_css,
+				array( 'bbai-funnel-hero', 'bbai-logged-in-state' ),
+				$asset_version( $guest_polish_css, '1.0.0' )
+			);
+		}
+
 		$usage_strip_css = 'assets/css/features/dashboard/usage-strip.css';
 		if ( file_exists( $base_path . $usage_strip_css ) ) {
 			wp_enqueue_style(

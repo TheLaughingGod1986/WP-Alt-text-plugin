@@ -67,6 +67,13 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 		</div>
 	<?php endif; ?>
 
+	<div class="bbai-guest-preview__header" aria-hidden="true">
+		<p class="bbai-guest-preview__header-title"><?php esc_html_e( 'ALT Library', 'beepbeep-ai-alt-text-generator' ); ?></p>
+		<span class="bbai-guest-preview__lock-badge">
+			<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+			<?php esc_html_e( 'Locked', 'beepbeep-ai-alt-text-generator' ); ?>
+		</span>
+	</div>
 	<div class="bbai-dashboard-locked-preview__shell bbai-dashboard-trial-preview__shell">
 		<?php if ( $bbai_trial_exhausted ) : ?>
 		<div class="bbai-dashboard-trial-preview__blur-wrap" aria-hidden="true" inert>
@@ -85,44 +92,58 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 				</div>
 			<?php else : ?>
 				<div class="bbai-dashboard-trial-preview__list" role="presentation" data-bbai-trial-preview-skeleton>
-					<?php
-					$bbai_skel_set = array(
-						array(
-							'cc' => 'bbai-dashboard-locked-preview__badge--missing',
-							'lb' => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
-						),
-						array(
-							'cc' => 'bbai-dashboard-locked-preview__badge--review',
-							'lb' => __( 'Review', 'beepbeep-ai-alt-text-generator' ),
-						),
-						array(
-							'cc' => 'bbai-dashboard-locked-preview__badge--optimized',
-							'lb' => __( 'OK', 'beepbeep-ai-alt-text-generator' ),
-						),
-					);
-					foreach ( $bbai_skel_set as $bbai_skel_row ) :
-						?>
 					<div class="bbai-dashboard-locked-preview__row" aria-hidden="true">
-						<div class="bbai-dashboard-locked-preview__thumb" aria-hidden="true"></div>
+						<div class="bbai-dashboard-locked-preview__thumb"></div>
 						<div class="bbai-dashboard-locked-preview__content">
 							<div class="bbai-dashboard-locked-preview__meta">
-								<span class="bbai-dashboard-locked-preview__filename" aria-hidden="true"></span>
-								<span class="bbai-dashboard-locked-preview__badge <?php echo esc_attr( (string) ( $bbai_skel_row['cc'] ?? '' ) ); ?>"><?php echo esc_html( (string) ( $bbai_skel_row['lb'] ?? '' ) ); ?></span>
+								<span class="bbai-dashboard-locked-preview__filename" style="width:48%"></span>
+								<span class="bbai-dashboard-locked-preview__badge bbai-dashboard-locked-preview__badge--missing"><?php esc_html_e( 'Missing', 'beepbeep-ai-alt-text-generator' ); ?></span>
 							</div>
-							<div class="bbai-dashboard-locked-preview__alt-lines" aria-hidden="true">
-								<span class="bbai-dashboard-locked-preview__line"></span>
-								<span class="bbai-dashboard-locked-preview__line" style="width:78%"></span>
+							<div class="bbai-dashboard-locked-preview__alt-lines">
+								<span class="bbai-dashboard-locked-preview__line" style="width:86%"></span>
+								<span class="bbai-dashboard-locked-preview__line" style="width:64%"></span>
 							</div>
 						</div>
 					</div>
-						<?php
-					endforeach;
-					?>
+					<div class="bbai-dashboard-locked-preview__row" aria-hidden="true">
+						<div class="bbai-dashboard-locked-preview__thumb"></div>
+						<div class="bbai-dashboard-locked-preview__content">
+							<div class="bbai-dashboard-locked-preview__meta">
+								<span class="bbai-dashboard-locked-preview__filename" style="width:55%"></span>
+								<span class="bbai-dashboard-locked-preview__badge bbai-dashboard-locked-preview__badge--review"><?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?></span>
+							</div>
+							<div class="bbai-dashboard-locked-preview__alt-lines">
+								<span class="bbai-dashboard-locked-preview__alt-snippet"><?php esc_html_e( 'A professional product display showing the new collection against a clean white background', 'beepbeep-ai-alt-text-generator' ); ?></span>
+							</div>
+							<span class="bbai-dashboard-locked-preview__ai-label">
+								<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+								<?php esc_html_e( 'AI suggestion', 'beepbeep-ai-alt-text-generator' ); ?>
+							</span>
+						</div>
+					</div>
+					<div class="bbai-dashboard-locked-preview__row" aria-hidden="true">
+						<div class="bbai-dashboard-locked-preview__thumb"></div>
+						<div class="bbai-dashboard-locked-preview__content">
+							<div class="bbai-dashboard-locked-preview__meta">
+								<span class="bbai-dashboard-locked-preview__filename" style="width:40%"></span>
+								<span class="bbai-dashboard-locked-preview__badge bbai-dashboard-locked-preview__badge--optimized"><?php esc_html_e( 'Done', 'beepbeep-ai-alt-text-generator' ); ?></span>
+							</div>
+							<div class="bbai-dashboard-locked-preview__alt-lines">
+								<span class="bbai-dashboard-locked-preview__alt-snippet"><?php esc_html_e( 'Three colleagues collaborating at a bright modern office desk, reviewing documents together', 'beepbeep-ai-alt-text-generator' ); ?></span>
+							</div>
+							<span class="bbai-dashboard-locked-preview__ai-label">
+								<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+								<?php esc_html_e( 'AI suggestion', 'beepbeep-ai-alt-text-generator' ); ?>
+							</span>
+						</div>
+					</div>
 				</div>
 			<?php endif; ?>
 		<?php if ( $bbai_trial_exhausted ) : ?>
 		</div>
 		<?php endif; ?>
+
+	<div class="bbai-guest-preview__fade" aria-hidden="true"></div>
 
 		<p class="bbai-dashboard-trial-preview__waiting-label" aria-hidden="true">
 			<?php echo esc_html( $bbai_locked_preview_waiting_line ); ?>
@@ -138,3 +159,12 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 
 	<p class="bbai-dashboard-trial-preview__empty" data-bbai-trial-preview-empty hidden></p>
 </section>
+<?php if ( ! $bbai_trial_exhausted ) : ?>
+<div class="bbai-guest-reassurance" aria-label="<?php esc_attr_e( 'Reassurance', 'beepbeep-ai-alt-text-generator' ); ?>">
+	<span class="bbai-guest-reassurance__item"><?php esc_html_e( 'AI suggestions are always reviewable before publishing', 'beepbeep-ai-alt-text-generator' ); ?></span>
+	<span class="bbai-guest-reassurance__dot" aria-hidden="true"></span>
+	<span class="bbai-guest-reassurance__item"><?php esc_html_e( 'Your original ALT text is never overwritten automatically', 'beepbeep-ai-alt-text-generator' ); ?></span>
+	<span class="bbai-guest-reassurance__dot" aria-hidden="true"></span>
+	<span class="bbai-guest-reassurance__item"><?php esc_html_e( 'Works with your existing WordPress media library', 'beepbeep-ai-alt-text-generator' ); ?></span>
+</div>
+<?php endif; ?>

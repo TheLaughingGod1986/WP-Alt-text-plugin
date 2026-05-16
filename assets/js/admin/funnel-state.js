@@ -1854,6 +1854,15 @@
                     trigger.getAttribute('data-auth-tab') === 'login' ? 'login' : 'register',
                     getModalContextFromTrigger(trigger)
                 );
+                    try {
+                        var evtName = trigger.getAttribute('data-auth-tab') === 'login'
+                            ? 'logged_out_login_clicked'
+                            : 'logged_out_signup_clicked';
+                        document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                            detail: { event: evtName, source: 'guest_funnel_cta' },
+                            bubbles: true
+                        }));
+                    } catch (e) {}
 	            return;
 	        }
 
@@ -2123,6 +2132,22 @@
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () {
             refresh();
+            // Logged-out page-view telemetry
+            var guestFunnelRoot = getRoot();
+            if (guestFunnelRoot && isDashboardGuest(guestFunnelRoot)) {
+                try {
+                    if (typeof window.bbaiDispatchAnalytics === 'function') {
+                        window.bbaiDispatchAnalytics('logged_out_dashboard_viewed', {
+                            source: 'guest_funnel',
+                            trial_remaining: getTrialCreditsRemaining(guestFunnelRoot)
+                        });
+                    }
+                    document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                        detail: { event: 'logged_out_dashboard_viewed', source: 'guest_funnel' },
+                        bubbles: true
+                    }));
+                } catch (e) {}
+            }
             maybeRevealLibraryGateFromQuery();
         });
     } else {
