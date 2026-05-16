@@ -6,6 +6,19 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### Unreleased
 
+### 4.6.6 — 2026-05-16
+
+- **Changed**: Redesigned the logged-out/guest dashboard with a premium, high-converting layout — updated hero left card with donut chart and feature tiles, right card with benefit checklist, trust strip with four items and subtitles, and a full-width library preview table showing real AI suggestion previews.
+- **Fixed**: Close button in the bulk progress completion modal now correctly dismisses the modal when the job has images ready to review (was routing to an unhandled action and silently doing nothing).
+- **Fixed**: Primary action button text in the bulk progress completion modal is now white on the green gradient background (colour was not being applied, making "Review images" text invisible).
+
+### 4.6.5 — 2026-05-15
+
+- **Fixed**: Cleaned up browser console output by removing unconditional USAGE CHECK and generation result debug logs, and gating approve-all logging behind BBAI_DEBUG flag.
+- **Fixed**: PostHog 401 retry flood resolved by adding on_xhr_error handler to opt out of capturing on Unauthorized responses.
+- **Fixed**: aria-hidden accessibility warning resolved by blurring focused elements before setting aria-hidden on modal close.
+- **Changed**: Added coloured icon circles to the three dashboard insight cards (Accessibility, Time Saved, SEO).
+
 ### 4.6.4 — 2026-05-14
 
 - **Fixed**: Background generation persistence now survives page navigation, refreshes, and multi-tab sessions across all plugin pages.
