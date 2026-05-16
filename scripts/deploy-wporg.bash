@@ -58,6 +58,9 @@ echo "Preparing SVN working copy at ${WORK_DIR}"
 if [[ ! -d "${WORK_DIR}/.svn" ]]; then
   rm -rf "${WORK_DIR}"
   svn checkout "${SVN_URL}" "${WORK_DIR}"
+else
+  echo "Updating existing SVN working copy"
+  svn update "${WORK_DIR}"
 fi
 
 echo "Syncing plugin into trunk"
@@ -90,8 +93,8 @@ rsync -av --delete "${WORK_DIR}/trunk/" "${WORK_DIR}/tags/${VERSION}/" >/dev/nul
 pushd "${WORK_DIR}" >/dev/null
 
 echo "SVN add/remove"
-svn status | awk '/^\\?/ {print $2}' | xargs -I{} svn add --force "{}" >/dev/null 2>&1 || true
-svn status | awk '/^\\!/ {print $2}' | xargs -I{} svn rm --force "{}" >/dev/null 2>&1 || true
+svn status | awk '/^\?/ {print $2}' | xargs -I{} svn add --force "{}" >/dev/null 2>&1 || true
+svn status | awk '/^!/ {print $2}' | xargs -I{} svn rm --force "{}" >/dev/null 2>&1 || true
 
 echo "Committing to WP.org SVN"
 msg="Release ${VERSION}"
