@@ -101,3 +101,10 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Ensure primary action button text is always readable against the green gradient */
+.bbai-bulk-progress__action--primary,
+.bbai-bulk-progress__action--primary:hover,
+.bbai-bulk-progress__action--primary:focus-visible {
+    color: #ffffff !important;
+}
