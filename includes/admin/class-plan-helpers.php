@@ -43,7 +43,7 @@ class Plan_Helpers {
 	 * @return array Plan data with keys: plan_slug, is_free, is_growth, is_agency, is_pro
 	 */
 	public static function get_plan_data( $force_refresh = false ) {
-		if ( self::null !== $cached_plan_data && ! $force_refresh ) {
+		if ( null !== self::$cached_plan_data && ! $force_refresh ) {
 			return self::$cached_plan_data;
 		}
 
