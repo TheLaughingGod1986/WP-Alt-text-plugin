@@ -108,6 +108,16 @@ rm -rf \
 
 rsync -a --delete "${CLEAN_SRC_DIR}/" "${DEST_DIR}"
 
+# Also sync directly to the OrbStack container volume if it exists.
+# On macOS with OrbStack, Docker bind-mounts live under a separate path that
+# may not reflect writes to the ~/.wp-env volume until a container restart.
+ORBSTACK_CONTAINER_PATH="${HOME}/OrbStack/docker/containers/${WP_ENV_HASH}-wordpress-1/var/www/html/wp-content/plugins/beepbeep-ai-alt-text-generator/"
+if [[ -d "$(dirname "${ORBSTACK_CONTAINER_PATH}")" ]]; then
+  rsync -a --delete "${CLEAN_SRC_DIR}/" "${ORBSTACK_CONTAINER_PATH}"
+  echo "Synced to OrbStack container path:"
+  echo "  ${ORBSTACK_CONTAINER_PATH}"
+fi
+
 echo ""
 echo "Clean source:"
 echo "  ${CLEAN_SRC_DIR}"
