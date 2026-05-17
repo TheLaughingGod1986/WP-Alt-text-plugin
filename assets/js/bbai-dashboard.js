@@ -2805,14 +2805,14 @@ function showAuthModal(tab) {
     // Try to show auth modal with specific tab
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
         if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using authModal.show()');
-        window.authModal.show();
-        
-        // Switch to the appropriate form
+
+        // Switch to the correct form BEFORE show() to avoid flashing the wrong form and misplaced focus.
         if (tab === 'register' && typeof window.authModal.showRegisterForm === 'function') {
             window.authModal.showRegisterForm();
-        } else if (typeof window.authModal.showLoginForm === 'function') {
+        } else if (tab !== 'register' && typeof window.authModal.showLoginForm === 'function') {
             window.authModal.showLoginForm();
         }
+        window.authModal.show();
         return;
     }
 

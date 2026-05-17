@@ -19400,14 +19400,15 @@
 
         $modal.on('click', '[data-bbai-bulk-progress-primary], [data-bbai-bulk-progress-secondary]', function() {
             var state = getBulkProgressState($modal);
-            var ctaConfig = resolveBulkProgressCompletionCtaConfig(state);
-            var isSecondary = $(this).is('[data-bbai-bulk-progress-secondary]');
-            var actionConfig = isSecondary ? ctaConfig.secondary : ctaConfig.primary;
+            var action = $(this).attr('data-bbai-bulk-progress-action') || '';
+            var url = $(this).attr('data-bbai-bulk-progress-url') || '';
+            var label = $(this).text().trim();
+            var actionConfig = { action: action, url: url, label: label };
 
             dispatchAnalyticsEvent(
                 'batch_generation_cta_clicked',
                 buildBulkProgressAnalyticsPayload(state, {
-                    cta_label: actionConfig && actionConfig.label ? actionConfig.label : ''
+                    cta_label: label
                 })
             );
 

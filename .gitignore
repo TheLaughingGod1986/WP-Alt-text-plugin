@@ -26,4 +26,3 @@ pcp-report.json
 
 # Local env / deployment working copies
 .wporg-svn/
-.wp-env.json
