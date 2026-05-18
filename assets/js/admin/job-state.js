@@ -10,8 +10,11 @@
 (function (global) {
     'use strict';
 
+    var STORAGE_KEY = 'bbai_active_generation_state_v1';
+    var MAX_STATE_AGE_MS = 6 * 60 * 60 * 1000;
     var listeners = [];
     var autoDismissTimer = null;
+    var suppressPersist = false;
 
     var state = {
         running: false,
@@ -29,6 +32,94 @@
         modalVisible: false,
         lastImageTitle: ''
     };
+
+    function isPersistable(next) {
+        return !!next && next.status !== 'idle' && (
+            next.running ||
+            next.status === 'processing' ||
+            next.status === 'complete' ||
+            next.status === 'error' ||
+            next.status === 'quota'
+        );
+    }
+
+    function readStoredState() {
+        var raw;
+        var parsed;
+        var updatedAt;
+
+        try {
+            raw = global.localStorage ? global.localStorage.getItem(STORAGE_KEY) : '';
+            if (!raw) {
+                return null;
+            }
+            parsed = JSON.parse(raw);
+            updatedAt = parseInt(parsed.updatedAt || parsed.startTime || '0', 10) || 0;
+            if (updatedAt && Date.now() - updatedAt > MAX_STATE_AGE_MS) {
+                global.localStorage.removeItem(STORAGE_KEY);
+                return null;
+            }
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function persistState() {
+        if (suppressPersist) {
+            return;
+        }
+        try {
+            if (!global.localStorage) {
+                return;
+            }
+            if (!isPersistable(state)) {
+                global.localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+            global.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                running: !!state.running,
+                progress: Math.max(0, parseInt(state.progress, 10) || 0),
+                total: Math.max(0, parseInt(state.total, 10) || 0),
+                percentage: Math.max(0, parseInt(state.percentage, 10) || 0),
+                successes: Math.max(0, parseInt(state.successes, 10) || 0),
+                failures: Math.max(0, parseInt(state.failures, 10) || 0),
+                skipped: Math.max(0, parseInt(state.skipped, 10) || 0),
+                status: String(state.status || 'idle'),
+                label: String(state.label || ''),
+                mode: String(state.mode || ''),
+                startTime: state.startTime || Date.now(),
+                updatedAt: Date.now(),
+                eta: String(state.eta || ''),
+                modalVisible: !!state.modalVisible,
+                lastImageTitle: String(state.lastImageTitle || '')
+            }));
+        } catch (e) {}
+    }
+
+    function applyStoredState(stored) {
+        if (!stored || typeof stored !== 'object') {
+            return;
+        }
+        suppressPersist = true;
+        update({
+            running: !!stored.running,
+            progress: Math.max(0, parseInt(stored.progress, 10) || 0),
+            total: Math.max(0, parseInt(stored.total, 10) || 0),
+            percentage: Math.max(0, parseInt(stored.percentage, 10) || 0),
+            successes: Math.max(0, parseInt(stored.successes, 10) || 0),
+            failures: Math.max(0, parseInt(stored.failures, 10) || 0),
+            skipped: Math.max(0, parseInt(stored.skipped, 10) || 0),
+            status: String(stored.status || 'idle'),
+            label: String(stored.label || ''),
+            mode: String(stored.mode || ''),
+            startTime: stored.startTime || null,
+            eta: String(stored.eta || ''),
+            modalVisible: !!stored.modalVisible,
+            lastImageTitle: String(stored.lastImageTitle || '')
+        });
+        suppressPersist = false;
+    }
 
     function notify() {
         for (var i = 0; i < listeners.length; i++) {
@@ -51,6 +142,7 @@
             if (state.total > 0) {
                 state.percentage = Math.round((state.progress / state.total) * 100);
             }
+            persistState();
             notify();
         }
     }
@@ -72,7 +164,7 @@
             failures: 0,
             skipped: 0,
             status: 'processing',
-            label: label || 'Processing images\u2026',
+            label: label || 'Generation continues in background',
             mode: mode || '',
             startTime: Date.now(),
             eta: '',
@@ -130,12 +222,9 @@
             progress: state.total
         });
 
-        // Auto-dismiss widget after 8 seconds
-        autoDismissTimer = setTimeout(function () {
-            if (!state.running && (state.status === 'complete' || state.status === 'error' || state.status === 'quota')) {
-                reset();
-            }
-        }, 8000);
+        // Keep terminal states visible until the user acknowledges them.
+        // Users often background generation and navigate between wp-admin pages;
+        // auto-clearing the state makes the finished job look like it vanished.
     }
 
     /**
@@ -162,6 +251,11 @@
             modalVisible: false,
             lastImageTitle: ''
         });
+        try {
+            if (global.localStorage) {
+                global.localStorage.removeItem(STORAGE_KEY);
+            }
+        } catch (e) {}
     }
 
     /**
@@ -197,5 +291,24 @@
         subscribe: subscribe,
         getState: getState
     };
+
+    applyStoredState(readStoredState());
+
+    if (global.addEventListener) {
+        global.addEventListener('storage', function (event) {
+            if (!event || event.key !== STORAGE_KEY) {
+                return;
+            }
+            if (!event.newValue) {
+                suppressPersist = true;
+                reset();
+                suppressPersist = false;
+                return;
+            }
+            try {
+                applyStoredState(JSON.parse(event.newValue));
+            } catch (e) {}
+        });
+    }
 
 })(window);

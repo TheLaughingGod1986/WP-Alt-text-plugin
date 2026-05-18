@@ -2248,6 +2248,13 @@ bbaiRunWithJQuery(function($) {
             if (openCheckoutUrl(fallbackUrl)) {
                 return;
             }
+            emitDashboardAnalyticsEvent('checkout_failed', {
+                source: 'checkout',
+                endpoint: 'beepbeepai_create_checkout',
+                plan: planName || '',
+                error_code: !ajaxUrl ? 'ajax_unavailable' : (!nonce ? 'missing_nonce' : (!resolvedPriceId ? 'missing_payload' : 'jquery_unavailable')),
+                error_message: 'Checkout session request could not be started.'
+            });
         } else {
             setCheckoutButtonLoading($button, true);
 
@@ -2291,6 +2298,14 @@ bbaiRunWithJQuery(function($) {
                 if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
                     window.bbaiModal.error(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
                 }
+                emitDashboardAnalyticsEvent('checkout_failed', {
+                    source: 'checkout',
+                    endpoint: 'beepbeepai_create_checkout',
+                    plan: planName || '',
+                    response_status: response && response.success === false ? 'error' : 'invalid_response',
+                    error_code: invalidHostedSession ? 'missing_checkout_session_id' : 'missing_checkout_url',
+                    error_message: 'Checkout response did not include a usable URL.'
+                });
             }).fail(function(xhr) {
                 setCheckoutButtonLoading($button, false);
 
@@ -2311,6 +2326,14 @@ bbaiRunWithJQuery(function($) {
                 if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
                     window.bbaiModal.error(errorMessage);
                 }
+                emitDashboardAnalyticsEvent('checkout_failed', {
+                    source: 'checkout',
+                    endpoint: 'beepbeepai_create_checkout',
+                    plan: planName || '',
+                    response_status: xhr && xhr.status ? xhr.status : 'error',
+                    error_code: 'checkout_session_failed',
+                    error_message: errorMessage
+                });
             });
 
             return;
@@ -2318,6 +2341,13 @@ bbaiRunWithJQuery(function($) {
 
         // No link available
         window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No Stripe payment link available for plan:', planName);
+        emitDashboardAnalyticsEvent('checkout_failed', {
+            source: 'checkout',
+            endpoint: 'beepbeepai_create_checkout',
+            plan: planName || '',
+            error_code: 'missing_checkout_url',
+            error_message: 'No Stripe checkout URL available.'
+        });
         if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
             window.bbaiModal.error(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
         }
@@ -2790,6 +2820,7 @@ function showAuthLogin() {
 }
 
 function showAuthModal(tab) {
+    tab = ['register', 'signup', 'create', 'create_account'].includes(String(tab || '').toLowerCase()) ? 'register' : 'login';
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
     if (typeof emitDashboardAnalyticsEvent === 'function') {
         emitDashboardAnalyticsEvent(

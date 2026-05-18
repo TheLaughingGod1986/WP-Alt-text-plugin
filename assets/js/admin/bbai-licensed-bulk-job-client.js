@@ -6,6 +6,10 @@
     'use strict';
 
     var STORAGE_KEY = 'bbai_active_bulk_job';
+    var POLL_LOCK_KEY = 'bbai_active_bulk_job_poll_lock';
+    var POLL_LOCK_TTL = 10000;
+    var TAB_ID = 'tab_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var recoveryStarted = false;
 
     function isEligible() {
         return !!(window.bbai_ajax && window.bbai_ajax.use_licensed_bulk_jobs);
@@ -206,25 +210,364 @@
         }
     }
 
-    function persistActiveJob(jobId, total) {
+    function persistActiveJob(jobId, total, extra) {
+        var now = Date.now();
+        var payload = Object.assign({
+            jobId: jobId,
+            job_id: jobId,
+            startedAt: now,
+            started_at: now,
+            updatedAt: now,
+            last_checked_at: now,
+            total: total,
+            requested_count: total,
+            progress: 0,
+            completed_count: 0,
+            successes: 0,
+            failures: 0,
+            failed_count: 0,
+            status: 'processing',
+            source: 'licensed_bulk_job',
+            source_page: (window.bbaiAnalytics && window.bbaiAnalytics.getCurrentScreen && window.bbaiAnalytics.getCurrentScreen()) || window.location.pathname,
+            resumedTracked: false
+        }, extra || {});
         try {
-            window.sessionStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify({ jobId: jobId, startedAt: Date.now(), total: total })
-            );
+            window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        } catch (e) {}
+    }
+
+    function readActiveJob() {
+        var raw;
+        try {
+            raw = window.localStorage.getItem(STORAGE_KEY) || window.sessionStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function writeActiveJob(job) {
+        try {
+            var now = Date.now();
+            var payload = Object.assign({}, job || {}, {
+                job_id: (job && (job.job_id || job.jobId)) || '',
+                started_at: (job && (job.started_at || job.startedAt)) || now,
+                updatedAt: now,
+                last_checked_at: now,
+                requested_count: job && (job.requested_count || job.total) || 0,
+                completed_count: job && (job.completed_count || job.successes || job.progress) || 0,
+                failed_count: job && (job.failed_count || job.failures) || 0,
+                source_page: job && job.source_page || ((window.bbaiAnalytics && window.bbaiAnalytics.getCurrentScreen && window.bbaiAnalytics.getCurrentScreen()) || window.location.pathname)
+            });
+            window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
         } catch (e) {}
     }
 
     function clearActiveJob() {
         try {
             window.sessionStorage.removeItem(STORAGE_KEY);
+            window.localStorage.removeItem(STORAGE_KEY);
+            window.localStorage.removeItem(POLL_LOCK_KEY);
         } catch (e2) {}
+    }
+
+    function claimPollLeadership() {
+        var now = Date.now();
+        var lock;
+
+        try {
+            lock = JSON.parse(window.localStorage.getItem(POLL_LOCK_KEY) || 'null');
+        } catch (e) {
+            lock = null;
+        }
+
+        if (
+            lock &&
+            lock.owner &&
+            lock.owner !== TAB_ID &&
+            parseInt(lock.expiresAt || '0', 10) > now
+        ) {
+            return false;
+        }
+
+        try {
+            window.localStorage.setItem(POLL_LOCK_KEY, JSON.stringify({
+                owner: TAB_ID,
+                expiresAt: now + POLL_LOCK_TTL,
+                updatedAt: now
+            }));
+        } catch (e2) {}
+
+        return true;
     }
 
     function getAjaxConfig() {
         var ajaxUrl = (window.bbai_ajax && (window.bbai_ajax.ajax_url || window.bbai_ajax.ajaxurl)) || '';
         var nonce = (window.bbai_ajax && window.bbai_ajax.nonce) || '';
         return { ajaxUrl: ajaxUrl, nonce: nonce };
+    }
+
+    function emitAnalytics(eventName, payload) {
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                detail: Object.assign({
+                    event: eventName,
+                    timestamp: Date.now()
+                }, payload || {})
+            }));
+        } catch (e) {}
+    }
+
+    function shouldFallbackToInlineStart(errCode, message, responseStatus) {
+        var code = String(errCode || '').toLowerCase();
+        var msg = String(message || '').toLowerCase();
+        var status = parseInt(responseStatus, 10) || 0;
+
+        if (
+            code.indexOf('quota') !== -1 ||
+            code.indexOf('credit') !== -1 ||
+            code.indexOf('limit') !== -1 ||
+            code.indexOf('auth') !== -1 ||
+            code.indexOf('forbidden') !== -1 ||
+            status === 401 ||
+            status === 403 ||
+            status === 429
+        ) {
+            return false;
+        }
+
+        return code === 'bbai_jobs_not_eligible' ||
+            code === 'bbai_job_create_failed' ||
+            code === 'rest_no_route' ||
+            code === 'http_request_failed' ||
+            code === 'bulk_job_start_failed' ||
+            code === 'start_timeout' ||
+            code === 'start_request_failed' ||
+            status === 0 ||
+            status === 404 ||
+            msg.indexOf('could not start bulk generation') !== -1 ||
+            msg.indexOf('failed to start bulk generation job') !== -1 ||
+            msg.indexOf('not found') !== -1;
+    }
+
+    function fallbackToInlineGeneration(onNotEligibleFallback, ids, onLogSuccess) {
+        if (typeof onNotEligibleFallback !== 'function') {
+            return false;
+        }
+        if (typeof onLogSuccess === 'function') {
+            onLogSuccess('Server background job unavailable. Continuing generation in this page…');
+        }
+        onNotEligibleFallback(ids);
+        return true;
+    }
+
+    function emitReplayMarker(marker, payload) {
+        emitAnalytics('replay_marker', Object.assign({ marker: marker }, payload || {}));
+        if (window.bbaiAnalytics && typeof window.bbaiAnalytics.trackGenerationLifecycle === 'function' && /^generation_/.test(marker)) {
+            try {
+                window.bbaiAnalytics.trackGenerationLifecycle(marker, payload || {});
+            } catch (e) {}
+        }
+    }
+
+    function isRecoverableActiveJob(active) {
+        if (!active || !active.jobId) {
+            return false;
+        }
+        if (isTerminalStatus(active.status)) {
+            return false;
+        }
+        var started = parseInt(active.startedAt || active.updatedAt || '0', 10) || 0;
+        return !started || Date.now() - started < 6 * 60 * 60 * 1000;
+    }
+
+    function updateJobWidgetFromActive(active, label) {
+        if (!window.bbaiJobState || !active || !active.jobId) {
+            return;
+        }
+        var total = Math.max(0, parseInt(active.total, 10) || 0);
+        var progress = Math.max(0, parseInt(active.progress, 10) || 0);
+        if (!window.bbaiJobState.getState().running) {
+            window.bbaiJobState.start(label || 'Reconnecting to active generation', total, active.source || 'licensed_bulk_job');
+        }
+        window.bbaiJobState.update({
+            running: true,
+            modalVisible: false,
+            progress: progress,
+            total: total,
+            successes: Math.max(0, parseInt(active.successes, 10) || 0),
+            failures: Math.max(0, parseInt(active.failures, 10) || 0),
+            status: 'processing',
+            label: label || 'Generation continues in background'
+        });
+    }
+
+    function recoverActiveJob(options) {
+        var active = readActiveJob();
+        var cfg = getAjaxConfig();
+        var attempts = 0;
+        var opts = options || {};
+
+        if (!isRecoverableActiveJob(active) || !cfg.ajaxUrl) {
+            return false;
+        }
+
+        if (recoveryStarted) {
+            updateJobWidgetFromActive(active, 'Generation continues in background');
+            return true;
+        }
+
+        if (!claimPollLeadership()) {
+            updateJobWidgetFromActive(active, 'Generation continues in background');
+            window.setTimeout(function () {
+                recoveryStarted = false;
+                recoverActiveJob({ surface: 'follower_retry' });
+            }, POLL_LOCK_TTL + 1000);
+            return true;
+        }
+
+        recoveryStarted = true;
+        updateJobWidgetFromActive(active, 'Reconnecting to active generation');
+        if (!active.resumedTracked) {
+            emitReplayMarker('generation_resumed', {
+                source: 'licensed_bulk_job',
+                job_id: active.jobId,
+                requested_count: active.total || 0,
+                recovery_surface: opts.surface || 'bootstrap'
+            });
+            active.resumedTracked = true;
+            writeActiveJob(active);
+        }
+
+        function pollRecovered() {
+            if (!claimPollLeadership()) {
+                recoveryStarted = false;
+                return;
+            }
+            attempts++;
+            $.ajax({
+                url: cfg.ajaxUrl,
+                method: 'POST',
+                dataType: 'json',
+                timeout: 45000,
+                data: {
+                    action: 'beepbeepai_bulk_job_poll',
+                    job_id: active.jobId,
+                    nonce: cfg.nonce
+                }
+            })
+                .done(function (pollRes) {
+                    if (!pollRes || !pollRes.success || !pollRes.data) {
+                        if (attempts >= 3) {
+                            emitReplayMarker('generation_recovery_failed', {
+                                source: 'licensed_bulk_job',
+                                job_id: active.jobId,
+                                requested_count: active.total || 0,
+                                error_code: 'poll_response_invalid'
+                            });
+                            clearActiveJob();
+                            recoveryStarted = false;
+                            if (window.bbaiJobState) {
+                                window.bbaiJobState.complete({ status: 'error', successes: active.successes || 0, failures: active.failures || 1, skipped: 0 });
+                            }
+                            return;
+                        }
+                        window.setTimeout(pollRecovered, 2000);
+                        return;
+                    }
+
+                    var pdata = pollRes.data;
+                    var job = pdata.job || {};
+                    var items = Array.isArray(job.items) ? job.items : (Array.isArray(job.results) ? job.results : []);
+                    var counts = mapJobItemsToLibraryRows(items, null);
+                    var total = Math.max(0, parseInt(active.total || job.total || job.count || '0', 10) || 0);
+                    var recovered = Object.assign({}, active, {
+                        status: job.status || active.status || 'processing',
+                        progress: Math.min(total, counts.completed + counts.failed),
+                        successes: counts.completed,
+                        failures: counts.failed,
+                        total: total
+                    });
+                    if (!active.resumeSuccessTracked) {
+                        emitReplayMarker('generation_resume_success', {
+                            source: 'licensed_bulk_job',
+                            job_id: active.jobId,
+                            requested_count: total,
+                            processed_count: recovered.progress
+                        });
+                        recovered.resumeSuccessTracked = true;
+                    }
+                    writeActiveJob(recovered);
+
+                    updateJobWidgetFromActive(recovered, 'Generation resumed');
+
+                    if (isTerminalStatus(job.status)) {
+                        clearActiveJob();
+                        recoveryStarted = false;
+                        if (window.bbaiJobState) {
+                            window.bbaiJobState.complete({
+                                status: counts.failed > 0 ? 'error' : 'complete',
+                                successes: counts.completed,
+                                failures: counts.failed,
+                                skipped: 0
+                            });
+                        }
+                        return;
+                    }
+
+                    active = recovered;
+                    window.setTimeout(pollRecovered, 2500);
+                })
+                .fail(function () {
+                    if (attempts >= 3) {
+                        emitReplayMarker('generation_recovery_failed', {
+                            source: 'licensed_bulk_job',
+                            job_id: active.jobId,
+                            requested_count: active.total || 0,
+                            error_code: 'poll_request_failed'
+                        });
+                        clearActiveJob();
+                        recoveryStarted = false;
+                        if (window.bbaiJobState) {
+                            window.bbaiJobState.complete({ status: 'error', successes: active.successes || 0, failures: active.failures || 1, skipped: 0 });
+                        }
+                        return;
+                    }
+                    window.setTimeout(pollRecovered, 2500);
+                });
+        }
+
+        pollRecovered();
+        return true;
+    }
+
+    function bindNavigationLifecycleAnalytics() {
+        window.addEventListener('pagehide', function() {
+            var job = readActiveJob();
+            if (!job || !job.jobId) {
+                return;
+            }
+            emitAnalytics('generation_backgrounded', {
+                source: 'licensed_bulk_job',
+                job_id: job.jobId,
+                requested_count: job.total || 0,
+                duration_ms: job.startedAt ? Math.max(0, Date.now() - job.startedAt) : 0
+            });
+        });
+
+        if ($ && typeof $.fn !== 'undefined') {
+            $(function () {
+                recoverActiveJob({ surface: 'bootstrap' });
+            });
+        } else if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                recoverActiveJob({ surface: 'bootstrap' });
+            });
+        } else {
+            recoverActiveJob({ surface: 'bootstrap' });
+        }
     }
 
     /**
@@ -276,6 +619,16 @@
             return;
         }
 
+        if (isRecoverableActiveJob(readActiveJob())) {
+            emitAnalytics('generation_click_noop', {
+                source: source,
+                reason: 'active_job_recovered',
+                requested_count: total
+            });
+            recoverActiveJob({ surface: 'cta_guard' });
+            return;
+        }
+
         stopPolling($modal);
         $modal.removeData('bbaiBulkJobPollCount');
 
@@ -301,7 +654,7 @@
             url: cfg.ajaxUrl,
             method: 'POST',
             dataType: 'json',
-            timeout: 180000,
+            timeout: 12000,
             data: {
                 action: 'beepbeepai_bulk_job_start',
                 attachment_ids: JSON.stringify(normalizedIds),
@@ -315,17 +668,27 @@
 
                 if (!response || !response.success || !response.data) {
                     var errCode = response && response.data && response.data.code ? String(response.data.code) : '';
-                    if (errCode === 'bbai_jobs_not_eligible' && typeof onNotEligibleFallback === 'function') {
-                        onNotEligibleFallback(normalizedIds);
-                        return;
-                    }
                     var msg =
                         response && response.data && response.data.message
                             ? String(response.data.message)
                             : options.strings && options.strings.couldNotStart
                               ? options.strings.couldNotStart
                               : 'Could not start bulk generation.';
+                    var responseStatus = response && response.data && response.data.data && response.data.data.status_code
+                        ? parseInt(response.data.data.status_code, 10)
+                        : 0;
+                    if (shouldFallbackToInlineStart(errCode, msg, responseStatus) && fallbackToInlineGeneration(onNotEligibleFallback, normalizedIds, onLogSuccess)) {
+                        return;
+                    }
                     onLogError(msg);
+                    emitAnalytics('generation_failed', {
+                        source: source,
+                        endpoint: 'beepbeepai_bulk_job_start',
+                        ajax_action: 'beepbeepai_bulk_job_start',
+                        requested_count: total,
+                        error_code: errCode || 'bulk_job_start_failed',
+                        error_message: msg
+                    });
                     finalize(0, 0, 0);
                     return;
                 }
@@ -359,11 +722,24 @@
                 var jobId = d.job_id ? String(d.job_id) : '';
                 if (!jobId) {
                     onLogError(options.strings && options.strings.noJobId ? options.strings.noJobId : 'No job id returned.');
+                    emitAnalytics('generation_stuck', {
+                        source: source,
+                        endpoint: 'beepbeepai_bulk_job_start',
+                        ajax_action: 'beepbeepai_bulk_job_start',
+                        requested_count: total,
+                        error_code: 'missing_job_id',
+                        error_message: 'No job id returned.'
+                    });
                     finalize(0, 0, 0);
                     return;
                 }
 
-                persistActiveJob(jobId, total);
+                persistActiveJob(jobId, total, { source: source, status: 'processing' });
+                emitReplayMarker('generation_job_created', {
+                    source: source,
+                    job_id: jobId,
+                    requested_count: total
+                });
 
                 if (!pollStartedTracked) {
                     pollStartedTracked = true;
@@ -438,6 +814,17 @@
 
                             var terminal = isTerminalStatus(job.status);
                             var finishedSlots = Math.min(total, jobState.successes + jobState.failures);
+                            writeActiveJob({
+                                jobId: jobId,
+                                startedAt: (readActiveJob() || {}).startedAt || Date.now(),
+                                total: total,
+                                progress: finishedSlots,
+                                successes: jobState.successes,
+                                failures: jobState.failures,
+                                status: job.status || 'processing',
+                                source: source,
+                                resumedTracked: true
+                            });
 
                             if (!progressSeenTracked && finishedSlots > 0) {
                                 progressSeenTracked = true;
@@ -498,6 +885,14 @@
                             scheduleNextPoll(delayMs);
                         })
                         .fail(function () {
+                            emitAnalytics('polling_failed', {
+                                source: source,
+                                endpoint: 'beepbeepai_bulk_job_poll',
+                                ajax_action: 'beepbeepai_bulk_job_poll',
+                                job_id: jobId,
+                                requested_count: total,
+                                error_code: 'poll_request_failed'
+                            });
                             scheduleNextPoll(delayMs);
                         });
                 }
@@ -522,7 +917,43 @@
                             ? options.strings.startTimeout
                             : 'Starting the batch timed out. Please try again with fewer images or check your connection.';
                 }
+                if (
+                    xhr &&
+                    shouldFallbackToInlineStart(
+                        xhr.statusText === 'timeout' ? 'start_timeout' : 'start_request_failed',
+                        failMsg,
+                        xhr.status
+                    ) &&
+                    fallbackToInlineGeneration(onNotEligibleFallback, normalizedIds, onLogSuccess)
+                ) {
+                    emitAnalytics('generation_recovery_failed', {
+                        source: source,
+                        endpoint: 'beepbeepai_bulk_job_start',
+                        ajax_action: 'beepbeepai_bulk_job_start',
+                        requested_count: total,
+                        error_code: xhr.statusText === 'timeout' ? 'start_timeout_fallback' : 'start_request_fallback',
+                        error_message: failMsg,
+                        response_status: xhr && xhr.status ? xhr.status : 0
+                    });
+                    return;
+                }
+                if (
+                    xhr &&
+                    shouldFallbackToInlineStart('start_request_failed', failMsg, xhr.status) &&
+                    fallbackToInlineGeneration(onNotEligibleFallback, normalizedIds, onLogSuccess)
+                ) {
+                    return;
+                }
                 onLogError(failMsg);
+                emitAnalytics('generation_failed', {
+                    source: source,
+                    endpoint: 'beepbeepai_bulk_job_start',
+                    ajax_action: 'beepbeepai_bulk_job_start',
+                    requested_count: total,
+                    error_code: xhr && xhr.statusText === 'timeout' ? 'start_timeout' : 'start_request_failed',
+                    error_message: failMsg,
+                    response_status: xhr && xhr.status ? xhr.status : 0
+                });
                 finalize(0, 0, 0);
             });
     }
@@ -541,8 +972,17 @@
         applyRowPhase: applyRowPhase,
         mapJobItemsToLibraryRows: mapJobItemsToLibraryRows,
         persistActiveJob: persistActiveJob,
+        readActiveJob: readActiveJob,
+        writeActiveJob: writeActiveJob,
         clearActiveJob: clearActiveJob,
+        recoverActiveJob: recoverActiveJob,
+        hasActiveJob: function () {
+            return isRecoverableActiveJob(readActiveJob());
+        },
         getAjaxConfig: getAjaxConfig,
+        emitAnalytics: emitAnalytics,
         run: run
     };
+
+    bindNavigationLifecycleAnalytics();
 })(window, jQuery);

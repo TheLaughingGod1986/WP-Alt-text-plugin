@@ -681,11 +681,16 @@
         var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
         req.controller = controller;
 
-        var timeoutMs = getGenerationRunningSnapshot() ? 15000 : 8000;
+        var timeoutMs = getGenerationRunningSnapshot() ? 25000 : 15000;
         var timeoutId = null;
         if (controller) {
             timeoutId = window.setTimeout(function () {
-                try { controller.abort(); } catch (e) { /* ignore */ }
+                logDebug('dashboard_state_fetch_slow', {
+                    reason: reason,
+                    sequence: sequence,
+                    durationMs: timeoutMs,
+                    endpoint: 'dashboard-state'
+                });
             }, timeoutMs);
         }
 

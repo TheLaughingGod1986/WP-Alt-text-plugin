@@ -1219,6 +1219,14 @@ body.bbai-guest-conversion-modal-open {
     height: 100%;
 }
 
+.bbai-dashboard-trial-preview--trial-available .bbai-dashboard-trial-preview__blur-wrap {
+    filter: none;
+    opacity: 1;
+    pointer-events: auto;
+    user-select: auto;
+    transform: none;
+}
+
 .bbai-dashboard-trial-preview__blur-header {
     display: grid;
     gap: 4px;

@@ -18,6 +18,12 @@
     loaderState.waitingForReady = !!loaderState.waitingForReady;
     loaderState.readyLogSent = !!loaderState.readyLogSent;
     loaderState.timeoutLogSent = !!loaderState.timeoutLogSent;
+    loaderState.globalHandlersBound = !!loaderState.globalHandlersBound;
+    loaderState.replayStarted = !!loaderState.replayStarted;
+    loaderState.replayForced = !!loaderState.replayForced;
+    loaderState.replayContextId = loaderState.replayContextId || '';
+    loaderState.lifecycle = isObject(loaderState.lifecycle) ? loaderState.lifecycle : {};
+    loaderState.dedupe = isObject(loaderState.dedupe) ? loaderState.dedupe : {};
     loaderState.identifyState = isObject(loaderState.identifyState) ? loaderState.identifyState : {
         id: '',
         propsKey: ''
@@ -54,6 +60,42 @@
         return /^[a-z0-9_]{1,80}$/.test(name) ? name : '';
     }
 
+    function isSensitiveKey(key) {
+        var raw = key === undefined || key === null ? '' : String(key);
+        var normalized = raw.toLowerCase();
+        var compact = normalized.replace(/[^a-z0-9]/g, '');
+
+        if (normalized === 'license_key_present' || compact === 'licensekeypresent') {
+            return false;
+        }
+
+        return (
+            /(^|_)(password|token|jwt|secret|nonce|api[_-]?key|license[_-]?key|authorization|auth_header|email|site[_-]?url)($|_)/i.test(raw) ||
+            /^(password|token|jwt|secret|nonce|apikey|licensekey|authorization|authheader|email|siteurl)$/.test(compact) ||
+            /email$/.test(compact)
+        );
+    }
+
+    function isLicenseKeyName(key) {
+        var normalized = key === undefined || key === null ? '' : String(key).toLowerCase();
+        return normalized === 'license_key' || normalized.replace(/[^a-z0-9]/g, '') === 'licensekey';
+    }
+
+    function sanitizeScalarValue(value) {
+        var output;
+
+        if (typeof value !== 'string') {
+            return value;
+        }
+
+        output = value
+            .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[redacted_email]')
+            .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[redacted_jwt]')
+            .replace(/https?:\/\/[^\s"'<>]+/gi, '[redacted_url]');
+
+        return output;
+    }
+
     function sanitizeProperties(input) {
         var output = {};
         var key;
@@ -74,15 +116,23 @@
             if (value === undefined || value === null) {
                 continue;
             }
+            if (isSensitiveKey(key)) {
+                if (isLicenseKeyName(key) && value) {
+                    output.license_key_present = true;
+                }
+                continue;
+            }
 
             if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-                output[key] = value;
+                output[key] = sanitizeScalarValue(value);
                 continue;
             }
 
             if (Array.isArray(value)) {
                 output[key] = value.filter(function(item) {
                     return typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean';
+                }).map(function(item) {
+                    return sanitizeScalarValue(item);
                 });
                 continue;
             }
@@ -96,13 +146,19 @@
                 if (!Object.prototype.hasOwnProperty.call(value, nestedKey)) {
                     continue;
                 }
+                if (isSensitiveKey(nestedKey)) {
+                    if (isLicenseKeyName(nestedKey) && value[nestedKey]) {
+                        nested.license_key_present = true;
+                    }
+                    continue;
+                }
 
                 if (
                     typeof value[nestedKey] === 'string' ||
                     typeof value[nestedKey] === 'number' ||
                     typeof value[nestedKey] === 'boolean'
                 ) {
-                    nested[nestedKey] = value[nestedKey];
+                    nested[nestedKey] = sanitizeScalarValue(value[nestedKey]);
                 }
             }
 
@@ -129,7 +185,23 @@
     }
 
     function getContext() {
-        return extend({}, sanitizeProperties(cfg.context || {}), runtimeContext);
+        var viewport = {};
+        var nav = window.navigator || {};
+
+        try {
+            viewport = {
+                viewport_width: window.innerWidth || 0,
+                viewport_height: window.innerHeight || 0
+            };
+        } catch (error) {
+            viewport = {};
+        }
+
+        return extend({}, sanitizeProperties(cfg.context || {}), viewport, {
+            current_screen: runtimeContext.page || (cfg.context && cfg.context.page) || 'dashboard',
+            browser: nav.userAgent ? String(nav.userAgent).slice(0, 180) : '',
+            environment: cfg.environment || ''
+        }, runtimeContext);
     }
 
     function getPageContext() {
@@ -164,8 +236,65 @@
     function isDebugEnabled() {
         return !!(
             window.BBAI_DEBUG_POSTHOG === true ||
-            cfg.debug_posthog === true
+            cfg.debug_posthog === true ||
+            cfg.debug === true ||
+            /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname || '')
         );
+    }
+
+    function hasPosthogConfig() {
+        return !!(cfg.enabled && cfg.apiKey && cfg.apiHost);
+    }
+
+    function nowMs() {
+        return Date.now ? Date.now() : new Date().getTime();
+    }
+
+    function shouldDedupe(key, ttlMs) {
+        var fullKey = String(key || '');
+        var ttl = typeof ttlMs === 'number' ? ttlMs : 1500;
+        var last = loaderState.dedupe[fullKey] || 0;
+        var now = nowMs();
+
+        if (last && now - last < ttl) {
+            return true;
+        }
+
+        loaderState.dedupe[fullKey] = now;
+        return false;
+    }
+
+    function randomReplayBucket() {
+        var key = 'bbai_posthog_replay_sample_v1';
+        var value = '';
+
+        try {
+            value = window.localStorage ? window.localStorage.getItem(key) : '';
+            if (!value && window.localStorage) {
+                value = String(Math.random());
+                window.localStorage.setItem(key, value);
+            }
+        } catch (error) {
+            value = String(Math.random());
+        }
+
+        return parseFloat(value || '1');
+    }
+
+    function shouldSampleReplay() {
+        var rate = parseFloat(cfg.replaySampleRate);
+        if (isNaN(rate)) {
+            rate = 0.25;
+        }
+        return randomReplayBucket() < Math.max(0, Math.min(1, rate));
+    }
+
+    function shouldForceReplayEverySession() {
+        return cfg.forceReplay === true || cfg.forceReplayEverySession === true;
+    }
+
+    function shouldUseManualReplayOnly() {
+        return cfg.manualReplayOnly === true && !shouldForceReplayEverySession();
     }
 
     function getClient() {
@@ -194,6 +323,47 @@
         }
 
         return apiHost.replace('.i.posthog.com', '-assets.i.posthog.com') + '/static/array.js';
+    }
+
+    function getUrlHost(url) {
+        try {
+            return new window.URL(String(url || ''), window.location.href).hostname || '';
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function isPosthogHost(host) {
+        var normalized = String(host || '').toLowerCase();
+        var apiHost = getUrlHost(cfg.apiHost || '');
+        var assetHost = getUrlHost(getAssetUrl());
+
+        if (!normalized) {
+            return false;
+        }
+
+        return (
+            normalized === apiHost ||
+            normalized === assetHost ||
+            /(^|\.)posthog\.com$/.test(normalized) ||
+            /(^|\.)i\.posthog\.com$/.test(normalized)
+        );
+    }
+
+    function shouldIgnoreObservedRequest(url) {
+        var raw = url === undefined || url === null ? '' : String(url);
+        var host;
+
+        if (!raw) {
+            return false;
+        }
+
+        if (/^(about|data|blob|chrome-extension|moz-extension|safari-extension):/i.test(raw)) {
+            return true;
+        }
+
+        host = getUrlHost(raw);
+        return isPosthogHost(host);
     }
 
     function hasLibraryApi(client) {
@@ -331,7 +501,7 @@
             loaderState.loadCallbacks.push(callback);
         }
 
-        if (!cfg.enabled || !cfg.apiKey || !cfg.apiHost) {
+        if (!hasPosthogConfig()) {
             loaderState.loadCallbacks = [];
             return;
         }
@@ -447,7 +617,7 @@
         var client = getClient();
         var library = getLibraryClient();
 
-        if (!cfg.enabled || !cfg.apiKey || !cfg.apiHost) {
+        if (!hasPosthogConfig()) {
             return null;
         }
 
@@ -473,9 +643,63 @@
                     api_host: cfg.apiHost,
                     defaults: cfg.defaults || '2026-01-30',
                     autocapture: false,
-                    capture_pageview: false,
-                    capture_pageleave: false,
-                    disable_session_recording: true
+                    capture_pageview: true,
+                    capture_pageleave: true,
+                    persistence: 'localStorage+cookie',
+                    disable_session_recording: shouldUseManualReplayOnly(),
+                    rageclick: false,
+                    property_denylist: [
+                        '$elements',
+                        '$el_text',
+                        'password',
+                        'token',
+                        'secret',
+                        'nonce',
+                        'api_key',
+                        'license_key',
+                        'authorization'
+                    ],
+                    mask_all_text: false,
+                    mask_all_element_attributes: false,
+                    session_recording: {
+                        maskAllInputs: true,
+                        maskInputOptions: {
+                            password: true,
+                            email: true,
+                            text: false,
+                            textarea: false,
+                            number: false,
+                            search: false,
+                            tel: true,
+                            url: false
+                        },
+                        maskTextSelector: [
+                            '[data-bbai-mask]',
+                            '[data-bbai-sensitive]',
+                            '.bbai-sensitive',
+                            'input[name*="password"]',
+                            'input[name*="api"]',
+                            'input[name*="token"]',
+                            'input[name*="secret"]',
+                            'input[name*="license"]',
+                            'input[name*="key"]',
+                            '[autocomplete="cc-number"]',
+                            '[autocomplete="cc-csc"]',
+                            '[autocomplete="cc-exp"]'
+                        ].join(','),
+                        blockSelector: [
+                            '[data-bbai-replay-block]',
+                            'iframe[src*="stripe"]',
+                            '.StripeElement'
+                        ].join(','),
+                        captureConsoleLog: true
+                    },
+                    capture_console_log: true,
+                    capture_performance: true,
+                    loaded: function(loadedClient) {
+                        tryStartReplay(shouldForceReplayEverySession() ? 'admin_session' : 'sampled_session', shouldForceReplayEverySession());
+                        markReady(loadedClient);
+                    }
                 });
                 syncNamedInstance(library);
             } catch (error) {
@@ -502,6 +726,10 @@
             return;
         }
 
+        if (!hasPosthogConfig()) {
+            return;
+        }
+
         if (isClientReady(client)) {
             markReady(client);
             safeCallback(client);
@@ -521,6 +749,9 @@
         }
 
         payload = extend({}, getContext(), sanitizeProperties(properties || {}));
+        if (shouldDedupe(safeName + ':' + serializeForCompare(payload), 250)) {
+            return;
+        }
         whenPosthogReady(function(client) {
             logToConsole('debug', 'bbaiTrack send', safeName, payload);
             if (safeName === 'checkout_started' && isDebugEnabled()) {
@@ -528,7 +759,7 @@
                     identifier: loaderState.identifyState.id || '',
                     account_id: payload.account_id || '',
                     user_id: payload.user_id || '',
-                    license_key_present: !!payload.license_key,
+                    license_key_present: !!payload.license_key_present,
                     site_id: payload.site_id || '',
                     site_hash: payload.site_hash || ''
                 });
@@ -539,6 +770,366 @@
                 // Ignore PostHog capture failures.
             }
         });
+    }
+
+    function addReplayMarker(name, properties) {
+        var safeName = sanitizeEventName(name) || 'replay_marker';
+        var payload = extend({ marker: safeName }, sanitizeProperties(properties || {}));
+
+        track('replay_marker', payload);
+        whenPosthogReady(function(client) {
+            try {
+                if (typeof client.capture === 'function') {
+                    client.capture('$snapshot', {
+                        $snapshot_source: 'bbai_marker',
+                        marker: safeName,
+                        bbai_context: payload
+                    });
+                }
+            } catch (error) {
+                // Marker support varies; the event above is the durable breadcrumb.
+            }
+        });
+    }
+
+    function tryStartReplay(reason, force) {
+        var shouldForce = force === true;
+
+        if (!cfg.replayEnabled) {
+            return;
+        }
+        if (loaderState.replayStarted && (!shouldForce || loaderState.replayForced)) {
+            return;
+        }
+        if (!shouldForce && !shouldSampleReplay()) {
+            return;
+        }
+
+        whenPosthogReady(function(client) {
+            try {
+                if (typeof client.startSessionRecording === 'function') {
+                    client.startSessionRecording(shouldForce);
+                    loaderState.replayStarted = true;
+                    loaderState.replayForced = loaderState.replayForced || shouldForce;
+                    if (typeof client.register === 'function') {
+                        client.register({
+                            bbai_replay_reason: reason || (shouldForce ? 'forced' : 'sampled'),
+                            bbai_replay_forced: shouldForce
+                        });
+                    }
+                    logToConsole('log', 'PostHog replay started', {
+                        reason: reason || '',
+                        forced: shouldForce,
+                        session_id: getSessionId()
+                    });
+                }
+            } catch (error) {
+                logToConsole('warn', 'PostHog replay start failed', error);
+            }
+        });
+    }
+
+    function getSessionId() {
+        var id = '';
+        var client = getClient();
+        try {
+            if (client && typeof client.get_session_id === 'function') {
+                id = client.get_session_id();
+            } else if (client && typeof client.getSessionId === 'function') {
+                id = client.getSessionId();
+            }
+        } catch (error) {
+            id = '';
+        }
+        return id || '';
+    }
+
+    function startReplayContext(properties) {
+        var contextId = 'ctx_' + nowMs() + '_' + Math.floor(Math.random() * 100000);
+        var payload = extend({
+            replay_context_id: contextId,
+            posthog_session_id: getSessionId()
+        }, sanitizeProperties(properties || {}));
+
+        loaderState.replayContextId = contextId;
+        updateContext(payload);
+        tryStartReplay(payload.reason || 'critical_context', true);
+        addReplayMarker('replay_context_started', payload);
+
+        if (isDebugEnabled()) {
+            logToConsole('debug', 'Replay context', payload);
+        }
+
+        return contextId;
+    }
+
+    function captureError(error, context) {
+        var err = error || {};
+        var payload = sanitizeProperties(extend({
+            error_name: err.name || '',
+            error_message: err.message || String(err || ''),
+            error_code: err.code || '',
+            source: 'frontend',
+            stack: isDebugEnabled() && err.stack ? String(err.stack).slice(0, 2000) : ''
+        }, context || {}));
+
+        tryStartReplay('frontend_error', true);
+        track('frontend_error_captured', payload);
+        addReplayMarker('frontend_error', payload);
+    }
+
+    function trackGenerationLifecycle(eventName, properties, options) {
+        var safeName = sanitizeEventName(eventName);
+        var props = sanitizeProperties(properties || {});
+        var opts = isObject(options) ? options : {};
+        var jobId = props.job_id || props.jobId || '';
+        var key = jobId || props.generation_run_id || 'default';
+
+        if (!safeName) {
+            return;
+        }
+
+        loaderState.lifecycle[key] = extend({}, loaderState.lifecycle[key] || {}, {
+            last_event: safeName,
+            last_event_at: nowMs(),
+            job_id: jobId
+        }, props);
+
+        if (
+            safeName === 'generation_request_started' ||
+            safeName === 'generation_started' ||
+            safeName === 'generation_job_created' ||
+            safeName === 'generation_resumed' ||
+            safeName === 'generation_resume_success' ||
+            safeName === 'checkout_started' ||
+            safeName === 'upgrade_clicked' ||
+            safeName === 'signup_started'
+        ) {
+            tryStartReplay(safeName, true);
+        }
+
+        if (
+            safeName === 'generation_failed' ||
+            safeName === 'generation_stuck' ||
+            safeName === 'generation_recovery_failed' ||
+            safeName === 'generation_click_noop' ||
+            safeName === 'checkout_failed' ||
+            safeName === 'ajax_request_failed' ||
+            safeName === 'polling_failed'
+        ) {
+            tryStartReplay(safeName, true);
+            addReplayMarker(safeName, props);
+        }
+
+        if (
+            safeName === 'review_queue_opened' ||
+            safeName === 'review_item_approved' ||
+            safeName === 'review_item_rejected' ||
+            safeName === 'success_state_shown' ||
+            safeName === 'fully_optimised_state_shown' ||
+            safeName === 'quota_exhausted_state_shown'
+        ) {
+            addReplayMarker(safeName, props);
+        }
+
+        if (jobId) {
+            updateContext({ generation_job_id: jobId });
+        }
+
+        if (isDebugEnabled()) {
+            logToConsole('debug', 'generation lifecycle', safeName, loaderState.lifecycle[key]);
+        }
+
+        if (!opts.observeOnly) {
+            track(safeName, props);
+        }
+    }
+
+    function bindGlobalObservability() {
+        var clickTimes = [];
+        var lastLoading = {};
+        var ajaxErrorBound = false;
+
+        if (loaderState.globalHandlersBound) {
+            return;
+        }
+        loaderState.globalHandlersBound = true;
+
+        window.addEventListener('error', function(event) {
+            captureError(event.error || new Error(event.message || 'Uncaught error'), {
+                type: 'uncaught_exception',
+                filename: event.filename || '',
+                line: event.lineno || 0,
+                column: event.colno || 0
+            });
+        });
+
+        window.addEventListener('unhandledrejection', function(event) {
+            captureError(event.reason || new Error('Unhandled promise rejection'), {
+                type: 'promise_rejection'
+            });
+        });
+
+        if (window.fetch && !window.fetch.__bbaiObserved) {
+            (function(originalFetch) {
+                var observedFetch = function(input, init) {
+                    var started = nowMs();
+                    var url = typeof input === 'string' ? input : (input && input.url) || '';
+                    var method = (init && init.method) || (input && input.method) || 'GET';
+
+                    return originalFetch.apply(window, arguments).then(function(response) {
+                        if (response && response.status >= 400 && !shouldIgnoreObservedRequest(url)) {
+                            track(response.status === 403 ? 'auth_expired' : 'ajax_request_failed', {
+                                endpoint: String(url).slice(0, 180),
+                                http_status: response.status,
+                                request_type: method,
+                                duration_ms: nowMs() - started,
+                                current_screen: getPageContext()
+                            });
+                        }
+                        return response;
+                    }).catch(function(error) {
+                        if (shouldIgnoreObservedRequest(url)) {
+                            throw error;
+                        }
+                        if (error && error.name === 'AbortError') {
+                            throw error;
+                        }
+                        track('ajax_request_failed', {
+                            endpoint: String(url).slice(0, 180),
+                            request_type: method,
+                            duration_ms: nowMs() - started,
+                            error_message: error && error.message ? error.message : String(error || ''),
+                            current_screen: getPageContext()
+                        });
+                        throw error;
+                    });
+                };
+                observedFetch.__bbaiObserved = true;
+                window.fetch = observedFetch;
+            })(window.fetch);
+        }
+
+        document.addEventListener('click', function(event) {
+            var target = event.target && event.target.closest ? event.target.closest('button, a, [role="button"], [data-action], [data-bbai-action]') : null;
+            var now = nowMs();
+            var signal;
+
+            if (!target) {
+                return;
+            }
+
+            clickTimes = clickTimes.filter(function(item) {
+                return now - item.at < 1200;
+            });
+            signal = [
+                target.getAttribute('data-action') || '',
+                target.getAttribute('data-bbai-action') || '',
+                target.getAttribute('aria-label') || '',
+                target.textContent || ''
+            ].join('|').replace(/\s+/g, ' ').trim().slice(0, 160);
+            clickTimes.push({ at: now, signal: signal });
+
+            if (clickTimes.length >= 3 && clickTimes.filter(function(item) { return item.signal === signal; }).length >= 3) {
+                track('rage_click_detected', {
+                    click_signal: signal,
+                    current_screen: getPageContext()
+                });
+                tryStartReplay('rage_click_detected', true);
+            }
+
+            if (target.disabled || target.getAttribute('aria-disabled') === 'true') {
+                track('dead_click_detected', {
+                    click_signal: signal,
+                    current_screen: getPageContext(),
+                    reason: 'disabled_control'
+                });
+                tryStartReplay('dead_click_detected', true);
+            }
+        }, true);
+
+        window.setInterval(function() {
+            var nodes = document.querySelectorAll('[aria-busy="true"], .is-loading, .bbai-btn-loading, [data-bbai-loading="true"]');
+            var seen = {};
+            var i;
+            var id;
+
+            for (i = 0; i < nodes.length; i++) {
+                id = nodes[i].id || nodes[i].getAttribute('data-action') || nodes[i].getAttribute('data-bbai-action') || nodes[i].className || 'loading';
+                id = String(id).slice(0, 120);
+                seen[id] = true;
+                if (!lastLoading[id]) {
+                    lastLoading[id] = nowMs();
+                    continue;
+                }
+                if (nowMs() - lastLoading[id] > 10000 && !shouldDedupe('loading:' + id, 30000)) {
+                    track('ui_loading_timeout', {
+                        loading_target: id,
+                        duration_ms: nowMs() - lastLoading[id],
+                        current_screen: getPageContext()
+                    });
+                    tryStartReplay('ui_loading_timeout', true);
+                }
+            }
+
+            Object.keys(lastLoading).forEach(function(key) {
+                if (!seen[key]) {
+                    delete lastLoading[key];
+                }
+            });
+        }, 2500);
+
+        if (window.PerformanceObserver) {
+            try {
+                new window.PerformanceObserver(function(list) {
+                    list.getEntries().forEach(function(entry) {
+                        if (entry.duration > 250 && !shouldDedupe('longtask:' + Math.round(entry.startTime), 10000)) {
+                            track('long_task_detected', {
+                                duration_ms: Math.round(entry.duration),
+                                current_screen: getPageContext()
+                            });
+                        }
+                    });
+                }).observe({ entryTypes: ['longtask'] });
+            } catch (error) {
+                // Long task support varies by browser.
+            }
+        }
+
+        (function waitForJqueryAjaxError(attempts) {
+            if (ajaxErrorBound) {
+                return;
+            }
+            if (window.jQuery && typeof window.jQuery === 'function') {
+                ajaxErrorBound = true;
+                window.jQuery(document).ajaxError(function(_event, xhr, settings, thrownError) {
+                    var endpoint = settings && settings.data
+                        ? String(settings.data).match(/action=([^&]+)/)
+                        : null;
+                    var action = endpoint && endpoint[1] ? decodeURIComponent(endpoint[1]) : '';
+                    var status = xhr && xhr.status ? xhr.status : 0;
+                    var eventName = status === 403 ? 'auth_expired' : 'ajax_request_failed';
+
+                    track(eventName, {
+                        endpoint: action || (settings && settings.url ? String(settings.url).slice(0, 160) : ''),
+                        http_status: status,
+                        request_type: settings && settings.type ? settings.type : '',
+                        error_code: status === 403 ? 'nonce_or_auth_failed' : '',
+                        error_message: thrownError ? String(thrownError).slice(0, 240) : '',
+                        current_screen: getPageContext()
+                    });
+                    if (status === 403 || /beepbeepai_|bbai_/.test(action)) {
+                        tryStartReplay(eventName, true);
+                    }
+                });
+                return;
+            }
+            if (attempts > 0) {
+                window.setTimeout(function() {
+                    waitForJqueryAjaxError(attempts - 1);
+                }, 500);
+            }
+        })(20);
     }
 
     function identify(distinctId, properties) {
@@ -662,20 +1253,22 @@
         return sanitizeProperties({
             account_id: source.account_id || source.id || source._id || baseContext.account_id || '',
             user_id: source.user_id || source.id || source._id || baseContext.user_id || baseContext.account_id || '',
-            license_key: source.license_key || baseContext.license_key || '',
+            license_key_present: !!(source.license_key_present || baseContext.license_key_present || source.license_key || baseContext.license_key),
             site_id: source.site_id || sourceSite.id || sourceSite._id || baseContext.site_id || '',
             site_hash: source.site_hash || baseContext.site_hash || '',
-            email: source.email || baseContext.email || '',
             plan: source.plan || source.plan_type || source.planSlug || baseContext.plan || baseContext.plan_type || '',
             plan_type: source.plan_type || source.plan || source.planSlug || baseContext.plan_type || baseContext.plan || '',
             wordpress_user_id: source.wordpress_user_id || baseContext.wordpress_user_id || '',
-            plugin_version: baseContext.plugin_version || source.plugin_version || ''
+            plugin_version: baseContext.plugin_version || source.plugin_version || '',
+            first_seen_at: source.first_seen_at || baseContext.first_seen_at || '',
+            signup_source: source.signup_source || baseContext.signup_source || '',
+            wp_admin_page: baseContext.page || source.wp_admin_page || ''
         });
     }
 
     function resolveIdentifyId(user) {
         var identity = buildIdentityContext(user);
-        var priority = ['account_id', 'user_id', 'license_key', 'site_id', 'site_hash'];
+        var priority = ['account_id', 'user_id', 'site_id', 'site_hash'];
         var i;
 
         for (i = 0; i < priority.length; i++) {
@@ -720,6 +1313,32 @@
                 identify(identifyId, buildPersonProperties(user));
             }
         });
+
+        document.addEventListener('bbai:analytics', function(event) {
+            var detail = event && event.detail ? extend({}, event.detail) : {};
+            var eventName = detail.event || '';
+            if (!eventName) {
+                return;
+            }
+            delete detail.event;
+            if (
+                /^generation_/.test(eventName) ||
+                eventName === 'checkout_started' ||
+                eventName === 'checkout_failed' ||
+                eventName === 'upgrade_clicked' ||
+                eventName === 'signup_started' ||
+                eventName === 'signup_failed' ||
+                eventName === 'ajax_request_failed' ||
+                eventName === 'polling_failed'
+            ) {
+                trackGenerationLifecycle(eventName, detail);
+                return;
+            }
+
+            if (sanitizeEventName(eventName)) {
+                track(eventName, detail);
+            }
+        });
     }
 
     window.bbaiAnalytics = {
@@ -731,18 +1350,29 @@
         whenPosthogReady: whenPosthogReady,
         track: track,
         identify: identify,
-        pageView: pageView
+        pageView: pageView,
+        captureError: captureError,
+        startReplayContext: startReplayContext,
+        trackGenerationLifecycle: trackGenerationLifecycle,
+        startReplay: tryStartReplay,
+        getSessionId: getSessionId
     };
     window.bbaiInitPosthog = initPosthog;
     window.bbaiWhenPosthogReady = whenPosthogReady;
     window.bbaiTrack = track;
     window.bbaiIdentify = identify;
+    window.bbaiCaptureError = captureError;
+    window.bbaiStartReplayContext = startReplayContext;
+    window.bbaiTrackGenerationLifecycle = trackGenerationLifecycle;
     window.bbaiPageView = pageView;
 
-    initPosthog();
     bindContextListeners();
+    if (hasPosthogConfig()) {
+        initPosthog();
+        bindGlobalObservability();
+    }
 
-    if (cfg.identify && cfg.identify.id) {
+    if (hasPosthogConfig() && cfg.identify && cfg.identify.id) {
         identify(cfg.identify.id, cfg.identify.person_properties || {});
     }
 })(window, document);

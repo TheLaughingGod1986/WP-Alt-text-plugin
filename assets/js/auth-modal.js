@@ -318,8 +318,11 @@ class BbAIAuthModal {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const requestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab || 
+                const rawRequestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab ||
                                    (authTrigger.id === 'bbai-show-auth-login-btn' ? 'login' : 'register');
+                const requestedTab = ['register', 'signup', 'create', 'create_account'].includes(String(rawRequestedTab || '').toLowerCase())
+                    ? 'register'
+                    : 'login';
                 const source = self.resolveSource(authTrigger, 'dashboard');
 
                 if (requestedTab === 'register') {
@@ -364,6 +367,8 @@ class BbAIAuthModal {
             if (e.target.id === 'show-login' || e.target.closest('#show-login')) {
                 e.preventDefault();
                 e.stopPropagation();
+                self.emitAnalyticsEvent('login_cta_clicked', { source: 'modal' });
+                self.emitAnalyticsEvent('login_modal_opened', { source: 'modal' });
                 self.showLoginForm();
                 return;
             }
@@ -581,6 +586,8 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
+                userData.email = userData.email || email;
+                userData.signup_source = source;
                 this.emitAnalyticsEvent('login_succeeded', {
                     source: source
                 });
@@ -658,6 +665,10 @@ class BbAIAuthModal {
 
         if (password !== confirmPassword) {
             this.showError('Passwords do not match');
+            this.emitAnalyticsEvent('signup_failed', {
+                source: source,
+                error_code: 'password_mismatch'
+            });
             return;
         }
 
@@ -670,6 +681,10 @@ class BbAIAuthModal {
         if (!window.bbai_ajax?.ajaxurl) {
             window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] AJAX configuration not loaded');
             this.showError('Configuration error. Please refresh the page and try again.');
+            this.emitAnalyticsEvent('signup_failed', {
+                source: source,
+                error_code: 'missing_ajax_config'
+            });
             this.setLoading(form, false);
             return;
         }
@@ -693,8 +708,11 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
+                userData.email = userData.email || email;
+                userData.signup_source = source;
                 this.emitAnalyticsEvent('signup_succeeded', {
-                    source: source
+                    source: source,
+                    signup_source: source
                 });
                 this.onAuthSuccess(userData);
                 this.hide();
@@ -731,6 +749,10 @@ class BbAIAuthModal {
                 } else {
                     this.showError(errorMessage);
                 }
+                this.emitAnalyticsEvent('signup_failed', {
+                    source: source,
+                    error_code: errorCode || 'registration_failed'
+                });
                 // Clear portal flag on registration failure
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
@@ -746,6 +768,10 @@ class BbAIAuthModal {
                 errorMessage = 'Request timed out. The server may be busy. Please try again in a moment.';
             }
             this.showError(errorMessage);
+            this.emitAnalyticsEvent('signup_failed', {
+                source: source,
+                error_code: error.name === 'SyntaxError' ? 'invalid_response' : 'network_error'
+            });
             // Clear portal flag on network error
             localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {

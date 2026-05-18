@@ -11,8 +11,18 @@
     'use strict';
 
     var WIDGET_ID = 'bbai-job-widget';
+    var OPEN_ON_LOAD_KEY = 'bbai_open_generation_progress_on_load';
     var $widget = null;
     var created = false;
+    var indicatorShownTracked = false;
+
+    function emitAnalytics(eventName, payload) {
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                detail: Object.assign({ event: eventName, timestamp: Date.now() }, payload || {})
+            }));
+        } catch (e) {}
+    }
 
     function escapeHtml(text) {
         var fn = window.bbaiEscapeHtml || function (t) {
@@ -28,9 +38,9 @@
         created = true;
 
         var html =
-            '<div id="' + WIDGET_ID + '" class="bbai-job-widget" hidden>' +
+            '<div id="' + WIDGET_ID + '" class="bbai-job-widget" hidden aria-live="polite">' +
             '  <div class="bbai-job-widget__header">' +
-            '    <span class="bbai-job-widget__status">Processing\u2026</span>' +
+            '    <span class="bbai-job-widget__status"><span class="bbai-job-widget__pulse" aria-hidden="true"></span><span class="bbai-job-widget__status-text">Processing\u2026</span></span>' +
             '    <button type="button" class="bbai-job-widget__close" aria-label="Dismiss">&times;</button>' +
             '  </div>' +
             '  <div class="bbai-job-widget__body">' +
@@ -49,19 +59,49 @@
         $widget = $('#' + WIDGET_ID);
 
         // View → reopen modal
-        $widget.on('click', '.bbai-job-widget__view', function () {
+        $widget.on('click', '.bbai-job-widget__view', function (event) {
+            var opened = false;
+            event.preventDefault();
+            event.stopPropagation();
+            emitAnalytics('generation_modal_reopened', {
+                source: 'global_job_indicator'
+            });
             if (window.bbaiJobState) {
                 window.bbaiJobState.update({ modalVisible: true });
+            }
+            if (typeof window.bbaiOpenBulkProgressFromBackground === 'function') {
+                opened = !!window.bbaiOpenBulkProgressFromBackground();
+            }
+            if (opened) {
+                return;
             }
             var $modal = $('#bbai-bulk-progress-modal');
             if ($modal.length) {
                 $modal.addClass('active');
                 $('body').css('overflow', 'hidden');
+                return;
+            }
+
+            if (window.bbaiJobWidget && window.bbaiJobWidget.dashboardUrl) {
+                try {
+                    window.localStorage.setItem(OPEN_ON_LOAD_KEY, '1');
+                } catch (e) {}
+                window.location.href = window.bbaiJobWidget.dashboardUrl;
             }
         });
 
-        // Close → dismiss widget (does NOT cancel job)
-        $widget.on('click', '.bbai-job-widget__close', function () {
+        // Close → dismiss/acknowledge widget (does NOT cancel a running job)
+        $widget.on('click', '.bbai-job-widget__close', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (window.bbaiJobState) {
+                var state = window.bbaiJobState.getState ? window.bbaiJobState.getState() : {};
+                if (state && !state.running && (state.status === 'complete' || state.status === 'error' || state.status === 'quota')) {
+                    window.bbaiJobState.reset();
+                    $widget.prop('hidden', true);
+                    return;
+                }
+            }
             $widget.prop('hidden', true);
         });
     }
@@ -91,21 +131,34 @@
         $widget.prop('hidden', !shouldShow);
         if (!shouldShow) return;
 
+        if (!indicatorShownTracked) {
+            indicatorShownTracked = true;
+            emitAnalytics('generation_global_indicator_shown', {
+                status: state.status || 'processing',
+                requested_count: state.total || 0,
+                completed_count: state.progress || 0,
+                failed_count: state.failures || 0
+            });
+        }
+
         // Status text
-        var statusEl = $widget.find('.bbai-job-widget__status');
+        var statusEl = $widget.find('.bbai-job-widget__status-text');
         var viewBtn = $widget.find('.bbai-job-widget__view');
+        var closeBtn = $widget.find('.bbai-job-widget__close');
 
         if (state.status === 'complete') {
-            statusEl.text('ALT text generation complete');
+            closeBtn.prop('hidden', false);
+            statusEl.text(state.successes + ' image' + (state.successes !== 1 ? 's' : '') + ' optimised');
             $widget.find('.bbai-job-widget__progress-text').text(
-                state.successes + ' image' + (state.successes !== 1 ? 's' : '') + ' updated'
+                'Review suggestions.'
             );
             $widget.find('.bbai-job-widget__eta').text('');
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--error')
                    .addClass('bbai-job-widget--complete');
-            viewBtn.text('Review');
+            viewBtn.text('Review images');
         } else if (state.status === 'quota') {
+            closeBtn.prop('hidden', false);
             statusEl.text('Credits exhausted');
             $widget.find('.bbai-job-widget__progress-text').text(
                 state.successes + ' processed, ' + state.skipped + ' skipped' +
@@ -117,7 +170,8 @@
                    .addClass('bbai-job-widget--error');
             viewBtn.text('View');
         } else if (state.status === 'error') {
-            statusEl.text('Completed with issues');
+            closeBtn.prop('hidden', false);
+            statusEl.text('Generation paused or failed');
             $widget.find('.bbai-job-widget__progress-text').text(
                 state.successes + ' succeeded, ' + state.failures + ' failed'
             );
@@ -125,17 +179,23 @@
             $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--complete')
                    .addClass('bbai-job-widget--error');
-            viewBtn.text('View');
+            viewBtn.text('Resume status check');
         } else {
-            statusEl.text(state.label || 'Generating ALT text\u2026');
+            var progress = Math.max(0, parseInt(state.progress, 10) || 0);
+            var total = Math.max(0, parseInt(state.total, 10) || 0);
+            var percent = total > 0 ? Math.min(100, Math.round((progress / total) * 100)) : Math.max(0, parseInt(state.percentage, 10) || 0);
+            closeBtn.prop('hidden', false);
+            statusEl.text('Generating ALT text…');
             $widget.find('.bbai-job-widget__progress-text').text(
-                state.progress + ' / ' + state.total
+                total > 0
+                    ? progress + '/' + total + ' complete'
+                    : 'Preparing images'
             );
-            $widget.find('.bbai-job-widget__eta').text(state.eta ? 'ETA ' + state.eta : '');
-            $widget.find('.bbai-job-widget__bar-fill').css('width', state.percentage + '%');
+            $widget.find('.bbai-job-widget__eta').text(state.eta ? 'About ' + state.eta + ' left' : (progress > 0 ? 'Calculating time left' : 'Estimating time left'));
+            $widget.find('.bbai-job-widget__bar-fill').css('width', percent + '%');
             $widget.removeClass('bbai-job-widget--complete bbai-job-widget--error')
                    .addClass('bbai-job-widget--processing');
-            viewBtn.text('View');
+            viewBtn.text('View progress');
         }
     }
 

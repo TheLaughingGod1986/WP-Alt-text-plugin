@@ -214,6 +214,12 @@ class BBAI_Telemetry {
 			if ( '' === $key || strlen( $key ) > 48 ) {
 				continue;
 			}
+			if ( 'license_key_present' !== $key && preg_match( '/(^|_)(password|token|jwt|secret|nonce|api_?key|license_?key|authorization|auth_header|email|site_?url)($|_)/', $key ) ) {
+				if ( in_array( $key, [ 'license_key', 'licensekey' ], true ) && ! empty( $v ) ) {
+					$out['license_key_present'] = true;
+				}
+				continue;
+			}
 			if ( is_bool( $v ) ) {
 				$out[ $key ] = $v;
 				continue;
@@ -223,7 +229,7 @@ class BBAI_Telemetry {
 				continue;
 			}
 			if ( is_string( $v ) ) {
-				$out[ $key ] = mb_substr( sanitize_text_field( $v ), 0, 500 );
+				$out[ $key ] = mb_substr( self::sanitize_scalar_string( $v ), 0, 500 );
 				continue;
 			}
 			if ( is_array( $v ) ) {
@@ -240,9 +246,16 @@ class BBAI_Telemetry {
 					if ( '' === $snk ) {
 						continue;
 					}
+					if ( 'license_key_present' !== $snk && preg_match( '/(^|_)(password|token|jwt|secret|nonce|api_?key|license_?key|authorization|auth_header|email|site_?url)($|_)/', $snk ) ) {
+						if ( in_array( $snk, [ 'license_key', 'licensekey' ], true ) && ! empty( $nv ) ) {
+							$nested['license_key_present'] = true;
+							++$i;
+						}
+						continue;
+					}
 					if ( is_scalar( $nv ) ) {
 						$nested[ $snk ] = is_string( $nv )
-							? mb_substr( sanitize_text_field( (string) $nv ), 0, 200 )
+							? mb_substr( self::sanitize_scalar_string( (string) $nv ), 0, 200 )
 							: $nv;
 						++$i;
 					}
@@ -253,6 +266,14 @@ class BBAI_Telemetry {
 			}
 		}
 		return $out;
+	}
+
+	private static function sanitize_scalar_string( string $value ): string {
+		$value = sanitize_text_field( $value );
+		$value = (string) preg_replace( '/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', '[redacted_email]', $value );
+		$value = (string) preg_replace( '/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/', '[redacted_jwt]', $value );
+		$value = (string) preg_replace( '#https?://[^\s"\'<>]+#i', '[redacted_url]', $value );
+		return $value;
 	}
 
 	private static function resolve_site_id(): string {

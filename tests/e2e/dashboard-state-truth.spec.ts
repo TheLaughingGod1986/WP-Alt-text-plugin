@@ -113,10 +113,21 @@ function setDashboardTruthFixture(fixture: TruthFixture) {
 
 async function loginAsAdmin(page: Page) {
   await page.goto(`${BASE}/wp-login.php`);
-  await page.fill('#user_login', 'admin');
-  await page.fill('#user_pass', 'password');
-  await page.click('#wp-submit');
-  await page.waitForURL('**/wp-admin/**', { timeout: 15000 });
+  if (page.url().includes('/wp-admin/')) {
+    await page.locator('#wpbody-content').waitFor({ state: 'attached', timeout: 15000 });
+    return;
+  }
+  const userField = page.locator('#user_login, input[name="log"]').first();
+  const passField = page.locator('#user_pass, input[name="pwd"]').first();
+  await userField.fill('admin');
+  await passField.fill('password');
+  await Promise.all([
+    page.waitForLoadState('domcontentloaded').catch(() => undefined),
+    page.click('#wp-submit'),
+  ]);
+  await page.waitForFunction(() => {
+    return window.location.href.includes('/wp-admin/') || !!document.querySelector('#wpbody-content');
+  }, undefined, { timeout: 15000 });
 }
 
 async function fetchDashboardTruth(page: Page) {
@@ -414,9 +425,9 @@ test.describe('Dashboard truth-driven UI', () => {
     await expectHeroState(page, 'ALL_CLEAR');
     await expect(hero).not.toContainText('Approve all');
     await expect(hero).not.toContainText('Open review queue');
-    await expect(hero.locator('[data-bbai-li-primary-cta]')).toContainText('Upload more images →');
+    await expect(hero.locator('[data-bbai-li-primary-cta]')).toContainText('Upload new images');
     await expect(hero.locator('[data-bbai-li-all-clear-rescan="1"]')).toContainText('Re-scan library →');
-    await expect(hero.locator('[data-bbai-li-all-clear-library="1"]')).toContainText('Open ALT Library');
+    await expect(hero.locator('[data-bbai-li-all-clear-library="1"]')).toHaveCount(0);
     await expect(hero).not.toContainText('Review existing ALT text');
     await expect(hero.locator('[data-bbai-all-clear-upgrade="1"]')).toContainText('Automate future uploads');
     await expect(hero.locator('[data-bbai-li-hero-headline]')).toContainText('fully optimised');
@@ -1386,7 +1397,7 @@ test.describe('Dashboard truth-driven UI', () => {
     await openDashboard(page);
 
     const hero = page.locator('[data-bbai-li-hero="1"]');
-    const primary = hero.locator('[data-bbai-li-primary-cta]');
+    const primary = hero.locator('[data-bbai-li-primary-cta]:visible').first();
     await expectHeroState(page, 'MISSING_ALT');
     await primary.click();
 
@@ -1408,7 +1419,7 @@ test.describe('Dashboard truth-driven UI', () => {
     setDashboardTruthFixture(fixture);
     await loginAsAdmin(page);
     setDashboardTruthFixture(fixture);
-    await installDashboardTruthRoutes(page, fixture);
+    await installDashboardTruthRoutes(page, fixture, { failResolvedDashboard: true });
 
     const idsRequest = page.waitForRequest(
       (req) =>
@@ -1442,6 +1453,7 @@ test.describe('Dashboard truth-driven UI', () => {
       }
       if (postData.includes('action=beepbeepai_bulk_queue')) {
         expect(postData).toMatch(/skip_schedule=1/);
+        await new Promise((resolve) => setTimeout(resolve, 800));
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -1464,21 +1476,203 @@ test.describe('Dashboard truth-driven UI', () => {
 
     await openDashboard(page);
     const hero = page.locator('[data-bbai-li-hero="1"]');
-    const primary = hero.locator('[data-bbai-li-primary-cta]');
+    const primary = hero.locator('[data-bbai-li-primary-cta]:visible').first();
 
     await expect(hero).toHaveAttribute('data-bbai-li-state', 'MISSING_ALT');
     await primary.click();
 
     await idsRequest;
+    await expect(primary).not.toHaveAttribute('aria-busy', 'true');
     await bulkRequest;
-
-    await expect(primary).not.toHaveAttribute('aria-busy', 'true', { timeout: 8000 });
 
     const modal = page.locator('#bbai-bulk-progress-modal.active');
     const failedStart = hero.locator('.bbai-li-hero-status-line').filter({
       hasText: 'Generation could not start',
     });
     await expect(modal.or(failedStart)).toBeVisible({ timeout: 15000 });
+  });
+
+  test('post-signup quota: signed-up free user does not fall back to anonymous trial and starts authenticated generation', async ({ page }) => {
+    test.setTimeout(60000);
+    const fixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 2, review: 0, complete: 0, failed: 0, total: 2 },
+      credits: {
+        used: 0,
+        total: 50,
+        remaining: 50,
+        plan: 'free',
+        plan_slug: 'free',
+        is_pro: false,
+        auth_state: 'authenticated',
+        quota_type: 'monthly_account',
+        quota_source_displayed_to_user: 'authenticated_account',
+      } as any,
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'usage_helper', site: 'fixture' },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+    setDashboardTruthFixture(fixture);
+    await installDashboardTruthRoutes(page, fixture, { failResolvedDashboard: true });
+    await page.addInitScript(() => {
+      (window as any).__bbaiAnalyticsEvents = [];
+      document.addEventListener('bbai:analytics', (event: Event) => {
+        (window as any).__bbaiAnalyticsEvents.push((event as CustomEvent).detail);
+      });
+    });
+
+    let bulkQueuePostData = '';
+    await page.route('**/wp-admin/admin-ajax.php', async (route) => {
+      const postData = route.request().postData() || '';
+      if (postData.includes('action=beepbeepai_get_attachment_ids')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              ids: [301, 302],
+              scope: 'missing',
+              pagination: { limit: 2, offset: 0 },
+            },
+          }),
+        });
+        return;
+      }
+      if (postData.includes('action=beepbeepai_bulk_queue')) {
+        bulkQueuePostData = postData;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              message: '2 image(s) queued for processing',
+              queued: 2,
+              total: 2,
+              scheduled: false,
+              job_state: 'QUEUED',
+              job_status: 'queued',
+            },
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await openDashboard(page);
+    await page.evaluate(async () => {
+      if (typeof (window as any).bbaiRefreshLoggedInDashboardTruth === 'function') {
+        await (window as any).bbaiRefreshLoggedInDashboardTruth('user_action');
+      }
+    });
+    const root = page.locator('[data-bbai-dashboard-root="1"]');
+    const hero = page.locator('[data-bbai-li-hero="1"]');
+    const primary = hero.locator('[data-bbai-li-primary-cta]:visible').first();
+
+    await expect(root).toHaveAttribute('data-bbai-auth-state', 'authenticated');
+    await expect(root).not.toHaveAttribute('data-bbai-quota-type', 'trial');
+    await expect(root).toHaveAttribute('data-bbai-credits-total', '50');
+    await expect(root).not.toHaveAttribute('data-bbai-credits-total', '5');
+    await expect(primary).toContainText('Generate ALT Text Now');
+
+    await primary.click();
+
+    await expect.poll(() => bulkQueuePostData, { timeout: 10000 }).toContain('action=beepbeepai_bulk_queue');
+    expect(bulkQueuePostData).toContain('source=dashboard');
+    expect(bulkQueuePostData).toContain('attachment_ids%5B%5D=301');
+    expect(bulkQueuePostData).toContain('attachment_ids%5B%5D=302');
+
+    const startEvent = await page.evaluate(() =>
+      ((window as any).__bbaiAnalyticsEvents || []).find((event: any) => event.event === 'generation_request_started')
+    );
+    expect(startEvent).toMatchObject({
+      auth_state: 'authenticated',
+      quota_type: 'monthly_account',
+      quota_source_displayed_to_user: 'authenticated_account',
+      ajax_action: 'beepbeepai_bulk_queue',
+    });
+  });
+
+  test('generate: failed queue response restores dashboard CTA and tracks start failure', async ({ page }) => {
+    const fixture: TruthFixture = {
+      state: 'MISSING_ALT',
+      counts: { missing: 2, review: 0, complete: 8, failed: 0, total: 10 },
+      credits: { used: 8, total: 50, remaining: 42, plan: 'free', plan_slug: 'free', is_pro: false },
+      job: null,
+      site: { site_hash: 'fixture-site', has_connected_account: true },
+      resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
+    };
+
+    setDashboardTruthFixture(fixture);
+    await loginAsAdmin(page);
+    setDashboardTruthFixture(fixture);
+    await installDashboardTruthRoutes(page, fixture);
+    await page.addInitScript(() => {
+      (window as any).__bbaiAnalyticsEvents = [];
+      document.addEventListener('bbai:analytics', (event: Event) => {
+        (window as any).__bbaiAnalyticsEvents.push((event as CustomEvent).detail);
+      });
+    });
+
+    await page.route('**/wp-admin/admin-ajax.php', async (route) => {
+      const postData = route.request().postData() || '';
+      if (postData.includes('action=beepbeepai_get_attachment_ids')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              ids: [201, 202],
+              scope: 'missing',
+              pagination: { limit: 2, offset: 0 },
+            },
+          }),
+        });
+        return;
+      }
+      if (postData.includes('action=beepbeepai_bulk_queue')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: false,
+            data: {
+              code: 'fixture_queue_failed',
+              message: 'Queue rejected by fixture',
+            },
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await openDashboard(page);
+    const hero = page.locator('[data-bbai-li-hero="1"]');
+    const primary = hero.locator('[data-bbai-li-primary-cta]');
+    const originalText = (await primary.textContent())?.trim() || '';
+
+    await primary.click();
+
+    await expect(primary).not.toHaveAttribute('aria-busy', 'true', { timeout: 10000 });
+    await expect(primary).toContainText(originalText);
+    await expect(hero.locator('.bbai-li-hero-status-line')).toContainText('Queue rejected by fixture');
+
+    const failureEvent = await page.evaluate(() =>
+      ((window as any).__bbaiAnalyticsEvents || []).find((event: any) => event.event === 'generation_start_failed')
+    );
+    expect(failureEvent).toMatchObject({
+      source: 'dashboard',
+      ajax_action: 'beepbeepai_bulk_queue',
+      error_code: 'fixture_queue_failed',
+      error_message: 'Queue rejected by fixture',
+    });
   });
 
   test('mixed: missing=4 and to_review=19 renders MIXED_ATTENTION with exact copy and CTAs', async ({ page }) => {

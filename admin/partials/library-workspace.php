@@ -26,6 +26,17 @@ $bbai_quota_type = isset($bbai_usage_stats['quota_type']) && is_string($bbai_usa
     ? sanitize_key($bbai_usage_stats['quota_type'])
     : '';
 $bbai_is_anonymous_trial = ('anonymous' === $bbai_auth_state) || ('trial' === $bbai_quota_type) || !empty($bbai_usage_stats['is_trial']);
+if (!empty($bbai_has_connected_account)) {
+    $bbai_is_anonymous_trial = false;
+    $bbai_auth_state = 'authenticated';
+    if ('trial' === $bbai_quota_type || '' === $bbai_quota_type) {
+        $bbai_quota_type = 'monthly_account';
+    }
+    $bbai_usage_stats['auth_state'] = $bbai_auth_state;
+    $bbai_usage_stats['quota_type'] = $bbai_quota_type;
+    $bbai_usage_stats['is_trial'] = false;
+    $bbai_usage_stats['signup_required'] = false;
+}
 $bbai_free_plan_offer = max(0, (int) ($bbai_usage_stats['free_plan_offer'] ?? 50));
 $bbai_usage_used_seed = max(0, (int) ($bbai_usage_stats['credits_used'] ?? $bbai_usage_stats['creditsUsed'] ?? $bbai_usage_stats['used'] ?? 0));
 $bbai_usage_limit_seed = max(1, (int) ($bbai_usage_stats['credits_total'] ?? $bbai_usage_stats['creditsTotal'] ?? $bbai_usage_stats['limit'] ?? 50));

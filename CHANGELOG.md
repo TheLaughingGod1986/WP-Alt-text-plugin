@@ -6,6 +6,14 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### Unreleased
 
+### 4.6.8 — 2026-05-18
+
+- **Changed**: Restored the logged-in dashboard presentation and refined the review-ready status card with calmer action hierarchy, tighter progress spacing, and more balanced alignment.
+- **Changed**: Added image-specific live feed entries to the bulk generation modal so users can see which images are currently being processed.
+- **Changed**: Release-polished the WordPress.org banner and icon artwork with improved supporting-copy readability and final production QA.
+- **Fixed**: Aligned the dashboard insight card buttons across Accessibility, Time Saved, and SEO cards.
+- **Fixed**: Bumped the plugin version above the current WordPress.org release so active installs are not incorrectly flagged as outdated.
+
 ### 4.6.3 — 2026-05-06
 
 - **Changed**: Updated the WordPress.org large and small banners with correctly sized Better Alt Text, Better Accessibility artwork.

@@ -54,6 +54,10 @@ $bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_compone
 <div
 	class="bbai-li-surface bbai-li-surface--<?php echo esc_attr( $bbai_it_modifier ); ?>"
 	data-bbai-li-surface="<?php echo esc_attr( $bbai_it_component ); ?>"
+	<?php if ( 'ReviewQueue' === $bbai_it_component ) : ?>
+		data-bbai-review-queue="1"
+		data-bbai-review-ready-count="<?php echo esc_attr( (string) max( 0, (int) ( $bbai_review_ready_count ?? 0 ) ) ); ?>"
+	<?php endif; ?>
 >
 
 	<div class="bbai-li-surface__header">
@@ -128,6 +132,11 @@ $bbai_it_modifier = sanitize_html_class( $bbai_it_modifier_map[ $bbai_it_compone
 								<?php if ( $bbai_is_miss ) : ?>
 									<span class="bbai-li-image-table__badge bbai-li-image-table__badge--missing"><?php esc_html_e( 'Missing', 'beepbeep-ai-alt-text-generator' ); ?></span>
 								<?php else : ?>
+									<div class="bbai-li-image-table__alt-preview">
+										<span class="bbai-li-image-table__alt-preview-label"><?php esc_html_e( 'Before ALT', 'beepbeep-ai-alt-text-generator' ); ?></span>
+										<span class="bbai-li-image-table__alt-preview-value"><?php esc_html_e( 'Original preserved', 'beepbeep-ai-alt-text-generator' ); ?></span>
+										<span class="bbai-li-image-table__alt-preview-label"><?php esc_html_e( 'AI suggestion', 'beepbeep-ai-alt-text-generator' ); ?></span>
+									</div>
 									<span class="bbai-li-image-table__badge bbai-li-image-table__badge--review"><?php esc_html_e( 'Needs review', 'beepbeep-ai-alt-text-generator' ); ?></span>
 								<?php endif; ?>
 							</td>

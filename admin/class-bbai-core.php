@@ -508,7 +508,7 @@ class Core {
     private function current_user_can_access_library(): bool {
         $auth_state = Auth_State::resolve($this->api_client);
 
-        return ! empty($auth_state['has_connected_account']) && ! empty($auth_state['is_authenticated']);
+        return ! empty($auth_state['has_connected_account']);
     }
 
     /**
@@ -575,7 +575,7 @@ class Core {
 
         $auth_state = Auth_State::resolve( $this->api_client );
         // Canonical plugin auth: wp-admin login is not BeepBeep auth.
-        $has_connected_account = ! empty( $auth_state['has_connected_account'] ) && ! empty( $auth_state['is_authenticated'] );
+        $has_connected_account = ! empty( $auth_state['has_connected_account'] );
 
         if ( $has_connected_account ) {
             return;
@@ -659,10 +659,34 @@ class Core {
         $status['free_plan_offer'] = max(0, (int) ($status['free_plan_offer'] ?? 50));
 
         if ( ! $should_gate ) {
+            $usage = Usage_Tracker::get_stats_display(false);
+            $connected_limit = max(1, (int) ($usage['creditsTotal'] ?? $usage['credits_total'] ?? $usage['limit'] ?? 50));
+            $connected_used = max(0, min($connected_limit, (int) ($usage['creditsUsed'] ?? $usage['credits_used'] ?? $usage['used'] ?? 0)));
+            $connected_remaining = max(0, (int) ($usage['creditsRemaining'] ?? $usage['credits_remaining'] ?? $usage['remaining'] ?? ($connected_limit - $connected_used)));
+            $connected_plan = sanitize_key((string) ($usage['plan_type'] ?? $usage['plan'] ?? 'free'));
+            if ('trial' === $connected_plan || '' === $connected_plan) {
+                $connected_plan = 'free';
+            }
+            $connected_quota_type = in_array($connected_plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'paid' : 'monthly_account';
+
+            $status['credits_total'] = $connected_limit;
+            $status['limit'] = $connected_limit;
+            $status['credits_used'] = $connected_used;
+            $status['used'] = $connected_used;
+            $status['credits_remaining'] = $connected_remaining;
+            $status['remaining'] = $connected_remaining;
+            $status['remaining_free_images'] = $connected_remaining;
             $status['auth_state'] = 'authenticated';
+            $status['quota_type'] = $connected_quota_type;
+            $status['plan'] = $connected_plan;
+            $status['plan_type'] = $connected_plan;
             $status['signup_required'] = false;
             $status['upgrade_required'] = false;
-            $status['quota_state'] = 'active';
+            $status['quota_state'] = $connected_remaining <= 0 ? 'exhausted' : 'active';
+            $status['is_trial'] = false;
+            $status['trial_exhausted'] = false;
+            $status['trial_near_limit'] = false;
+            $status['quota_source_displayed_to_user'] = (string) ($usage['quota_source_displayed_to_user'] ?? $usage['source'] ?? 'authenticated_account');
         }
 
         $status['should_gate'] = $should_gate;
@@ -695,7 +719,7 @@ class Core {
             'quota_state' => (string) ($trial['quota_state'] ?? 'active'),
             'signup_required' => !empty($trial['signup_required']),
             'upgrade_required' => false,
-            'is_trial' => true,
+            'is_trial' => !empty($trial['should_gate']),
             'trial_exhausted' => !empty($trial['trial_exhausted']),
             'trial_near_limit' => !empty($trial['trial_near_limit']),
             'credits_total' => max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 5)),
@@ -720,7 +744,7 @@ class Core {
 
         // Usage should be fetched whenever we have any valid backend auth, even if the
         // cached has_connected_account flag is stale (common after session changes).
-        $can_fetch_usage = ! empty( $auth_state['has_connected_account'] ) && ! empty( $auth_state['is_authenticated'] );
+        $can_fetch_usage = ! empty( $auth_state['has_connected_account'] );
         if ( ! $can_fetch_usage && is_object( $this->api_client ) ) {
             $can_fetch_usage = ( method_exists( $this->api_client, 'is_authenticated' ) && $this->api_client->is_authenticated() )
                 || ( method_exists( $this->api_client, 'has_active_license' ) && $this->api_client->has_active_license() );
@@ -1856,7 +1880,7 @@ class Core {
         }
         // Add connected-account modifier so full-width header CSS only fires for authenticated users.
         $bbai_fc_auth = Auth_State::resolve( $this->api_client );
-        if ( ! empty( $bbai_fc_auth['has_connected_account'] ) && ! empty( $bbai_fc_auth['is_authenticated'] ) ) {
+        if ( ! empty( $bbai_fc_auth['has_connected_account'] ) ) {
             $bbai_body .= ' bbai-dashboard--connected';
         }
         return trim( $classes . ' ' . $bbai_body );
@@ -1866,8 +1890,8 @@ class Core {
         $cap = current_user_can(self::CAPABILITY) ? self::CAPABILITY : 'manage_options';
 
         $bbai_auth = Auth_State::resolve($this->api_client);
-        // Canonical plugin auth: require an active BeepBeep session/JWT as well.
-        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']) && !empty($bbai_auth['is_authenticated']);
+        // Canonical plugin auth: stored post-signup credentials are enough to show connected UI immediately.
+        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
 
         // Top-level menu uses the brand name; the first submenu is "Dashboard".
         add_menu_page(
@@ -2600,8 +2624,8 @@ class Core {
 	        $bbai_has_stored_token = !empty($bbai_auth['has_stored_token']);
 	        $bbai_has_stored_license = !empty($bbai_auth['has_stored_license']);
 	        $bbai_has_registered_user = !empty($bbai_auth['has_registered_user']);
-	        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']) && $bbai_is_authenticated;
-            $bbai_is_anonymous_trial = !empty($bbai_auth['is_anonymous_trial']);
+	        $bbai_has_connected_account = !empty($bbai_auth['has_connected_account']);
+            $bbai_is_anonymous_trial = empty($bbai_has_connected_account);
             $bbai_auth_state = isset($bbai_auth['auth_state']) ? (string) $bbai_auth['auth_state'] : ($bbai_is_anonymous_trial ? 'anonymous' : 'authenticated');
 		        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 		        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
@@ -6025,6 +6049,9 @@ class Core {
                 if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
                     \BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
                 }
+                \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
+                delete_transient('bbai_quota_cache');
+                $this->invalidate_stats_cache();
 
                 return $alt_text;
             }
@@ -6068,6 +6095,9 @@ class Core {
             if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
                 \BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
             }
+            \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
+            delete_transient('bbai_quota_cache');
+            $this->invalidate_stats_cache();
 
             return $stub_alt;
         }
@@ -6384,7 +6414,22 @@ class Core {
                 ], 'generation');
             }
 
-            Usage_Tracker::update_usage($bbai_usage_data);
+            $current_usage = Usage_Tracker::get_local_usage_snapshot();
+            $current_used = is_array($current_usage)
+                ? max(0, intval($current_usage['used'] ?? $current_usage['credits_used'] ?? $current_usage['creditsUsed'] ?? 0))
+                : 0;
+            $response_used = max(0, intval($bbai_usage_data['used'] ?? $bbai_usage_data['credits_used'] ?? $bbai_usage_data['creditsUsed'] ?? 0));
+
+            if ($response_used <= $current_used) {
+                $fresh_usage = Usage_Tracker::record_generation_success(1);
+                if (is_array($fresh_usage)) {
+                    $bbai_usage_data = $fresh_usage;
+                } else {
+                    Usage_Tracker::update_usage($bbai_usage_data);
+                }
+            } else {
+                Usage_Tracker::update_usage($bbai_usage_data);
+            }
         } else {
             // Generation response didn't include credits info - fetch fresh usage from API
             // This ensures the dashboard shows accurate counts even if the backend doesn't
@@ -7686,8 +7731,8 @@ class Core {
         $bbai_has_license = $this->api_client->has_active_license();
 
         // Check if user has remaining usage (skip in local dev mode or when license active)
-        if (!$bbai_has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
-            $usage = $this->api_client->get_usage();
+	        if (!$bbai_has_license && (!defined('WP_LOCAL_DEV') || !WP_LOCAL_DEV)) {
+	            $usage = $this->api_client->get_usage();
             
             // If usage check fails due to authentication, allow queueing but warn user
             if (is_wp_error($usage)) {
@@ -7722,11 +7767,11 @@ class Core {
                         'remaining' => $remaining
                     ]);
                     return;
-                }
-            }
-        }
-        
-        try {
+	                }
+	            }
+	        }
+
+	        try {
             // Queue images (will clear existing entries for bulk-regenerate)
             $queued = Queue::enqueue_many($ids, $source);
             
@@ -9223,12 +9268,18 @@ class Core {
     }
 
     /**
-     * Whether the current site should use the licensed POST /api/jobs bulk flow.
+     * Whether the current site should use the server-side POST /api/jobs bulk flow.
+     *
+     * Only accounts with an active license should use this path. Free connected
+     * accounts can have auth tokens without access to the server bulk job API;
+     * sending them here leaves generation stuck before any per-image work starts.
+     * Anonymous trial/free fallback users stay on inline generation.
      */
     public function should_use_licensed_bulk_jobs_api(): bool {
-        return isset( $this->api_client )
-            && method_exists( $this->api_client, 'has_active_license' )
-            && $this->api_client->has_active_license();
+        if ( ! isset( $this->api_client ) || ! is_object( $this->api_client ) ) {
+            return false;
+        }
+        return method_exists( $this->api_client, 'has_active_license' ) && $this->api_client->has_active_license();
     }
 
     /**
@@ -9894,7 +9945,22 @@ class Core {
         }
         if (! empty($bbai_usage_data) && (isset($bbai_usage_data['used']) || isset($bbai_usage_data['remaining']))) {
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
-            \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_usage_data);
+            $current_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
+            $current_used = is_array($current_usage)
+                ? max(0, intval($current_usage['used'] ?? $current_usage['credits_used'] ?? $current_usage['creditsUsed'] ?? 0))
+                : 0;
+            $response_used = max(0, intval($bbai_usage_data['used'] ?? $bbai_usage_data['credits_used'] ?? $bbai_usage_data['creditsUsed'] ?? 0));
+
+            if ($response_used <= $current_used) {
+                $fresh_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
+                if (is_array($fresh_usage)) {
+                    $bbai_usage_data = $fresh_usage;
+                } else {
+                    \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_usage_data);
+                }
+            } else {
+                \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_usage_data);
+            }
         } else {
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
             \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
@@ -10467,7 +10533,8 @@ class Core {
             ob_clean();
         }
 
-        Usage_Tracker::clear_cache();
+        $inline_usage_after_generation = Usage_Tracker::get_cached_usage(false);
+        delete_transient('bbai_quota_cache');
         $this->invalidate_stats_cache();
 
         $trial_snapshot_after = null;
@@ -10537,6 +10604,8 @@ class Core {
             $generation_meta['trial_remaining_after'] = null;
             $generation_meta['trial_exhausted_after']  = null;
         }
+
+        $generation_meta['usage'] = is_array( $inline_usage_after_generation ) ? $inline_usage_after_generation : null;
 
         // Ensure headers haven't been sent (which would break JSON response)
         if (headers_sent($file, $line)) {

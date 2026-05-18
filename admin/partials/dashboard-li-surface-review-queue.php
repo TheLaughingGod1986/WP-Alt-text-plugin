@@ -18,12 +18,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $bbai_it_component   = 'ReviewQueue';
 $bbai_it_scope       = 'needs_review';
-$bbai_it_heading     = __( 'Awaiting your approval', 'beepbeep-ai-alt-text-generator' );
-$bbai_it_subheading  = __( 'ALT text has been generated. Approve to publish, or edit individual items in the library.', 'beepbeep-ai-alt-text-generator' );
+$bbai_review_ready_count = isset( $bbai_li_state['donut']['segments']['weak'] )
+	? max( 0, (int) $bbai_li_state['donut']['segments']['weak'] )
+	: 0;
+$bbai_it_heading     = $bbai_review_ready_count > 0
+	? sprintf(
+		/* translators: %s: number of images ready for review */
+		_n( '%s image ready for review', '%s images ready for review', $bbai_review_ready_count, 'beepbeep-ai-alt-text-generator' ),
+		number_format_i18n( $bbai_review_ready_count )
+	)
+	: __( 'Images ready for review', 'beepbeep-ai-alt-text-generator' );
+$bbai_it_subheading  = __( 'Approve AI suggestions when they look right, or open an item to edit before publishing.', 'beepbeep-ai-alt-text-generator' );
 $bbai_it_loading     = __( 'Loading review queue…', 'beepbeep-ai-alt-text-generator' );
 $bbai_it_alt_col     = __( 'Generated ALT text', 'beepbeep-ai-alt-text-generator' );
 $bbai_it_primary_cta = [
-	'label'  => __( 'Approve all', 'beepbeep-ai-alt-text-generator' ),
+	'label'  => __( 'Approve AI suggestions', 'beepbeep-ai-alt-text-generator' ),
 	'href'   => '#',
 	'action' => 'approve-all',
 ];

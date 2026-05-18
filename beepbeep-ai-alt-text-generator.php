@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
- * Version: 4.6.3
+ * Version: 4.6.8
  * Requires at least: 6.2
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
@@ -23,8 +23,8 @@ if ( defined( 'BBAI_ALREADY_LOADED' ) ) {
 define( 'BBAI_ALREADY_LOADED', true );
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.6.3' );
-define( 'BBAI_VERSION', '4.6.3' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.6.8' );
+define( 'BBAI_VERSION', '4.6.8' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
@@ -188,6 +188,10 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-email-lifecycle.php';
+if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Email_Lifecycle' ) ) {
+	\BeepBeepAI\AltTextGenerator\BBAI_Email_Lifecycle::init();
+}
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/phase17-content-pipeline.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';

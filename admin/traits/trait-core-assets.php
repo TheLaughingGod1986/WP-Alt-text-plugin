@@ -372,6 +372,71 @@ JS,
      * @param string $base_url Plugin base URL
      * @param string $base_path Plugin base path
      */
+    private function enqueue_background_job_widget_assets(string $base_url, string $base_path, bool $include_recovery_client = false): void {
+        $bbai_job_state_js = 'assets/js/admin/job-state.js';
+        if ( file_exists( $base_path . $bbai_job_state_js ) ) {
+            wp_enqueue_script(
+                'bbai-job-state',
+                $base_url . $bbai_job_state_js,
+                [],
+                $this->get_asset_version( $bbai_job_state_js, '1.0.0', $base_path ),
+                true
+            );
+        }
+
+        $bbai_job_widget_js = 'assets/js/admin/job-widget.js';
+        if ( file_exists( $base_path . $bbai_job_widget_js ) ) {
+            wp_enqueue_script(
+                'bbai-job-widget',
+                $base_url . $bbai_job_widget_js,
+                [ 'jquery', 'bbai-job-state' ],
+                $this->get_asset_version( $bbai_job_widget_js, '1.0.0', $base_path ),
+                true
+            );
+            wp_localize_script(
+                'bbai-job-widget',
+                'bbaiJobWidget',
+                [
+                    'dashboardUrl' => esc_url_raw( admin_url( 'admin.php?page=bbai' ) ),
+                ]
+            );
+        }
+
+        if ( $include_recovery_client ) {
+            $bbai_licensed_bulk_client = 'assets/js/admin/bbai-licensed-bulk-job-client.js';
+            if ( is_readable( $base_path . $bbai_licensed_bulk_client ) ) {
+                wp_enqueue_script(
+                    'bbai-licensed-bulk-job-client',
+                    $base_url . $bbai_licensed_bulk_client,
+                    [ 'jquery', 'bbai-job-state' ],
+                    $this->get_asset_version( $bbai_licensed_bulk_client, '1.0.0', $base_path ),
+                    true
+                );
+                wp_localize_script(
+                    'bbai-licensed-bulk-job-client',
+                    'bbai_ajax',
+                    [
+                        'ajaxurl'                => admin_url( 'admin-ajax.php' ),
+                        'ajax_url'               => admin_url( 'admin-ajax.php' ),
+                        'nonce'                  => wp_create_nonce( 'beepbeepai_nonce' ),
+                        'admin_url'              => admin_url( 'admin.php' ),
+                        'use_licensed_bulk_jobs' => method_exists( $this, 'should_use_licensed_bulk_jobs_api' ) && $this->should_use_licensed_bulk_jobs_api(),
+                    ]
+                );
+            }
+        }
+
+        $bbai_job_widget_css = 'assets/css/components/job-widget.css';
+        if ( file_exists( $base_path . $bbai_job_widget_css ) ) {
+            wp_enqueue_style(
+                'bbai-job-widget',
+                $base_url . $bbai_job_widget_css,
+                [],
+                $this->get_asset_version( $bbai_job_widget_css, '1.0.0', $base_path )
+            );
+        }
+    }
+
     private function enqueue_media_library_assets(string $hook, string $base_url, string $base_path): void {
         $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
         $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
@@ -408,12 +473,24 @@ JS,
         }
 
         $bbai_admin_script_deps = ['jquery', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry'];
+        $bbai_job_state_js = 'assets/js/admin/job-state.js';
+        if ( file_exists( $base_path . $bbai_job_state_js ) ) {
+            wp_enqueue_script(
+                'bbai-job-state',
+                $base_url . $bbai_job_state_js,
+                [],
+                $this->get_asset_version( $bbai_job_state_js, '1.0.0', $base_path ),
+                true
+            );
+            $bbai_admin_script_deps[] = 'bbai-job-state';
+        }
+
         $bbai_licensed_bulk_client = 'assets/js/admin/bbai-licensed-bulk-job-client.js';
         if ( is_readable( $base_path . $bbai_licensed_bulk_client ) ) {
             wp_enqueue_script(
                 'bbai-licensed-bulk-job-client',
                 $base_url . $bbai_licensed_bulk_client,
-                ['jquery'],
+                ['jquery', 'bbai-job-state'],
                 $this->get_asset_version( $bbai_licensed_bulk_client, '1.0.0', $base_path ),
                 true
             );
@@ -498,28 +575,8 @@ JS,
             'nonce'     => wp_create_nonce('bbai_ajax_nonce'),
         ]);
 
-        // Background job state + floating widget
-        $bbai_job_state_js = 'assets/js/admin/job-state.js';
-        if ( file_exists( $base_path . $bbai_job_state_js ) ) {
-            wp_enqueue_script(
-                'bbai-job-state',
-                $base_url . $bbai_job_state_js,
-                [],
-                $this->get_asset_version( $bbai_job_state_js, '1.0.0', $base_path ),
-                true
-            );
-        }
-
-        $bbai_job_widget_js = 'assets/js/admin/job-widget.js';
-        if ( file_exists( $base_path . $bbai_job_widget_js ) ) {
-            wp_enqueue_script(
-                'bbai-job-widget',
-                $base_url . $bbai_job_widget_js,
-                [ 'jquery', 'bbai-job-state' ],
-                $this->get_asset_version( $bbai_job_widget_js, '1.0.0', $base_path ),
-                true
-            );
-        }
+        // Background job floating widget.
+        $this->enqueue_background_job_widget_assets($base_url, $base_path);
 
         $bbai_funnel_state_js = 'assets/js/admin/funnel-state.js';
         if ( file_exists( $base_path . $bbai_funnel_state_js ) ) {
@@ -532,15 +589,6 @@ JS,
             );
         }
 
-        $bbai_job_widget_css = 'assets/css/components/job-widget.css';
-        if ( file_exists( $base_path . $bbai_job_widget_css ) ) {
-            wp_enqueue_style(
-                'bbai-job-widget',
-                $base_url . $bbai_job_widget_css,
-                [],
-                $this->get_asset_version( $bbai_job_widget_css, '1.0.0', $base_path )
-            );
-        }
     }
 
     /**
@@ -553,6 +601,13 @@ JS,
         $use_debug_assets = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG;
         $js_base  = $use_debug_assets ? 'assets/src/js/' : 'assets/dist/js/';
         $css_base = $use_debug_assets ? 'assets/src/css/' : 'assets/dist/css/';
+        $current_page = $this->get_current_admin_page();
+        $resolved_tab = $this->get_resolved_tab();
+        $is_dashboard_tab = $this->is_dashboard_tab();
+        $is_analytics_tab = $this->is_analytics_tab();
+        $is_usage_tab = 'usage' === $resolved_tab || 'bbai-credit-usage' === $current_page;
+        $is_debug_page = 'bbai-debug' === $current_page;
+        $needs_contact_modal = in_array($resolved_tab, ['settings', 'help'], true) || in_array($current_page, ['bbai-settings', 'bbai-guide'], true);
 
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
@@ -1019,7 +1074,7 @@ JS,
         }
 
         $dashboard_state_js = 'assets/js/bbai-dashboard-state.js';
-        if ( file_exists( $base_path . $dashboard_state_js ) ) {
+        if ( ! $is_dashboard_tab && file_exists( $base_path . $dashboard_state_js ) ) {
             wp_enqueue_script(
                 'bbai-dashboard-state',
                 $base_url . $dashboard_state_js,
@@ -1029,7 +1084,7 @@ JS,
             );
         }
 
-        if ( file_exists( $base_path . $analytics_js ) ) {
+        if ( $is_analytics_tab && file_exists( $base_path . $analytics_js ) ) {
             wp_enqueue_script(
                 'bbai-analytics',
                 $base_url . $analytics_js,
@@ -1175,7 +1230,7 @@ JS,
             );
         }
 
-        if (file_exists($base_path . $usage_bridge_js)) {
+        if ( $is_usage_tab && file_exists($base_path . $usage_bridge_js)) {
             wp_enqueue_script(
                 'bbai-usage-bridge',
                 $base_url . $usage_bridge_js,
@@ -1185,7 +1240,7 @@ JS,
             );
         }
 
-        if ( file_exists( $base_path . $debug_js ) ) {
+        if ( $is_debug_page && file_exists( $base_path . $debug_js ) ) {
             wp_enqueue_script(
                 'bbai-debug',
                 $base_url . $debug_js,
@@ -1195,7 +1250,7 @@ JS,
             );
         }
 
-        if ( file_exists( $base_path . $contact_modal_js ) ) {
+        if ( $needs_contact_modal && file_exists( $base_path . $contact_modal_js ) ) {
             wp_enqueue_script(
                 'bbai-contact-modal',
                 $base_url . $contact_modal_js,
@@ -1205,17 +1260,21 @@ JS,
             );
         }
 
-        wp_enqueue_style(
-            'bbai-contact-modal',
-            $base_url . $contact_modal_css,
-            ['bbai-unified'],
-            $asset_version($contact_modal_css, '1.0.0')
-        );
+        if ( $needs_contact_modal ) {
+            wp_enqueue_style(
+                'bbai-contact-modal',
+                $base_url . $contact_modal_css,
+                ['bbai-unified'],
+                $asset_version($contact_modal_css, '1.0.0')
+            );
+        }
 
-        wp_localize_script('bbai-contact-modal', 'bbaiContactData', [
-            'wp_version' => get_bloginfo('version'),
-            'plugin_version' => BEEPBEEP_AI_VERSION,
-        ]);
+        if ( $needs_contact_modal ) {
+            wp_localize_script('bbai-contact-modal', 'bbaiContactData', [
+                'wp_version' => get_bloginfo('version'),
+                'plugin_version' => BEEPBEEP_AI_VERSION,
+            ]);
+        }
 
         $this->enqueue_logout_bridge_script();
 
@@ -1307,29 +1366,31 @@ JS,
             ? \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name()
             : 'bbai_anon_id';
 
-        wp_localize_script('bbai-debug', 'BBAI_DEBUG', [
-            'restLogs' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs', admin_url('admin-ajax.php'))),
-            'restClear' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs_clear', admin_url('admin-ajax.php'))),
-            'nonce' => wp_create_nonce('wp_rest'),
-            'initial' => $this->get_debug_bootstrap(),
-            'strings' => [
-                'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
-                'contextTitle' => __('View Details', 'beepbeep-ai-alt-text-generator'),
-                'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'beepbeep-ai-alt-text-generator'),
-                'errorGeneric' => __('Unable to load debug logs. Please try again.', 'beepbeep-ai-alt-text-generator'),
-                'emptyContext' => __('No additional context was provided for this entry.', 'beepbeep-ai-alt-text-generator'),
-                'emptyPayload' => __('No request payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
-                'emptyResponse' => __('No response payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
-                'emptyStack' => __('No stack trace was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
-                'modalTitle' => __('Log Context Details', 'beepbeep-ai-alt-text-generator'),
-                'cleared' => __('Logs cleared successfully.', 'beepbeep-ai-alt-text-generator'),
-                'copied' => __('Debug info copied to clipboard.', 'beepbeep-ai-alt-text-generator'),
-                'copyFailed' => __('Unable to copy debug info. Please copy it manually.', 'beepbeep-ai-alt-text-generator'),
-                'connected' => __('Connected', 'beepbeep-ai-alt-text-generator'),
-                'failed' => __('Failed', 'beepbeep-ai-alt-text-generator'),
-                'noWarnings' => __('No warnings or errors recorded yet.', 'beepbeep-ai-alt-text-generator'),
-            ],
-        ]);
+        if (wp_script_is('bbai-debug', 'enqueued')) {
+            wp_localize_script('bbai-debug', 'BBAI_DEBUG', [
+                'restLogs' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs', admin_url('admin-ajax.php'))),
+                'restClear' => esc_url_raw(add_query_arg('action', 'bbai_debug_logs_clear', admin_url('admin-ajax.php'))),
+                'nonce' => wp_create_nonce('wp_rest'),
+                'initial' => $this->get_debug_bootstrap(),
+                'strings' => [
+                    'noLogs' => __('No logs recorded yet.', 'beepbeep-ai-alt-text-generator'),
+                    'contextTitle' => __('View Details', 'beepbeep-ai-alt-text-generator'),
+                    'clearConfirm' => __('This will permanently delete all debug logs. Continue?', 'beepbeep-ai-alt-text-generator'),
+                    'errorGeneric' => __('Unable to load debug logs. Please try again.', 'beepbeep-ai-alt-text-generator'),
+                    'emptyContext' => __('No additional context was provided for this entry.', 'beepbeep-ai-alt-text-generator'),
+                    'emptyPayload' => __('No request payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
+                    'emptyResponse' => __('No response payload was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
+                    'emptyStack' => __('No stack trace was captured for this entry.', 'beepbeep-ai-alt-text-generator'),
+                    'modalTitle' => __('Log Context Details', 'beepbeep-ai-alt-text-generator'),
+                    'cleared' => __('Logs cleared successfully.', 'beepbeep-ai-alt-text-generator'),
+                    'copied' => __('Debug info copied to clipboard.', 'beepbeep-ai-alt-text-generator'),
+                    'copyFailed' => __('Unable to copy debug info. Please copy it manually.', 'beepbeep-ai-alt-text-generator'),
+                    'connected' => __('Connected', 'beepbeep-ai-alt-text-generator'),
+                    'failed' => __('Failed', 'beepbeep-ai-alt-text-generator'),
+                    'noWarnings' => __('No warnings or errors recorded yet.', 'beepbeep-ai-alt-text-generator'),
+                ],
+            ]);
+        }
 
         if (!class_exists(\BeepBeepAI\AltTextGenerator\Services\Upgrade_Path_Resolver::class, false)) {
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-upgrade-path-resolver.php';
@@ -1595,10 +1656,8 @@ JS,
         $context = [
             'account_id'          => $account_id,
             'user_id'             => $user_id,
-            'email'               => sanitize_email((string) ($user_data['email'] ?? '')),
             'plan'                => $plan_type,
             'plan_type'           => $plan_type,
-            'license_key'         => $license_key,
             'license_key_present' => '' !== $license_key,
             'site_id'             => $site_id,
             'site_hash'           => sanitize_key($site_hash),
@@ -1621,7 +1680,7 @@ JS,
      * @return string
      */
     private function resolve_posthog_identify_id(array $identity_context): string {
-        foreach ( ['account_id', 'user_id', 'license_key', 'site_id', 'site_hash'] as $key ) {
+        foreach ( ['account_id', 'user_id', 'site_id', 'site_hash'] as $key ) {
             if ( empty( $identity_context[ $key ] ) ) {
                 continue;
             }
@@ -1717,24 +1776,49 @@ JS,
         $api_key = class_exists( BBAI_Telemetry::class )
             ? BBAI_Telemetry::get_posthog_api_key()
             : 'phc_6L7JzpjYRC8Gk4Br3YevTmjZnJsJPvoy9GK7RFdo72s';
+        $site_host = (string) ( wp_parse_url( home_url(), PHP_URL_HOST ) ?: '' );
+        $environment_type = wp_get_environment_type();
+        $is_local_site = (bool) preg_match(
+            '/(^localhost$|^127\.|^0\.0\.0\.0$|^::1$|\.local$|\.test$|\.localhost$)/i',
+            $site_host
+        );
+        $browser_capture_enabled = '' !== $api_key
+            && '' !== $api_host
+            && ! $is_local_site
+            && ! in_array( $environment_type, [ 'local', 'development' ], true );
+        $browser_capture_enabled = (bool) apply_filters(
+            'bbai_posthog_browser_capture_enabled',
+            $browser_capture_enabled,
+            [
+                'site_host'        => $site_host,
+                'environment_type' => $environment_type,
+                'is_local_site'    => $is_local_site,
+            ]
+        );
 
         return [
-            'enabled'       => true,
+            'enabled'       => $browser_capture_enabled,
             'apiKey'        => $api_key,
             'apiHost'       => $api_host,
             'assetUrl'      => $asset_url,
             'defaults'      => '2026-01-30',
             'instanceName'  => 'bbaiPosthog',
-            'debug_posthog' => defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG,
+            'debug_posthog' => (defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG) || (bool) getenv('BBAI_DEBUG_POSTHOG'),
             'debug'         => (defined('WP_DEBUG') && WP_DEBUG) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
+            'replayEnabled' => true,
+            'replaySampleRate' => 1,
+            'forceReplayEverySession' => true,
+            'manualReplayOnly' => false,
+            'environment'   => wp_get_environment_type(),
             'pageViewEvents' => $page_view_events,
             'context'       => array_merge([
                 'page'               => $page_key,
                 'site_hash'          => $site_hash,
-                'site_url'           => esc_url_raw(home_url('/')),
                 'is_logged_in'       => $is_logged_in,
+                'logged_in_state'    => $is_logged_in ? 'authenticated' : 'anonymous',
                 'plan_type'          => $plan_type,
                 'quota_remaining'    => $quota_remaining,
+                'credits_remaining'  => $quota_remaining,
                 'quota_limit'        => $quota_limit,
                 'trial_exhausted'    => $trial_exhausted,
                 'remaining_free_images' => $remaining_free_images,
@@ -1742,6 +1826,8 @@ JS,
                 'needs_review_count' => max(0, (int) ($stats_data['needs_review_count'] ?? 0)),
                 'optimized_count'    => max(0, (int) ($stats_data['optimized_count'] ?? 0)),
                 'plugin_version'     => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
+                'wp_version'         => get_bloginfo('version'),
+                'php_version'        => PHP_VERSION,
             ], $identity_context),
             'identify'      => [
                 'id'                => $identify_id,
@@ -1750,6 +1836,7 @@ JS,
                     'plan'           => $plan_type,
                     'site_hash'      => $site_hash,
                     'plugin_version' => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
+                    'wp_admin_page'  => $page_key,
                 ], $identity_context),
             ],
         ];
@@ -1834,12 +1921,15 @@ JS,
             'ajaxUrl'     => admin_url('admin-ajax.php'),
             'nonce'       => wp_create_nonce('beepbeepai_nonce'),
             'action'      => 'beepbeepai_telemetry',
-            'debug_posthog' => defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG,
+            'debug_posthog' => (defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG) || (bool) getenv('BBAI_DEBUG_POSTHOG'),
             'debug'       => (defined('WP_DEBUG') && WP_DEBUG) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
             'context'     => [
                 'user_id'                  => $uid,
                 'plan_type'                => $plan_type,
                 'plugin_version'           => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
+                'wp_version'               => get_bloginfo('version'),
+                'php_version'              => PHP_VERSION,
+                'environment'              => wp_get_environment_type(),
                 'page'                     => $this->get_telemetry_page_key(),
                 'page_variant'             => $this->get_posthog_page_key(),
                 'days_since_last_active'   => $days_since,
@@ -1890,6 +1980,7 @@ JS,
 
         // Restrict plugin assets to BeepBeep AI admin pages.
         if (!$is_bbai_page) {
+            $this->enqueue_background_job_widget_assets($base_url, $base_path, true);
             return;
         }
 
@@ -1938,9 +2029,26 @@ JS,
             if ( ! get_transient( $key ) ) {
                 set_transient( $key, 1, 600 );
                 bbai_telemetry_emit(
-                    'upgrade_completed',
+                    'payment_succeeded',
                     [
                         'source' => 'checkout_return',
+                    ]
+                );
+            }
+        }
+
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $checkout_error = isset( $_GET['checkout_error'] ) ? sanitize_text_field( wp_unslash( $_GET['checkout_error'] ) ) : '';
+        if ( '' !== $checkout_error ) {
+            $key = 'bbai_tel_chkerr_' . $uid . '_' . md5( $checkout_error );
+            if ( ! get_transient( $key ) ) {
+                set_transient( $key, 1, 600 );
+                bbai_telemetry_emit(
+                    'checkout_failed',
+                    [
+                        'source'        => 'checkout_return',
+                        'error_code'    => 'checkout_error',
+                        'error_message' => $checkout_error,
                     ]
                 );
             }

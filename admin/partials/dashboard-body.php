@@ -196,9 +196,9 @@ $bbai_is_authenticated = (bool) ($bbai_is_authenticated ?? false);
 $bbai_has_license = (bool) ($bbai_has_license ?? false);
 $bbai_has_registered_user = (bool) ($bbai_has_registered_user ?? false);
 $bbai_has_connected_account = (bool) ($bbai_has_connected_account ?? $bbai_has_registered_user);
-// Canonical auth separation: wp-admin login is NOT BeepBeep auth.
-// Treat any non-authenticated session as guest_logged_out even if stale flags suggest a connection.
-if ( ! $bbai_is_authenticated ) {
+// Canonical auth separation: wp-admin login is NOT BeepBeep auth. Stored
+// post-signup credentials still count as connected while the API auth cache warms.
+if ( ! $bbai_is_authenticated && ! $bbai_has_registered_user && ! $bbai_has_license ) {
     $bbai_has_connected_account = false;
     $bbai_has_license = false;
 }
@@ -255,11 +255,20 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         $bbai_auth_state = 'anonymous';
         $bbai_quota_type = 'trial';
     }
-    $bbai_is_anonymous_trial = ('anonymous' === $bbai_auth_state) || ('trial' === $bbai_quota_type) || !empty($bbai_usage_stats['is_trial']) || $bbai_is_guest_trial;
+    $bbai_is_anonymous_trial = $bbai_has_no_saas_account && (('anonymous' === $bbai_auth_state) || ('trial' === $bbai_quota_type) || !empty($bbai_usage_stats['is_trial']) || $bbai_is_guest_trial);
 
     if ($bbai_is_anonymous_trial) {
         $bbai_auth_state = 'anonymous';
         $bbai_quota_type = 'trial';
+    } elseif ($bbai_has_connected_account) {
+        $bbai_auth_state = 'authenticated';
+        if ('trial' === $bbai_quota_type) {
+            $bbai_quota_type = $bbai_is_premium ? 'paid' : 'monthly_account';
+        }
+        $bbai_usage_stats['auth_state'] = $bbai_auth_state;
+        $bbai_usage_stats['quota_type'] = $bbai_quota_type;
+        $bbai_usage_stats['is_trial'] = false;
+        $bbai_usage_stats['signup_required'] = false;
     }
     // Keep no-SaaS guests in the guest shell even if usage/auth flags disagree (avoids signed-in FTUE on stale payloads).
     $bbai_is_guest_trial = $bbai_is_anonymous_trial || $bbai_has_no_saas_account;
@@ -272,6 +281,39 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     if ($bbai_credits_used > $bbai_credits_total) {
         $bbai_credits_used = $bbai_credits_total;
         $bbai_credits_remaining = 0;
+    }
+
+    // The backend usage endpoint can lag immediately after generation. Apply
+    // the local post-generation snapshot before any visible usage strings are
+    // computed, so SSR cards and async root state start from the same credits.
+    if ( ! $bbai_has_no_saas_account && ! $bbai_is_anonymous_trial && class_exists( Usage_Tracker::class ) ) {
+        $bbai_local_usage_snapshot = Usage_Tracker::get_local_usage_snapshot();
+        if ( is_array( $bbai_local_usage_snapshot ) ) {
+            $bbai_local_usage_source = strtolower( (string) ( $bbai_local_usage_snapshot['source'] ?? '' ) );
+            $bbai_local_usage_used   = max( 0, (int) ( $bbai_local_usage_snapshot['used'] ?? $bbai_local_usage_snapshot['credits_used'] ?? $bbai_local_usage_snapshot['creditsUsed'] ?? 0 ) );
+            $bbai_local_usage_total  = max( 1, (int) ( $bbai_local_usage_snapshot['limit'] ?? $bbai_local_usage_snapshot['credits_total'] ?? $bbai_local_usage_snapshot['creditsTotal'] ?? $bbai_credits_total ) );
+            if (
+                in_array( $bbai_local_usage_source, [ 'generation_success', 'local_generation_history' ], true )
+                && $bbai_local_usage_total === $bbai_credits_total
+                && $bbai_local_usage_used > $bbai_credits_used
+            ) {
+                $bbai_credits_used      = min( $bbai_credits_total, $bbai_local_usage_used );
+                $bbai_credits_remaining = max( 0, $bbai_credits_total - $bbai_credits_used );
+
+                $bbai_usage_stats['used']              = $bbai_credits_used;
+                $bbai_usage_stats['remaining']         = $bbai_credits_remaining;
+                $bbai_usage_stats['limit']             = $bbai_credits_total;
+                $bbai_usage_stats['credits_used']      = $bbai_credits_used;
+                $bbai_usage_stats['credits_remaining'] = $bbai_credits_remaining;
+                $bbai_usage_stats['credits_total']     = $bbai_credits_total;
+                $bbai_usage_stats['creditsUsed']       = $bbai_credits_used;
+                $bbai_usage_stats['creditsRemaining']  = $bbai_credits_remaining;
+                $bbai_usage_stats['creditsTotal']      = $bbai_credits_total;
+                $bbai_usage_stats['creditsLimit']      = $bbai_credits_total;
+                $bbai_usage_stats['source']            = $bbai_local_usage_source;
+                $bbai_usage_stats['quota_source_displayed_to_user'] = $bbai_local_usage_source;
+            }
+        }
     }
 
     // Guest (no SaaS connection): mirror local guest trial bucket into dashboard credit-shaped fields — free generations only (not monthly credits).
@@ -317,8 +359,11 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
                 : 'active'));
     $bbai_signup_required = !empty($bbai_usage_stats['signup_required']) || ($bbai_is_anonymous_trial && 'exhausted' === $bbai_quota_state);
     $bbai_upgrade_required = !empty($bbai_usage_stats['upgrade_required']);
+    $bbai_quota_source_displayed_to_user = isset($bbai_usage_stats['quota_source_displayed_to_user']) && is_scalar($bbai_usage_stats['quota_source_displayed_to_user'])
+        ? sanitize_key((string) $bbai_usage_stats['quota_source_displayed_to_user'])
+        : ($bbai_is_anonymous_trial ? 'anonymous_trial' : 'authenticated_account');
 
-    // Always use a fresh scan for SSR counts so first paint matches ALT Library.
+	// Always use a fresh scan for SSR counts so first paint matches ALT Library.
     $bbai_fresh_local_coverage = true;
     $bbai_coverage             = ( isset( $this ) && method_exists( $this, 'get_alt_text_coverage_scan' ) )
         ? $this->get_alt_text_coverage_scan( $bbai_fresh_local_coverage )
@@ -722,6 +767,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         'authState' => $bbai_auth_state,
         'quotaType' => $bbai_quota_type,
         'quotaState' => $bbai_quota_state,
+        'quotaSourceDisplayedToUser' => $bbai_quota_source_displayed_to_user,
         'signupRequired' => $bbai_signup_required,
         'upgradeRequired' => $bbai_upgrade_required,
         'isTrial' => $bbai_is_anonymous_trial || !empty($bbai_usage_stats['is_trial']),
@@ -811,6 +857,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         'data-bbai-auth-state'             => (string) $bbai_auth_state,
         'data-bbai-quota-type'             => (string) $bbai_quota_type,
         'data-bbai-quota-state'            => (string) $bbai_quota_state,
+        'data-bbai-quota-source'           => (string) $bbai_quota_source_displayed_to_user,
         'data-bbai-signup-required'        => $bbai_signup_required ? '1' : '0',
         'data-bbai-free-plan-offer'        => (string) $bbai_free_plan_offer,
         'data-bbai-low-credit-threshold'   => (string) $bbai_low_credit_threshold,
@@ -838,6 +885,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
             'auth_state'             => (string) $bbai_auth_state,
             'quota_type'             => (string) $bbai_quota_type,
             'quota_state'            => (string) $bbai_quota_state,
+            'quota_source_displayed_to_user' => (string) $bbai_quota_source_displayed_to_user,
             'signup_required'        => $bbai_signup_required,
             'upgrade_required'       => $bbai_upgrade_required,
             'is_trial'               => $bbai_is_anonymous_trial,
@@ -1080,6 +1128,39 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         $bbai_dashboard_root_credits_left = (int) ( $bbai_li_truth_credits['remaining'] ?? $bbai_li_truth_credits['credits_remaining'] ?? $bbai_li_truth_credits['creditsRemaining'] ?? $bbai_dashboard_root_credits_left );
     }
 
+    // Backend usage can lag behind generated local state. Never show 0 used when
+    // this site already has AI-generated/reviewable work in the current dashboard.
+    if ( ! $bbai_is_anonymous_trial && ! empty( $bbai_has_connected_account ) && $bbai_dashboard_root_credits_total > 0 ) {
+        $bbai_usage_floor = 0;
+        if ( class_exists( Usage_Tracker::class ) ) {
+            $bbai_usage_floor = max( $bbai_usage_floor, Usage_Tracker::get_local_successful_generations_this_month() );
+        }
+        if ( $bbai_usage_floor <= 0 && $bbai_dashboard_root_weak_count > 0 ) {
+            $bbai_usage_floor = $bbai_dashboard_root_weak_count;
+        }
+        if ( $bbai_usage_floor > $bbai_dashboard_root_credits_used ) {
+            $bbai_dashboard_root_credits_used  = min( $bbai_dashboard_root_credits_total, $bbai_usage_floor );
+            $bbai_dashboard_root_credits_left  = max( 0, $bbai_dashboard_root_credits_total - $bbai_dashboard_root_credits_used );
+            $bbai_state_credits_used           = $bbai_dashboard_root_credits_used;
+            $bbai_state_credits_limit          = $bbai_dashboard_root_credits_total;
+            $bbai_state_credits_remaining      = $bbai_dashboard_root_credits_left;
+            $bbai_usage_stats['used']          = $bbai_dashboard_root_credits_used;
+            $bbai_usage_stats['remaining']     = $bbai_dashboard_root_credits_left;
+            $bbai_usage_stats['limit']         = $bbai_dashboard_root_credits_total;
+            $bbai_usage_stats['credits_used']  = $bbai_dashboard_root_credits_used;
+            $bbai_usage_stats['credits_total'] = $bbai_dashboard_root_credits_total;
+            $bbai_usage_stats['credits_remaining'] = $bbai_dashboard_root_credits_left;
+            if ( isset( $bbai_dashboard_state ) && is_array( $bbai_dashboard_state ) ) {
+                $bbai_dashboard_state['creditsUsed']      = $bbai_dashboard_root_credits_used;
+                $bbai_dashboard_state['creditsLimit']     = $bbai_dashboard_root_credits_total;
+                $bbai_dashboard_state['creditsRemaining'] = $bbai_dashboard_root_credits_left;
+                $bbai_dashboard_state['usagePercent']     = (int) min( 100, round( ( 100 * $bbai_dashboard_root_credits_used ) / max( 1, $bbai_dashboard_root_credits_total ) ) );
+                $bbai_dashboard_state['isLowCredits']     = $bbai_dashboard_root_credits_left > 0 && $bbai_dashboard_root_credits_left <= $bbai_low_credit_threshold;
+                $bbai_dashboard_state['isOutOfCredits']   = 0 === $bbai_dashboard_root_credits_left;
+            }
+        }
+    }
+
     if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
         error_log( '[BBAI counts] dashboard_ssr ' . wp_json_encode( [
@@ -1217,6 +1298,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         data-bbai-auth-state="<?php echo esc_attr($bbai_auth_state); ?>"
         data-bbai-quota-type="<?php echo esc_attr($bbai_quota_type); ?>"
         data-bbai-quota-state="<?php echo esc_attr($bbai_quota_state); ?>"
+        data-bbai-quota-source="<?php echo esc_attr($bbai_quota_source_displayed_to_user); ?>"
         data-bbai-signup-required="<?php echo esc_attr($bbai_signup_required ? '1' : '0'); ?>"
         data-bbai-upgrade-required="<?php echo esc_attr($bbai_upgrade_required ? '1' : '0'); ?>"
         data-bbai-free-plan-offer="<?php echo esc_attr($bbai_free_plan_offer); ?>"

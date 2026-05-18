@@ -472,6 +472,7 @@ class Logged_In_Dashboard_Resolver {
 		$credits  = $ctx['credits'];
 		$cr_used  = (int) ( $credits['used']  ?? 0 );
 		$cr_total = max( 1, (int) ( $credits['total'] ?? 1 ) );
+		$is_first_free_generation = ( ! $is_trial && ! $is_pro && 0 === $cr_used && $cr_total >= 50 && $missing > 0 );
 
 		// Impossible queue states (stale labels) must never yield review CTAs with zero review items.
 		if ( self::STATE_NEEDS_REVIEW === $state && $review <= 0 ) {
@@ -526,7 +527,9 @@ class Logged_In_Dashboard_Resolver {
 						_n( '%s image is ready for ALT text', '%s images are ready for ALT text', $queued_total, 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $queued_total )
 					),
-					'support'       => __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ),
+					'support'       => $is_first_free_generation
+						? __( 'You have 50 free credits. Generate your first ALT text now.', 'beepbeep-ai-alt-text-generator' )
+						: __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ),
 					'variant'       => 'queued',
 					'primary_cta'   => [
 						'label'      => sprintf(
@@ -777,7 +780,7 @@ class Logged_In_Dashboard_Resolver {
 					'variant'       => 'default',
 					'primary_cta'   => [
 						'label'       => sprintf(
-							/* translators: %s: missing count */
+							/* translators: %s: missing ALT count */
 							_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $missing, 'beepbeep-ai-alt-text-generator' ),
 							number_format_i18n( $missing )
 						),
@@ -830,7 +833,11 @@ class Logged_In_Dashboard_Resolver {
 					'support'       => $review_support,
 					'variant'       => 'default',
 					'primary_cta'   => [
-						'label'       => __( 'Approve all', 'beepbeep-ai-alt-text-generator' ),
+						'label'       => sprintf(
+							/* translators: %s: review count */
+							_n( 'Review %s image', 'Review %s images', $review, 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $review )
+						),
 						'busy_label'  => __( 'Approving…', 'beepbeep-ai-alt-text-generator' ),
 						'action'      => 'approve-all',
 					],
@@ -872,12 +879,12 @@ class Logged_In_Dashboard_Resolver {
 						),
 						'support'       => $missing_support,
 						'variant'       => 'default',
-						'primary_cta'   => [
-							'label'       => $trial_left > 0
+							'primary_cta'   => [
+								'label'       => $trial_left > 0
 								? sprintf(
 									/* translators: %s: number of free generations remaining */
-									_n( 'Generate free (%s left)', 'Generate free (%s left)', $trial_left, 'beepbeep-ai-alt-text-generator' ),
-									number_format_i18n( $trial_left )
+									_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', min( $missing, $trial_left ), 'beepbeep-ai-alt-text-generator' ),
+									number_format_i18n( min( $missing, $trial_left ) )
 								)
 								: __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ),
 							'busy_label'  => __( 'Starting…', 'beepbeep-ai-alt-text-generator' ),
@@ -892,14 +899,16 @@ class Logged_In_Dashboard_Resolver {
 					];
 				}
 
-				$missing_support = $is_pro && $complete > 0
+				$missing_support = $is_first_free_generation
+					? __( 'You have 50 free credits. Generate your first ALT text now.', 'beepbeep-ai-alt-text-generator' )
+					: ( $is_pro && $complete > 0
 					? sprintf(
 						/* translators: 1: already optimised count, 2: remaining count */
 						__( '%1$s images already optimised — generate the remaining %2$s to complete your library.', 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $complete ),
 						number_format_i18n( $missing )
 					)
-					: __( 'Generate the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' );
+					: __( 'Generate the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' ) );
 
 				if ( ! $is_pro && $missing > 0 ) {
 					$missing_support .= ' ' . sprintf(
@@ -919,7 +928,11 @@ class Logged_In_Dashboard_Resolver {
 					'support'       => $missing_support,
 					'variant'       => 'default',
 					'primary_cta'   => [
-						'label'       => __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ),
+						'label'       => sprintf(
+							/* translators: %s: missing ALT count */
+							_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $missing, 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $missing )
+						),
 						'busy_label'  => __( 'Starting…', 'beepbeep-ai-alt-text-generator' ),
 						'action'      => 'generate-missing',
 					],
@@ -934,6 +947,7 @@ class Logged_In_Dashboard_Resolver {
 			case self::STATE_ALL_CLEAR:
 			default:
 				$all_clear_support = __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
+				$all_clear_support .= ' ' . __( 'nAi will keep watching new uploads.', 'beepbeep-ai-alt-text-generator' );
 				if ( ! $is_pro ) {
 					$all_clear_support .= ' ' . __( 'New uploads will not be optimised automatically on the free plan.', 'beepbeep-ai-alt-text-generator' );
 				}
@@ -954,11 +968,7 @@ class Logged_In_Dashboard_Resolver {
 						'action'      => 'rescan-media-library',
 						'href'        => '#',
 					],
-					'library_cta'   => [
-						'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
-						'action' => 'navigate',
-						'href'   => admin_url( 'admin.php?page=bbai-library' ),
-					],
+					'library_cta'   => null,
 					// Positive summary: pro users see optimised count prominently.
 					'summary'       => [
 						[
