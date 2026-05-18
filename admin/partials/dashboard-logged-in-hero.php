@@ -260,10 +260,10 @@ $bbai_li_secondary_cta = is_array( $bbai_li_hero['secondary_cta'] ?? null ) ? $b
 
 if ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count && in_array( $bbai_li_state_id, array( 'ALL_CLEAR', 'DONE' ), true ) ) {
 	$bbai_li_state_id      = 'ALL_CLEAR';
-	$bbai_li_title         = __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' );
-	$bbai_li_description   = __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_title         = __( 'Library fully protected', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_description   = __( 'Every image is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
 	$bbai_li_primary_cta   = array(
-		'label'  => __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ),
+		'label'  => __( 'Stay fully optimised', 'beepbeep-ai-alt-text-generator' ),
 		'action' => 'navigate',
 		'href'   => admin_url( 'upload.php' ),
 	);

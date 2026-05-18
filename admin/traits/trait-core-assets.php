@@ -617,7 +617,7 @@ JS,
 			'bbai-unified',
 			$base_url . $unified_css,
 			array(),
-			$asset_version( $unified_css, '6.0.17' )
+			$asset_version( $unified_css, '6.1.0' )
 		);
 
 		$admin_foundation_tokens_css = 'assets/css/system/bbai-admin-foundation-tokens.css';
