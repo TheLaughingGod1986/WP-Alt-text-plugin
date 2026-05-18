@@ -265,6 +265,12 @@
 
         // ── Derive messaging from the single result object ───────────────────
         var titleText, messageText, primaryLabel, primaryUrl;
+        var trialExhausted = !!result.trialExhausted;
+
+        // Free trial limit info sourced from the global trial contract when available.
+        var trialData = window.BBAI_DASH && window.BBAI_DASH.trial;
+        var trialLimit = (trialData && (trialData.limit || trialData.credits_total)) || 5;
+        var freeAccountMonthly = (trialData && trialData.free_plan_offer) || 50;
 
         if (result.status === 'success') {
             var n = result.updated;
@@ -273,8 +279,15 @@
             primaryLabel = 'View results';
             primaryUrl   = reviewResultsUrl;
         } else if (result.status === 'partial') {
-            titleText    = result.updated + ' of ' + result.attempted + ' images updated';
-            messageText  = result.failed + ' image' + (result.failed !== 1 ? 's' : '') + ' could not be processed. Check the library for details.';
+            if (trialExhausted) {
+                titleText    = result.updated + ' of ' + result.attempted + ' images updated';
+                messageText  = 'You\'ve used your ' + trialLimit + ' free trial generations — ' +
+                               result.failed + ' image' + (result.failed !== 1 ? 's' : '') + ' could not be processed. ' +
+                               'Create a free account to unlock ' + freeAccountMonthly + ' generations per month.';
+            } else {
+                titleText    = result.updated + ' of ' + result.attempted + ' images updated';
+                messageText  = result.failed + ' image' + (result.failed !== 1 ? 's' : '') + ' could not be processed. Check the library for details.';
+            }
             primaryLabel = 'Review results';
             primaryUrl   = reviewResultsUrl;
         } else if (result.status === 'no_changes') {
@@ -284,19 +297,34 @@
             primaryUrl   = libraryUrl;
         } else {
             // error
-            titleText    = 'Generation completed with issues';
-            messageText  = 'Some images could not be processed. Check the library for details.';
+            if (trialExhausted) {
+                titleText    = 'Free trial generations used';
+                messageText  = 'You\'ve used all ' + trialLimit + ' free trial generations. ' +
+                               'Create a free account to unlock ' + freeAccountMonthly + ' generations per month.';
+            } else {
+                titleText    = 'Generation completed with issues';
+                messageText  = 'Some images could not be processed. Check the library for details.';
+            }
             primaryLabel = 'View library';
             primaryUrl   = libraryUrl;
         }
         // ─────────────────────────────────────────────────────────────────────
+
+        var signupActionsHtml = '';
+        if (trialExhausted) {
+            signupActionsHtml =
+                '        <button type="button" class="button button-primary bbai-bulk-progress__complete-signup" ' +
+                '            onclick="if(typeof window.bbaiHandleTrialExhausted===\'function\'){window.bbaiHandleTrialExhausted({code:\'bbai_trial_exhausted\',message:\'Trial exhausted\'});}return false;">' +
+                '            Create free account' +
+                '        </button>';
+        }
 
         var completionHtml =
             '<div class="bbai-bulk-progress__complete">' +
             '    <p class="bbai-bulk-progress__complete-title">' + titleText + '</p>' +
             '    <p class="bbai-bulk-progress__complete-message">' + messageText + '</p>' +
             '    <div class="bbai-bulk-progress__complete-actions">' +
-            '        <a href="' + primaryUrl + '" class="button button-primary bbai-bulk-progress__complete-review">' + primaryLabel + '</a>' +
+            (trialExhausted ? signupActionsHtml : ('        <a href="' + primaryUrl + '" class="button button-primary bbai-bulk-progress__complete-review">' + primaryLabel + '</a>')) +
             '        <a href="' + libraryUrl + '" class="button bbai-bulk-progress__complete-library">Open library</a>' +
             '    </div>' +
             '</div>';

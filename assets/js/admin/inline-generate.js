@@ -74,10 +74,11 @@
         var successes = 0;
         var failures = 0;
         var active = 0;
+        var trialExhausted = false;
 
         function processNext() {
             if (!queue.length && active === 0) {
-                finalizeInlineGeneration(successes, failures, total);
+                finalizeInlineGeneration(successes, failures, total, trialExhausted);
                 return;
             }
 
@@ -102,6 +103,9 @@
                 .catch(function(error) {
                     failures++;
                     processed++;
+                    if (error && error.code === 'bbai_trial_exhausted') {
+                        trialExhausted = true;
+                    }
                     var message = 'Image #' + id + ': ' + (error && error.message ? error.message : 'Failed to generate alt text.');
                     logBulkProgressError(message);
                     updateBulkProgressTitle('Improving your images (' + processed + ' / ' + total + ')');
@@ -131,7 +135,7 @@
      * @param {number} failures  Images that failed.
      * @param {number} total     Total images attempted.
      */
-    function finalizeInlineGeneration(successes, failures, total) {
+    function finalizeInlineGeneration(successes, failures, total, trialExhausted) {
         total = total || (successes + failures);
 
         // ── Single source of truth for all post-generation UI ────────────────
@@ -147,11 +151,12 @@
         }
 
         window.bbaiGenerationResult = {
-            status:    status,
-            attempted: total,
-            updated:   successes,
-            failed:    failures,
-            unchanged: Math.max(0, total - successes - failures),
+            status:         status,
+            attempted:      total,
+            updated:        successes,
+            failed:         failures,
+            unchanged:      Math.max(0, total - successes - failures),
+            trialExhausted: !!trialExhausted,
         };
         // ─────────────────────────────────────────────────────────────────────
 
