@@ -81,7 +81,11 @@
         el.classList.add('disabled');
         el.style.pointerEvents = 'none';
         el.style.cursor = 'not-allowed';
-        el.setAttribute('title', 'You are out of credits for this month. Upgrade to continue now, or wait until your monthly reset date.');
+        var trialInfo = window.BBAI_DASH && window.BBAI_DASH.trial;
+        var lockTitle = (trialInfo && (trialInfo.exhausted || trialInfo.is_trial))
+            ? 'You\'ve used your free trial generations. Create a free account to continue.'
+            : 'You are out of credits for this month. Upgrade to continue now, or wait until your monthly reset date.';
+        el.setAttribute('title', lockTitle);
     }
 
     function blockIfOutOfCredits(e, el) {
@@ -99,6 +103,18 @@
             e.stopImmediatePropagation();
         }
         lockControl(el);
+
+        // Show the appropriate modal so the user knows why the button is blocked.
+        var trialData = window.BBAI_DASH && window.BBAI_DASH.trial;
+        var isTrial = !!(trialData && (trialData.exhausted || trialData.is_trial));
+        setTimeout(function() {
+            if (isTrial && typeof window.bbaiHandleTrialExhausted === 'function') {
+                window.bbaiHandleTrialExhausted({ code: 'bbai_trial_exhausted' });
+            } else if (typeof window.bbaiHandleLimitReached === 'function') {
+                window.bbaiHandleLimitReached({ code: 'limit_reached' });
+            }
+        }, 0);
+
         return true;
     }
 
