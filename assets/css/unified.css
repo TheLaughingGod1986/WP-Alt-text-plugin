@@ -12710,6 +12710,11 @@ h4.bbai-heading {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+body.toplevel_page_bbai .wrap.bbai-wrap > .bbai-header,
+body[class*="_page_bbai"] .wrap.bbai-wrap > .bbai-header {
+    display: none !important;
+}
+
 .bbai-header-content {
     display: flex;
     align-items: center;

@@ -43,6 +43,9 @@ $bbai_display_name    = ( $bbai_current_user instanceof WP_User && '' !== $bbai_
 				<?php esc_html_e( 'All systems operational', 'beepbeep-ai-alt-text-generator' ); ?>
 			</span>
 		</div>
+		<button type="button" class="bbai-dashboard-header__logout" data-action="logout" data-bbai-action="logout">
+			<?php esc_html_e( 'Log out', 'beepbeep-ai-alt-text-generator' ); ?>
+		</button>
 	</div>
 
 </header>

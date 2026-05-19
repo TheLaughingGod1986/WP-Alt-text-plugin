@@ -427,7 +427,11 @@ JS,
         }
 
         $bbai_job_widget_css = 'assets/css/components/job-widget.css';
-        if ( file_exists( $base_path . $bbai_job_widget_css ) ) {
+        $dashboard_css_bundle = 'assets/css/bbai-dashboard-page.bundle.css';
+        if (
+            file_exists( $base_path . $bbai_job_widget_css )
+            && ! ( $this->is_dashboard_tab() && is_readable( $base_path . $dashboard_css_bundle ) )
+        ) {
             wp_enqueue_style(
                 'bbai-job-widget',
                 $base_url . $bbai_job_widget_css,
@@ -449,7 +453,9 @@ JS,
         $checkout_prices = $this->get_checkout_price_ids();
         $l10n_common = $this->get_common_l10n();
         $auth_state = Auth_State::resolve($this->api_client);
-        $usage_data = Usage_Helper::get_usage($this->api_client, (bool) ($auth_state['has_connected_account'] ?? false));
+        $usage_data = !empty($auth_state['has_connected_account'])
+            ? Usage_Tracker::get_local_usage_snapshot()
+            : Usage_Helper::get_usage($this->api_client, false);
         $trial_status = method_exists($this, 'get_trial_status') ? $this->get_trial_status() : [];
 
         if ( file_exists( $base_path . $toast_file ) ) {
@@ -1057,14 +1063,16 @@ JS,
             );
         }
 
-        $stats_data = $this->get_dashboard_stats_payload();
-        $usage_data = Usage_Tracker::get_stats_display();
+        $stats_data = $is_dashboard_tab
+            ? $this->get_cached_dashboard_stats_context_for_assets()
+            : $this->get_dashboard_stats_payload();
+        $usage_data = Usage_Tracker::get_local_usage_snapshot();
 
         if ( file_exists( $base_path . $dashboard_js ) ) {
             wp_enqueue_script(
                 'bbai-dashboard',
                 $base_url . $dashboard_js,
-                ['jquery', 'wp-api-fetch', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry', 'bbai-admin'],
+                ['jquery', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry', 'bbai-admin'],
                 $asset_version($dashboard_js, '3.0.4'),
                 true
             );
@@ -1350,6 +1358,76 @@ JS,
         wp_add_inline_script( 'wp-i18n', $bbai_cta_inline );
 
         $this->localize_dashboard_scripts($stats_data, $usage_data, $checkout_prices, $l10n_common);
+        $this->maybe_bundle_dashboard_styles($base_url, $base_path);
+    }
+
+    /**
+     * Collapse dashboard CSS into one generated bundle on the dashboard page only.
+     *
+     * Source styles remain split for editing and non-dashboard admin pages.
+     */
+    private function maybe_bundle_dashboard_styles(string $base_url, string $base_path): void {
+        if (! $this->is_dashboard_tab()) {
+            return;
+        }
+
+        $bundle = 'assets/css/bbai-dashboard-page.bundle.css';
+        if (! is_readable($base_path . $bundle)) {
+            return;
+        }
+
+        $handles = [
+            'bbai-job-widget',
+            'bbai-unified',
+            'bbai-admin-foundation-tokens',
+            'bbai-modern',
+            'bbai-admin-wizard',
+            'bbai-dashboard-status-card-refresh',
+            'bbai-command-hero-host',
+            'bbai-filter-group',
+            'bbai-queue-workflow',
+            'bbai-funnel-hero',
+            'bbai-usage-strip',
+            'bbai-dashboard-retention-strip',
+            'bbai-upgrade-modal-refresh',
+            'bbai-saas-consistency',
+            'bbai-product-banner',
+            'bbai-page-hero',
+            'bbai-admin-ui-components',
+            'bbai-admin-micro-motion',
+            'bbai-card-rhythm',
+            'bbai-section-header',
+            'bbai-dashboard-header',
+            'bbai-admin-controls',
+            'bbai-admin-interactions',
+            'bbai-admin-product-states',
+            'bbai-admin-surfaces',
+            'bbai-admin-design-system',
+            'bbai-admin-semantic-status',
+            'bbai-admin-table-workspace',
+            'bbai-admin-page-adoption',
+            'bbai-admin-surface-taxonomy',
+            'bbai-admin-library-workspace-polish',
+            'bbai-admin-button-system',
+            'bbai-modal',
+            'bbai-bulk-progress-refresh',
+            'bbai-phase17-assistant',
+            'bbai-tooltips',
+            'bbai-logged-in-state',
+            'bbai-dashboard-composition',
+        ];
+
+        foreach ($handles as $handle) {
+            wp_dequeue_style($handle);
+            wp_deregister_style($handle);
+        }
+
+        wp_enqueue_style(
+            'bbai-dashboard-page-bundle',
+            $base_url . $bundle,
+            [],
+            $this->get_asset_version($bundle, BEEPBEEP_AI_VERSION, $base_path)
+        );
     }
 
     /**
@@ -1478,7 +1556,7 @@ JS,
         }
         $api_url = esc_url_raw( untrailingslashit( $bbai_canonical_api_base ) );
         $sanitized_user_data = $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data());
-        $bbai_client_is_authenticated = (bool) $this->api_client->is_authenticated();
+        $bbai_client_is_authenticated = $this->is_bbai_account_authenticated();
         $bbai_client_user_email = $bbai_client_is_authenticated ? sanitize_email((string) ($sanitized_user_data['email'] ?? '')) : '';
         $bbai_client_user_id = $bbai_client_is_authenticated ? sanitize_text_field((string) ($sanitized_user_data['id'] ?? $sanitized_user_data['_id'] ?? $sanitized_user_data['user_id'] ?? '')) : '';
 
@@ -1487,7 +1565,7 @@ JS,
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce('beepbeepai_nonce'),
             'api_url' => $api_url,
-            'is_authenticated' => $this->api_client->is_authenticated(),
+            'is_authenticated' => $bbai_client_is_authenticated,
             'user_data' => $sanitized_user_data,
             'admin_url' => admin_url('admin.php'),
             'admin_logout_confirm' => __('Are you sure you want to log out of the admin panel?', 'beepbeep-ai-alt-text-generator'),
@@ -1579,12 +1657,26 @@ JS,
      */
     private function is_bbai_account_authenticated(): bool {
         if (isset($this->api_client) && $this->api_client) {
-            if ($this->api_client->is_authenticated() || $this->api_client->has_active_license()) {
+            $has_token = false;
+            $has_license = false;
+
+            try {
+                $has_token = method_exists($this->api_client, 'get_token') && '' !== (string) $this->api_client->get_token();
+                $has_license = method_exists($this->api_client, 'has_active_license') && (bool) $this->api_client->has_active_license();
+            } catch (\Exception $e) {
+                $has_token = false;
+                $has_license = false;
+            } catch (\Error $e) {
+                $has_token = false;
+                $has_license = false;
+            }
+
+            if ($has_token || $has_license) {
                 return true;
             }
         }
 
-        return function_exists('bbai_is_authenticated') ? \bbai_is_authenticated() : false;
+        return false;
     }
 
     /**
@@ -1614,6 +1706,9 @@ JS,
 
     /**
      * Stable site hash for client analytics.
+     *
+     * This intentionally matches the backend/Supabase site identity source of
+     * truth sent as X-Site-Hash/site_hash/site_id/install_id.
      */
     private function get_posthog_site_hash(): string {
         if (!function_exists('\BeepBeepAI\AltTextGenerator\get_site_identifier')) {
@@ -1627,7 +1722,65 @@ JS,
             ? (string) \BeepBeepAI\AltTextGenerator\get_site_identifier()
             : (string) home_url('/');
 
-        return hash('sha256', $site_identifier);
+        return $site_identifier;
+    }
+
+    /**
+     * Legacy/debug-only SHA-256 form of the site identity.
+     */
+    private function get_posthog_site_hash_sha256(string $site_hash = ''): string {
+        $raw_site_hash = '' !== $site_hash ? $site_hash : $this->get_posthog_site_hash();
+        return hash('sha256', $raw_site_hash);
+    }
+
+    /**
+     * Resolve whether client analytics should be marked internal/test traffic.
+     */
+    private function is_posthog_internal_environment(array $user_data = []): bool {
+        if (!function_exists('\BeepBeepAI\AltTextGenerator\is_internal_environment')) {
+            $site_id_helper = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+            if (is_readable($site_id_helper)) {
+                require_once $site_id_helper;
+            }
+        }
+
+        $email = sanitize_email((string) ($user_data['email'] ?? $user_data['user_email'] ?? ''));
+
+        return function_exists('\BeepBeepAI\AltTextGenerator\is_internal_environment')
+            ? (bool) \BeepBeepAI\AltTextGenerator\is_internal_environment($email)
+            : (defined('WP_DEBUG') && WP_DEBUG);
+    }
+
+    /**
+     * Resolve the authoritative license identity when present in cached auth data.
+     *
+     * @param array<string, mixed> $user_data    Sanitized account payload.
+     * @param array<string, mixed> $license_data Cached license payload.
+     */
+    private function resolve_posthog_license_id(array $user_data, array $license_data): string {
+        $candidates = [
+            $license_data['license_id'] ?? null,
+            $license_data['licenseId'] ?? null,
+            $license_data['id'] ?? null,
+            $license_data['_id'] ?? null,
+            $license_data['license']['id'] ?? null,
+            $license_data['license']['_id'] ?? null,
+            $license_data['license']['license_id'] ?? null,
+            $license_data['organization']['license_id'] ?? null,
+            $license_data['organization']['licenseId'] ?? null,
+            $license_data['organization']['id'] ?? null,
+            $user_data['license_id'] ?? null,
+            $user_data['licenseId'] ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $value = sanitize_text_field((string) ($candidate ?? ''));
+            if ('' !== $value) {
+                return $value;
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -1642,11 +1795,7 @@ JS,
     private function get_posthog_identity_context(array $user_data, array $license_data, string $site_hash, string $plan_type): array {
         $account_id = sanitize_text_field((string) ($user_data['id'] ?? $user_data['_id'] ?? ''));
         $user_id    = $account_id;
-        $license_key = '';
-
-        if ( isset( $this->api_client ) && method_exists( $this->api_client, 'get_license_key' ) ) {
-            $license_key = sanitize_text_field((string) $this->api_client->get_license_key());
-        }
+        $license_id = $this->resolve_posthog_license_id($user_data, $license_data);
 
         $site_id = '';
         if ( isset( $license_data['site'] ) && is_array( $license_data['site'] ) ) {
@@ -1654,14 +1803,13 @@ JS,
         }
 
         $context = [
+            'license_id'          => $license_id,
             'account_id'          => $account_id,
             'user_id'             => $user_id,
             'plan'                => $plan_type,
             'plan_type'           => $plan_type,
-            'license_key_present' => '' !== $license_key,
             'site_id'             => $site_id,
-            'site_hash'           => sanitize_key($site_hash),
-            'wordpress_user_id'   => get_current_user_id() > 0 ? absint(get_current_user_id()) : null,
+            'site_hash'           => $site_hash,
             'plugin_version'      => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
         ];
 
@@ -1680,7 +1828,7 @@ JS,
      * @return string
      */
     private function resolve_posthog_identify_id(array $identity_context): string {
-        foreach ( ['account_id', 'user_id', 'site_id', 'site_hash'] as $key ) {
+        foreach ( ['license_id', 'account_id', 'site_hash'] as $key ) {
             if ( empty( $identity_context[ $key ] ) ) {
                 continue;
             }
@@ -1697,8 +1845,8 @@ JS,
      * @return array<string, mixed>
      */
     private function get_posthog_client_config(): array {
-        $usage_data = Usage_Tracker::get_stats_display();
-        $stats_data = $this->get_dashboard_stats_payload();
+        $usage_data = $this->get_cached_usage_context_for_assets();
+        $stats_data = $this->get_cached_dashboard_stats_context_for_assets();
         $user_data  = isset($this->api_client) ? $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data()) : [];
         $license_data = (isset($this->api_client) && method_exists($this->api_client, 'get_license_data'))
             ? $this->api_client->get_license_data()
@@ -1706,6 +1854,7 @@ JS,
         $is_logged_in = $this->is_bbai_account_authenticated();
         $page_key     = $this->get_posthog_page_key();
         $site_hash    = $this->get_posthog_site_hash();
+        $site_hash_sha256 = $this->get_posthog_site_hash_sha256($site_hash);
 
         $plan_type = sanitize_key(
             (string) (
@@ -1757,7 +1906,8 @@ JS,
             $site_hash,
             $plan_type
         );
-        $identify_id = $is_logged_in ? $this->resolve_posthog_identify_id($identity_context) : '';
+        $identify_id = $this->resolve_posthog_identify_id($identity_context);
+        $is_internal = $this->is_posthog_internal_environment(is_array($user_data) ? $user_data : []);
 
         $page_view_events = [
             'dashboard'       => 'dashboard_viewed',
@@ -1814,6 +1964,10 @@ JS,
             'context'       => array_merge([
                 'page'               => $page_key,
                 'site_hash'          => $site_hash,
+                'site_hash_sha256'   => $site_hash_sha256,
+                'site_url'           => home_url('/'),
+                'is_trial'           => ! $is_logged_in,
+                'is_internal'        => $is_internal,
                 'is_logged_in'       => $is_logged_in,
                 'logged_in_state'    => $is_logged_in ? 'authenticated' : 'anonymous',
                 'plan_type'          => $plan_type,
@@ -1835,6 +1989,8 @@ JS,
                     'plan_type'      => $plan_type,
                     'plan'           => $plan_type,
                     'site_hash'      => $site_hash,
+                    'site_hash_sha256' => $site_hash_sha256,
+                    'is_internal'    => $is_internal,
                     'plugin_version' => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
                     'wp_admin_page'  => $page_key,
                 ], $identity_context),
@@ -1895,10 +2051,11 @@ JS,
      * @return array<string,mixed>
      */
     private function get_telemetry_client_config(): array {
-        $usage = Usage_Tracker::get_stats_display();
+        $usage = $this->get_cached_usage_context_for_assets();
         $plan  = isset($usage['plan']) ? sanitize_key((string) $usage['plan']) : 'free';
         $plan_type = in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'pro' : ('free' === $plan ? 'free' : 'unknown');
         $site_hash = $this->get_posthog_site_hash();
+        $site_hash_sha256 = $this->get_posthog_site_hash_sha256($site_hash);
         $sanitized_user_data = isset($this->api_client) ? $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data()) : [];
         $license_data = (isset($this->api_client) && method_exists($this->api_client, 'get_license_data'))
             ? $this->api_client->get_license_data()
@@ -1909,6 +2066,7 @@ JS,
             $site_hash,
             $plan
         );
+        $is_internal = $this->is_posthog_internal_environment(is_array($sanitized_user_data) ? $sanitized_user_data : []);
 
         $uid = get_current_user_id();
         $key = '_bbai_telemetry_session_images_' . gmdate('Ymd');
@@ -1935,12 +2093,55 @@ JS,
                 'days_since_last_active'   => $days_since,
                 'images_processed_session' => $session_images,
                 'account_id'               => $identity_context['account_id'] ?? '',
+                'license_id'               => $identity_context['license_id'] ?? null,
                 'site_id'                  => $identity_context['site_id'] ?? '',
                 'site_hash'                => $site_hash,
-                'license_key_present'      => !empty($identity_context['license_key_present']),
-                'wordpress_user_id'        => $identity_context['wordpress_user_id'] ?? ($uid > 0 ? $uid : null),
+                'site_hash_sha256'         => $site_hash_sha256,
+                'site_url'                 => home_url('/'),
+                'is_trial'                 => empty($identity_context['license_id']),
+                'is_internal'              => $is_internal,
             ],
         ];
+    }
+
+    /**
+     * Fast analytics context for asset localization. This must never force a
+     * remote usage refresh because it runs before the dashboard can paint.
+     *
+     * @return array<string, mixed>
+     */
+    private function get_cached_usage_context_for_assets(): array {
+        if (class_exists(Usage_Tracker::class) && method_exists(Usage_Tracker::class, 'get_local_usage_snapshot')) {
+            $snapshot = Usage_Tracker::get_local_usage_snapshot();
+            if (is_array($snapshot) && !empty($snapshot)) {
+                return $snapshot;
+            }
+        }
+
+        $cached = class_exists(Usage_Tracker::class) ? get_transient(Usage_Tracker::CACHE_KEY) : false;
+        return is_array($cached) ? $cached : [];
+    }
+
+    /**
+     * Fast dashboard stats for analytics context. Avoids kicking off expensive
+     * media-library scans during the PHP document response.
+     *
+     * @return array<string, mixed>
+     */
+    private function get_cached_dashboard_stats_context_for_assets(): array {
+        $stats = get_transient('bbai_stats_v3');
+        $coverage = get_transient('bbai_alt_coverage_scan_v4');
+
+        $payload = is_array($stats) ? $stats : [];
+        if (is_array($coverage)) {
+            $payload['total_images'] = max(0, (int) ($coverage['total_images'] ?? ($payload['total'] ?? 0)));
+            $payload['images_with_alt'] = max(0, (int) ($coverage['images_with_alt'] ?? ($payload['with_alt'] ?? 0)));
+            $payload['images_missing_alt'] = max(0, (int) ($coverage['images_missing_alt'] ?? ($payload['missing'] ?? 0)));
+            $payload['needs_review_count'] = max(0, (int) ($coverage['needs_review_count'] ?? 0));
+            $payload['optimized_count'] = max(0, (int) ($coverage['optimized_count'] ?? 0));
+        }
+
+        return $payload;
     }
 
     /**
@@ -1993,6 +2194,45 @@ JS,
         $this->maybe_telemetry_admin_query_events();
         $this->enqueue_media_library_assets($hook, $base_url, $base_path);
         $this->enqueue_dashboard_assets($base_url, $base_path);
+
+        if ($this->is_dashboard_tab()) {
+            $this->dequeue_unused_wp_editor_assets_for_dashboard();
+        }
+    }
+
+    /**
+     * The dashboard is a custom admin screen and does not use the block editor,
+     * command palette, or React runtime. WordPress can enqueue those globals in
+     * newer admin screens, which adds dozens of cached requests plus a users/me
+     * REST call. Keep them off the dashboard while leaving usage/library screens
+     * alone in case they need richer WP components later.
+     */
+    private function dequeue_unused_wp_editor_assets_for_dashboard(): void {
+        $handles = [
+            'wp-core-commands',
+            'wp-commands',
+            'wp-block-editor',
+            'wp-blocks',
+            'wp-core-data',
+            'wp-preferences',
+            'wp-preferences-persistence',
+            'wp-notices',
+            'wp-components',
+            'wp-rich-text',
+            'wp-data',
+            'wp-compose',
+            'wp-element',
+            'wp-api-fetch',
+            'react',
+            'react-dom',
+            'react-jsx-runtime',
+            'wp-react-refresh-entry',
+            'wp-react-refresh-runtime',
+        ];
+
+        foreach ($handles as $handle) {
+            wp_dequeue_script($handle);
+        }
     }
 
     /**

@@ -150,7 +150,7 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
                 </div>
                 <div class="bbai-guide-step-content">
                     <h3 class="bbai-guide-step-title"><?php esc_html_e('Automate Your Workflow', 'beepbeep-ai-alt-text-generator'); ?></h3>
-                    <p class="bbai-guide-step-desc"><?php esc_html_e('Enable automation to keep your media library optimized.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p class="bbai-guide-step-desc"><?php esc_html_e('Enable Autopilot to keep your media library optimized.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <ul class="bbai-guide-step-bullets">
                         <li><?php esc_html_e('Turn on auto-generation in Settings', 'beepbeep-ai-alt-text-generator'); ?></li>
                         <li><?php esc_html_e('Automatically generate ALT text for new uploads', 'beepbeep-ai-alt-text-generator'); ?></li>
@@ -363,6 +363,5 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
 </div>
 
 </div>
-
 
 

@@ -80,6 +80,18 @@
     transition: width 0.35s ease;
 }
 
+.bbai-retention-strip[data-progress-tone='danger'] .bbai-retention-strip__bar-fill {
+    background: linear-gradient(90deg, #ef4444, #f97316);
+}
+
+.bbai-retention-strip[data-progress-tone='warning'] .bbai-retention-strip__bar-fill {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.bbai-retention-strip[data-progress-tone='complete'] .bbai-retention-strip__bar-fill {
+    background: linear-gradient(90deg, #10b981, #22c55e);
+}
+
 .bbai-retention-strip__processed {
     margin: 0.35rem 0 0;
     font-size: 0.75rem;

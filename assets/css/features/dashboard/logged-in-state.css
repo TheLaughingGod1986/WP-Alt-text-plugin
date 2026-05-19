@@ -5867,6 +5867,18 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-fill 
     background: #10b981 !important;
 }
 
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-usage[data-credit-state="low"] .bbai-credit-fill {
+    background: #f59e0b !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-usage[data-credit-state="empty"] .bbai-credit-fill {
+    background: #dc2626 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-usage[data-credit-state="empty"] .bbai-credit-context.bbai-credit-context--warning {
+    color: #b91c1c !important;
+}
+
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-helper {
     margin-top: 8px !important;
 }

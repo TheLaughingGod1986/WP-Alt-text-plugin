@@ -30,11 +30,45 @@ $bbai_daily_focus      = $bbai_daily_complete ? 'complete' : ( $bbai_daily_missi
 $bbai_daily_ring_count = 'complete' === $bbai_daily_focus ? '✓' : number_format_i18n( 'missing' === $bbai_daily_focus ? $bbai_daily_missing : $bbai_daily_review );
 $bbai_daily_card_mod   = 'complete' === $bbai_daily_focus ? 'bbai-daily-hero-card--complete' : ( 'review' === $bbai_daily_focus ? 'bbai-daily-hero-card--review' : 'bbai-daily-hero-card--incomplete' );
 $bbai_daily_strip_mod  = 'complete' === $bbai_daily_focus ? 'bbai-daily-optimised-strip--complete' : ( 'review' === $bbai_daily_focus ? 'bbai-daily-optimised-strip--review' : 'bbai-daily-optimised-strip--incomplete' );
-$bbai_daily_used       = max( 0, (int) ( $bbai_dashboard_root_credits_used ?? 0 ) );
-$bbai_daily_limit      = max( 1, (int) ( $bbai_dashboard_root_credits_total ?? 50 ) );
-$bbai_daily_remaining  = max( 0, (int) ( $bbai_dashboard_root_credits_left ?? max( 0, $bbai_daily_limit - $bbai_daily_used ) ) );
-$bbai_daily_usage_pct  = (int) min( 100, round( ( 100 * $bbai_daily_used ) / $bbai_daily_limit ) );
+	$bbai_daily_used       = max( 0, (int) ( $bbai_dashboard_root_credits_used ?? 0 ) );
+	$bbai_daily_limit      = max( 1, (int) ( $bbai_dashboard_root_credits_total ?? 50 ) );
+	$bbai_daily_remaining  = max( 0, (int) ( $bbai_dashboard_root_credits_left ?? max( 0, $bbai_daily_limit - $bbai_daily_used ) ) );
+	$bbai_daily_usage_pct  = (int) min( 100, round( ( 100 * $bbai_daily_used ) / $bbai_daily_limit ) );
+	$bbai_daily_remaining_pct = (int) min( 100, round( ( 100 * $bbai_daily_remaining ) / $bbai_daily_limit ) );
+	$bbai_daily_credit_state = 'healthy';
+	if ( $bbai_daily_remaining <= 0 || $bbai_daily_usage_pct >= 90 ) {
+		$bbai_daily_credit_state = 'empty';
+	} elseif ( $bbai_daily_usage_pct >= 70 || $bbai_daily_remaining_pct <= 30 ) {
+		$bbai_daily_credit_state = 'low';
+	}
+$bbai_daily_autopilot_label = __( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' );
 $bbai_daily_library_url = $bbai_library_url ?? admin_url( 'admin.php?page=bbai-library' );
+$bbai_daily_anchor_url = static function ( string $url ): string {
+	return false === strpos( $url, '#' ) ? $url . '#bbai-review-filter-tabs' : $url;
+};
+$bbai_daily_missing_library_url = isset( $bbai_missing_library_url )
+	? $bbai_daily_anchor_url( (string) $bbai_missing_library_url )
+	: add_query_arg(
+		[
+			'page'     => 'bbai-library',
+			'status'   => 'missing',
+			'alt_page' => 1,
+		],
+		admin_url( 'admin.php' )
+	) . '#bbai-review-filter-tabs';
+$bbai_daily_review_library_url = isset( $bbai_needs_review_library_url )
+	? $bbai_daily_anchor_url( (string) $bbai_needs_review_library_url )
+	: add_query_arg(
+		[
+			'page'     => 'bbai-library',
+			'status'   => 'weak',
+			'alt_page' => 1,
+		],
+		admin_url( 'admin.php' )
+	) . '#bbai-review-filter-tabs';
+$bbai_daily_status_library_url = $bbai_daily_missing > 0 ? $bbai_daily_missing_library_url : ( $bbai_daily_review > 0 ? $bbai_daily_review_library_url : $bbai_daily_library_url );
+$bbai_daily_optimised_pct = $bbai_daily_total > 0 ? (int) min( 100, round( ( 100 * $bbai_daily_optimised ) / $bbai_daily_total ) ) : 0;
+$bbai_daily_optimised_meter_state = $bbai_daily_optimised_pct >= 90 ? 'healthy' : ( $bbai_daily_optimised_pct >= 50 ? 'low' : 'empty' );
 $bbai_daily_upload_url  = admin_url( 'upload.php' );
 $bbai_daily_time_saved  = max( 0, $bbai_daily_optimised * 2 );
 $bbai_daily_review_phrase = sprintf(
@@ -95,12 +129,12 @@ $bbai_daily_primary = $bbai_daily_complete
 $bbai_daily_secondary = $bbai_daily_complete
 	? [
 		'label'  => __( 'View library status', 'beepbeep-ai-alt-text-generator' ),
-		'href'   => $bbai_daily_library_url,
+		'href'   => $bbai_daily_status_library_url,
 		'action' => 'navigate',
 	]
 	: [
 		'label'  => __( 'View library status', 'beepbeep-ai-alt-text-generator' ),
-		'href'   => $bbai_daily_library_url,
+		'href'   => $bbai_daily_status_library_url,
 		'action' => 'navigate',
 	];
 
@@ -196,8 +230,12 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 			</div>
 
 			<div class="bbai-daily-queue-row">
-				<span><i class="bbai-daily-dot bbai-daily-dot--red" aria-hidden="true"></i><strong data-bbai-daily-missing="1"><?php echo esc_html( number_format_i18n( $bbai_daily_missing ) ); ?></strong><?php esc_html_e( 'images need ALT text', 'beepbeep-ai-alt-text-generator' ); ?></span>
-				<span><i class="bbai-daily-dot bbai-daily-dot--amber" aria-hidden="true"></i><strong data-bbai-daily-review="1"><?php echo esc_html( number_format_i18n( $bbai_daily_review ) ); ?></strong><?php esc_html_e( 'ready for review', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<a class="bbai-daily-queue-link<?php echo $bbai_daily_missing <= 0 ? ' bbai-daily-queue-link--disabled' : ''; ?>" href="<?php echo esc_url( $bbai_daily_missing > 0 ? $bbai_daily_missing_library_url : $bbai_daily_library_url ); ?>" data-action="navigate" data-bbai-dashboard-status-filter="missing" <?php echo $bbai_daily_missing <= 0 ? 'aria-disabled="true"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+					<i class="bbai-daily-dot bbai-daily-dot--red" aria-hidden="true"></i><strong data-bbai-daily-missing="1"><?php echo esc_html( number_format_i18n( $bbai_daily_missing ) ); ?></strong> <?php esc_html_e( 'images need ALT text', 'beepbeep-ai-alt-text-generator' ); ?>
+				</a>
+				<a class="bbai-daily-queue-link<?php echo $bbai_daily_review <= 0 ? ' bbai-daily-queue-link--disabled' : ''; ?>" href="<?php echo esc_url( $bbai_daily_review > 0 ? $bbai_daily_review_library_url : $bbai_daily_library_url ); ?>" data-action="navigate" data-bbai-dashboard-status-filter="weak" <?php echo $bbai_daily_review <= 0 ? 'aria-disabled="true"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+					<i class="bbai-daily-dot bbai-daily-dot--amber" aria-hidden="true"></i><strong data-bbai-daily-review="1"><?php echo esc_html( number_format_i18n( $bbai_daily_review ) ); ?></strong> <?php esc_html_e( 'ready for review', 'beepbeep-ai-alt-text-generator' ); ?>
+				</a>
 			</div>
 
 			<div class="bbai-daily-flow-row" aria-label="<?php esc_attr_e( 'ALT text workflow', 'beepbeep-ai-alt-text-generator' ); ?>">
@@ -226,14 +264,14 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 							number_format_i18n( $bbai_daily_remaining )
 						) ); ?></span>
 				</div>
-				<div class="bbai-daily-meter"><span data-bbai-daily-usage-meter="1" style="width: <?php echo esc_attr( (string) $bbai_daily_usage_pct ); ?>%;"></span></div>
+				<div class="bbai-daily-meter bbai-daily-meter--<?php echo esc_attr( $bbai_daily_credit_state ); ?>"><span data-bbai-daily-usage-meter="1" style="width: <?php echo esc_attr( (string) $bbai_daily_usage_pct ); ?>%;"></span></div>
 			</div>
 
-			<div class="bbai-daily-automation-box">
-				<div>
-					<h3><span aria-hidden="true">⚡</span><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></h3>
-					<p><?php esc_html_e( 'Automatically generate ALT text for new media uploads.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-				</div>
+				<div class="bbai-daily-automation-box">
+					<div>
+						<h3><span aria-hidden="true">⚡</span><?php echo esc_html( $bbai_daily_autopilot_label ); ?></h3>
+						<p><?php esc_html_e( 'Automatically generate ALT text for new media uploads.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					</div>
 				<button type="button" class="bbai-daily-switch" data-action="show-upgrade-modal" aria-pressed="false"><span></span></button>
 			</div>
 
@@ -252,8 +290,8 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 						__( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $bbai_daily_remaining )
 					) ); ?></strong>
-				<div class="bbai-daily-meter"><span data-bbai-daily-credit-meter="1" style="width: <?php echo esc_attr( (string) $bbai_daily_usage_pct ); ?>%;"></span></div>
-				<a href="#" data-action="show-upgrade-modal"><?php esc_html_e( 'Upgrade to automate ALT text', 'beepbeep-ai-alt-text-generator' ); ?><br><?php esc_html_e( '(up to 1,000 images/month)', 'beepbeep-ai-alt-text-generator' ); ?></a>
+				<div class="bbai-daily-meter bbai-daily-meter--<?php echo esc_attr( $bbai_daily_credit_state ); ?>"><span data-bbai-daily-credit-meter="1" style="width: <?php echo esc_attr( (string) $bbai_daily_usage_pct ); ?>%;"></span></div>
+				<a href="#" data-action="show-upgrade-modal"><?php echo esc_html( $bbai_daily_autopilot_label ); ?><br><?php esc_html_e( '(up to 1,000 images/month)', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			</div>
 		</section>
 	</div>
@@ -271,10 +309,10 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 					number_format_i18n( $bbai_daily_optimised ),
 					number_format_i18n( $bbai_daily_total )
 				) ); ?></span>
-			<div class="bbai-daily-meter"><span data-bbai-daily-strip-meter="1" style="width: <?php echo esc_attr( (string) $bbai_daily_pct ); ?>%;"></span></div>
+			<div class="bbai-daily-meter bbai-daily-meter--<?php echo esc_attr( $bbai_daily_optimised_meter_state ); ?>"><span data-bbai-daily-strip-meter="1" style="width: <?php echo esc_attr( (string) $bbai_daily_optimised_pct ); ?>%;"></span></div>
 		</div>
-		<a class="bbai-daily-btn bbai-daily-btn--primary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php esc_html_e( 'Keep optimising automatically', 'beepbeep-ai-alt-text-generator' ); ?></a>
-		<a class="bbai-daily-btn bbai-daily-btn--secondary" href="<?php echo esc_url( $bbai_daily_library_url ); ?>" data-action="navigate"><?php esc_html_e( 'View library status', 'beepbeep-ai-alt-text-generator' ); ?></a>
+		<a class="bbai-daily-btn bbai-daily-btn--primary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php echo esc_html( $bbai_daily_autopilot_label ); ?></a>
+		<a class="bbai-daily-btn bbai-daily-btn--secondary" href="<?php echo esc_url( $bbai_daily_status_library_url ); ?>" data-action="navigate"><?php esc_html_e( 'View library status', 'beepbeep-ai-alt-text-generator' ); ?></a>
 	</section>
 
 	<section class="bbai-daily-insights" aria-label="<?php echo esc_attr__( 'Library insights', 'beepbeep-ai-alt-text-generator' ); ?>">
@@ -299,7 +337,7 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 					number_format_i18n( $bbai_daily_total )
 				) ); ?></strong>
 			<p><?php esc_html_e( 'Keep coverage at 100% as you upload.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-			<a class="bbai-daily-btn bbai-daily-btn--secondary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php esc_html_e( 'Automate new uploads', 'beepbeep-ai-alt-text-generator' ); ?></a>
+			<a class="bbai-daily-btn bbai-daily-btn--secondary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php echo esc_html( $bbai_daily_autopilot_label ); ?></a>
 		</article>
 
 		<article class="bbai-daily-insight bbai-daily-insight--time bbai-daily-card">
@@ -316,8 +354,8 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 				) ); ?></h3>
 			<p><?php esc_html_e( 'Manual ALT writing avoided.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			<strong><?php esc_html_e( 'Estimated from 2 mins per image.', 'beepbeep-ai-alt-text-generator' ); ?></strong>
-			<p><?php esc_html_e( 'Turn on automation to keep saving time.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-			<a class="bbai-daily-btn bbai-daily-btn--secondary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php esc_html_e( 'Enable automation', 'beepbeep-ai-alt-text-generator' ); ?></a>
+				<p><?php esc_html_e( 'Use Autopilot to keep saving time.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<a class="bbai-daily-btn bbai-daily-btn--secondary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php echo esc_html( $bbai_daily_autopilot_label ); ?></a>
 		</article>
 
 		<article class="bbai-daily-insight bbai-daily-insight--seo bbai-daily-card">
@@ -338,15 +376,10 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 					_n( '%s search-ready image', '%s search-ready images', $bbai_daily_optimised, 'beepbeep-ai-alt-text-generator' ),
 					number_format_i18n( $bbai_daily_optimised )
 				) ); ?></strong>
-			<p><?php esc_html_e( 'Keep future uploads SEO-ready automatically.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-			<a class="bbai-daily-btn bbai-daily-btn--secondary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php esc_html_e( 'Automate future images', 'beepbeep-ai-alt-text-generator' ); ?></a>
+			<p><?php esc_html_e( 'Keep future uploads SEO-ready with Autopilot.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+			<a class="bbai-daily-btn bbai-daily-btn--secondary" href="#" data-action="show-upgrade-modal"><span aria-hidden="true">⚡</span><?php echo esc_html( $bbai_daily_autopilot_label ); ?></a>
 		</article>
 	</section>
-
-	<footer class="bbai-daily-footer" aria-label="<?php echo esc_attr__( 'Dashboard help', 'beepbeep-ai-alt-text-generator' ); ?>">
-		<strong><?php esc_html_e( 'Thank you for choosing BeepBeep AI. 💙', 'beepbeep-ai-alt-text-generator' ); ?></strong>
-		<p><?php esc_html_e( 'Need help? Check our documentation or contact support.', 'beepbeep-ai-alt-text-generator' ); ?></p>
-	</footer>
 
 	<div class="bbai-legacy-dashboard-runtime" hidden aria-hidden="true">
 		<?php

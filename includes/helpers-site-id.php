@@ -91,3 +91,62 @@ function get_site_identifier() {
 function beepbeepai_get_site_identifier() {
 	return get_site_identifier();
 }
+
+/**
+ * Determine whether analytics should be flagged as internal/test traffic.
+ *
+ * Events are still sent; callers should attach the returned value as
+ * `is_internal` so dashboards can filter development and test usage.
+ *
+ * @param string $email Optional account/admin email to evaluate.
+ * @return bool
+ */
+function is_internal_environment($email = '') {
+	$host = '';
+	if (function_exists('wp_parse_url') && function_exists('home_url')) {
+		$host = (string) (wp_parse_url(home_url('/'), PHP_URL_HOST) ?: '');
+	}
+	$host = strtolower($host);
+	$email = strtolower(trim((string) $email));
+
+	$is_internal = false;
+
+	if ('' !== $host) {
+		$is_internal = (bool) preg_match(
+			'/(^localhost$|^127\.|^0\.0\.0\.0$|^::1$|\.local$|\.test$|\.localhost$|\.tastewp\.com$|(^|\.)staging\.|(^|\.)dev\.|staging|development|dev-site)/i',
+			$host
+		);
+	}
+
+	if (!$is_internal && function_exists('wp_get_environment_type')) {
+		$is_internal = 'production' !== wp_get_environment_type();
+	}
+
+	if (!$is_internal && defined('WP_DEBUG') && WP_DEBUG) {
+		$is_internal = true;
+	}
+
+	if (!$is_internal && '' !== $email) {
+		$is_internal = (bool) preg_match(
+			'/(^ben@|admin@|test@|demo@|dev@|staging@|localhost|example\.com$|example\.test$|beepbeep|boxedtech|optti)/i',
+			$email
+		);
+	}
+
+	/**
+	 * Filter whether PostHog/frontend analytics should be flagged internal.
+	 *
+	 * @param bool   $is_internal Computed internal flag.
+	 * @param array  $context     Detection context.
+	 */
+	return (bool) apply_filters(
+		'bbai_posthog_is_internal',
+		$is_internal,
+		[
+			'host'             => $host,
+			'email'            => $email,
+			'environment_type' => function_exists('wp_get_environment_type') ? wp_get_environment_type() : '',
+			'wp_debug'         => defined('WP_DEBUG') && WP_DEBUG,
+		]
+	);
+}

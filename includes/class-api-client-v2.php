@@ -1562,7 +1562,7 @@ class API_Client_V2 {
      *
      * @return array|\WP_Error
      */
-    public function get_dashboard_state_truth() {
+    public function get_dashboard_state_truth( $force_refresh = false ) {
         $fixture = get_option('bbai_e2e_dashboard_state_truth_fixture', null);
         if (is_string($fixture) && '' !== trim($fixture)) {
             $decoded = json_decode($fixture, true);
@@ -1589,6 +1589,19 @@ class API_Client_V2 {
             );
         }
 
+        $cache_key = 'bbai_dashboard_state_truth_' . md5( implode( '|', [
+            (string) home_url(),
+            (string) $token,
+            (string) $license_key,
+        ] ) );
+
+        if ( ! $force_refresh ) {
+            $cached = get_transient( $cache_key );
+            if ( is_array( $cached ) && ! empty( $cached['state'] ) ) {
+                return $cached;
+            }
+        }
+
         $candidates = [
             '/api/dashboard/state-truth',
         ];
@@ -1613,6 +1626,7 @@ class API_Client_V2 {
             $payload = is_array($backend_response) ? ($backend_response['data'] ?? $backend_response) : [];
 
             if (is_array($payload) && !empty($payload['state'])) {
+                set_transient( $cache_key, $payload, 30 );
                 return $payload;
             }
 

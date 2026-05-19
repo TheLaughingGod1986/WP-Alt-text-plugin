@@ -217,6 +217,12 @@ function bbai_retention_build_strip_model(array $ctx): ?array {
         : '';
 
     $remaining_pct = $total > 0 ? max(0, 100 - $coverage_pct) : 0;
+    $progress_tone = 'complete';
+    if ($coverage_pct < 50) {
+        $progress_tone = 'danger';
+    } elseif ($coverage_pct < 100) {
+        $progress_tone = 'warning';
+    }
     $near_complete = $coverage_pct >= 85 && $issues > 0 && $issues <= max(3, (int) ceil(0.1 * $total));
     $near_ninety = $coverage_pct >= 90 && $issues > 0;
 
@@ -410,6 +416,7 @@ function bbai_retention_build_strip_model(array $ctx): ?array {
     $model = [
         'show'           => true,
         'trigger'        => $trigger,
+        'progress_tone'  => $progress_tone,
         'headline'       => $headline,
         'supporting'     => $supporting,
         'progress_pct'   => $coverage_pct,

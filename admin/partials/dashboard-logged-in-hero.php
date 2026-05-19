@@ -375,11 +375,12 @@ $bbai_hero_c_used = min( $bbai_hero_c_used, $bbai_hero_c_lim );
 $bbai_hero_c_rem  = min( max( 0, $bbai_hero_c_rem ), $bbai_hero_c_lim );
 $bbai_hero_c_rem  = min( $bbai_hero_c_rem, max( 0, $bbai_hero_c_lim - $bbai_hero_c_used ) );
 $bbai_hero_c_pct = (int) min( 100, max( 0, round( ( $bbai_hero_c_used / $bbai_hero_c_lim ) * 100 ) ) );
+$bbai_hero_c_remaining_pct = (int) min( 100, max( 0, round( ( $bbai_hero_c_rem / $bbai_hero_c_lim ) * 100 ) ) );
 
 $bbai_hero_credit_state = 'healthy';
-if ( $bbai_hero_c_rem <= 0 ) {
+if ( $bbai_hero_c_rem <= 0 || $bbai_hero_c_pct >= 90 ) {
 	$bbai_hero_credit_state = 'empty';
-} elseif ( $bbai_hero_c_rem <= 10 ) {
+} elseif ( $bbai_hero_c_pct >= 70 || $bbai_hero_c_remaining_pct <= 30 ) {
 	$bbai_hero_credit_state = 'low';
 }
 
@@ -459,11 +460,11 @@ if ( $bbai_li_missing_count > 0 && $bbai_hero_c_rem >= $bbai_li_missing_count ) 
 	);
 }
 
-$bbai_hero_credit_helper = sprintf(
-	/* translators: %s: Growth plan monthly image allowance */
-	__( 'Upgrade to automate ALT text (up to %s images/month)', 'beepbeep-ai-alt-text-generator' ),
-	number_format_i18n( $bbai_hero_growth_credit_limit )
-);
+	$bbai_hero_credit_helper = sprintf(
+		/* translators: %s: Growth plan monthly image allowance */
+		__( 'Enable Autopilot (up to %s images/month)', 'beepbeep-ai-alt-text-generator' ),
+		number_format_i18n( $bbai_hero_growth_credit_limit )
+	);
 $bbai_hero_credit_helper_hidden = false;
 
 $bbai_hero_credit_bar_aria = sprintf(
@@ -790,11 +791,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 			<?php if ( $bbai_li_all_clear_upgrade_panel ) : ?>
 			<hr class="bbai-all-clear-section-divider" aria-hidden="true" />
 			<div class="bbai-all-clear-upgrade" data-bbai-all-clear-upgrade="1">
-				<p class="bbai-li-free-plan-upsell__note" data-bbai-li-free-upsell="1"><?php esc_html_e( 'New uploads won’t be optimised automatically.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<p class="bbai-li-free-plan-upsell__note" data-bbai-li-free-upsell="1"><?php esc_html_e( 'New uploads need Autopilot to stay covered.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 				<div class="bbai-all-clear-upgrade__panel">
 					<span class="bbai-all-clear-upgrade__icon" aria-hidden="true">⚡</span>
 					<div class="bbai-all-clear-upgrade__copy">
-						<p class="bbai-all-clear-upgrade__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-all-clear-upgrade__title"><?php esc_html_e( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></p>
 						<p class="bbai-all-clear-upgrade__desc"><?php esc_html_e( 'Automatically generate ALT text for new media uploads.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					</div>
 					<button
@@ -838,7 +839,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 					<div class="bbai-credit-fill" data-bbai-hero-credit-fill="1" style="--bbai-credit-percent: <?php echo esc_attr( (string) $bbai_hero_c_pct ); ?>%;"></div>
 				</div>
 				<p
-					class="bbai-credit-context<?php echo $bbai_hero_c_rem < 10 ? ' bbai-credit-context--warning' : ''; ?>"
+					class="bbai-credit-context<?php echo 'healthy' !== $bbai_hero_credit_state ? ' bbai-credit-context--warning' : ''; ?>"
 					data-bbai-hero-credit-context="1"
 				><?php echo esc_html( $bbai_hero_credit_context_line ); ?></p>
 				<p
@@ -860,8 +861,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 				<?php if ( $bbai_hero_is_free_plan && 'ALL_CLEAR' !== $bbai_li_state_id ) : ?>
 				<div class="bbai-credit-upgrade-panel" data-bbai-credit-upgrade-panel="1">
 					<div class="bbai-credit-upgrade-panel__copy">
-						<p class="bbai-credit-upgrade-panel__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
-						<p class="bbai-credit-upgrade-panel__sub"><?php esc_html_e( 'Upgrade to generate ALT text automatically when new images are added.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-credit-upgrade-panel__title"><?php esc_html_e( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></p>
+							<p class="bbai-credit-upgrade-panel__sub"><?php esc_html_e( 'Use Autopilot when new images are added.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					</div>
 					<span
 						class="bbai-credit-upgrade-panel__cta"
@@ -895,6 +896,44 @@ $bbai_hero_credit_bar_aria = sprintf(
 	}
 
 	window.isUserAuthenticated = window.isUserAuthenticated || isUserAuthenticated;
+
+	function resolveHeroCreditState( used, total, remaining ) {
+		var safeTotal = Math.max( 1, parseInt( total, 10 ) || 1 );
+		var safeUsed = Math.max( 0, parseInt( used, 10 ) || 0 );
+		var safeRemaining = Math.max( 0, parseInt( remaining, 10 ) || 0 );
+		var usedPct = Math.min( 100, Math.max( 0, Math.round( ( safeUsed / safeTotal ) * 100 ) ) );
+		var remainingPct = Math.min( 100, Math.max( 0, Math.round( ( safeRemaining / safeTotal ) * 100 ) ) );
+
+		if ( safeRemaining <= 0 || usedPct >= 90 ) {
+			return 'empty';
+		}
+
+		if ( usedPct >= 70 || remainingPct <= 30 ) {
+			return 'low';
+		}
+
+		return 'healthy';
+	}
+
+	function applyHeroCreditStateFromAttributes() {
+		var wrap = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' ) || document.querySelector( '[data-bbai-hero-credit-usage="1"]' );
+		if ( ! wrap ) {
+			return;
+		}
+
+		var used = parseInt( wrap.getAttribute( 'data-bbai-hero-credits-used' ) || '0', 10 ) || 0;
+		var total = parseInt( wrap.getAttribute( 'data-bbai-hero-credits-limit' ) || '1', 10 ) || 1;
+		var remaining = parseInt( wrap.getAttribute( 'data-bbai-hero-credits-remaining' ) || String( Math.max( 0, total - used ) ), 10 ) || 0;
+		var creditState = resolveHeroCreditState( used, total, remaining );
+		var ctx = wrap.querySelector( '[data-bbai-hero-credit-context="1"]' );
+
+		if ( wrap.getAttribute( 'data-credit-state' ) !== creditState ) {
+			wrap.setAttribute( 'data-credit-state', creditState );
+		}
+		if ( ctx ) {
+			ctx.classList.toggle( 'bbai-credit-context--warning', creditState !== 'healthy' );
+		}
+	}
 
 	function renderGuestDashboardFallback() {
 		var root = document.querySelector( '[data-bbai-dashboard-root="1"]' );
@@ -1076,6 +1115,17 @@ $bbai_hero_credit_bar_aria = sprintf(
 		return ( 'poll' === r || 'focus' === r || 'bootstrap' === r || 'visibility' === r || 'visibility_resume' === r );
 	}
 
+	function bbaiShouldForceDashboardTruthRefresh( reason ) {
+		var r = String( reason || '' );
+		return (
+			'generation_completed' === r ||
+			'manual_rescan' === r ||
+			'user_action' === r ||
+			'approve_all' === r ||
+			'approve_all_success' === r
+		);
+	}
+
 	function bbaiDebugTiming( eventName, detail ) {
 		if ( ! window.BBAI_LOG || typeof window.BBAI_LOG.info !== 'function' || ! window.console || typeof window.console.debug !== 'function' ) {
 			return;
@@ -1116,7 +1166,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return Promise.resolve( dashboardPolling.currentTruth );
 		}
 
-		if ( 'generation_completed' === r || 'manual_rescan' === r || 'user_action' === r ) {
+		if ( bbaiShouldForceDashboardTruthRefresh( r ) ) {
 			req.lastCompletedAt = 0;
 		}
 
@@ -1219,6 +1269,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 	// Expose for debugging and console checks (read-only; no secrets).
 	window.BBAI_HERO_CFG = BBAI_HERO_CFG;
+	applyHeroCreditStateFromAttributes();
+	window.setTimeout( applyHeroCreditStateFromAttributes, 0 );
+	window.setTimeout( applyHeroCreditStateFromAttributes, 750 );
 
 	var BOOTSTRAP_SYNC_LOCK_TTL_MS = 5 * 60 * 1000;
 	var BOOTSTRAP_SYNC_FAILURE_COOLDOWN_MS = 15 * 60 * 1000;
@@ -1300,7 +1353,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		heroCreditOnlyLeftThisMonth: '<?php echo esc_js( __( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditEnoughForBatch: '<?php echo esc_js( __( '✔ Enough credits to finish this batch', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditCanGenerateMore: '<?php echo esc_js( __( 'You can generate %s more images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditUpgradeGrowth: '<?php echo esc_js( __( 'Upgrade to automate ALT text (up to %s images/month)', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+			heroCreditUpgradeGrowth: '<?php echo esc_js( __( 'Enable Autopilot (up to %s images/month)', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditLowRunningSuffix: '<?php echo esc_js( __( 'Running low — upgrade or top up before you run out.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditCtxManual: '<?php echo esc_js( __( 'Manual generation uses credits.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditCtxReview: '<?php echo esc_js( __( 'Reviewing does not use credits.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -2439,6 +2492,17 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return Promise.reject( missingConfigError );
 		}
 
+		if ( bbaiShouldForceDashboardTruthRefresh( context ) ) {
+			try {
+				var parsedUrl = new URL( stateTruthUrl, window.location.href );
+				parsedUrl.searchParams.set( 'force', '1' );
+				parsedUrl.searchParams.set( 'context', String( context || '' ) );
+				stateTruthUrl = parsedUrl.toString();
+			} catch ( e ) {
+				stateTruthUrl += ( -1 === stateTruthUrl.indexOf( '?' ) ? '?' : '&' ) + 'force=1&context=' + encodeURIComponent( String( context || '' ) );
+			}
+		}
+
 		var controller = reqOpts.controller || ( typeof AbortController !== 'undefined' ? new AbortController() : null );
 		var startedAt = Date.now();
 		var timeoutMs = reqOpts.timeoutMs || ( function () {
@@ -2986,14 +3050,13 @@ $bbai_hero_credit_bar_aria = sprintf(
 	}
 
 	function getPollIntervalForState( state ) {
-		// Consolidated dashboard polling: 15s when visible, 3s while generation is active.
-		// (Generation-active is represented by QUEUED/PROCESSING states in truth.)
+		// Poll only while generation is active; stable dashboard states refresh on explicit actions.
 		switch ( String( state || '' ).toUpperCase() ) {
 			case 'QUEUED':
 			case 'PROCESSING':
 				return 3000;
 			default:
-				return 15000;
+				return 0;
 		}
 	}
 
@@ -4008,7 +4071,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 	 * Without this, SSR/Poller update the root data attributes but the visible label/bar stayed stale until reload.
 	 */
 	function syncHeroCreditBlockFromTruth( truth ) {
-		var wrap = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' );
+		var wrap = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' ) || document.querySelector( '[data-bbai-hero-credit-usage="1"]' );
 		if ( ! wrap ) {
 			return;
 		}
@@ -4017,15 +4080,17 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var total = Math.max( 1, credits.total );
 		var remaining = Math.max( 0, credits.remaining );
 		var pct = Math.min( 100, Math.max( 0, Math.round( ( used / total ) * 100 ) ) );
+		var creditState = resolveHeroCreditState( used, total, remaining );
 
 		// Idempotent rendering: skip all DOM writes when credits are unchanged.
 		// Prevents flicker from re-applying text/classes/animations on every poll.
-		window.bbaiLastRenderedCredits = window.bbaiLastRenderedCredits || { used: null, limit: null, remaining: null, pct: null };
+		window.bbaiLastRenderedCredits = window.bbaiLastRenderedCredits || { used: null, limit: null, remaining: null, pct: null, creditState: null };
 		var prev = window.bbaiLastRenderedCredits;
 		var unchanged = prev
 			&& prev.used === used
 			&& prev.limit === total
-			&& prev.remaining === remaining;
+			&& prev.remaining === remaining
+			&& prev.creditState === creditState;
 		var creditsDebug = !!( window.BBAI_DEBUG || ( window.BBAI && window.BBAI.debug ) );
 		if ( unchanged ) {
 			if ( creditsDebug ) {
@@ -4034,14 +4099,13 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return;
 		}
 
-		window.bbaiLastRenderedCredits = { used: used, limit: total, remaining: remaining, pct: pct };
+		window.bbaiLastRenderedCredits = { used: used, limit: total, remaining: remaining, pct: pct, creditState: creditState };
 		if ( creditsDebug ) {
 			logCredits( 'updated', { previous: prev, next: window.bbaiLastRenderedCredits } );
 		}
 
 		var state = getStateTruthState( truth );
 		var isFreePlan = ! credits.isPro;
-		var creditState = remaining <= 0 ? 'empty' : ( remaining <= 10 ? 'low' : 'healthy' );
 		var counts = normalizeCounts( truth && truth.counts ? truth.counts : {} );
 
 		if ( wrap.getAttribute( 'data-bbai-hero-credits-used' ) !== String( used ) ) {
@@ -4109,7 +4173,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var ctx = wrap.querySelector( '[data-bbai-hero-credit-context="1"]' );
 		var ctxLine = buildHeroCreditContextLine( remaining, state );
 		if ( ctx ) {
-			ctx.classList.toggle( 'bbai-credit-context--warning', remaining < 10 );
+			ctx.classList.toggle( 'bbai-credit-context--warning', creditState !== 'healthy' );
 			if ( ctxLine ) {
 				ctx.removeAttribute( 'hidden' );
 				ctx.textContent = ctxLine;
@@ -5444,8 +5508,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 			stopPolling( 'hidden' );
 			return;
 		}
-		if ( ! shouldPollState( currentState ) && ! dashboardPolling.requiresResolvedSync && 'startup' !== pollContext ) {
+		if ( ! shouldPollState( currentState ) && ! dashboardPolling.requiresResolvedSync && ( 'startup' !== pollContext || ! hasStartupDashboardDomMismatch() ) ) {
 			stopPolling( 'stable' );
+			if ( 'startup' === pollContext ) {
+				markDashboardStartupTruthResolved();
+			}
 			return;
 		}
 

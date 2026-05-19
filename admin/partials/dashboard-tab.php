@@ -28,13 +28,28 @@ $bbai_has_registered_user = $bbai_auth['has_registered_user'] ?? false;
 $bbai_has_connected_account = $bbai_auth['has_connected_account'] ?? false;
 $bbai_is_anonymous_trial = $bbai_auth['is_anonymous_trial'] ?? false;
 
-// Ensure stats/usage are available for downstream partials.
-$bbai_stats = (isset($bbai_stats) && is_array($bbai_stats))
-    ? $bbai_stats
-    : (method_exists($this, 'get_dashboard_stats_payload')
-        ? $this->get_dashboard_stats_payload(false)
-        : $this->get_media_stats());
-$bbai_usage_stats = Usage_Helper::get_usage($this->api_client, (bool) $bbai_has_connected_account);
+// Ensure stats/usage are available for downstream partials without blocking first paint.
+// The live dashboard/state-truth refresh can reconcile after load; PHP render should use
+// cached media/coverage snapshots only.
+if (!isset($bbai_stats) || !is_array($bbai_stats)) {
+    $bbai_cached_stats = get_transient('bbai_stats_v3');
+    $bbai_cached_coverage = get_transient('bbai_alt_coverage_scan_v4');
+    $bbai_stats = is_array($bbai_cached_stats) ? $bbai_cached_stats : [];
+    if (is_array($bbai_cached_coverage)) {
+        $bbai_stats['total'] = max(0, (int) ($bbai_cached_coverage['total_images'] ?? ($bbai_stats['total'] ?? 0)));
+        $bbai_stats['with_alt'] = max(0, (int) ($bbai_cached_coverage['images_with_alt'] ?? ($bbai_stats['with_alt'] ?? 0)));
+        $bbai_stats['missing'] = max(0, (int) ($bbai_cached_coverage['images_missing_alt'] ?? ($bbai_stats['missing'] ?? 0)));
+        $bbai_stats['total_images'] = max(0, (int) ($bbai_cached_coverage['total_images'] ?? ($bbai_stats['total_images'] ?? 0)));
+        $bbai_stats['images_with_alt'] = max(0, (int) ($bbai_cached_coverage['images_with_alt'] ?? ($bbai_stats['images_with_alt'] ?? 0)));
+        $bbai_stats['images_missing_alt'] = max(0, (int) ($bbai_cached_coverage['images_missing_alt'] ?? ($bbai_stats['images_missing_alt'] ?? 0)));
+        $bbai_stats['coverage_percent'] = max(0, min(100, (int) ($bbai_cached_coverage['coverage_percent'] ?? 0)));
+        $bbai_stats['needs_review_count'] = max(0, (int) ($bbai_cached_coverage['needs_review_count'] ?? 0));
+        $bbai_stats['optimized_count'] = max(0, (int) ($bbai_cached_coverage['optimized_count'] ?? 0));
+    }
+}
+$bbai_usage_stats = (bool) $bbai_has_connected_account
+    ? Usage_Tracker::get_local_usage_snapshot()
+    : Usage_Helper::get_usage($this->api_client, false);
 
 // Partial paths.
 $bbai_dashboard_auth_partial       = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-authenticated.php';

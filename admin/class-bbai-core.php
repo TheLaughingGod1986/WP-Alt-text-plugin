@@ -7364,6 +7364,7 @@ class Core {
                 continue;
             }
             $props = isset( $row['properties'] ) && is_array( $row['properties'] ) ? $row['properties'] : [];
+            $props['_bbai_client_batched'] = true;
             if ( function_exists( 'bbai_telemetry_emit' ) ) {
                 bbai_telemetry_emit( $name, $props );
                 ++$recorded;

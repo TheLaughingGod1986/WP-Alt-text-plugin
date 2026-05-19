@@ -363,8 +363,9 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         ? sanitize_key((string) $bbai_usage_stats['quota_source_displayed_to_user'])
         : ($bbai_is_anonymous_trial ? 'anonymous_trial' : 'authenticated_account');
 
-	// Always use a fresh scan for SSR counts so first paint matches ALT Library.
-    $bbai_fresh_local_coverage = true;
+    // Use the cached coverage snapshot for first paint. Explicit library actions,
+    // generation, and refresh endpoints invalidate/rebuild the scan when counts change.
+    $bbai_fresh_local_coverage = false;
     $bbai_coverage             = ( isset( $this ) && method_exists( $this, 'get_alt_text_coverage_scan' ) )
         ? $this->get_alt_text_coverage_scan( $bbai_fresh_local_coverage )
         : [];
@@ -1049,26 +1050,9 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
             'user_type' => ! empty( $bbai_state_is_pro_plan ) ? 'pro' : 'free',
         ];
 
-        if (
-            isset( $this, $this->api_client )
-            && is_object( $this->api_client )
-            && method_exists( $this->api_client, 'get_dashboard_state_truth' )
-        ) {
-            $bbai_li_truth_candidate = $this->api_client->get_dashboard_state_truth();
-            if ( is_array( $bbai_li_truth_candidate ) && [] !== $bbai_li_truth_candidate ) {
-                $bbai_li_truth_boot = bbai_reconcile_state_truth_payload_missing_to_local(
-                    $bbai_li_truth_candidate,
-                    (int) $bbai_state_missing_count,
-                    (int) $bbai_state_weak_count,
-                    (int) $bbai_state_optimized_count,
-                    (int) $bbai_state_total_images
-                );
-                $bbai_li_state = \BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve_from_truth(
-                    $bbai_li_truth_boot,
-                    $bbai_li_plan_ctx
-                );
-            }
-        }
+        // First paint should not block on remote backend truth. The local resolver
+        // already has the coverage, usage, and active job data needed for SSR;
+        // explicit refresh/action paths can fetch backend state-truth after paint.
 
         if ( ! is_array( $bbai_li_state ) ) {
             $bbai_li_job_for_ctx = [];

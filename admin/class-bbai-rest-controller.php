@@ -597,7 +597,8 @@ class REST_Controller {
 
 		$helper_usage = \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage(
 			$api_client,
-			$has_connected_account
+			$has_connected_account,
+			true
 		);
 
 		$local_snapshot = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
@@ -1480,7 +1481,8 @@ class REST_Controller {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
 
-		$truth = $this->get_logged_in_dashboard_state_truth_payload();
+		$force_refresh = rest_sanitize_boolean( $request->get_param( 'force' ) );
+		$truth         = $this->get_logged_in_dashboard_state_truth_payload( $force_refresh );
 		if ( is_array( $truth ) ) {
 			return rest_ensure_response(
 				\BeepBeepAI\AltTextGenerator\Services\Logged_In_Dashboard_Resolver::resolve_from_truth(
@@ -1509,7 +1511,8 @@ class REST_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function handle_logged_in_dashboard_state_truth( \WP_REST_Request $request ) {
-		$truth = $this->get_logged_in_dashboard_state_truth_payload();
+		$force_refresh = rest_sanitize_boolean( $request->get_param( 'force' ) );
+		$truth         = $this->get_logged_in_dashboard_state_truth_payload( $force_refresh );
 		if ( ! is_array( $truth ) ) {
 			return new \WP_Error(
 				'dashboard_state_truth_unavailable',
@@ -1518,8 +1521,7 @@ class REST_Controller {
 			);
 		}
 
-		// Align truth counts with local coverage scan (same source as ALT Library).
-		$truth = $this->reconcile_truth_missing_count_with_local_media( $truth );
+		// get_logged_in_dashboard_state_truth_payload() already aligns counts with the local coverage scan.
 		$truth = $this->normalize_state_truth_credits_for_rest( $truth );
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -2010,15 +2012,34 @@ class REST_Controller {
 	 *
 	 * @return array<string,mixed>|null
 	 */
-	private function get_logged_in_dashboard_state_truth_payload(): ?array {
+	private function get_logged_in_dashboard_state_truth_payload( bool $force_refresh = false ): ?array {
+		$cache_key = 'bbai_dashboard_state_truth_payload_' . md5(
+			implode(
+				'|',
+				[
+					(string) home_url(),
+					(string) get_current_user_id(),
+				]
+			)
+		);
+		if ( ! $force_refresh ) {
+			$cached = get_transient( $cache_key );
+			if ( is_array( $cached ) && [] !== $cached && ! empty( $cached['state'] ) ) {
+				return $cached;
+			}
+		}
+
 		$api_client = $this->core->get_api_client();
 		if ( $api_client && method_exists( $api_client, 'get_dashboard_state_truth' ) ) {
-			$truth = $api_client->get_dashboard_state_truth();
+			$truth = $api_client->get_dashboard_state_truth( $force_refresh );
 			if ( is_array( $truth ) && [] !== $truth ) {
 				$truth = $this->reconcile_truth_missing_count_with_local_media( $truth );
 				$truth = $this->reconcile_truth_credits_with_usage_helper( $truth );
 
-				return $this->align_state_truth_payload_state_with_resolver( $truth );
+				$truth = $this->align_state_truth_payload_state_with_resolver( $truth );
+				set_transient( $cache_key, $truth, 30 );
+
+				return $truth;
 			}
 		}
 
@@ -2026,7 +2047,10 @@ class REST_Controller {
 		if ( is_array( $fallback ) && [] !== $fallback ) {
 			$fallback = $this->reconcile_truth_missing_count_with_local_media( $fallback );
 
-			return $this->align_state_truth_payload_state_with_resolver( $fallback );
+			$fallback = $this->align_state_truth_payload_state_with_resolver( $fallback );
+			set_transient( $cache_key, $fallback, 30 );
+
+			return $fallback;
 		}
 
 		return is_array( $fallback ) ? $fallback : null;
@@ -2467,7 +2491,8 @@ class REST_Controller {
 		$auth_state = \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $api_client );
 		return \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage(
 			$api_client,
-			(bool) ( $auth_state['has_connected_account'] ?? false )
+			(bool) ( $auth_state['has_connected_account'] ?? false ),
+			true
 		);
 	}
 

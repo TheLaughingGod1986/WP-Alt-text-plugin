@@ -8423,6 +8423,17 @@
         }
     }
 
+    function setDailyMeterState(selector, percent, scope) {
+        var node = (scope || document).querySelector(selector);
+        var meter = node ? node.closest('.bbai-daily-meter') : null;
+        var numeric = Math.max(0, Math.min(100, parseInt(percent, 10) || 0));
+        if (!meter) {
+            return;
+        }
+        meter.classList.remove('bbai-daily-meter--healthy', 'bbai-daily-meter--low', 'bbai-daily-meter--empty');
+        meter.classList.add(numeric >= 90 ? 'bbai-daily-meter--healthy' : (numeric >= 50 ? 'bbai-daily-meter--low' : 'bbai-daily-meter--empty'));
+    }
+
     function buildDailyQueueSentence(missing, review) {
         var reviewPhrase = sprintf(
             _n('%s is ready for review', '%s are ready for review', review, 'beepbeep-ai-alt-text-generator'),
@@ -8460,12 +8471,15 @@
         var primary;
         var secondary;
         var libraryUrl;
+        var missingUrl;
         var reviewUrl;
+        var statusUrl;
         var uploadUrl;
         var used;
         var limit;
         var remaining;
         var usagePct;
+        var optimizedPct;
 
         if (!dailyRoot || !dashboardRoot) {
             return;
@@ -8479,11 +8493,14 @@
         total = Math.max(total, missing + review + optimized);
         covered = Math.max(0, total - missing);
         pct = total > 0 ? Math.min(100, Math.round((covered / total) * 100)) : 0;
+        optimizedPct = total > 0 ? Math.min(100, Math.round((optimized / total) * 100)) : 0;
         complete = total > 0 && missing === 0 && review === 0;
         focus = complete ? 'complete' : (missing > 0 ? 'missing' : 'review');
         queueSentence = buildDailyQueueSentence(missing, review);
         libraryUrl = dashboardRoot.getAttribute('data-bbai-library-url') || 'admin.php?page=bbai-library';
+        missingUrl = dashboardRoot.getAttribute('data-bbai-missing-library-url') || libraryUrl;
         reviewUrl = dashboardRoot.getAttribute('data-bbai-needs-review-library-url') || libraryUrl;
+        statusUrl = missing > 0 ? missingUrl : (review > 0 ? reviewUrl : libraryUrl);
         uploadUrl = 'upload.php';
 
         dashboardRoot.setAttribute('data-bbai-missing-count', String(missing));
@@ -8507,6 +8524,18 @@
         updateDailyText('[data-bbai-daily-accessible="1"]', pct + '%', dailyRoot);
         updateDailyText('[data-bbai-daily-missing="1"]', formatDashboardNumber(missing), dailyRoot);
         updateDailyText('[data-bbai-daily-review="1"]', formatDashboardNumber(review), dailyRoot);
+        Array.prototype.forEach.call(dailyRoot.querySelectorAll('[data-bbai-dashboard-status-filter]'), function(link) {
+            var filter = link.getAttribute('data-bbai-dashboard-status-filter');
+            var count = filter === 'missing' ? missing : review;
+            var href = filter === 'missing' ? missingUrl : reviewUrl;
+            link.setAttribute('href', count > 0 ? href : libraryUrl);
+            link.classList.toggle('bbai-daily-queue-link--disabled', count <= 0);
+            if (count > 0) {
+                link.removeAttribute('aria-disabled');
+            } else {
+                link.setAttribute('aria-disabled', 'true');
+            }
+        });
 
         primary = dailyRoot.querySelector('[data-bbai-daily-primary-cta="1"]');
         if (primary) {
@@ -8543,7 +8572,7 @@
 
         secondary = dailyRoot.querySelector('[data-bbai-daily-secondary-cta="1"]');
         if (secondary) {
-            secondary.setAttribute('href', libraryUrl);
+            secondary.setAttribute('href', statusUrl);
             secondary.setAttribute('data-action', 'navigate');
             secondary.innerHTML = '<span aria-hidden="true">□</span>' + escapeHtml(__('View library status', 'beepbeep-ai-alt-text-generator'));
         }
@@ -8563,7 +8592,11 @@
         updateDailyText('[data-bbai-daily-strip-title="1"]', complete ? __("You're 100% optimised", 'beepbeep-ai-alt-text-generator') : (focus === 'review' ? __('Review queue ready', 'beepbeep-ai-alt-text-generator') : __('Today’s pass needs attention', 'beepbeep-ai-alt-text-generator')), dailyRoot);
         updateDailyText('[data-bbai-daily-strip-body="1"]', complete ? __('All images are done.', 'beepbeep-ai-alt-text-generator') : queueSentence, dailyRoot);
         updateDailyText('[data-bbai-daily-strip-progress-text="1"]', sprintf(__('%1$s / %2$s images optimised', 'beepbeep-ai-alt-text-generator'), formatDashboardNumber(optimized), formatDashboardNumber(total)), dailyRoot);
-        setDailyMeter('[data-bbai-daily-strip-meter="1"]', pct, dailyRoot);
+        setDailyMeter('[data-bbai-daily-strip-meter="1"]', optimizedPct, dailyRoot);
+        setDailyMeterState('[data-bbai-daily-strip-meter="1"]', optimizedPct, dailyRoot);
+        Array.prototype.forEach.call(dailyRoot.querySelectorAll('.bbai-daily-optimised-strip .bbai-daily-btn--secondary'), function(link) {
+            link.setAttribute('href', statusUrl);
+        });
 
         usage = usage && typeof usage === 'object' ? usage : {};
         used = usage.used !== undefined ? parseInt(usage.used, 10) : parseInt(dashboardRoot.getAttribute('data-bbai-credits-used') || '0', 10);
@@ -12236,7 +12269,7 @@
 
     function formatDashboardHeroCreditGrowthComparison(heroUsage, used, limit, remaining) {
         var growthLimit = resolveDashboardHeroGrowthLimit(heroUsage, limit);
-        return sprintf(__('Upgrade to automate ALT text (up to %s images/month)', 'beepbeep-ai-alt-text-generator'), growthLimit.toLocaleString());
+        return sprintf(__('Enable Autopilot (up to %s images/month)', 'beepbeep-ai-alt-text-generator'), growthLimit.toLocaleString());
     }
 
     function resolveCreditsLimitFallback() {
@@ -16526,13 +16559,13 @@
             panel.innerHTML =
                 '<hr class="bbai-all-clear-section-divider" aria-hidden="true" />' +
                 '<p class="bbai-li-free-plan-upsell__note" data-bbai-li-free-upsell="1">' +
-                escapeHtml(__('New uploads won’t be optimised automatically.', 'beepbeep-ai-alt-text-generator')) +
+                escapeHtml(__('New uploads need Autopilot to stay covered.', 'beepbeep-ai-alt-text-generator')) +
                 '</p>' +
                 '<div class="bbai-all-clear-upgrade__panel">' +
                 '<span class="bbai-all-clear-upgrade__icon" aria-hidden="true">⚡</span>' +
                 '<div class="bbai-all-clear-upgrade__copy">' +
                 '<p class="bbai-all-clear-upgrade__title">' +
-                escapeHtml(__('Automate future uploads', 'beepbeep-ai-alt-text-generator')) +
+                escapeHtml(__('Enable Autopilot', 'beepbeep-ai-alt-text-generator')) +
                 '</p>' +
                 '<p class="bbai-all-clear-upgrade__desc">' +
                 escapeHtml(__('Automatically generate ALT text for new media uploads.', 'beepbeep-ai-alt-text-generator')) +
@@ -16544,7 +16577,7 @@
                 '</button>' +
                 '</div>' +
                 '<p class="bbai-all-clear-upgrade__nudge">' +
-                escapeHtml(__('Keep your library optimised as you upload new images.', 'beepbeep-ai-alt-text-generator')) +
+                escapeHtml(__('Use Autopilot as you upload new images.', 'beepbeep-ai-alt-text-generator')) +
                 '</p>';
 
             if (creditUsage && creditUsage.parentNode === actionBlock) {

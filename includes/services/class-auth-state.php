@@ -31,29 +31,6 @@ class Auth_State {
         $is_authenticated = false;
         $has_license = false;
 
-        try {
-            $is_authenticated = $api_client->is_authenticated();
-            $has_license = $api_client->has_active_license();
-		} catch (\Exception $e) {
-			\bbai_debug_log(
-				'Auth_State authentication check failed',
-				[
-					'error' => $e->getMessage(),
-				]
-			);
-            $is_authenticated = false;
-            $has_license = false;
-		} catch (\Error $e) {
-			\bbai_debug_log(
-				'Auth_State authentication fatal error',
-				[
-					'error' => $e->getMessage(),
-				]
-			);
-            $is_authenticated = false;
-            $has_license = false;
-        }
-
         $stored_token = get_option('beepbeepai_jwt_token', '');
         $legacy_token = get_option('opptibbai_jwt_token', '');
         $has_stored_token = !empty($stored_token) || !empty($legacy_token);
@@ -68,10 +45,34 @@ class Auth_State {
         }
         $has_stored_license = !empty($stored_license);
 
+        try {
+            $has_license = $api_client->has_active_license();
+        } catch (\Exception $e) {
+            \bbai_debug_log(
+                'Auth_State license check failed',
+                [
+                    'error' => $e->getMessage(),
+                ]
+            );
+            $has_license = false;
+        } catch (\Error $e) {
+            \bbai_debug_log(
+                'Auth_State license fatal error',
+                [
+                    'error' => $e->getMessage(),
+                ]
+            );
+            $has_license = false;
+        }
+
         // If we have a stored license, treat it as active for gating UI.
         if (!$has_license && $has_stored_license) {
             $has_license = true;
         }
+
+        // First paint should never block on a remote token validation request.
+        // Action endpoints still validate credentials before performing work.
+        $is_authenticated = $has_license || $has_stored_token;
 
         $has_connected_account = $is_authenticated || $has_license || $has_stored_token || $has_stored_license;
 

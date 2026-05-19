@@ -209,11 +209,12 @@ class Usage_Helper {
     /**
      * Fetch usage stats, preferring live API when a connected account exists.
      *
-     * @param  object $api_client           API client instance.
-     * @param  bool   $has_connected_account Whether the site is connected to an account/license.
+     * @param  object $api_client             API client instance.
+     * @param  bool   $has_connected_account  Whether the site is connected to an account/license.
+     * @param  bool   $force_refresh          Whether to bypass the local usage cache.
      * @return array
      */
-    public static function get_usage($api_client, bool $has_connected_account = false): array {
+    public static function get_usage($api_client, bool $has_connected_account = false, bool $force_refresh = false): array {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 
         // No connected SaaS account: always use local Trial_Quota for credits. Otherwise a stale JWT
@@ -228,9 +229,12 @@ class Usage_Helper {
         $usage_stats = Usage_Tracker::get_local_usage_snapshot();
         $can_fetch = false;
 
+        if ( $has_connected_account && ! $force_refresh && false !== get_transient( Usage_Tracker::CACHE_KEY ) ) {
+            return $usage_stats;
+        }
+
         try {
             $can_fetch = $has_connected_account
-                || (is_object($api_client) && method_exists($api_client, 'is_authenticated') && $api_client->is_authenticated())
                 || (is_object($api_client) && method_exists($api_client, 'has_active_license') && $api_client->has_active_license());
 
             if ($can_fetch) {

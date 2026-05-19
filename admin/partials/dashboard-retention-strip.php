@@ -37,12 +37,17 @@ $bbai_rs_render_attrs = static function (array $action): string {
 $bbai_rs_primary = $bbai_rs['primary'] ?? [];
 $bbai_rs_secondary = $bbai_rs['secondary'] ?? [];
 $bbai_rs_pp = (int) ($bbai_rs['progress_pct'] ?? 0);
+$bbai_rs_progress_tone = isset($bbai_rs['progress_tone']) ? sanitize_key((string) $bbai_rs['progress_tone']) : 'complete';
+if (!in_array($bbai_rs_progress_tone, ['danger', 'warning', 'complete'], true)) {
+    $bbai_rs_progress_tone = 'complete';
+}
 ?>
 
 <section
     class="bbai-status-strip bbai-retention-strip"
     data-bbai-retention-strip="1"
     data-bbai-surface="status-strip"
+    data-progress-tone="<?php echo esc_attr($bbai_rs_progress_tone); ?>"
     data-bbai-retention-trigger="<?php echo esc_attr($bbai_rs_trigger); ?>"
     data-bbai-telemetry-retention="dashboard"
     data-bbai-retention-telemetry="<?php echo esc_attr(wp_json_encode($bbai_rs_tel)); ?>"

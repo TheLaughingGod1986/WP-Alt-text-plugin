@@ -50,7 +50,9 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$properties = self::sanitize_properties( $properties );
+		$properties        = self::sanitize_properties( $properties );
+		$is_client_batched = ! empty( $properties['_bbai_client_batched'] );
+		unset( $properties['_bbai_client_batched'] );
 
 		$envelope = [
 			'event'           => $event_name,
@@ -73,6 +75,26 @@ class BBAI_Telemetry {
 
 		if ( apply_filters( 'bbai_telemetry_persist_ring', true ) ) {
 			self::push_ring( $envelope );
+		}
+
+		if ( ! $is_client_batched && 'alt_generated' !== $event_name ) {
+			$distinct_id = self::resolve_posthog_distinct_id( $properties );
+			if ( '' !== $distinct_id ) {
+				self::capture_posthog_event(
+					$event_name,
+					$distinct_id,
+					array_merge(
+						[
+							'source'         => 'server',
+							'page'           => $envelope['page'],
+							'plan_type'      => $envelope['plan_type'],
+							'plugin_version' => $envelope['plugin_version'],
+							'site_id'        => $envelope['site_id'],
+						],
+						$properties
+					)
+				);
+			}
 		}
 	}
 
@@ -185,6 +207,31 @@ class BBAI_Telemetry {
 				'data_format' => 'body',
 			]
 		);
+	}
+
+	/**
+	 * Resolve a stable, privacy-safe server-side PostHog distinct id.
+	 *
+	 * @param array<string,mixed> $properties Sanitized event properties.
+	 */
+	private static function resolve_posthog_distinct_id( array $properties = [] ): string {
+		foreach ( [ 'account_id', 'user_id', 'site_id', 'site_hash' ] as $key ) {
+			if ( empty( $properties[ $key ] ) || ! is_scalar( $properties[ $key ] ) ) {
+				continue;
+			}
+
+			$value = sanitize_text_field( (string) $properties[ $key ] );
+			if ( '' !== $value ) {
+				return $value;
+			}
+		}
+
+		$site_id = self::resolve_site_id();
+		if ( '' !== $site_id ) {
+			return hash( 'sha256', $site_id );
+		}
+
+		return hash( 'sha256', home_url( '/' ) );
 	}
 
 	/**

@@ -41,7 +41,16 @@
         target_plan: '',
         at: 0
     };
-    var posthogAllowlist = {
+    var posthogDenylist = {};
+    var delegatedActionTelemetryBound = false;
+    var delegatedActionDedup = {
+        key: '',
+        at: 0
+    };
+
+    // Historical event catalog. PostHog forwarding is now denylist-based below so
+    // newly added sanitized plugin events are not silently dropped.
+    var posthogEventCatalog = {
         plugin_opened: true,
         dashboard_viewed: true,
         guest_dashboard_viewed: true,
@@ -168,6 +177,10 @@
             // Fail open if Set is unavailable.
         }
         track(eventName, props || {});
+    }
+
+    function shouldSendToPostHog(eventName) {
+        return !!eventName && /^[a-z0-9_]{1,80}$/.test(eventName) && !posthogDenylist[eventName];
     }
 
     function getAnalyticsContext() {
@@ -805,6 +818,91 @@
         return cleanupProps(props);
     }
 
+    function getDelegatedActionNode(target) {
+        if (!target || typeof target.closest !== 'function') {
+            return null;
+        }
+
+        return target.closest([
+            '[data-bbai-analytics-event]',
+            '[data-bbai-telemetry-event]',
+            '[data-bbai-event]',
+            '[data-bbai-navigation]',
+            '[data-bbai-action]',
+            '[data-action]',
+            '[data-upgrade-trigger="true"]'
+        ].join(','));
+    }
+
+    function getDelegatedActionName(node) {
+        if (!node || typeof node.getAttribute !== 'function') {
+            return '';
+        }
+
+        return readString(
+            node.getAttribute('data-bbai-action') ||
+            node.getAttribute('data-action') ||
+            node.getAttribute('data-bbai-navigation') ||
+            node.getAttribute('data-upgrade-trigger') ||
+            ''
+        ).replace(/\s+/g, '_').replace(/-/g, '_').toLowerCase().slice(0, 80);
+    }
+
+    function bindDelegatedActionTelemetry() {
+        if (delegatedActionTelemetryBound || !document.addEventListener) {
+            return;
+        }
+
+        delegatedActionTelemetryBound = true;
+        document.addEventListener('click', function(event) {
+            var node = getDelegatedActionNode(event.target);
+            var actionName;
+            var explicitEvent;
+            var dedupeKey;
+            var now;
+
+            if (!node) {
+                return;
+            }
+
+            actionName = getDelegatedActionName(node);
+            explicitEvent = normalizeEventName(
+                node.getAttribute('data-bbai-analytics-event') ||
+                node.getAttribute('data-bbai-telemetry-event') ||
+                node.getAttribute('data-bbai-event') ||
+                ''
+            );
+
+            if (!actionName && !explicitEvent) {
+                return;
+            }
+
+            dedupeKey = [
+                actionName || explicitEvent,
+                getButtonLocation(node),
+                getButtonText(node)
+            ].join('|');
+            now = Date.now();
+            if (delegatedActionDedup.key === dedupeKey && (now - delegatedActionDedup.at) < 500) {
+                return;
+            }
+            delegatedActionDedup.key = dedupeKey;
+            delegatedActionDedup.at = now;
+
+            track('plugin_action_clicked', buildCtaProps(node, {
+                action: actionName || explicitEvent,
+                action_source: 'delegated_action_capture'
+            }));
+
+            if (explicitEvent && explicitEvent !== 'plugin_action_clicked') {
+                track(explicitEvent, buildCtaProps(node, {
+                    action: actionName,
+                    action_source: 'delegated_explicit_event'
+                }));
+            }
+        }, true);
+    }
+
     function buildGenerationDefaults(props) {
         var payload = props || {};
         var now = Date.now();
@@ -1202,7 +1300,7 @@
         if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
             window.console.debug('[BBAI analytics] ' + eventName, sanitizeAnalyticsPayload(props));
         }
-        if (posthogAllowlist[eventName]) {
+        if (shouldSendToPostHog(eventName)) {
             bbaiTrack(eventName, buildPostHogProps(props));
         }
         queue.push({ event: eventName, properties: sanitizeAnalyticsPayload(props) });
@@ -1216,7 +1314,11 @@
         if (flushTimer) {
             return;
         }
-        flushTimer = window.setTimeout(flushNow, 1200);
+        var delay = parseInt(cfg.flushDelayMs, 10);
+        if (isNaN(delay) || delay < 1000) {
+            delay = 6000;
+        }
+        flushTimer = window.setTimeout(flushNow, delay);
     }
 
     function flushNow() {
@@ -1947,6 +2049,7 @@
             // ignore
         }
         sendPageView();
+        bindDelegatedActionTelemetry();
         bindNavCapture();
         bindUpgradeUi();
         bindLibraryFilters();
