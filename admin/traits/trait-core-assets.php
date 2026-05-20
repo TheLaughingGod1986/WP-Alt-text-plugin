@@ -665,6 +665,23 @@ JS,
 			$asset_version( $command_hero_host_css, '1.4.7' )
 		);
 
+		// nAi redesign — load Geist via Google Fonts + the scoped dashboard styles.
+		if ( apply_filters( 'bbai_use_nai_dashboard', true ) ) {
+			wp_enqueue_style(
+				'bbai-nai-geist',
+				'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap',
+				array(),
+				null
+			);
+			$nai_dashboard_css = 'assets/css/nai-dashboard.css';
+			wp_enqueue_style(
+				'bbai-nai-dashboard',
+				$base_url . $nai_dashboard_css,
+				array( 'bbai-nai-geist' ),
+				$asset_version( $nai_dashboard_css, '1.0.0' )
+			);
+		}
+
 		$filter_group_css = 'assets/css/features/dashboard/filter-group.css';
 		wp_enqueue_style(
 			'bbai-filter-group',

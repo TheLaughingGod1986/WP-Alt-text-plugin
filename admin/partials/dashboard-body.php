@@ -1283,8 +1283,16 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 	>
 		<div id="bbai-limit-state-root" class="bbai-limit-state-root" hidden></div>
 		<?php
-		$bbai_li_page_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-page.php';
-		if ( is_readable( $bbai_li_page_partial ) ) {
+		// nAi redesign: the connected dashboard uses the Linear/Vercel-inspired
+		// surface. Fall back to the legacy logged-in page if the new partial
+		// is missing or the filter opts out.
+		$bbai_nai_dashboard_enabled = apply_filters( 'bbai_use_nai_dashboard', true );
+		$bbai_nai_partial           = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-dashboard.php';
+		$bbai_li_page_partial       = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-page.php';
+
+		if ( $bbai_nai_dashboard_enabled && is_readable( $bbai_nai_partial ) ) {
+			require $bbai_nai_partial;
+		} elseif ( is_readable( $bbai_li_page_partial ) ) {
 			if ( isset( $this ) && is_object( $this ) ) {
 				require $bbai_li_page_partial;
 			} else {
