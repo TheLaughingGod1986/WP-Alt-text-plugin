@@ -2522,12 +2522,9 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard .bbai-command-a
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
-    /* nAi Dashboard: two cards side-by-side; left card is donut visualisation,
-       right card holds headline + CTAs + automation + credit usage. */
-    grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: 24px;
-    min-height: 0;
-    align-items: stretch;
+    min-height: 360px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
@@ -2539,11 +2536,10 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    height: auto;
-    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    height: 360px;
+    min-height: 360px;
     padding: 24px;
 }
 
@@ -2588,10 +2584,8 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__sub-label {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
-    /* nAi Dashboard: right card now contains intro + actions + activation +
-       monetisation so it grows to fit content rather than locking to 360px. */
-    height: auto;
-    min-height: 0;
+    height: 360px;
+    min-height: 360px;
     padding: 24px;
     gap: 0;
 }
@@ -5877,35 +5871,15 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-credit-growth-link {
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-credit-growth-link {
-    /*
-     * nAi Dashboard refinement: render the upgrade-to-automate link as the
-     * shared outlined pill (matches the design mock), not a blue text link.
-     * The shared pill rules above already set the look — keep the override
-     * minimal so the pill sits flush against the credit usage block.
-     */
-    margin-top: 10px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #2563eb !important;
+    font-size: 12.5px !important;
+    line-height: 1.35 !important;
     white-space: normal !important;
-    line-height: 1.3 !important;
-    padding: 6px 12px !important;
-    min-height: 30px !important;
-    text-align: center !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-growth-link {
-    color: #475569 !important;
-    font-weight: 650 !important;
-    text-decoration: none !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-growth-link:hover,
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-credit-growth-link:focus {
-    color: #0f172a !important;
-    text-decoration: none !important;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-credit-helper--growth {
-    margin-top: 0 !important;
-    text-align: center !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-hero-review-inline-link:hover,

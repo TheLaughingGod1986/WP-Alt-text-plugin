@@ -114,47 +114,55 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   LEFT CARD — DONUT VISUALISATION (nAi Dashboard layout)
-   Vertical stack: donut visualisation on top, then a soft divider, then the
-   status summary + workflow flow underneath. Headline + CTAs live in the
-   right card so this panel reads as a single "status at a glance" surface.
+   LEFT CARD — HORIZONTAL LAYOUT
+   Converts the donut card from a narrow stacked card to a wide two-column card:
+   left column = donut ring, right column = title + CTAs + status counts.
 ───────────────────────────────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    gap: 14px !important;
-    padding: 24px !important;
+    display: grid !important;
+    grid-template-columns: 192px minmax(0, 1fr);
+    column-gap: 24px;
+    row-gap: 0;
+    align-items: start;
+    padding: 20px 24px !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-col {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut .bbai-li-donut-context {
-    /* Soft divider above the status + flow section. */
-    padding-top: 14px;
-    border-top: 1px solid rgba(226, 232, 240, 0.95);
-    width: 100%;
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 0;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col .bbai-li-card-section--intro {
+    padding: 0;
+    margin-bottom: 12px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col .bbai-li-card-section--actions {
+    padding: 0;
+    margin-bottom: 12px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
-    width: 178px;
-    height: 178px;
-    margin-bottom: 4px;
+    width: 168px;
+    height: 168px;
+    margin-bottom: 3px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner {
-    inset: 20px;
+    inset: 18px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
-    gap: 6px;
+    gap: 5px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-card-meta-row {
@@ -163,23 +171,12 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-card-meta-row {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   RIGHT CONTENT CARD (nAi Dashboard layout)
-   Holds intro (badge + headline + support), actions (primary + secondary CTAs),
-   automation panel, and credit usage — the actionable + monetisation surface.
+   RIGHT CONTENT CARD
+   Reduce internal vertical rhythm so content feels grouped, not drifting.
 ───────────────────────────────────────────────────────────────────────────── */
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
-    padding: 20px 24px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-li-card-section--intro {
-    padding: 0;
-    margin: 0 0 12px;
-}
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-li-card-section--actions {
-    padding: 0;
-    margin: 0 0 12px;
+    padding: 18px 22px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-state-badge {
@@ -192,7 +189,7 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-li-support {
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-action-block {
     margin-top: 12px;
-    max-width: 100%;
+    max-width: 500px;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-li-card-section--spaced {
