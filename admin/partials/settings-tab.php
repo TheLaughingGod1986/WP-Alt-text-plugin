@@ -271,6 +271,19 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 			<!-- Settings Page -->
 			<div class="bbai-container bbai-settings-page">
 				<?php
+				// nAi redesign — surface the design-language summary above the
+				// legacy settings form. Form handling/data remain entirely on
+				// the existing form below; this is presentation-only.
+				$bbai_nai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-settings.php';
+				if (
+					apply_filters( 'bbai_use_nai_dashboard', true )
+					&& 'general' === (string) $bbai_settings_section
+					&& is_readable( $bbai_nai_settings_partial )
+				) {
+					require $bbai_nai_settings_partial;
+				}
+				?>
+				<?php
 					// Pull fresh usage from backend to avoid stale cache in Settings
 				if ( isset( $this->api_client ) ) {
 					$bbai_live = $this->api_client->get_usage();
