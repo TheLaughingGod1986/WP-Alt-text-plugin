@@ -4,7 +4,8 @@
  */
 import { test, expect } from '@playwright/test';
 
-const BASE = 'http://localhost:8888';
+// Skips when BBAI_E2E_BASE_URL is unset (default clone / CI without WP).
+const BASE = process.env.BBAI_E2E_BASE_URL || 'http://localhost:8888';
 const DASHBOARD = `${BASE}/wp-admin/admin.php?page=bbai`;
 
 async function wpLogin(page: any) {
@@ -16,6 +17,7 @@ async function wpLogin(page: any) {
 }
 
 test('after sign-out the exhausted hero panel is shown', async ({ page }) => {
+  test.skip(!process.env.BBAI_E2E_BASE_URL, 'Set BBAI_E2E_BASE_URL to your local WP base (no trailing slash)');
   // ── Step 1: log into wp-admin ──────────────────────────────────────────
   await wpLogin(page);
 

@@ -208,6 +208,8 @@ async function expectDashboardCreditsInRoot(page: Page, creditsDisplay: string) 
 test.describe('Dashboard truth-driven UI', () => {
   test.describe.configure({ mode: 'serial' });
 
+  test.skip(!process.env.BBAI_E2E_BASE_URL, 'Set BBAI_E2E_BASE_URL to your local WP base (no trailing slash)');
+
   test.beforeEach(() => {
     resetDashboardTruthFixture();
   });

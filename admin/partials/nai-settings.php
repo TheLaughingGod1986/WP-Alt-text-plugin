@@ -19,14 +19,18 @@ if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::class, 
 }
 
 $nai_set_options = is_array( get_option( 'bbai_options', array() ) ) ? get_option( 'bbai_options', array() ) : array();
-$nai_set_plan    = function_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::get_plan_data' )
+$nai_set_plan    = class_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers' )
 	? \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::get_plan_data()
 	: array();
 $nai_set_is_pro  = ! empty( $nai_set_plan['is_pro'] ) || ! empty( $nai_set_plan['is_agency'] );
 
-$nai_set_usage    = isset( $this, $this->api_client ) && is_object( $this->api_client )
-	? \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $this->api_client, true )
+$nai_set_api_client = isset( $this, $this->api_client ) && is_object( $this->api_client ) ? $this->api_client : null;
+$nai_set_usage      = class_exists( '\BeepBeepAI\AltTextGenerator\Services\Usage_Helper' )
+	? \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $nai_set_api_client, true )
 	: array();
+if ( ! is_array( $nai_set_usage ) ) {
+	$nai_set_usage = array();
+}
 $nai_set_used     = max( 0, (int) ( $nai_set_usage['used'] ?? $nai_set_usage['credits_used'] ?? 0 ) );
 $nai_set_limit    = max( 1, (int) ( $nai_set_usage['limit'] ?? $nai_set_usage['credits_total'] ?? 50 ) );
 $nai_set_remain   = max( 0, $nai_set_limit - $nai_set_used );
