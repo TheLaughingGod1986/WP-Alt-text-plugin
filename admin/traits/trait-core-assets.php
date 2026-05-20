@@ -680,6 +680,14 @@ JS,
 				array( 'bbai-nai-geist' ),
 				$asset_version( $nai_dashboard_css, '1.0.0' )
 			);
+			// Mark the admin body so the modal overlay rules in the stylesheet
+			// scope correctly (body.nai-design-active #bbai-upgrade-modal …).
+			add_filter(
+				'admin_body_class',
+				static function ( $classes ) {
+					return trim( (string) $classes ) . ' nai-design-active';
+				}
+			);
 		}
 
 		$filter_group_css = 'assets/css/features/dashboard/filter-group.css';

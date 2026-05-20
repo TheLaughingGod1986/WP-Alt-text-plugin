@@ -1209,3 +1209,49 @@
 	from { transform: scale(0.96); opacity: 0; }
 	to   { transform: scale(1);    opacity: 1; }
 }
+
+/* ==========================================================================
+   Upgrade modal — apply nAi design tokens to the existing #bbai-upgrade-modal
+   without disturbing its working DOM. Scoped to body.nai-design-active so the
+   overlay only loads when the redesign filter is on.
+   ========================================================================== */
+body.nai-design-active #bbai-upgrade-modal {
+	font-family: var(--nai-font-sans, "Geist", system-ui, -apple-system, sans-serif);
+}
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__content {
+	border-radius: 20px;
+	border: 1px solid #E6EAF0;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 20px 40px -12px rgba(15, 23, 42, 0.18);
+	background: #FFFFFF;
+	overflow: hidden;
+}
+body.nai-design-active #bbai-upgrade-modal,
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__backdrop {
+	background: rgba(15, 23, 42, 0.45);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+}
+body.nai-design-active #bbai-upgrade-modal-title {
+	font-size: 24px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	color: #0F172A;
+	line-height: 1.2;
+}
+body.nai-design-active #bbai-upgrade-modal-description,
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__subtitle {
+	color: #475569;
+	font-size: 13.5px;
+	line-height: 1.55;
+}
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__section-label {
+	font-size: 10.5px;
+	color: #64748B;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__footer-link {
+	color: #1D4ED8;
+	font-weight: 600;
+}

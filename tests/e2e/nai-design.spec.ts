@@ -160,4 +160,45 @@ test.describe('nAi design — static render', () => {
     // No progress bar on Pro (renders only the pulse-dot status line).
     await expect(page.locator('.nai-plan-card .nai-progress__bar')).toHaveCount(0);
   });
+
+  test('library renders filter pills, coverage strip, and rows with preserved data-action selectors', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+
+    await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=library&plan=free&state=mid`);
+
+    // No PHP errors leaked through.
+    const body = await page.locator('body').innerText();
+    expect(body.toLowerCase()).not.toContain('fatal error');
+    expect(body.toLowerCase()).not.toContain('parse error');
+    expect(body).not.toContain('Notice:');
+    expect(body).not.toContain('Warning:');
+
+    // Wrapper present.
+    await expect(page.locator('[data-nai-screen="library"]')).toBeVisible();
+    // Coverage strip eyebrow + four filter pills (All / Needs ALT / Low quality / Optimised).
+    await expect(page.locator('.nai-eyebrow', { hasText: /Library coverage/i })).toBeVisible();
+    await expect(page.locator('.nai-filter-pill')).toHaveCount(4);
+    await expect(page.locator('.nai-filter-pill--active', { hasText: /All/i })).toBeVisible();
+
+    // Sample rows render and preserve the data-action attributes the legacy JS expects.
+    await expect(page.locator('.nai-lib-row')).toHaveCount(6);
+    await expect(page.locator('[data-action="regenerate-single"]').first()).toBeVisible();
+    await expect(page.locator('[data-action="edit-alt-inline"]').first()).toBeVisible();
+    await expect(page.locator('[data-action="generate-selected"]')).toBeVisible();
+    await expect(page.locator('[data-action="regenerate-selected"]')).toBeVisible();
+    await expect(page.locator('[data-action="rescan-media-library"]')).toBeVisible();
+
+    // Free variant carries the Pro upsell strip at the bottom.
+    await expect(page.locator('.nai-btn--pro', { hasText: /Upgrade to Pro/i })).toBeVisible();
+  });
+
+  test('library Pro variant drops the upsell strip', async ({ page }) => {
+    await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=library&plan=pro&state=near`);
+    await expect(page.locator('[data-nai-screen="library"]')).toBeVisible();
+    // Pro should NOT see the "Upgrade to Pro" CTA at the bottom of the library.
+    await expect(page.locator('.nai-screen--library .nai-btn--pro')).toHaveCount(0);
+  });
 });

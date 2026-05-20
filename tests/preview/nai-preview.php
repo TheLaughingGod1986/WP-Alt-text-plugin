@@ -121,6 +121,17 @@ function add_query_arg( ...$args ) {
 }
 function sanitize_email( $s ) { return filter_var( (string) $s, FILTER_SANITIZE_EMAIL ); }
 function sanitize_key( $s ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $s ) ); }
+function wp_get_attachment_image_src( $id, $size = 'thumbnail' ) { return false; }
+function get_attached_file( $id ) { return false; }
+function wp_get_attachment_image_url( $id, $size = 'full' ) { return false; }
+function wp_get_attachment_metadata( $id ) { return array(); }
+function wp_html_excerpt( $str, $count, $more = '' ) {
+	$s = (string) $str;
+	return strlen( $s ) > $count ? substr( $s, 0, $count ) . $more : $s;
+}
+function date_i18n( $format, $ts = null ) { return date( $format, $ts ?: time() ); }
+function size_format( $bytes ) { return number_format( (float) $bytes / 1024, 1 ) . ' KB'; }
+function absint( $v ) { return abs( (int) $v ); }
 
 $css_href = '/assets/css/nai-dashboard.css';
 ?><!DOCTYPE html>
@@ -142,6 +153,42 @@ switch ( $screen ) {
 		break;
 	case 'settings':
 		require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-settings.php';
+		break;
+	case 'library':
+		// Library partial expects locals from library-tab.php; provide a
+		// minimal sample dataset so the preview can render in isolation.
+		$bbai_cov_total        = $s['total'];
+		$bbai_cov_optimized    = $s['optimised'];
+		$bbai_cov_needs_review = $s['weak'];
+		$bbai_cov_missing      = $s['missing'];
+		$bbai_cov_opt_pct      = $s['coverage'];
+		$bbai_total_images     = $s['total'];
+		$bbai_is_pro           = ( 'pro' === $plan );
+		$bbai_limit_reached_state  = false;
+		$bbai_default_review_filter = isset( $_GET['filter'] ) ? sanitize_key( $_GET['filter'] ) : 'all';
+		$bbai_current_page     = 1;
+		$bbai_total_pages      = 1;
+		$bbai_all_images       = array();
+		$bbai_library_row_states = array();
+		// Fabricate a handful of mock image rows for the preview.
+		$nai_preview_mock = array(
+			array( 'name' => 'hero-spring-collection.jpg', 'status' => 'missing'   ),
+			array( 'name' => 'team-portrait-2026.jpg',     'status' => 'weak'      ),
+			array( 'name' => 'blog-cover-seo-guide.png',   'status' => 'optimized' ),
+			array( 'name' => 'product-shot-coffee-04.jpg', 'status' => 'missing'   ),
+			array( 'name' => 'testimonial-jane-d.jpg',     'status' => 'weak'      ),
+			array( 'name' => 'feature-launch-2026.jpg',    'status' => 'optimized' ),
+		);
+		foreach ( $nai_preview_mock as $i => $m ) {
+			$row = new stdClass();
+			$row->ID            = 1000 + $i;
+			$row->post_title    = $m['name'];
+			$row->post_modified = '2026-05-15 09:30:00';
+			$row->alt_text      = 'missing' === $m['status'] ? '' : 'A short sample description';
+			$bbai_all_images[]  = $row;
+			$bbai_library_row_states[ $i ] = array( 'status' => $m['status'] );
+		}
+		require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-library.php';
 		break;
 	default:
 		require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-dashboard.php';
