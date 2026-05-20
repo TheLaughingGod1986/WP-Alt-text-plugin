@@ -1937,6 +1937,17 @@ class Core {
 				array( $this, 'render_settings_page' )
 			);
 
+			if ( apply_filters( 'bbai_use_nai_dashboard', true ) ) {
+				add_submenu_page(
+					self::MENU_SLUG_DASHBOARD,
+					__( 'Autopilot', 'beepbeep-ai-alt-text-generator' ),
+					__( 'Autopilot', 'beepbeep-ai-alt-text-generator' ),
+					$cap,
+					'bbai-autopilot',
+					array( $this, 'render_settings_page' )
+				);
+			}
+
 			add_submenu_page(
 				'bbai',
 				__( 'Analytics', 'beepbeep-ai-alt-text-generator' ),
@@ -2768,6 +2779,17 @@ class Core {
 				'usage'     => __( 'Usage', 'beepbeep-ai-alt-text-generator' ),
 				'settings'  => __( 'Settings', 'beepbeep-ai-alt-text-generator' ),
 			);
+			if ( apply_filters( 'bbai_use_nai_dashboard', true ) ) {
+				// Insert Autopilot after Library to mirror the simplified IA.
+				$bbai_tabs = array(
+					'dashboard' => $bbai_tabs['dashboard'],
+					'library'   => $bbai_tabs['library'],
+					'autopilot' => __( 'Autopilot', 'beepbeep-ai-alt-text-generator' ),
+					'analytics' => $bbai_tabs['analytics'],
+					'usage'     => $bbai_tabs['usage'],
+					'settings'  => $bbai_tabs['settings'],
+				);
+			}
 
 			$bbai_can_show_debug_tab = $this->can_show_debug_logs_tab();
 			$bbai_allowed_tabs       = $bbai_tabs + array(
@@ -2796,6 +2818,7 @@ class Core {
 			$bbai_page_to_tab = array(
 				'bbai'                 => 'dashboard',
 				'bbai-library'         => 'library',
+				'bbai-autopilot'       => 'autopilot',
 				'bbai-analytics'       => 'analytics',
 				'bbai-credit-usage'    => 'usage',
 				'bbai-guide'           => 'help',
@@ -2808,6 +2831,11 @@ class Core {
 				'credit-usage' => 'usage',
 				'guide'        => 'help',
 			);
+
+			// Autopilot is part of the nAi redesign; allow it through the gate.
+			if ( apply_filters( 'bbai_use_nai_dashboard', true ) ) {
+				$bbai_allowed_tabs['autopilot'] = __( 'Autopilot', 'beepbeep-ai-alt-text-generator' );
+			}
 
 				// Determine current tab from URL
 	            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
@@ -2844,6 +2872,7 @@ class Core {
 			$bbai_active_nav_map = array(
 				'dashboard'       => 'dashboard',
 				'library'         => 'library',
+				'autopilot'       => 'autopilot',
 				'analytics'       => 'analytics',
 				'usage'           => 'usage',
 				'settings'        => 'settings',
@@ -2915,6 +2944,7 @@ class Core {
 						$bbai_tab_to_page = array(
 							'dashboard' => 'bbai',
 							'library'   => 'bbai-library',
+							'autopilot' => 'bbai-autopilot',
 							'analytics' => 'bbai-analytics',
 							'usage'     => 'bbai-credit-usage',
 							'settings'  => 'bbai-settings',
@@ -3054,6 +3084,16 @@ class Core {
 		__( 'Library content unavailable.', 'beepbeep-ai-alt-text-generator' ),
 		$this
 	);
+	?>
+
+<?php elseif ( 'autopilot' === $bbai_tab && $bbai_has_connected_account && apply_filters( 'bbai_use_nai_dashboard', true ) ) : ?>
+	<?php
+	$bbai_nai_autopilot_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-autopilot.php';
+	if ( is_readable( $bbai_nai_autopilot_partial ) ) {
+		// Bring resolved plan flag into scope for the partial.
+		$bbai_state_is_pro_plan = ! empty( $bbai_is_pro );
+		require $bbai_nai_autopilot_partial;
+	}
 	?>
 
 <?php elseif ( 'help' === $bbai_tab || 'bbai-guide' === $bbai_page_slug ) : ?>

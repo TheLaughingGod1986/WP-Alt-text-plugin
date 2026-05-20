@@ -671,7 +671,7 @@ JS,
 				'bbai-nai-geist',
 				'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap',
 				array(),
-				null
+				'1.0.0'
 			);
 			$nai_dashboard_css = 'assets/css/nai-dashboard.css';
 			wp_enqueue_style(

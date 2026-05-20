@@ -23,18 +23,18 @@ $nai_credits_lim = max( 1, (int) ( $nai_state['creditsLimit'] ?? 1 ) );
 $nai_credits_rem = max( 0, (int) ( $nai_state['creditsRemaining'] ?? 0 ) );
 $nai_days_reset  = max( 0, (int) ( $nai_state['daysUntilReset'] ?? 0 ) );
 
-$nai_library_url       = (string) ( $nai_state['libraryUrl'] ?? '' );
-$nai_missing_url       = (string) ( $nai_state['missingLibraryUrl'] ?? $nai_library_url );
-$nai_needs_review_url  = (string) ( $nai_state['needsReviewLibraryUrl'] ?? $nai_library_url );
-$nai_settings_url      = (string) ( $nai_state['settingsUrl'] ?? '' );
-$nai_usage_url         = (string) ( $nai_state['usageUrl'] ?? '' );
+$nai_library_url      = (string) ( $nai_state['libraryUrl'] ?? '' );
+$nai_missing_url      = (string) ( $nai_state['missingLibraryUrl'] ?? $nai_library_url );
+$nai_needs_review_url = (string) ( $nai_state['needsReviewLibraryUrl'] ?? $nai_library_url );
+$nai_settings_url     = (string) ( $nai_state['settingsUrl'] ?? '' );
+$nai_usage_url        = (string) ( $nai_state['usageUrl'] ?? '' );
 
 // Ring/stage tone — early stages stay primary (calm momentum) instead of red.
 $nai_tone_class = $nai_coverage >= 90 ? 'nai-ring--ok'
 	: ( $nai_coverage >= 50 ? 'nai-ring--warn'
 	: 'nai-ring--primary' );
 
-$nai_next_milestone = min( 100, (int) ( ceil( ( $nai_coverage + 1 ) / 15 ) * 15 ) );
+$nai_next_milestone        = min( 100, (int) ( ceil( ( $nai_coverage + 1 ) / 15 ) * 15 ) );
 $nai_distance_to_milestone = max( 0, $nai_next_milestone - $nai_coverage );
 
 // Time saved estimate — ~55s per generated image.
@@ -50,16 +50,18 @@ $nai_queue_size  = min( 5, max( 0, $nai_missing + $nai_weak ) );
 $nai_show_queue  = $nai_queue_size > 0;
 $nai_queue_items = array();
 for ( $i = 0; $i < $nai_queue_size; $i++ ) {
+	/* translators: %d: queue index, used as a placeholder filename in the preview row. */
+	$nai_queue_name = sprintf( __( 'image-%d', 'beepbeep-ai-alt-text-generator' ), $i + 1 );
 	if ( $i < $nai_missing ) {
 		$nai_queue_items[] = array(
-			'name'   => sprintf( __( 'image-%d', 'beepbeep-ai-alt-text-generator' ), $i + 1 ),
+			'name'   => $nai_queue_name,
 			'signal' => __( 'Missing ALT', 'beepbeep-ai-alt-text-generator' ),
 			'tone'   => 'danger',
 			'hue'    => ( $i * 70 ) % 360,
 		);
 	} else {
 		$nai_queue_items[] = array(
-			'name'   => sprintf( __( 'image-%d', 'beepbeep-ai-alt-text-generator' ), $i + 1 ),
+			'name'   => $nai_queue_name,
 			'signal' => __( 'Needs review', 'beepbeep-ai-alt-text-generator' ),
 			'tone'   => 'warn',
 			'hue'    => ( $i * 70 ) % 360,
@@ -78,14 +80,14 @@ $nai_primary_cta_url = $nai_missing > 0 ? $nai_missing_url : ( $nai_weak > 0 ? $
  */
 $nai_icon = static function ( string $name, int $size = 16, float $stroke = 1.75 ): string {
 	$paths = array(
-		'zap'        => '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
-		'sparkles'   => '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/>',
-		'check'      => '<path d="m5 12 5 5 9-11"/>',
-		'crown'      => '<path d="m2 19 2-11 5 5 3-7 3 7 5-5 2 11H2Z"/><path d="M2 21h20"/>',
-		'upload'     => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
-		'arrow-right'=> '<path d="M5 12h14M13 5l7 7-7 7"/>',
+		'zap'         => '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
+		'sparkles'    => '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/>',
+		'check'       => '<path d="m5 12 5 5 9-11"/>',
+		'crown'       => '<path d="m2 19 2-11 5 5 3-7 3 7 5-5 2 11H2Z"/><path d="M2 21h20"/>',
+		'upload'      => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/>',
+		'arrow-right' => '<path d="M5 12h14M13 5l7 7-7 7"/>',
 	);
-	$body = $paths[ $name ] ?? '';
+	$body  = $paths[ $name ] ?? '';
 	return sprintf(
 		'<svg width="%1$d" height="%1$d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="%2$s" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">%3$s</svg>',
 		$size,
@@ -101,7 +103,7 @@ $nai_ring_radius = ( $nai_ring_size - $nai_ring_stroke ) / 2;
 $nai_ring_circ   = 2 * M_PI * $nai_ring_radius;
 $nai_ring_dash   = ( $nai_coverage / 100 ) * $nai_ring_circ;
 ?>
-<div class="nai-dashboard" data-nai-dashboard>
+<div class="nai-screen nai-screen--dashboard" data-nai-screen="dashboard">
 
 	<?php // -------- HERO: Today's pass -------- ?>
 	<?php
@@ -118,7 +120,12 @@ $nai_ring_dash   = ( $nai_coverage / 100 ) * $nai_ring_circ;
 		);
 	}
 	?>
-	<div <?php foreach ( $nai_hero_attrs as $k => $v ) { echo esc_attr( $k ) . '="' . esc_attr( $v ) . '" '; } ?>>
+	<div 
+	<?php
+	foreach ( $nai_hero_attrs as $k => $v ) {
+		echo esc_attr( $k ) . '="' . esc_attr( $v ) . '" '; }
+	?>
+	>
 		<div class="nai-hero__header">
 			<div style="min-width:0;flex:1;">
 				<div class="nai-hero__eyebrow">
