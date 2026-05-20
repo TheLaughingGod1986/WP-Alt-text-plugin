@@ -573,18 +573,24 @@ $bbai_hero_credit_bar_aria = sprintf(
 		<?php endif; ?>
 
 		<?php
-		$bbai_li_donut_cm_href  = '';
-		$bbai_li_donut_cm_label = '';
+		$bbai_li_donut_cm_href   = '';
+		$bbai_li_donut_cm_label  = '';
+		$bbai_li_donut_cm_action = '';
 		if ( in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_seg_miss > 0 ) {
 			$bbai_li_donut_cm_href  = $bbai_li_primary_cta['href'] ?? '#';
 			$bbai_li_donut_cm_label = __( 'Generate ALT text →', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'MIXED_ATTENTION' === $bbai_li_state_id && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
 			$bbai_li_donut_cm_href  = $bbai_needs_review_library_url;
 			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( 'ALL_CLEAR' === $bbai_li_state_id && ! empty( $bbai_li_primary_cta['href'] ) ) {
+			// nAi Dashboard: ALL_CLEAR shows "Add new images →" pill directly under the donut.
+			$bbai_li_donut_cm_href   = (string) $bbai_li_primary_cta['href'];
+			$bbai_li_donut_cm_label  = (string) ( $bbai_li_primary_cta['label'] ?? __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ) );
+			$bbai_li_donut_cm_action = (string) ( $bbai_li_primary_cta['action'] ?? 'navigate' );
 		}
 		?>
 		<?php if ( $bbai_li_donut_cm_href && $bbai_li_donut_cm_label ) : ?>
-		<p class="bbai-li-donut__action-wrap"><a href="<?php echo esc_url( $bbai_li_donut_cm_href ); ?>" class="bbai-li-donut__action-cm"><?php echo esc_html( $bbai_li_donut_cm_label ); ?></a></p>
+		<p class="bbai-li-donut__action-wrap"><a href="<?php echo esc_url( $bbai_li_donut_cm_href ); ?>" class="bbai-li-donut__action-cm"<?php echo $bbai_li_donut_cm_action ? ' data-action="' . esc_attr( $bbai_li_donut_cm_action ) . '"' : ''; ?>><?php echo esc_html( $bbai_li_donut_cm_label ); ?></a></p>
 		<?php endif; ?>
 
 		<div
@@ -626,7 +632,15 @@ $bbai_hero_credit_bar_aria = sprintf(
 		</div>
 		</div><!-- /.bbai-li-donut-col -->
 
-		<div class="bbai-li-hero-content-col">
+		<?php
+		/*
+		 * nAi Dashboard layout:
+		 * Donut card stacks vertically — donut on top, then status summary +
+		 * workflow flow underneath. Headline + CTAs render in the right card
+		 * below (see bbai-li-card--content) to match the two-card design.
+		 */
+		ob_start();
+		?>
 
 		<div class="bbai-li-card-section bbai-li-card-section--intro">
 		<?php if ( $bbai_li_badge ) : ?>
@@ -754,6 +768,12 @@ endif;
 		</div>
 		</div>
 
+		<?php
+		// Capture intro + actions; render them inside the right card below
+		// so the donut card stays a clean "status visualisation" panel.
+		$bbai_li_intro_actions_html = ob_get_clean();
+		?>
+
 		<div class="bbai-li-donut-context" data-bbai-li-donut-context="1">
 			<div class="bbai-status-summary" role="group" aria-label="<?php esc_attr_e( 'Status summary', 'beepbeep-ai-alt-text-generator' ); ?>">
 			<button type="button" class="bbai-status-item bbai-status-item--readout is-missing" data-bbai-dashboard-status-filter="missing" data-filter="missing" aria-label="<?php echo esc_attr( 'QUEUED' === $bbai_li_state_id ? __( 'Preview images ready to generate', 'beepbeep-ai-alt-text-generator' ) : __( 'Show images that need alt text', 'beepbeep-ai-alt-text-generator' ) ); ?>">
@@ -816,12 +836,13 @@ endif;
 			></div>
 		</div>
 
-		</div><!-- /.bbai-li-hero-content-col -->
-
 	</div>
 
-	<?php /* ── RIGHT CARD: usage + automation ─────────────────────────────── */ ?>
+	<?php /* ── RIGHT CARD: headline + CTAs + usage + automation ─────────── */ ?>
 	<div class="bbai-li-card bbai-li-card--content">
+
+		<?php /* Intro + actions moved from the donut card (nAi Dashboard layout). */ ?>
+		<?php echo $bbai_li_intro_actions_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- HTML built from escaped variables above. ?>
 
 		<div class="bbai-li-card-section bbai-li-card-section--activation" data-bbai-activation-host="1" aria-live="polite"></div>
 
