@@ -266,22 +266,21 @@ $nai_ring_dash   = ( $nai_coverage / 100 ) * $nai_ring_circ;
 					<span class="nai-health__insight-title-text"><?php esc_html_e( 'Steady improvement', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				</div>
 				<div class="nai-health__insight-body">
-					<?php
-					/* translators: 1: projection target percent, 2: weeks to reach it. */
-					$nai_proj_template = _n(
-						'At your current pace, your library could reach %1$s%% coverage in around %2$s week.',
-						'At your current pace, your library could reach %1$s%% coverage in around %2$s weeks.',
-						$nai_weeks_to_target,
-						'beepbeep-ai-alt-text-generator'
-					);
-					$nai_proj_parts = explode( '%1$s', $nai_proj_template, 2 );
-					$nai_proj_b     = isset( $nai_proj_parts[1] ) ? explode( '%2$s', $nai_proj_parts[1], 2 ) : array( '', '' );
-					echo esc_html( $nai_proj_parts[0] );
-					?>
-					<span class="nai-mono nai-tnum" style="color:var(--nai-text);font-weight:600;"><?php echo esc_html( (string) $nai_projection_target ); ?>%</span>
-					<?php echo esc_html( $nai_proj_b[0] ); ?>
-					<span class="nai-mono nai-tnum" style="color:var(--nai-text);font-weight:600;"><?php echo esc_html( (string) $nai_weeks_to_target ); ?></span>
-					<?php echo esc_html( $nai_proj_b[1] ); ?>
+					<?php if ( $nai_coverage >= 100 ) : ?>
+						<?php esc_html_e( 'Your library is fully optimised. Autopilot can keep new uploads covered automatically.', 'beepbeep-ai-alt-text-generator' ); ?>
+					<?php elseif ( $nai_coverage >= $nai_projection_target ) : ?>
+						<?php esc_html_e( "You're holding ahead of the curve. Keep the steady pace and you'll close the remaining gap shortly.", 'beepbeep-ai-alt-text-generator' ); ?>
+					<?php else : ?>
+						<?php esc_html_e( 'At your current pace, your library could reach', 'beepbeep-ai-alt-text-generator' ); ?>
+						<span class="nai-mono nai-tnum" style="color:var(--nai-text);font-weight:600;"><?php echo esc_html( (string) $nai_projection_target ); ?>%</span>
+						<?php esc_html_e( 'coverage in around', 'beepbeep-ai-alt-text-generator' ); ?>
+						<span class="nai-mono nai-tnum" style="color:var(--nai-text);font-weight:600;"><?php echo esc_html( (string) $nai_weeks_to_target ); ?></span>
+						<?php
+						echo esc_html(
+							_n( 'week.', 'weeks.', $nai_weeks_to_target, 'beepbeep-ai-alt-text-generator' )
+						);
+						?>
+					<?php endif; ?>
 				</div>
 			</div>
 
