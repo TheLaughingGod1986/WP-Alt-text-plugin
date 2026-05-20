@@ -153,7 +153,7 @@ final class Upgrade_Cta_Resolver {
 			'upgrade_target'        => 'growth',
 			'locked_labels'         => [
 				'generate_missing' => __( 'Upgrade to continue generating ALT text', 'beepbeep-ai-alt-text-generator' ),
-				'regenerate_single' => __( 'Buy more credits to regenerate ALT text', 'beepbeep-ai-alt-text-generator' ),
+				'regenerate_single' => __( 'Upgrade to continue generating', 'beepbeep-ai-alt-text-generator' ),
 				'reoptimize_all'   => __( 'Upgrade to continue improving ALT text', 'beepbeep-ai-alt-text-generator' ),
 				'default'          => $growth,
 			],
@@ -219,7 +219,7 @@ final class Upgrade_Cta_Resolver {
 			'upgrade_target'        => 'pro',
 			'locked_labels'         => [
 				'generate_missing' => $pro,
-				'regenerate_single' => __( 'Buy more credits to regenerate ALT text', 'beepbeep-ai-alt-text-generator' ),
+				'regenerate_single' => __( 'Upgrade to continue generating', 'beepbeep-ai-alt-text-generator' ),
 				'reoptimize_all'   => $pro,
 				'default'          => $pro,
 			],

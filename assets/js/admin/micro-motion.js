@@ -289,9 +289,9 @@
         var missingEnd = weakEnd + (360 * counts.missing / counts.total);
 
         donut.style.background = 'conic-gradient(' +
-            '#22c55e 0deg ' + optimizedEnd.toFixed(3) + 'deg, ' +
-            '#f59e0b ' + optimizedEnd.toFixed(3) + 'deg ' + weakEnd.toFixed(3) + 'deg, ' +
-            '#ef4444 ' + weakEnd.toFixed(3) + 'deg ' + missingEnd.toFixed(3) + 'deg, ' +
+            '#22B573 0deg ' + optimizedEnd.toFixed(3) + 'deg, ' +
+            '#D9A441 ' + optimizedEnd.toFixed(3) + 'deg ' + weakEnd.toFixed(3) + 'deg, ' +
+            '#C97A00 ' + weakEnd.toFixed(3) + 'deg ' + missingEnd.toFixed(3) + 'deg, ' +
             '#d7dee8 ' + missingEnd.toFixed(3) + 'deg 360deg)';
     }
 

@@ -302,7 +302,7 @@ class Core {
 
         $properties = [
             'account_id'          => $identity_context['account_id'] ?? '',
-            'license_key'         => $identity_context['license_key'] ?? '',
+            'license_id'          => $identity_context['license_id'] ?? '',
             'site_id'             => $identity_context['site_id'] ?? '',
             'site_hash'           => $identity_context['site_hash'] ?? '',
             'user_id'             => $identity_context['user_id'] ?? '',
@@ -315,7 +315,10 @@ class Core {
             'model'               => sanitize_text_field($model),
             'success'             => true,
             'plugin_version'      => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
-            'wordpress_user_id'   => $wordpress_user_id > 0 ? $wordpress_user_id : null,
+            'wp_version'          => get_bloginfo('version'),
+            'site_url'            => home_url('/'),
+            'is_trial'            => ! $this->is_bbai_account_authenticated(),
+            'is_internal'         => $this->is_posthog_internal_environment(),
             'is_first_generation' => $is_first_generation,
             '$insert_id'          => 'alt_generated:' . $fingerprint,
         ];

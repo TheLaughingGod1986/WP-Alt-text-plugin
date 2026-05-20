@@ -1482,10 +1482,12 @@ test.describe('Dashboard truth-driven UI', () => {
     await primary.click();
 
     await idsRequest;
+    const modal = page.locator('#bbai-bulk-progress-modal.active');
+    await expect(modal).toContainText('Queued Image #101', { timeout: 10000 });
+    await expect(modal).toContainText('Generating ALT text for Image #101', { timeout: 10000 });
     await expect(primary).not.toHaveAttribute('aria-busy', 'true');
     await bulkRequest;
 
-    const modal = page.locator('#bbai-bulk-progress-modal.active');
     const failedStart = hero.locator('.bbai-li-hero-status-line').filter({
       hasText: 'Generation could not start',
     });

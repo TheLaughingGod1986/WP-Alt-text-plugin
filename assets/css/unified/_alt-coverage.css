@@ -80,15 +80,15 @@
 }
 
 .bbai-alt-coverage-card__progress-segment--optimized {
-    background: #3b82f6;
+    background: #22b573;
 }
 
 .bbai-alt-coverage-card__progress-segment--needs-review {
-    background: #f59e0b;
+    background: #d9a441;
 }
 
 .bbai-alt-coverage-card__progress-segment--missing {
-    background: #ef4444;
+    background: #c97a00;
 }
 
 .bbai-alt-coverage-card__progress-labels {
@@ -99,9 +99,9 @@
     color: var(--bbai-text-muted);
 }
 
-.bbai-alt-coverage-card__progress-label--optimized { color: #3b82f6; }
-.bbai-alt-coverage-card__progress-label--needs-review { color: #f59e0b; }
-.bbai-alt-coverage-card__progress-label--missing { color: #ef4444; }
+.bbai-alt-coverage-card__progress-label--optimized { color: #08785c; }
+.bbai-alt-coverage-card__progress-label--needs-review { color: #7c5719; }
+.bbai-alt-coverage-card__progress-label--missing { color: #805112; }
 
 @media (max-width: 640px) {
     .bbai-alt-coverage-card__stats {
@@ -220,13 +220,13 @@
 .bbai-quality-pill--needs-review,
 .bbai-quality-pill--fair,
 .bbai-quality-pill--poor {
-    background: #fff7ed;
-    color: #ea580c;
+    background: #fff8e8;
+    color: #7c5719;
 }
 
 .bbai-quality-pill--missing {
-    background: #fee2e2;
-    color: #dc2626;
+    background: #fff7ed;
+    color: #805112;
 }
 
 /* ============================================

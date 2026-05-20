@@ -202,15 +202,42 @@ slug_dir="${stage}/beepbeep-ai-alt-text-generator"
 mkdir -p "${slug_dir}"
 
 rsync -av --delete \
-  --exclude=".git" \
-  --exclude="node_modules" \
-  --exclude=".playwright-cli" \
-  --exclude="output" \
-  --exclude="dist" \
-  --exclude="test-results" \
-  --exclude="playwright-report" \
-  --exclude=".cursor" \
-  --exclude=".claude" \
+  --exclude=".git/" \
+  --exclude=".gitattributes" \
+  --exclude=".gitignore" \
+  --exclude=".claude/" \
+  --exclude=".cursor/" \
+  --exclude=".playwright-cli/" \
+  --exclude=".playwright-mcp/" \
+  --exclude=".vscode/" \
+  --exclude=".wp-env.json" \
+  --exclude=".wporg-svn/" \
+  --exclude="AGENTS.md" \
+  --exclude="build/" \
+  --exclude="dist/" \
+  --exclude="docs/" \
+  --exclude="gitignore" \
+  --exclude="jest.config.js" \
+  --exclude="login-helper.js" \
+  --exclude="node_modules/" \
+  --exclude="output/" \
+  --exclude="output-dashboard-after.png" \
+  --exclude="output-dashboard-before.png" \
+  --exclude="output-dashboard-final.png" \
+  --exclude="package-lock.json" \
+  --exclude="package.json" \
+  --exclude="playwright-report/" \
+  --exclude="playwright.config.ts" \
+  --exclude="rescan-complete-feedback.png" \
+  --exclude="scripts/" \
+  --exclude="sync-to-wpenv.bash" \
+  --exclude="test-results/" \
+  --exclude="tests/" \
+  --exclude="wp-login.js" \
+  --exclude=".DS_Store" \
+  --exclude="*/.DS_Store" \
+  --exclude="assets/src/" \
+  --exclude="assets/img/screenshots/" \
   "${ROOT_DIR}/" "${slug_dir}/" >/dev/null
 
 (cd "${stage}" && zip -qr "${ZIP_OUT}" "beepbeep-ai-alt-text-generator")
@@ -268,4 +295,3 @@ echo "Release ready:"
 echo "- Version: ${VERSION}"
 echo "- Zip: ${ZIP_OUT}"
 echo "- Synced + verified in wp-env"
-

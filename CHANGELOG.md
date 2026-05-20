@@ -6,6 +6,16 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### Unreleased
 
+### 4.6.10 — 2026-05-20
+
+- **Changed**: Rebuilt the WordPress.org package from the latest dashboard assets so the live plugin matches the current local dashboard polish.
+- **Changed**: Refreshed bundled admin CSS and JavaScript for the credit progress, review banner, Autopilot CTA, and PostHog analytics reliability updates.
+
+### 4.6.9 — 2026-05-19
+
+- **Changed**: Improved analytics and telemetry reliability for cleaner event attribution.
+
+
 ### 4.6.8 — 2026-05-18
 
 - **Changed**: Restored the logged-in dashboard presentation and refined the review-ready status card with calmer action hierarchy, tighter progress spacing, and more balanced alignment.

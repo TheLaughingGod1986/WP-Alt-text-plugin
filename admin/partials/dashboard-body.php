@@ -162,7 +162,7 @@ $bbai_build_donut_background = static function (int $optimized, int $weak, int $
     $weak_end = max($optimized_end, min(360, $optimized_end + $weak_angle));
 
     return sprintf(
-        'conic-gradient(#22c55e 0deg %.3Fdeg, #f59e0b %.3Fdeg %.3Fdeg, #ef4444 %.3Fdeg 360deg)',
+        'conic-gradient(#22B573 0deg %.3Fdeg, #D9A441 %.3Fdeg %.3Fdeg, #C97A00 %.3Fdeg 360deg)',
         $optimized_end,
         $optimized_end,
         $weak_end,

@@ -100,6 +100,8 @@ test('PostHog bridge initializes once with privacy-safe replay and lifecycle API
   expect(result.initConfig.autocapture).toBe(false);
   expect(result.initConfig.capture_pageview).toBe(true);
   expect(result.initConfig.capture_pageleave).toBe(true);
+  expect(result.initConfig.advanced_disable_feature_flags).toBe(true);
+  expect(result.initConfig.advanced_disable_feature_flags_on_first_load).toBe(true);
   expect(result.initConfig.persistence).toBe('localStorage+cookie');
   expect(result.initConfig.disable_session_recording).toBe(false);
   expect(result.initConfig.session_recording.maskAllInputs).toBe(true);
@@ -124,7 +126,6 @@ test('PostHog bridge initializes once with privacy-safe replay and lifecycle API
     'eyJabc.def.ghi',
     'nonce-fixture',
     'license-fixture',
-    'https://example.test',
     'https://nested.example.test',
     'nested-token',
   ]) {
@@ -184,6 +185,184 @@ test('PostHog bridge dedupes repeated events and does not let capture failures t
 
   expect(result.thrown).toBe(false);
   expect(result.ctaCaptures).toBe(1);
+});
+
+test('PostHog bridge uses stable site_hash for anonymous identity and safe super properties', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as any).__captures = [];
+    (window as any).__registered = {};
+    (window as any).__identified = [];
+    (window as any).posthog = {
+      __loaded: false,
+      config: null,
+      init(_key: string, config: Record<string, unknown>) {
+        this.__loaded = true;
+        this.config = config;
+        if (typeof config.loaded === 'function') {
+          config.loaded(this);
+        }
+      },
+      capture(event: string, properties: Record<string, unknown>) {
+        (window as any).__captures.push({ event, properties });
+      },
+      register(properties: Record<string, unknown>) {
+        (window as any).__registered = { ...(window as any).__registered, ...properties };
+      },
+      identify(id: string) {
+        (window as any).__identified.push(id);
+      },
+      setPersonProperties() {},
+      startSessionRecording() {},
+    };
+    (window as any).BBAI_POSTHOG = {
+      enabled: true,
+      apiKey: 'phc_test',
+      apiHost: 'https://us.i.posthog.com',
+      replayEnabled: false,
+      context: {
+        page: 'guest_dashboard',
+        site_hash: 'raw_site_hash_fixture',
+        site_hash_sha256: 'sha_fixture',
+        site_url: 'https://example.test/',
+        plan: 'free',
+        plugin_version: '1.0.0',
+        wp_version: '6.9.4',
+        is_trial: true,
+        is_internal: true,
+        license_key: 'must-not-register',
+        email: 'person@example.com',
+        wordpress_user_id: 123,
+      },
+      identify: {
+        id: 'raw_site_hash_fixture',
+        person_properties: {
+          site_hash: 'raw_site_hash_fixture',
+          email: 'person@example.com',
+        },
+      },
+    };
+  });
+
+  await page.goto('about:blank');
+  await page.addScriptTag({ path: POSTHOG_BRIDGE });
+  await page.evaluate(() => {
+    (window as any).bbaiTrack('dashboard_viewed', {
+      license_key: 'must-not-capture',
+      email: 'person@example.com',
+      wordpress_user_id: 456,
+    });
+  });
+
+  const result = await page.evaluate(() => ({
+    registered: (window as any).__registered,
+    identified: (window as any).__identified,
+    captures: (window as any).__captures,
+  }));
+
+  expect(result.identified).toContain('raw_site_hash_fixture');
+  expect(result.registered.site_hash).toBe('raw_site_hash_fixture');
+  expect(result.registered.is_internal).toBe(true);
+  expect(result.registered.is_trial).toBe(true);
+  expect(result.registered.license_key).toBeUndefined();
+  expect(result.registered.email).toBeUndefined();
+  expect(result.registered.wordpress_user_id).toBeUndefined();
+
+  const dashboardEvent = result.captures.find((capture: any) => capture.event === 'dashboard_viewed');
+  expect(dashboardEvent.properties.site_hash).toBe('raw_site_hash_fixture');
+  expect(dashboardEvent.properties.is_internal).toBe(true);
+  expect(dashboardEvent.properties.site_url).toBe('https://example.test/');
+  expect(dashboardEvent.properties.license_key).toBeUndefined();
+  expect(dashboardEvent.properties.email).toBeUndefined();
+  expect(dashboardEvent.properties.wordpress_user_id).toBeUndefined();
+  expect(JSON.stringify(result)).not.toContain('must-not');
+  expect(JSON.stringify(result)).not.toContain('person@example.com');
+});
+
+test('PostHog bridge aliases account identity to site_hash once and prefers license_id', async ({ page }) => {
+  await page.route('https://bbai.test/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><html><body></body></html>' });
+  });
+  await page.addInitScript(() => {
+    (window as any).__aliases = [];
+    (window as any).__identified = [];
+    (window as any).posthog = {
+      __loaded: false,
+      config: null,
+      init(_key: string, config: Record<string, unknown>) {
+        this.__loaded = true;
+        this.config = config;
+        if (typeof config.loaded === 'function') {
+          config.loaded(this);
+        }
+      },
+      capture() {},
+      register() {},
+      identify(id: string) {
+        (window as any).__identified.push(id);
+      },
+      alias(aliasId: string, originalId: string) {
+        (window as any).__aliases.push({ aliasId, originalId });
+      },
+      setPersonProperties() {},
+      startSessionRecording() {},
+    };
+    (window as any).BBAI_POSTHOG = {
+      enabled: true,
+      apiKey: 'phc_test',
+      apiHost: 'https://us.i.posthog.com',
+      replayEnabled: false,
+      context: {
+        page: 'dashboard',
+        site_hash: 'raw_site_hash_fixture',
+        account_id: 'acct_fixture',
+        license_id: 'lic_fixture',
+        is_internal: false,
+      },
+      identify: {
+        id: 'lic_fixture',
+        person_properties: {
+          site_hash: 'raw_site_hash_fixture',
+          account_id: 'acct_fixture',
+          license_id: 'lic_fixture',
+        },
+      },
+    };
+  });
+
+  await page.goto('https://bbai.test/');
+  await page.evaluate(() => window.localStorage.clear());
+  await page.addScriptTag({ path: POSTHOG_BRIDGE });
+  await page.evaluate(() => {
+    document.dispatchEvent(new CustomEvent('alttext:auth-success', {
+      detail: {
+        user: {
+          id: 'acct_fixture',
+          license_id: 'lic_fixture',
+          site_hash: 'raw_site_hash_fixture',
+        },
+      },
+    }));
+    document.dispatchEvent(new CustomEvent('alttext:auth-success', {
+      detail: {
+        user: {
+          id: 'acct_fixture',
+          license_id: 'lic_fixture',
+          site_hash: 'raw_site_hash_fixture',
+        },
+      },
+    }));
+  });
+  await page.addScriptTag({ path: POSTHOG_BRIDGE });
+
+  const result = await page.evaluate(() => ({
+    aliases: (window as any).__aliases,
+    identified: (window as any).__identified,
+    guard: window.localStorage.getItem('bbai_posthog_alias_v1:raw_site_hash_fixture:lic_fixture'),
+  }));
+
+  expect(result.aliases).toEqual([{ aliasId: 'lic_fixture', originalId: 'raw_site_hash_fixture' }]);
+  expect(result.identified).toContain('lic_fixture');
+  expect(result.guard).toBe('1');
 });
 
 test('PostHog bridge does not report failed PostHog ingestion as app AJAX failures', async ({ page }) => {

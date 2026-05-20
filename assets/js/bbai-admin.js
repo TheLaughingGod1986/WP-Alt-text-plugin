@@ -1717,7 +1717,7 @@
             return __('Upgrade to continue improving ALT text', 'beepbeep-ai-alt-text-generator');
         }
         if (normalizedReason === 'regenerate_single' || normalizedReason === 'regenerate-single') {
-            return __('Buy more credits to regenerate ALT text', 'beepbeep-ai-alt-text-generator');
+            return __('Upgrade to continue generating', 'beepbeep-ai-alt-text-generator');
         }
 
         if (element && String(element.textContent || '').toLowerCase().indexOf('generate missing') !== -1) {
@@ -3426,6 +3426,8 @@
         });
         if (usage) {
             syncDashboardStateFromUsage(usage);
+            updateUsageDisplayGlobally(usage);
+            applyDailyPassDashboardState(getDailyPassCountsSnapshot(), usage);
         }
         if (isTrialExhausted) {
             syncDashboardStateRoots({
@@ -7651,6 +7653,31 @@
                 return;
             }
 
+            var $progressModal = $('#bbai-bulk-progress-modal');
+            if ($progressModal.length) {
+                $progressModal.data('source', 'generate-missing');
+                setBulkProgressImageQueue($progressModal, ids);
+                var queuedState = syncBulkProgressState($progressModal, {
+                    total: count,
+                    processed: 0,
+                    failed: 0,
+                    skipped: 0,
+                    source: 'generate-missing',
+                    activeTitle: __('Processing your images', 'beepbeep-ai-alt-text-generator'),
+                    quotaBlocked: false,
+                    quotaError: null,
+                    complete: false
+                });
+                updateBulkProgress(queuedState.current, queuedState.total);
+                appendBulkProgressImageLog(
+                    $progressModal,
+                    'processing',
+                    ids[0],
+                    '',
+                    { dedupe: true }
+                );
+            }
+
             // Queue all images; bulk progress opens after queue succeeds.
             queueImages(ids, 'bulk', { skipSchedule: true }, function(success, queued, error, processedIds, responseData) {
 	                if (success && queued > 0) {
@@ -8434,6 +8461,61 @@
         meter.classList.add(numeric >= 90 ? 'bbai-daily-meter--healthy' : (numeric >= 50 ? 'bbai-daily-meter--low' : 'bbai-daily-meter--empty'));
     }
 
+    function setDailyUsageMeterState(selector, usagePercent, remainingCredits, scope) {
+        var node = (scope || document).querySelector(selector);
+        var meter = node ? node.closest('.bbai-daily-meter') : null;
+        var pct = Math.max(0, Math.min(100, parseInt(usagePercent, 10) || 0));
+        var remaining = Math.max(0, parseInt(remainingCredits, 10) || 0);
+        if (!meter) {
+            return;
+        }
+        meter.classList.remove('bbai-daily-meter--healthy', 'bbai-daily-meter--low', 'bbai-daily-meter--empty');
+        meter.classList.add(remaining <= 0 || pct >= 100 ? 'bbai-daily-meter--empty' : (pct >= 80 ? 'bbai-daily-meter--low' : 'bbai-daily-meter--healthy'));
+    }
+
+    function setDailyStripSegments(missing, review, optimized, total, scope) {
+        var meter = (scope || document).querySelector('[data-bbai-daily-strip-meter="1"]');
+        var segments;
+        var counts;
+
+        if (!meter) {
+            return;
+        }
+
+        total = Math.max(0, parseInt(total, 10) || 0);
+        counts = {
+            missing: Math.max(0, parseInt(missing, 10) || 0),
+            review: Math.max(0, parseInt(review, 10) || 0),
+            optimised: Math.max(0, parseInt(optimized, 10) || 0)
+        };
+        if (total <= 0) {
+            total = counts.missing + counts.review + counts.optimised;
+        }
+        segments = {
+            missing: meter.querySelector('[data-bbai-daily-strip-segment="missing"]'),
+            review: meter.querySelector('[data-bbai-daily-strip-segment="review"]'),
+            optimised: meter.querySelector('[data-bbai-daily-strip-segment="optimised"]')
+        };
+
+        Object.keys(segments).forEach(function(key) {
+            var segment = segments[key];
+            var pct = total > 0 ? Math.max(0, Math.min(100, (counts[key] / total) * 100)) : 0;
+            if (segment) {
+                segment.style.width = pct.toFixed(4).replace(/\.?0+$/, '') + '%';
+            }
+        });
+
+        meter.setAttribute(
+            'aria-label',
+            sprintf(
+                __('%1$s images optimised, %2$s ready for review, %3$s missing ALT text', 'beepbeep-ai-alt-text-generator'),
+                formatDashboardNumber(counts.optimised),
+                formatDashboardNumber(counts.review),
+                formatDashboardNumber(counts.missing)
+            )
+        );
+    }
+
     function buildDailyQueueSentence(missing, review) {
         var reviewPhrase = sprintf(
             _n('%s is ready for review', '%s are ready for review', review, 'beepbeep-ai-alt-text-generator'),
@@ -8538,16 +8620,44 @@
         });
 
         primary = dailyRoot.querySelector('[data-bbai-daily-primary-cta="1"]');
+        usage = usage && typeof usage === 'object' ? usage : {};
+        used = usage.used !== undefined ? parseInt(usage.used, 10) : parseInt(dashboardRoot.getAttribute('data-bbai-credits-used') || '0', 10);
+        limit = usage.limit !== undefined ? parseInt(usage.limit, 10) : parseInt(dashboardRoot.getAttribute('data-bbai-credits-total') || '50', 10);
+        if (!isFinite(limit) || limit <= 0) {
+            limit = 50;
+        }
+        if (!isFinite(used) || used < 0) {
+            used = 0;
+        }
+        used = Math.min(limit, used);
+        remaining = usage.remaining !== undefined ? parseInt(usage.remaining, 10) : Math.max(0, limit - used);
+        if (!isFinite(remaining)) {
+            remaining = Math.max(0, limit - used);
+        }
+        remaining = Math.max(0, remaining);
+        usagePct = Math.min(100, Math.round((used / limit) * 100));
+
         if (primary) {
             primary.classList.remove('is-busy', 'is-loading', 'bbai-generate-button');
+            primary.classList.remove('bbai-daily-btn--premium-gated');
             primary.removeAttribute('aria-busy');
             primary.removeAttribute('aria-disabled');
             primary.removeAttribute('data-bbai-busy-original-html');
             primary.removeAttribute('data-bbai-busy-original-disabled');
             primary.removeAttribute('data-bbai-early-loading');
-            if (missing > 0) {
+            if (missing > 0 && remaining <= 0) {
+                primary.setAttribute('href', '#');
+                primary.setAttribute('data-action', 'show-upgrade-modal');
+                primary.setAttribute('data-bbai-li-action', 'show-upgrade-modal');
+                primary.removeAttribute('data-bbai-action');
+                primary.removeAttribute('data-bbai-generation-action');
+                primary.removeAttribute('data-busy-label');
+                primary.classList.add('bbai-daily-btn--premium-gated');
+                primary.innerHTML = '<span aria-hidden="true">🔒</span>' + escapeHtml(__('Upgrade to continue generating', 'beepbeep-ai-alt-text-generator'));
+            } else if (missing > 0) {
                 primary.setAttribute('href', '#');
                 primary.setAttribute('data-action', 'generate-missing');
+                primary.setAttribute('data-bbai-li-action', 'generate-missing');
                 primary.setAttribute('data-bbai-action', 'generate_missing');
                 primary.setAttribute('data-bbai-generation-action', '1');
                 primary.setAttribute('data-busy-label', __('Loading…', 'beepbeep-ai-alt-text-generator'));
@@ -8556,6 +8666,7 @@
             } else if (review > 0) {
                 primary.setAttribute('href', reviewUrl);
                 primary.setAttribute('data-action', 'navigate');
+                primary.setAttribute('data-bbai-li-action', 'navigate');
                 primary.removeAttribute('data-bbai-action');
                 primary.removeAttribute('data-bbai-generation-action');
                 primary.removeAttribute('data-busy-label');
@@ -8563,6 +8674,7 @@
             } else {
                 primary.setAttribute('href', uploadUrl);
                 primary.setAttribute('data-action', 'navigate');
+                primary.setAttribute('data-bbai-li-action', 'navigate');
                 primary.removeAttribute('data-bbai-action');
                 primary.removeAttribute('data-bbai-generation-action');
                 primary.removeAttribute('data-busy-label');
@@ -8592,28 +8704,11 @@
         updateDailyText('[data-bbai-daily-strip-title="1"]', complete ? __("You're 100% optimised", 'beepbeep-ai-alt-text-generator') : (focus === 'review' ? __('Review queue ready', 'beepbeep-ai-alt-text-generator') : __('Today’s pass needs attention', 'beepbeep-ai-alt-text-generator')), dailyRoot);
         updateDailyText('[data-bbai-daily-strip-body="1"]', complete ? __('All images are done.', 'beepbeep-ai-alt-text-generator') : queueSentence, dailyRoot);
         updateDailyText('[data-bbai-daily-strip-progress-text="1"]', sprintf(__('%1$s / %2$s images optimised', 'beepbeep-ai-alt-text-generator'), formatDashboardNumber(optimized), formatDashboardNumber(total)), dailyRoot);
-        setDailyMeter('[data-bbai-daily-strip-meter="1"]', optimizedPct, dailyRoot);
-        setDailyMeterState('[data-bbai-daily-strip-meter="1"]', optimizedPct, dailyRoot);
+        setDailyStripSegments(missing, review, optimized, total, dailyRoot);
         Array.prototype.forEach.call(dailyRoot.querySelectorAll('.bbai-daily-optimised-strip .bbai-daily-btn--secondary'), function(link) {
             link.setAttribute('href', statusUrl);
         });
 
-        usage = usage && typeof usage === 'object' ? usage : {};
-        used = usage.used !== undefined ? parseInt(usage.used, 10) : parseInt(dashboardRoot.getAttribute('data-bbai-credits-used') || '0', 10);
-        limit = usage.limit !== undefined ? parseInt(usage.limit, 10) : parseInt(dashboardRoot.getAttribute('data-bbai-credits-total') || '50', 10);
-        if (!isFinite(limit) || limit <= 0) {
-            limit = 50;
-        }
-        if (!isFinite(used) || used < 0) {
-            used = 0;
-        }
-        used = Math.min(limit, used);
-        remaining = usage.remaining !== undefined ? parseInt(usage.remaining, 10) : Math.max(0, limit - used);
-        if (!isFinite(remaining)) {
-            remaining = Math.max(0, limit - used);
-        }
-        remaining = Math.max(0, remaining);
-        usagePct = Math.min(100, Math.round((used / limit) * 100));
         dashboardRoot.setAttribute('data-bbai-credits-used', String(used));
         dashboardRoot.setAttribute('data-bbai-credits-total', String(limit));
         dashboardRoot.setAttribute('data-bbai-credits-remaining', String(remaining));
@@ -8622,6 +8717,8 @@
         updateDailyText('[data-bbai-daily-credit-copy="1"]', remaining <= 0 ? __('No credits left this month', 'beepbeep-ai-alt-text-generator') : sprintf(__('Only %s credits left this month', 'beepbeep-ai-alt-text-generator'), formatDashboardNumber(remaining)), dailyRoot);
         setDailyMeter('[data-bbai-daily-usage-meter="1"]', usagePct, dailyRoot);
         setDailyMeter('[data-bbai-daily-credit-meter="1"]', usagePct, dailyRoot);
+        setDailyUsageMeterState('[data-bbai-daily-usage-meter="1"]', usagePct, remaining, dailyRoot);
+        setDailyUsageMeterState('[data-bbai-daily-credit-meter="1"]', usagePct, remaining, dailyRoot);
     }
 
     function applyDailyPassGenerationCompletion(successes) {
@@ -10249,9 +10346,9 @@
         var gap = 4.0;
         var ringOffset = 0.0;
         var ringSegments = [
-            { key: 'optimized', count: stats.optimized_count, stroke: '#16A34A' },
-            { key: 'weak', count: stats.needs_review_count, stroke: '#F97316' },
-            { key: 'missing', count: stats.images_missing_alt, stroke: '#EF4444' }
+            { key: 'optimized', count: stats.optimized_count, stroke: '#22B573' },
+            { key: 'weak', count: stats.needs_review_count, stroke: '#D9A441' },
+            { key: 'missing', count: stats.images_missing_alt, stroke: '#C97A00' }
         ];
         var nonZeroSegments = ringSegments.filter(function(segment) {
             return segment.count > 0;
@@ -15682,14 +15779,14 @@
         var a1;
         var a2;
         var a3;
-        var missingColor = String(stateId || '') === 'QUEUED' ? '#3b82f6' : '#ef4444';
+        var missingColor = String(stateId || '') === 'QUEUED' ? '#5B6EA8' : '#C97A00';
 
         if (optimized + weak + missing === 0) {
             return 'conic-gradient(#e2e8f0 0deg 360deg)';
         }
 
         if (optimized >= total) {
-            return 'conic-gradient(#22c55e 0deg 360deg)';
+            return 'conic-gradient(#22B573 0deg 360deg)';
         }
 
         angles = loggedInDonutRingDegrees(missing, weak, optimized, total);
@@ -15697,7 +15794,7 @@
         a2 = angles.a2;
         a3 = angles.a3;
 
-        return 'conic-gradient(' + missingColor + ' 0deg ' + a1 + 'deg, #f59e0b ' + a1 + 'deg ' + a2 + 'deg, #22c55e ' + a2 + 'deg ' + a3 + 'deg, #e2e8f0 ' + a3 + 'deg 360deg)';
+        return 'conic-gradient(' + missingColor + ' 0deg ' + a1 + 'deg, #D9A441 ' + a1 + 'deg ' + a2 + 'deg, #22B573 ' + a2 + 'deg ' + a3 + 'deg, #e2e8f0 ' + a3 + 'deg 360deg)';
     }
 
     function getLoggedInDonutSubLabel(stateId, donut) {
@@ -17855,6 +17952,7 @@
     function setBulkProgressImageQueue($modal, ids) {
         var map = {};
         var order = [];
+        var maxQueuedLogItems = 12;
 
         if (!$modal || !$modal.length) {
             return;
@@ -17871,6 +17969,26 @@
 
         $modal.data('bbaiBulkImageOrder', order);
         $modal.data('bbaiBulkImageLabels', map);
+
+        order.slice(0, maxQueuedLogItems).forEach(function(id) {
+            appendBulkProgressImageLog($modal, 'queued', id, map[id], { dedupe: true });
+        });
+        if (order.length > maxQueuedLogItems) {
+            appendBulkProgressLogEntry(
+                $modal,
+                'queued',
+                sprintf(
+                    _n(
+                        '%s more image queued',
+                        '%s more images queued',
+                        order.length - maxQueuedLogItems,
+                        'beepbeep-ai-alt-text-generator'
+                    ),
+                    formatDashboardNumber(order.length - maxQueuedLogItems)
+                ),
+                { dedupe: true }
+            );
+        }
     }
 
     function getBulkProgressImageIdAt($modal, oneBasedIndex) {
@@ -17890,6 +18008,8 @@
 
         if (type === 'processing') {
             message = sprintf(__('Generating ALT text for %s…', 'beepbeep-ai-alt-text-generator'), label);
+        } else if (type === 'queued') {
+            message = sprintf(__('Queued %s', 'beepbeep-ai-alt-text-generator'), label);
         } else if (type === 'error') {
             message = sprintf(__('Could not generate ALT text for %s', 'beepbeep-ai-alt-text-generator'), label);
         } else {
@@ -19272,10 +19392,16 @@
         function handleQuotaStop(error) {
             var unstartedCount = queue.length;
             var state;
+            var quotaUsage;
 
             clearStalledWatch();
             blockedByQuota = true;
             quotaError = mapGenerationErrorToUi(error || { code: 'quota_exhausted' });
+            quotaUsage = quotaError && quotaError.usage ? quotaError.usage : null;
+            if (quotaUsage) {
+                updateUsageDisplayGlobally(quotaUsage);
+                applyDailyPassDashboardState(getDailyPassCountsSnapshot(), quotaUsage);
+            }
             skipped += 1 + unstartedCount;
             queue = [];
 
@@ -19711,10 +19837,12 @@
             }
 
             // Pause dashboard polling during generation is already handled; now do one canonical refresh after.
+            // The WordPress-local state-truth endpoint is available for unsigned BeepBeep trial users too;
+            // skipping it leaves free-credit generations showing stale missing/coverage counts.
             var refreshPromise = null;
-            if (typeof window.bbaiRequestDashboardStateRefresh === 'function' && authMode !== 'guest_logged_out') {
+            if (typeof window.bbaiRequestDashboardStateRefresh === 'function') {
                 refreshPromise = window.bbaiRequestDashboardStateRefresh('generation_completed');
-            } else if (typeof window.bbaiRefreshLoggedInDashboardTruth === 'function' && authMode !== 'guest_logged_out') {
+            } else if (typeof window.bbaiRefreshLoggedInDashboardTruth === 'function') {
                 refreshPromise = window.bbaiRefreshLoggedInDashboardTruth('generation_completed');
             }
 
@@ -19725,7 +19853,7 @@
                     applySnapshot();
                 });
             } else {
-                // Guest/logged-out: no authenticated refresh. Use current DOM counters.
+                // No dashboard refresh hook is available. Use current DOM counters.
                 applySnapshot();
             }
         }());
@@ -20432,7 +20560,7 @@
             return;
         }
 
-        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : (type === 'processing' ? 'processing' : 'success'));
+        tone = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : (type === 'queued' ? 'queued' : (type === 'processing' ? 'processing' : 'success')));
         if (options.dedupe) {
             key = tone + ':' + String(message);
             seen = $modal.data('bbaiBulkLogSeen') || {};
@@ -20443,7 +20571,7 @@
             $modal.data('bbaiBulkLogSeen', seen);
         }
 
-        icon = tone === 'error' ? '!' : (tone === 'processing' ? '⏳' : '✓');
+        icon = tone === 'error' ? '!' : (tone === 'queued' ? '…' : (tone === 'processing' ? '⏳' : '✓'));
         timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         entryHtml =
             '<div class="bbai-bulk-progress__log-entry bbai-log-item bbai-bulk-progress__log-entry--' + tone + '" role="listitem">' +
@@ -20454,7 +20582,7 @@
 
         $log.find('[data-bbai-bulk-progress-log-empty]').remove();
         $log.append(entryHtml);
-        $log.children('.bbai-bulk-progress__log-entry').slice(0, -5).remove();
+        $log.children('.bbai-bulk-progress__log-entry').slice(0, -20).remove();
         $log.scrollTop($log.prop('scrollHeight'));
     }
 
@@ -23336,16 +23464,16 @@
 
                 // Adaptive stroke color based on usage percentage
                 var colorClass = 'bbai-usage-ring--healthy';
-                var strokeColor = '#10B981';
+                var strokeColor = '#22B573';
                 if (percentage >= 100) {
                     colorClass = 'bbai-usage-ring--critical';
-                    strokeColor = '#EF4444';
+                    strokeColor = '#6274B8';
                 } else if (percentage >= 86) {
                     colorClass = 'bbai-usage-ring--danger';
-                    strokeColor = '#EF4444';
+                    strokeColor = '#6274B8';
                 } else if (percentage >= 61) {
                     colorClass = 'bbai-usage-ring--warning';
-                    strokeColor = '#F59E0B';
+                    strokeColor = '#5B6EA8';
                 }
 
                 $ring.removeClass('bbai-usage-ring--healthy bbai-usage-ring--warning bbai-usage-ring--danger bbai-usage-ring--critical');

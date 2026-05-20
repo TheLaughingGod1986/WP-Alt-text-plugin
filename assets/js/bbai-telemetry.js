@@ -231,20 +231,15 @@
         var normalized = raw.toLowerCase();
         var compact = normalized.replace(/[^a-z0-9]/g, '');
 
-        if (normalized === 'license_key_present' || compact === 'licensekeypresent') {
+        if (normalized === 'site_url' || compact === 'siteurl') {
             return false;
         }
 
         return (
-            /(^|_)(password|token|jwt|secret|nonce|api[_-]?key|license[_-]?key|authorization|auth_header|email|site[_-]?url)($|_)/.test(normalized) ||
-            /^(password|token|jwt|secret|nonce|apikey|licensekey|authorization|authheader|email|siteurl)$/.test(compact) ||
+            /(^|_)(password|token|jwt|secret|nonce|api[_-]?key|license[_-]?key|authorization|auth_header|email|wordpress_user_id)($|_)/.test(normalized) ||
+            /^(password|token|jwt|secret|nonce|apikey|licensekey|authorization|authheader|email|wordpressuserid)$/.test(compact) ||
             /email$/.test(compact)
         );
-    }
-
-    function isLicenseKeyName(key) {
-        var normalized = readString(key).toLowerCase();
-        return normalized === 'license_key' || normalized.replace(/[^a-z0-9]/g, '') === 'licensekey';
     }
 
     function sanitizeScalarValue(value) {
@@ -269,13 +264,10 @@
             }
 
             if (isSensitiveKey(key)) {
-                if (isLicenseKeyName(key) && value) {
-                    output.license_key_present = true;
-                }
                 return;
             }
 
-            output[key] = sanitizeScalarValue(value);
+            output[key] = key === 'site_url' ? value : sanitizeScalarValue(value);
         });
 
         return output;
@@ -518,11 +510,14 @@
         var identity = getPostHogIdentityContext();
 
         return {
+            license_id: identity.license_id || '',
             account_id: identity.account_id || '',
             user_id: identity.user_id || '',
-            license_key_present: !!identity.license_key_present,
             site_id: identity.site_id || '',
             site_hash: identity.site_hash || '',
+            site_url: identity.site_url || '',
+            is_trial: identity.is_trial === true,
+            is_internal: identity.is_internal === true,
             current_plan: getCurrentPlan(),
             remaining_credits: getRemainingCredits(),
             source_page: getSourcePage(),
@@ -537,12 +532,14 @@
         var context = getAnalyticsContext();
 
         return {
+            license_id: context.license_id || '',
             account_id: context.account_id || '',
             user_id: context.user_id || '',
-            license_key_present: !!context.license_key_present,
             site_id: context.site_id || '',
             site_hash: context.site_hash || '',
-            wordpress_user_id: context.wordpress_user_id || ''
+            site_url: context.site_url || '',
+            is_trial: context.is_trial === true,
+            is_internal: context.is_internal === true
         };
     }
 
@@ -554,7 +551,12 @@
             client_page: c.page || 'unknown',
             page_variant: c.page_variant || c.page || 'unknown',
             plan_type: runtime.current_plan || c.plan_type,
-            plugin_version: runtime.plugin_version || c.plugin_version
+            plan: runtime.current_plan || c.plan || c.plan_type,
+            plugin_version: runtime.plugin_version || c.plugin_version,
+            wp_version: c.wp_version || '',
+            site_url: runtime.site_url || c.site_url || '',
+            is_trial: runtime.is_trial === true || c.is_trial === true,
+            is_internal: runtime.is_internal === true || c.is_internal === true
         }, getPostHogIdentityContext());
     }
 
@@ -592,9 +594,6 @@
                 return;
             }
             if (isSensitiveKey(key)) {
-                if (isLicenseKeyName(key) && payload[key]) {
-                    cleaned.license_key_present = true;
-                }
                 return;
             }
             cleaned[key] = sanitizeScalarValue(payload[key]);
@@ -1170,9 +1169,9 @@
         var runtime = getTelemetryRuntimeContext();
         var stored = getStoredUpgradeAttribution();
         var payload = cleanupProps($.extend({
+            license_id: runtime.license_id || '',
             account_id: runtime.account_id || '',
             user_id: runtime.user_id || '',
-            license_key_present: !!runtime.license_key_present,
             site_id: runtime.site_id || '',
             site_hash: runtime.site_hash || '',
             trigger_feature: stored.trigger_feature || 'unknown',
@@ -1290,9 +1289,9 @@
         }
         if (eventName === 'checkout_started' && isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
             window.console.debug('[BBAI] checkout_started identity context', {
+                license_id: props.license_id || '',
                 account_id: props.account_id || '',
                 user_id: props.user_id || '',
-                license_key_present: !!props.license_key_present,
                 site_id: props.site_id || '',
                 site_hash: props.site_hash || ''
             });

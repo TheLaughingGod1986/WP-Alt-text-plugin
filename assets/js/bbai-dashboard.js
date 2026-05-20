@@ -4769,7 +4769,7 @@ bbaiRunWithJQuery(function($) {
             {
                 key: 'missing',
                 value: statusCoverage.missing,
-                stroke: '#EF4444'
+                stroke: '#C97A00'
             }
         ];
 
@@ -5350,8 +5350,8 @@ bbaiRunWithJQuery(function($) {
                 muted: '#fde7c4'
             },
             missing: {
-                base: '#ef4444',
-                active: '#dc2626',
+                base: '#c97a00',
+                active: '#d48806',
                 muted: '#fee2e2'
             }
         };

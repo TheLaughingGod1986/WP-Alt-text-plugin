@@ -1055,14 +1055,14 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 /* Donut + metric tiles — align with Phase 4 --bbai-status-* (foundation tokens) */
 #bbai-dashboard-main .bbai-status-card {
     --bbai-status-optimized: var(--bbai-status-optimized-accent);
-    --bbai-status-optimized-bg: rgba(22, 163, 74, 0.06);
-    --bbai-status-optimized-border: rgba(22, 163, 74, 0.14);
+    --bbai-status-optimized-bg: rgba(34, 181, 115, 0.06);
+    --bbai-status-optimized-border: rgba(34, 181, 115, 0.14);
     --bbai-status-weak: var(--bbai-status-needs-review-accent);
-    --bbai-status-weak-bg: rgba(217, 119, 6, 0.06);
-    --bbai-status-weak-border: rgba(217, 119, 6, 0.14);
+    --bbai-status-weak-bg: rgba(217, 164, 65, 0.06);
+    --bbai-status-weak-border: rgba(217, 164, 65, 0.14);
     --bbai-status-missing: var(--bbai-status-missing-accent);
-    --bbai-status-missing-bg: rgba(244, 63, 94, 0.06);
-    --bbai-status-missing-border: rgba(244, 63, 94, 0.14);
+    --bbai-status-missing-bg: rgba(201, 122, 0, 0.06);
+    --bbai-status-missing-border: rgba(201, 122, 0, 0.14);
 }
 
 #bbai-dashboard-main .bbai-status-card .bbai-card__header {
@@ -5407,11 +5407,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-tone="attention"] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+    background: linear-gradient(90deg, #c97a00 0%, #d48806 100%);
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-tone="paused"] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+    background: linear-gradient(90deg, #5b6ea8 0%, #6a6fd1 100%);
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero-actions {
@@ -5881,7 +5881,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     --bbai-primary: #10b981;
     --bbai-primary-strong: #047857;
     --bbai-success: #16a34a;
-    --bbai-warning: #d97706;
+    --bbai-warning: #c97a00;
     --bbai-warning-soft: #fff7ed;
     --bbai-danger: #dc2626;
     --bbai-danger-soft: #fff7f7;
@@ -6175,11 +6175,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-tone="attention"] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+    background: linear-gradient(90deg, #c97a00 0%, #d48806 100%);
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner)[data-tone="paused"] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+    background: linear-gradient(90deg, #5b6ea8 0%, #6a6fd1 100%);
 }
 
 #bbai-dashboard-main .bbai-dashboard-hero--command:not(.bbai-status-banner) .bbai-dashboard-hero__note {
@@ -6575,15 +6575,15 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--optimized .bbai-command-breakdown__label::before {
-    background: #22c55e;
+    background: #22b573;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--weak .bbai-command-breakdown__label::before {
-    background: #f59e0b;
+    background: #d9a441;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing .bbai-command-breakdown__label::before {
-    background: #ef4444;
+    background: #c97a00;
 }
 
 #bbai-dashboard-main .bbai-command-plan__label {
@@ -6608,11 +6608,11 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--weak .bbai-command-breakdown__value {
-    color: var(--bbai-warning);
+    color: #7c5719;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing .bbai-command-breakdown__value {
-    color: var(--bbai-danger);
+    color: #805112;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown {
@@ -6964,7 +6964,7 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
     --bbai-primary: #10b981;
     --bbai-primary-strong: #047857;
     --bbai-success: #16a34a;
-    --bbai-warning: #d97706;
+    --bbai-warning: #c97a00;
     --bbai-danger: #dc2626;
     --bbai-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
     --bbai-shadow-md: 0 10px 24px rgba(15, 23, 42, 0.07);
@@ -7466,8 +7466,8 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable {
-    background: linear-gradient(90deg, rgba(244, 63, 94, 0.05) 0%, rgba(244, 63, 94, 0.015) 58%, rgba(244, 63, 94, 0) 100%);
-    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.12);
+    background: linear-gradient(90deg, rgba(201, 122, 0, 0.06) 0%, rgba(201, 122, 0, 0.018) 58%, rgba(201, 122, 0, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(201, 122, 0, 0.14);
     transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
     /* Slightly more vertical inset than plain rows so the tint does not crowd the label. */
     padding-top: calc(var(--bbai-command-row-padding) + 4px);
@@ -7476,12 +7476,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable .bbai-command-breakdown__value {
-    color: #be123c;
+    color: #805112;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable .bbai-command-breakdown__arrow {
     opacity: 0.72;
-    color: #be123c;
+    color: #805112;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable:hover .bbai-command-breakdown__arrow,
@@ -7490,24 +7490,24 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable.is-pressed .bbai-command-breakdown__arrow {
     opacity: 1;
     transform: translateX(0);
-    color: #be123c;
+    color: #805112;
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable:hover,
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable.is-active {
-    background: linear-gradient(90deg, rgba(244, 63, 94, 0.08) 0%, rgba(244, 63, 94, 0.03) 60%, rgba(244, 63, 94, 0) 100%);
-    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.18);
+    background: linear-gradient(90deg, rgba(201, 122, 0, 0.09) 0%, rgba(201, 122, 0, 0.03) 60%, rgba(201, 122, 0, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(201, 122, 0, 0.2);
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable:focus-visible {
     outline: none;
-    background: linear-gradient(90deg, rgba(244, 63, 94, 0.08) 0%, rgba(244, 63, 94, 0.03) 60%, rgba(244, 63, 94, 0) 100%);
-    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.22), 0 0 0 3px rgba(244, 63, 94, 0.14);
+    background: linear-gradient(90deg, rgba(201, 122, 0, 0.09) 0%, rgba(201, 122, 0, 0.03) 60%, rgba(201, 122, 0, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(201, 122, 0, 0.22), 0 0 0 3px rgba(201, 122, 0, 0.14);
 }
 
 #bbai-dashboard-main .bbai-command-breakdown--missing-actionable.is-pressed {
-    background: linear-gradient(90deg, rgba(244, 63, 94, 0.09) 0%, rgba(244, 63, 94, 0.04) 60%, rgba(244, 63, 94, 0) 100%);
-    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.2);
+    background: linear-gradient(90deg, rgba(201, 122, 0, 0.1) 0%, rgba(201, 122, 0, 0.04) 60%, rgba(201, 122, 0, 0) 100%);
+    box-shadow: inset 0 0 0 1px rgba(201, 122, 0, 0.22);
 }
 
 /* One-shot legacy hook (JS removes after attention cycle); prefer .bbai-dashboard-missing-attention */
@@ -7558,12 +7558,12 @@ body.beepbeep-ai_page_bbai-agency-overview .wrap {
 @keyframes bbai-dashboard-missing-attention {
     0%,
     100% {
-        background: linear-gradient(90deg, rgba(244, 63, 94, 0.05) 0%, rgba(244, 63, 94, 0.015) 58%, rgba(244, 63, 94, 0) 100%);
-        box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.12);
+        background: linear-gradient(90deg, rgba(201, 122, 0, 0.06) 0%, rgba(201, 122, 0, 0.018) 58%, rgba(201, 122, 0, 0) 100%);
+        box-shadow: inset 0 0 0 1px rgba(201, 122, 0, 0.14);
     }
     50% {
-        background: linear-gradient(90deg, rgba(244, 63, 94, 0.088) 0%, rgba(244, 63, 94, 0.03) 60%, rgba(244, 63, 94, 0) 100%);
-        box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.2), 0 10px 32px -24px rgba(190, 24, 60, 0.28);
+        background: linear-gradient(90deg, rgba(201, 122, 0, 0.1) 0%, rgba(201, 122, 0, 0.035) 60%, rgba(201, 122, 0, 0) 100%);
+        box-shadow: inset 0 0 0 1px rgba(201, 122, 0, 0.22), 0 10px 32px -24px rgba(201, 122, 0, 0.28);
     }
 }
 

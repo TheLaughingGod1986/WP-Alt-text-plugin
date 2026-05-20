@@ -28,6 +28,7 @@
         id: '',
         propsKey: ''
     };
+    loaderState.aliasState = isObject(loaderState.aliasState) ? loaderState.aliasState : {};
 
     function isObject(value) {
         return !!value && Object.prototype.toString.call(value) === '[object Object]';
@@ -65,20 +66,15 @@
         var normalized = raw.toLowerCase();
         var compact = normalized.replace(/[^a-z0-9]/g, '');
 
-        if (normalized === 'license_key_present' || compact === 'licensekeypresent') {
+        if (normalized === 'site_url' || compact === 'siteurl') {
             return false;
         }
 
         return (
-            /(^|_)(password|token|jwt|secret|nonce|api[_-]?key|license[_-]?key|authorization|auth_header|email|site[_-]?url)($|_)/i.test(raw) ||
-            /^(password|token|jwt|secret|nonce|apikey|licensekey|authorization|authheader|email|siteurl)$/.test(compact) ||
+            /(^|_)(password|token|jwt|secret|nonce|api[_-]?key|license[_-]?key|authorization|auth_header|email|wordpress_user_id)($|_)/i.test(raw) ||
+            /^(password|token|jwt|secret|nonce|apikey|licensekey|authorization|authheader|email|wordpressuserid)$/.test(compact) ||
             /email$/.test(compact)
         );
-    }
-
-    function isLicenseKeyName(key) {
-        var normalized = key === undefined || key === null ? '' : String(key).toLowerCase();
-        return normalized === 'license_key' || normalized.replace(/[^a-z0-9]/g, '') === 'licensekey';
     }
 
     function sanitizeScalarValue(value) {
@@ -117,14 +113,11 @@
                 continue;
             }
             if (isSensitiveKey(key)) {
-                if (isLicenseKeyName(key) && value) {
-                    output.license_key_present = true;
-                }
                 continue;
             }
 
             if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-                output[key] = sanitizeScalarValue(value);
+                output[key] = key === 'site_url' ? value : sanitizeScalarValue(value);
                 continue;
             }
 
@@ -147,9 +140,6 @@
                     continue;
                 }
                 if (isSensitiveKey(nestedKey)) {
-                    if (isLicenseKeyName(nestedKey) && value[nestedKey]) {
-                        nested.license_key_present = true;
-                    }
                     continue;
                 }
 
@@ -158,13 +148,46 @@
                     typeof value[nestedKey] === 'number' ||
                     typeof value[nestedKey] === 'boolean'
                 ) {
-                    nested[nestedKey] = sanitizeScalarValue(value[nestedKey]);
+                    nested[nestedKey] = nestedKey === 'site_url' ? value[nestedKey] : sanitizeScalarValue(value[nestedKey]);
                 }
             }
 
             if (Object.keys(nested).length) {
                 output[key] = nested;
             }
+        }
+
+        return output;
+    }
+
+    function stripSuperPropertyKeys(input) {
+        var output = {};
+        var key;
+        var normalized;
+        var compact;
+
+        if (!isObject(input)) {
+            return output;
+        }
+
+        for (key in input) {
+            if (!Object.prototype.hasOwnProperty.call(input, key)) {
+                continue;
+            }
+
+            normalized = String(key || '').toLowerCase();
+            compact = normalized.replace(/[^a-z0-9]/g, '');
+            if (
+                normalized === 'license_key' ||
+                normalized === 'email' ||
+                normalized === 'wordpress_user_id' ||
+                compact === 'licensekey' ||
+                compact === 'email' ||
+                compact === 'wordpressuserid'
+            ) {
+                continue;
+            }
+            output[key] = input[key];
         }
 
         return output;
@@ -197,11 +220,11 @@
             viewport = {};
         }
 
-        return extend({}, sanitizeProperties(cfg.context || {}), viewport, {
+        return stripSuperPropertyKeys(extend({}, sanitizeProperties(cfg.context || {}), viewport, {
             current_screen: runtimeContext.page || (cfg.context && cfg.context.page) || 'dashboard',
             browser: nav.userAgent ? String(nav.userAgent).slice(0, 180) : '',
             environment: cfg.environment || ''
-        }, runtimeContext);
+        }, runtimeContext));
     }
 
     function getPageContext() {
@@ -432,7 +455,7 @@
         }
 
         try {
-            client.register(getContext());
+            client.register(stripSuperPropertyKeys(getContext()));
         } catch (error) {
             // Ignore PostHog registration failures.
         }
@@ -645,6 +668,8 @@
                     autocapture: false,
                     capture_pageview: true,
                     capture_pageleave: true,
+                    advanced_disable_feature_flags: true,
+                    advanced_disable_feature_flags_on_first_load: true,
                     persistence: 'localStorage+cookie',
                     disable_session_recording: shouldUseManualReplayOnly(),
                     rageclick: false,
@@ -748,7 +773,7 @@
             return;
         }
 
-        payload = extend({}, getContext(), sanitizeProperties(properties || {}));
+        payload = stripSuperPropertyKeys(extend({}, getContext(), sanitizeProperties(properties || {})));
         if (shouldDedupe(safeName + ':' + serializeForCompare(payload), 250)) {
             return;
         }
@@ -757,9 +782,9 @@
             if (safeName === 'checkout_started' && isDebugEnabled()) {
                 logToConsole('debug', 'checkout_started identity context', {
                     identifier: loaderState.identifyState.id || '',
+                    license_id: payload.license_id || '',
                     account_id: payload.account_id || '',
                     user_id: payload.user_id || '',
-                    license_key_present: !!payload.license_key_present,
                     site_id: payload.site_id || '',
                     site_hash: payload.site_hash || ''
                 });
@@ -1178,6 +1203,64 @@
         });
     }
 
+    function getAliasStorageKey(aliasId, siteHash) {
+        return 'bbai_posthog_alias_v1:' + String(siteHash || '') + ':' + String(aliasId || '');
+    }
+
+    function hasAliasGuard(aliasId, siteHash) {
+        var key = getAliasStorageKey(aliasId, siteHash);
+        if (!aliasId || !siteHash || aliasId === siteHash) {
+            return true;
+        }
+        if (loaderState.aliasState[key]) {
+            return true;
+        }
+        try {
+            return window.localStorage && window.localStorage.getItem(key) === '1';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function setAliasGuard(aliasId, siteHash) {
+        var key = getAliasStorageKey(aliasId, siteHash);
+        loaderState.aliasState[key] = true;
+        try {
+            if (window.localStorage) {
+                window.localStorage.setItem(key, '1');
+            }
+        } catch (error) {
+            // Ignore storage failures; in-memory guard still prevents loops.
+        }
+    }
+
+    function aliasAccount(aliasId, siteHash) {
+        var safeAlias = aliasId === undefined || aliasId === null ? '' : String(aliasId);
+        var safeSite = siteHash === undefined || siteHash === null ? '' : String(siteHash);
+
+        if (hasAliasGuard(safeAlias, safeSite)) {
+            return;
+        }
+
+        whenPosthogReady(function(client) {
+            if (hasAliasGuard(safeAlias, safeSite)) {
+                return;
+            }
+            try {
+                if (typeof client.alias === 'function') {
+                    client.alias(safeAlias, safeSite);
+                    setAliasGuard(safeAlias, safeSite);
+                    logToConsole('debug', 'posthog alias called', {
+                        alias_id: safeAlias,
+                        site_hash: safeSite
+                    });
+                }
+            } catch (error) {
+                // Ignore alias failures; the guard only persists after success.
+            }
+        });
+    }
+
     function pageView(pageName, properties) {
         var page = pageName === undefined || pageName === null ? '' : String(pageName);
         var mappedEvent = isObject(cfg.pageViewEvents) ? cfg.pageViewEvents[page] : '';
@@ -1191,7 +1274,7 @@
     }
 
     function updateContext(properties) {
-        runtimeContext = extend({}, runtimeContext, sanitizeProperties(properties || {}));
+        runtimeContext = stripSuperPropertyKeys(extend({}, runtimeContext, sanitizeProperties(properties || {})));
         registerContext();
     }
 
@@ -1251,14 +1334,16 @@
         var sourceSite = isObject(source.site) ? source.site : {};
 
         return sanitizeProperties({
+            license_id: source.license_id || source.licenseId || baseContext.license_id || '',
             account_id: source.account_id || source.id || source._id || baseContext.account_id || '',
             user_id: source.user_id || source.id || source._id || baseContext.user_id || baseContext.account_id || '',
-            license_key_present: !!(source.license_key_present || baseContext.license_key_present || source.license_key || baseContext.license_key),
             site_id: source.site_id || sourceSite.id || sourceSite._id || baseContext.site_id || '',
             site_hash: source.site_hash || baseContext.site_hash || '',
             plan: source.plan || source.plan_type || source.planSlug || baseContext.plan || baseContext.plan_type || '',
             plan_type: source.plan_type || source.plan || source.planSlug || baseContext.plan_type || baseContext.plan || '',
-            wordpress_user_id: source.wordpress_user_id || baseContext.wordpress_user_id || '',
+            site_url: source.site_url || baseContext.site_url || '',
+            is_trial: source.is_trial !== undefined ? !!source.is_trial : !!baseContext.is_trial,
+            is_internal: source.is_internal !== undefined ? !!source.is_internal : !!baseContext.is_internal,
             plugin_version: baseContext.plugin_version || source.plugin_version || '',
             first_seen_at: source.first_seen_at || baseContext.first_seen_at || '',
             signup_source: source.signup_source || baseContext.signup_source || '',
@@ -1268,7 +1353,7 @@
 
     function resolveIdentifyId(user) {
         var identity = buildIdentityContext(user);
-        var priority = ['account_id', 'user_id', 'site_id', 'site_hash'];
+        var priority = ['license_id', 'account_id', 'site_hash'];
         var i;
 
         for (i = 0; i < priority.length; i++) {
@@ -1304,11 +1389,17 @@
             var detail = event && event.detail ? event.detail : {};
             var user = detail.user || {};
             var identifyId = resolveIdentifyId(user);
+            var identityContext = buildIdentityContext(user);
+            var aliasId = identityContext.license_id || identityContext.account_id || '';
+            var siteHash = identityContext.site_hash || (cfg.context && cfg.context.site_hash) || '';
 
             updateContext({ is_logged_in: true });
-            updateContext(buildIdentityContext(user));
+            updateContext(identityContext);
             updateContext(extractUsageContext(user));
 
+            if (aliasId && siteHash) {
+                aliasAccount(aliasId, siteHash);
+            }
             if (identifyId) {
                 identify(identifyId, buildPersonProperties(user));
             }
@@ -1350,6 +1441,7 @@
         whenPosthogReady: whenPosthogReady,
         track: track,
         identify: identify,
+        aliasAccount: aliasAccount,
         pageView: pageView,
         captureError: captureError,
         startReplayContext: startReplayContext,
@@ -1361,6 +1453,7 @@
     window.bbaiWhenPosthogReady = whenPosthogReady;
     window.bbaiTrack = track;
     window.bbaiIdentify = identify;
+    window.bbaiAliasAccount = aliasAccount;
     window.bbaiCaptureError = captureError;
     window.bbaiStartReplayContext = startReplayContext;
     window.bbaiTrackGenerationLifecycle = trackGenerationLifecycle;
@@ -1373,6 +1466,9 @@
     }
 
     if (hasPosthogConfig() && cfg.identify && cfg.identify.id) {
+        if (cfg.context && cfg.context.site_hash && cfg.identify.id !== cfg.context.site_hash) {
+            aliasAccount(cfg.identify.id, cfg.context.site_hash);
+        }
         identify(cfg.identify.id, cfg.identify.person_properties || {});
     }
 })(window, document);

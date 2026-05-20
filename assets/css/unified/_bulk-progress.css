@@ -373,6 +373,16 @@
 	color: #047857;
 }
 
+.bbai-bulk-progress__log-entry--queued {
+	border-left: 3px solid rgba(100, 116, 139, 0.55);
+	background: rgba(248, 250, 252, 0.92);
+}
+
+.bbai-bulk-progress__log-entry--queued .bbai-bulk-progress__log-icon {
+	background: rgba(100, 116, 139, 0.14);
+	color: #475569;
+}
+
 .bbai-bulk-progress__complete {
 	display: flex;
 	flex-direction: column;

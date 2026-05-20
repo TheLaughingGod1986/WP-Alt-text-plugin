@@ -1932,10 +1932,8 @@ JS,
             '/(^localhost$|^127\.|^0\.0\.0\.0$|^::1$|\.local$|\.test$|\.localhost$)/i',
             $site_host
         );
-        $browser_capture_enabled = '' !== $api_key
-            && '' !== $api_host
-            && ! $is_local_site
-            && ! in_array( $environment_type, [ 'local', 'development' ], true );
+        $debug_posthog = (defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG) || (bool) getenv('BBAI_DEBUG_POSTHOG');
+        $browser_capture_enabled = '' !== $api_key && '' !== $api_host;
         $browser_capture_enabled = (bool) apply_filters(
             'bbai_posthog_browser_capture_enabled',
             $browser_capture_enabled,
@@ -1943,6 +1941,7 @@ JS,
                 'site_host'        => $site_host,
                 'environment_type' => $environment_type,
                 'is_local_site'    => $is_local_site,
+                'debug_posthog'    => $debug_posthog,
             ]
         );
 
@@ -1953,7 +1952,7 @@ JS,
             'assetUrl'      => $asset_url,
             'defaults'      => '2026-01-30',
             'instanceName'  => 'bbaiPosthog',
-            'debug_posthog' => (defined('BBAI_DEBUG_POSTHOG') && (bool) BBAI_DEBUG_POSTHOG) || (bool) getenv('BBAI_DEBUG_POSTHOG'),
+            'debug_posthog' => $debug_posthog,
             'debug'         => (defined('WP_DEBUG') && WP_DEBUG) || (defined('SCRIPT_DEBUG') && SCRIPT_DEBUG),
             'replayEnabled' => true,
             'replaySampleRate' => 1,
@@ -2056,6 +2055,7 @@ JS,
         $plan_type = in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'pro' : ('free' === $plan ? 'free' : 'unknown');
         $site_hash = $this->get_posthog_site_hash();
         $site_hash_sha256 = $this->get_posthog_site_hash_sha256($site_hash);
+        $is_logged_in = $this->is_bbai_account_authenticated();
         $sanitized_user_data = isset($this->api_client) ? $this->sanitize_api_user_data_for_localize($this->api_client->get_user_data()) : [];
         $license_data = (isset($this->api_client) && method_exists($this->api_client, 'get_license_data'))
             ? $this->api_client->get_license_data()
@@ -2098,7 +2098,7 @@ JS,
                 'site_hash'                => $site_hash,
                 'site_hash_sha256'         => $site_hash_sha256,
                 'site_url'                 => home_url('/'),
-                'is_trial'                 => empty($identity_context['license_id']),
+                'is_trial'                 => ! $is_logged_in,
                 'is_internal'              => $is_internal,
             ],
         ];

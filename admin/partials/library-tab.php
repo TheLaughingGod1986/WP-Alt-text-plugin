@@ -964,7 +964,6 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                                                         class="bbai-row-action-btn bbai-row-action-btn--primary <?php echo esc_attr($bbai_limit_reached_state ? 'bbai-is-locked' : ''); ?>"
                                                         data-action="regenerate-single"
                                                         data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
-                                                        data-bbai-lock-preserve-label="1"
                                                         title="<?php echo esc_attr($bbai_has_alt ? __('Regenerate ALT text with AI', 'beepbeep-ai-alt-text-generator') : bbai_copy_cta_generate_missing_images()); ?>"
                                                         <?php if ($bbai_limit_reached_state) : ?>
                                                             data-bbai-action="open-upgrade"

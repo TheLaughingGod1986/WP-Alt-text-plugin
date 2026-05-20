@@ -153,8 +153,7 @@ if ( $bbai_li_seg_opt + $bbai_li_seg_weak + $bbai_li_seg_miss === 0 ) {
 		$bbai_li_seg_opt,
 		$bbai_li_seg_tot
 	);
-	// In QUEUED, the “missing” segment is a ready action (not an error) — use a neutral blue accent.
-	$bbai_li_missing_seg_color = ( 'QUEUED' === $bbai_li_state_id ) ? '#3b82f6' : '#ef4444';
+	$bbai_li_missing_seg_color = '#c98218';
 	$bbai_li_donut_bg = sprintf(
 		'conic-gradient(%1$s 0deg %.3Fdeg, #f59e0b %.3Fdeg %.3Fdeg, #22c55e %.3Fdeg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
 		$bbai_li_missing_seg_color,
@@ -217,7 +216,7 @@ if ( $bbai_li_seg_tot > 0 ) {
 		'bg'    => $bbai_li_seg_miss_deg > 0
 			? sprintf(
 				'conic-gradient(%1$s 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
-				( 'QUEUED' === $bbai_li_state_id ) ? '#3b82f6' : '#ef4444',
+				'#c98218',
 				$bbai_li_seg_miss_deg,
 				$bbai_li_seg_miss_deg
 			)
@@ -1119,6 +1118,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var r = String( reason || '' );
 		return (
 			'generation_completed' === r ||
+			'generate_missing' === r ||
+			'inline_generation' === r ||
 			'manual_rescan' === r ||
 			'user_action' === r ||
 			'approve_all' === r ||
@@ -5215,11 +5216,15 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 		var domUsed = root ? parseInt( root.getAttribute( 'data-bbai-credits-used' ) || '', 10 ) : NaN;
 		var domTotal = root ? parseInt( root.getAttribute( 'data-bbai-credits-total' ) || '', 10 ) : NaN;
+		var domRemaining = root ? parseInt( root.getAttribute( 'data-bbai-credits-remaining' ) || '', 10 ) : NaN;
 		if ( root ) {
 			if ( ! isNaN( domUsed ) && domUsed !== incomingCredits.used ) {
 				return false;
 			}
 			if ( ! isNaN( domTotal ) && domTotal !== incomingCredits.total ) {
+				return false;
+			}
+			if ( ! isNaN( domRemaining ) && domRemaining !== incomingCredits.remaining ) {
 				return false;
 			}
 		}
@@ -5230,6 +5235,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 		}
 		var heroLim = heroCredit ? parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-limit' ) || '', 10 ) : NaN;
 		if ( ! isNaN( heroLim ) && heroLim !== incomingCredits.total ) {
+			return false;
+		}
+		var heroRemaining = heroCredit ? parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-remaining' ) || '', 10 ) : NaN;
+		if ( ! isNaN( heroRemaining ) && heroRemaining !== incomingCredits.remaining ) {
 			return false;
 		}
 
@@ -5298,6 +5307,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return Promise.resolve( truth );
 		}
 		if ( shouldSkipTruthUiUpdate( truth, context, forceResolved ) ) {
+			syncCreditsOnlyFromTruth( truth );
 			syncDashboardRootFromTruth( truth );
 			syncRetentionStripFromTruth( truth );
 			markTruthSeenWithoutUiUpdate( truth );

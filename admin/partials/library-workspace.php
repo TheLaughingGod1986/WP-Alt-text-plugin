@@ -1087,7 +1087,6 @@ $bbai_library_workspace_filter_items = [
                                                                 data-action="<?php echo esc_attr($bbai_q1_action); ?>"
                                                                 data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
                                                                 title="<?php echo esc_attr($bbai_q1_title); ?>"
-                                                                <?php if ('regenerate-single' === $bbai_q1_action) : ?>data-bbai-lock-preserve-label="1"<?php endif; ?>
                                                                 <?php if ($bbai_limit_reached_state && 'regenerate-single' === $bbai_q1_action) : ?>data-bbai-action="<?php echo esc_attr($bbai_locked_quota_action); ?>" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-regenerate-quick" aria-disabled="true"<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?><?php endif; ?>>
                                                                 <?php echo esc_html($bbai_q1_label); ?>
                                                             </button>
@@ -1096,7 +1095,6 @@ $bbai_library_workspace_filter_items = [
                                                                 data-action="<?php echo esc_attr($bbai_q2_action); ?>"
                                                                 data-attachment-id="<?php echo esc_attr($bbai_attachment_id); ?>"
                                                                 title="<?php echo esc_attr($bbai_q2_title); ?>"
-                                                                <?php if ('regenerate-single' === $bbai_q2_action) : ?>data-bbai-lock-preserve-label="1"<?php endif; ?>
                                                                 <?php if ($bbai_limit_reached_state && 'regenerate-single' === $bbai_q2_action) : ?>data-bbai-action="<?php echo esc_attr($bbai_locked_quota_action); ?>" data-bbai-locked-cta="1" data-bbai-lock-reason="regenerate_single" data-bbai-locked-source="library-row-regenerate-quick" aria-disabled="true"<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?><?php endif; ?>>
                                                                 <?php echo esc_html($bbai_q2_label); ?>
                                                             </button>

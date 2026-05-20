@@ -129,13 +129,13 @@
     --bbai-admin-semantic-success-border: var(--bbai-success-light);
     --bbai-admin-semantic-success-accent: var(--bbai-success);
 
-    /* Semantic: warning = needs review */
-    --bbai-admin-semantic-warning-fg: var(--bbai-warning-dark);
-    --bbai-admin-semantic-warning-bg: var(--bbai-warning-bg);
-    --bbai-admin-semantic-warning-border: var(--bbai-warning-light);
-    --bbai-admin-semantic-warning-accent: var(--bbai-warning);
+    /* Semantic: warning = active workflow attention / missing ALT */
+    --bbai-admin-semantic-warning-fg: #805112;
+    --bbai-admin-semantic-warning-bg: rgba(255, 247, 237, 0.82);
+    --bbai-admin-semantic-warning-border: rgba(201, 122, 0, 0.3);
+    --bbai-admin-semantic-warning-accent: #c97a00;
 
-    /* Semantic: error = missing / failed */
+    /* Semantic: error = failed system/destructive only */
     --bbai-admin-semantic-error-fg: var(--bbai-error);
     --bbai-admin-semantic-error-bg: var(--bbai-error-bg);
     --bbai-admin-semantic-error-border: var(--bbai-error-light);
@@ -159,33 +159,33 @@
 
     --bbai-status-neutral-indicator: #94a3b8;
 
-    --bbai-status-missing-fg: #9f1239;
-    --bbai-status-missing-bg: rgba(255, 241, 242, 0.78);
-    --bbai-status-missing-border: rgba(244, 63, 94, 0.32);
-    --bbai-status-missing-accent: #e11d48;
-    --bbai-status-missing-active-bg: #be123c;
-    --bbai-status-missing-active-border: #881337;
-    --bbai-status-missing-count-fg: #9f1239;
+    --bbai-status-missing-fg: #805112;
+    --bbai-status-missing-bg: rgba(255, 247, 237, 0.82);
+    --bbai-status-missing-border: rgba(201, 122, 0, 0.3);
+    --bbai-status-missing-accent: #c97a00;
+    --bbai-status-missing-active-bg: #8a5200;
+    --bbai-status-missing-active-border: #6f4100;
+    --bbai-status-missing-count-fg: #805112;
     --bbai-status-missing-row-bg: #ffffff;
-    --bbai-status-missing-rail: rgba(225, 29, 72, 0.3);
-    --bbai-status-missing-rail-strong: rgba(225, 29, 72, 0.48);
+    --bbai-status-missing-rail: rgba(201, 122, 0, 0.34);
+    --bbai-status-missing-rail-strong: rgba(201, 122, 0, 0.52);
 
-    --bbai-status-needs-review-fg: #92400e;
-    --bbai-status-needs-review-bg: rgba(255, 251, 235, 0.82);
-    --bbai-status-needs-review-border: rgba(245, 158, 11, 0.34);
-    --bbai-status-needs-review-accent: #d97706;
-    --bbai-status-needs-review-active-bg: #b45309;
-    --bbai-status-needs-review-active-border: #78350f;
-    --bbai-status-needs-review-count-fg: #92400e;
+    --bbai-status-needs-review-fg: #7c5719;
+    --bbai-status-needs-review-bg: rgba(255, 248, 232, 0.84);
+    --bbai-status-needs-review-border: rgba(217, 164, 65, 0.34);
+    --bbai-status-needs-review-accent: #d9a441;
+    --bbai-status-needs-review-active-bg: #9a6c1e;
+    --bbai-status-needs-review-active-border: #7c5719;
+    --bbai-status-needs-review-count-fg: #7c5719;
     --bbai-status-needs-review-row-bg: rgba(255, 251, 235, 0.68);
-    --bbai-status-needs-review-rail: rgba(217, 119, 6, 0.46);
-    --bbai-status-needs-review-rail-strong: rgba(217, 119, 6, 0.64);
+    --bbai-status-needs-review-rail: rgba(217, 164, 65, 0.42);
+    --bbai-status-needs-review-rail-strong: rgba(217, 164, 65, 0.6);
 
     --bbai-status-optimized-fg: #166534;
     --bbai-status-optimized-bg: rgba(240, 253, 244, 0.82);
-    --bbai-status-optimized-border: rgba(34, 197, 94, 0.3);
-    --bbai-status-optimized-accent: #16a34a;
-    --bbai-status-optimized-active-bg: #15803d;
+    --bbai-status-optimized-border: rgba(34, 181, 115, 0.3);
+    --bbai-status-optimized-accent: #22b573;
+    --bbai-status-optimized-active-bg: #20b26c;
     --bbai-status-optimized-active-border: #14532d;
     --bbai-status-optimized-count-fg: #166534;
     --bbai-status-optimized-row-bg: rgba(240, 253, 244, 0.58);

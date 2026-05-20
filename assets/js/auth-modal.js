@@ -50,6 +50,21 @@ class BbAIAuthModal {
         }
     }
 
+    hydrateAnalyticsIdentity(userData, responseData) {
+        const user = userData || {};
+        const data = responseData || {};
+        const license = data.license || user.license || {};
+        const organization = data.organization || user.organization || {};
+        const site = data.site || user.site || {};
+
+        user.license_id = user.license_id || user.licenseId || data.license_id || data.licenseId || license.id || license._id || license.license_id || organization.license_id || organization.licenseId || '';
+        user.account_id = user.account_id || data.account_id || data.accountId || user.id || user._id || '';
+        user.site_id = user.site_id || data.site_id || data.siteId || site.id || site._id || '';
+        user.site_hash = user.site_hash || data.site_hash || data.siteHash || (window.BBAI_POSTHOG && window.BBAI_POSTHOG.context && window.BBAI_POSTHOG.context.site_hash) || '';
+
+        return user;
+    }
+
     resolveSource(trigger, fallback) {
         if (window.bbaiAnalytics && typeof window.bbaiAnalytics.resolveSource === 'function') {
             return window.bbaiAnalytics.resolveSource(trigger || this.modalElement);
@@ -585,7 +600,7 @@ class BbAIAuthModal {
 
             if (data.success) {
                 // WordPress AJAX success response
-                const userData = data.data?.user || {};
+                const userData = this.hydrateAnalyticsIdentity(data.data?.user || {}, data.data || {});
                 userData.email = userData.email || email;
                 userData.signup_source = source;
                 this.emitAnalyticsEvent('login_succeeded', {
@@ -707,7 +722,7 @@ class BbAIAuthModal {
 
             if (data.success) {
                 // WordPress AJAX success response
-                const userData = data.data?.user || {};
+                const userData = this.hydrateAnalyticsIdentity(data.data?.user || {}, data.data || {});
                 userData.email = userData.email || email;
                 userData.signup_source = source;
                 this.emitAnalyticsEvent('signup_succeeded', {
@@ -1015,7 +1030,7 @@ class BbAIAuthModal {
 
             if (response.ok) {
                 const data = await response.json();
-                this.onAuthSuccess(data.user);
+                this.onAuthSuccess(this.hydrateAnalyticsIdentity(data.user || {}, data || {}));
             } else {
                 this.clearToken();
                 this.showAuthRequired();

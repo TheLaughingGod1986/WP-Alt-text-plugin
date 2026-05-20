@@ -6,14 +6,124 @@
 
     var cfg = window.BBAI_PHASE17 || {};
     var root = document.getElementById('bbai-phase17-assistant');
-    if (!root || !cfg.restUrl || !cfg.nonce) {
-        return;
-    }
 
     function esc(s) {
         var d = document.createElement('div');
         d.textContent = s;
         return d.innerHTML;
+    }
+
+    /**
+     * One-click improve (weak ALT rows) — REST + full page refresh for consistent library state.
+     * This is intentionally available even when the optional floating assistant mount is absent.
+     */
+    window.bbaiHandlePhase17ImproveAlt = function (e) {
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
+        if (e && typeof e.stopPropagation === 'function') {
+            e.stopPropagation();
+        }
+        var btn = this;
+        if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true' || (btn.classList && btn.classList.contains('bbai-is-locked'))) {
+            return false;
+        }
+        var idRaw = btn.getAttribute('data-attachment-id') || '';
+        var id = parseInt(idRaw, 10);
+        if (!id || id <= 0 || !cfg.improveUrlTemplate || !cfg.nonce) {
+            if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                window.bbaiPushToast('error', cfg.strings && cfg.strings.improveFail ? cfg.strings.improveFail : 'Could not improve ALT text.');
+            }
+            return false;
+        }
+        var baseLabel = (btn.textContent || '').trim();
+        var working =
+            cfg.strings && cfg.strings.improveWorking ? cfg.strings.improveWorking : 'Improving...';
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        if (baseLabel) {
+            btn.textContent = working;
+        }
+        var url = cfg.improveUrlTemplate.replace(/\/?$/, '/') + id;
+        fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-WP-Nonce': cfg.nonce
+            }
+        })
+            .then(function (r) {
+                return r.json().then(function (body) {
+                    return { ok: r.ok, body: body };
+                });
+            })
+            .then(function (res) {
+                if (res.ok && res.body && res.body.alt) {
+                    var msg =
+                        cfg.strings && cfg.strings.improveDone
+                            ? cfg.strings.improveDone
+                            : 'ALT text updated.';
+                    if (res.body.text_only_tip && window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                        var tipLabel = cfg.strings && cfg.strings.improveTip ? cfg.strings.improveTip : 'Tip';
+                        window.bbaiPushToast('info', tipLabel + ': ' + String(res.body.text_only_tip));
+                    }
+                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                        window.bbaiPushToast('success', msg);
+                    }
+                    window.setTimeout(function () {
+                        window.location.reload();
+                    }, 600);
+                    return;
+                }
+                var err = (res.body && (res.body.message || res.body.code)) || '';
+                var tip = res.body && res.body.data && res.body.data.text_only_tip ? res.body.data.text_only_tip : res.body.text_only_tip;
+                if (tip && window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                    var tl = cfg.strings && cfg.strings.improveTip ? cfg.strings.improveTip : 'Tip';
+                    window.bbaiPushToast('info', tl + ': ' + String(tip));
+                }
+                if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                    window.bbaiPushToast(
+                        'error',
+                        err ||
+                            (cfg.strings && cfg.strings.improveFail
+                                ? cfg.strings.improveFail
+                                : 'Could not improve ALT text.')
+                    );
+                }
+            })
+            .catch(function () {
+                if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
+                    window.bbaiPushToast(
+                        'error',
+                        cfg.strings && cfg.strings.improveFail
+                            ? cfg.strings.improveFail
+                            : 'Could not improve ALT text.'
+                    );
+                }
+            })
+            .finally(function () {
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+                if (baseLabel) {
+                    btn.textContent = baseLabel;
+                }
+            });
+        return false;
+    };
+
+    if (!window.bbaiPhase17ImproveAltDelegated) {
+        window.bbaiPhase17ImproveAltDelegated = true;
+        document.addEventListener('click', function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest('[data-action="phase17-improve-alt"]') : null;
+            if (!btn) {
+                return;
+            }
+            window.bbaiHandlePhase17ImproveAlt.call(btn, e);
+        });
+    }
+
+    if (!root || !cfg.restUrl || !cfg.nonce) {
+        return;
     }
 
     function renderReply(data) {
@@ -139,100 +249,4 @@
         }
     });
 
-    /**
-     * One-click improve (weak ALT rows) — REST + full page refresh for consistent library state.
-     */
-    window.bbaiHandlePhase17ImproveAlt = function (e) {
-        if (e && typeof e.preventDefault === 'function') {
-            e.preventDefault();
-        }
-        if (e && typeof e.stopPropagation === 'function') {
-            e.stopPropagation();
-        }
-        var btn = this;
-        if (!btn || btn.getAttribute('aria-disabled') === 'true' || (btn.classList && btn.classList.contains('bbai-is-locked'))) {
-            return false;
-        }
-        var idRaw = btn.getAttribute('data-attachment-id') || '';
-        var id = parseInt(idRaw, 10);
-        if (!id || id <= 0 || !cfg.improveUrlTemplate || !cfg.nonce) {
-            if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                window.bbaiPushToast('error', cfg.strings && cfg.strings.improveFail ? cfg.strings.improveFail : 'Could not improve ALT text.');
-            }
-            return false;
-        }
-        var baseLabel = (btn.textContent || '').trim();
-        var working =
-            cfg.strings && cfg.strings.improveWorking ? cfg.strings.improveWorking : 'Improving…';
-        btn.disabled = true;
-        btn.setAttribute('aria-busy', 'true');
-        if (baseLabel) {
-            btn.textContent = working;
-        }
-        var url = cfg.improveUrlTemplate.replace(/\/?$/, '/') + id;
-        fetch(url, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'X-WP-Nonce': cfg.nonce
-            }
-        })
-            .then(function (r) {
-                return r.json().then(function (body) {
-                    return { ok: r.ok, body: body };
-                });
-            })
-            .then(function (res) {
-                if (res.ok && res.body && res.body.alt) {
-                    var msg =
-                        cfg.strings && cfg.strings.improveDone
-                            ? cfg.strings.improveDone
-                            : 'ALT text updated.';
-                    if (res.body.text_only_tip && window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                        var tipLabel = cfg.strings && cfg.strings.improveTip ? cfg.strings.improveTip : 'Tip';
-                        window.bbaiPushToast('info', tipLabel + ': ' + String(res.body.text_only_tip));
-                    }
-                    if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                        window.bbaiPushToast('success', msg);
-                    }
-                    window.setTimeout(function () {
-                        window.location.reload();
-                    }, 600);
-                    return;
-                }
-                var err = (res.body && (res.body.message || res.body.code)) || '';
-                var tip = res.body && res.body.data && res.body.data.text_only_tip ? res.body.data.text_only_tip : res.body.text_only_tip;
-                if (tip && window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                    var tl = cfg.strings && cfg.strings.improveTip ? cfg.strings.improveTip : 'Tip';
-                    window.bbaiPushToast('info', tl + ': ' + String(tip));
-                }
-                if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                    window.bbaiPushToast(
-                        'error',
-                        err ||
-                            (cfg.strings && cfg.strings.improveFail
-                                ? cfg.strings.improveFail
-                                : 'Could not improve ALT text.')
-                    );
-                }
-            })
-            .catch(function () {
-                if (window.bbaiPushToast && typeof window.bbaiPushToast === 'function') {
-                    window.bbaiPushToast(
-                        'error',
-                        cfg.strings && cfg.strings.improveFail
-                            ? cfg.strings.improveFail
-                            : 'Could not improve ALT text.'
-                    );
-                }
-            })
-            .finally(function () {
-                btn.disabled = false;
-                btn.removeAttribute('aria-busy');
-                if (baseLabel) {
-                    btn.textContent = baseLabel;
-                }
-            });
-        return false;
-    };
 })();

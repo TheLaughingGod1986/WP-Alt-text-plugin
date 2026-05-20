@@ -53,6 +53,7 @@ rsync -a \
     --exclude 'wp-login.js' \
     --exclude '.DS_Store' \
     --exclude '*/.DS_Store' \
+    --exclude 'assets/src/' \
     --exclude 'assets/img/screenshots/' \
     "$ROOT_DIR/" "$STAGE_DIR/"
 

@@ -172,6 +172,19 @@ class BBAI_Telemetry {
 			return;
 		}
 
+		$site_hash = self::resolve_site_id();
+		$properties = array_merge(
+			[
+				'site_hash'      => $site_hash,
+				'site_url'       => home_url( '/' ),
+				'wp_version'     => get_bloginfo( 'version' ),
+				'plugin_version' => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+				'plan'           => self::resolve_plan_type(),
+				'is_internal'    => self::is_internal_environment(),
+			],
+			$properties
+		);
+
 		if ( ! apply_filters( 'bbai_posthog_server_capture_enabled', true, $event_name, $distinct_id, $properties ) ) {
 			return;
 		}
@@ -215,7 +228,7 @@ class BBAI_Telemetry {
 	 * @param array<string,mixed> $properties Sanitized event properties.
 	 */
 	private static function resolve_posthog_distinct_id( array $properties = [] ): string {
-		foreach ( [ 'account_id', 'user_id', 'site_id', 'site_hash' ] as $key ) {
+		foreach ( [ 'license_id', 'account_id', 'site_hash' ] as $key ) {
 			if ( empty( $properties[ $key ] ) || ! is_scalar( $properties[ $key ] ) ) {
 				continue;
 			}
@@ -228,10 +241,10 @@ class BBAI_Telemetry {
 
 		$site_id = self::resolve_site_id();
 		if ( '' !== $site_id ) {
-			return hash( 'sha256', $site_id );
+			return $site_id;
 		}
 
-		return hash( 'sha256', home_url( '/' ) );
+		return home_url( '/' );
 	}
 
 	/**
@@ -261,10 +274,7 @@ class BBAI_Telemetry {
 			if ( '' === $key || strlen( $key ) > 48 ) {
 				continue;
 			}
-			if ( 'license_key_present' !== $key && preg_match( '/(^|_)(password|token|jwt|secret|nonce|api_?key|license_?key|authorization|auth_header|email|site_?url)($|_)/', $key ) ) {
-				if ( in_array( $key, [ 'license_key', 'licensekey' ], true ) && ! empty( $v ) ) {
-					$out['license_key_present'] = true;
-				}
+			if ( 'site_url' !== $key && preg_match( '/(^|_)(password|token|jwt|secret|nonce|api_?key|license_?key|authorization|auth_header|email|wordpress_user_id)($|_)/', $key ) ) {
 				continue;
 			}
 			if ( is_bool( $v ) ) {
@@ -293,11 +303,7 @@ class BBAI_Telemetry {
 					if ( '' === $snk ) {
 						continue;
 					}
-					if ( 'license_key_present' !== $snk && preg_match( '/(^|_)(password|token|jwt|secret|nonce|api_?key|license_?key|authorization|auth_header|email|site_?url)($|_)/', $snk ) ) {
-						if ( in_array( $snk, [ 'license_key', 'licensekey' ], true ) && ! empty( $nv ) ) {
-							$nested['license_key_present'] = true;
-							++$i;
-						}
+					if ( 'site_url' !== $snk && preg_match( '/(^|_)(password|token|jwt|secret|nonce|api_?key|license_?key|authorization|auth_header|email|wordpress_user_id)($|_)/', $snk ) ) {
 						continue;
 					}
 					if ( is_scalar( $nv ) ) {
@@ -334,6 +340,19 @@ class BBAI_Telemetry {
 			return (string) get_site_identifier();
 		}
 		return '';
+	}
+
+	private static function is_internal_environment(): bool {
+		if ( ! function_exists( __NAMESPACE__ . '\\is_internal_environment' ) ) {
+			$file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+			if ( is_readable( $file ) ) {
+				require_once $file;
+			}
+		}
+
+		return function_exists( __NAMESPACE__ . '\\is_internal_environment' )
+			? (bool) is_internal_environment()
+			: ( defined( 'WP_DEBUG' ) && WP_DEBUG );
 	}
 
 	private static function resolve_plan_type(): string {

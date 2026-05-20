@@ -76,20 +76,20 @@
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #10b981, #22c55e);
+    background: linear-gradient(90deg, #20b26c, #22b573);
     transition: width 0.35s ease;
 }
 
 .bbai-retention-strip[data-progress-tone='danger'] .bbai-retention-strip__bar-fill {
-    background: linear-gradient(90deg, #ef4444, #f97316);
+    background: linear-gradient(90deg, #c97a00, #d48806);
 }
 
 .bbai-retention-strip[data-progress-tone='warning'] .bbai-retention-strip__bar-fill {
-    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    background: linear-gradient(90deg, #d9a441, #e0b35a);
 }
 
 .bbai-retention-strip[data-progress-tone='complete'] .bbai-retention-strip__bar-fill {
-    background: linear-gradient(90deg, #10b981, #22c55e);
+    background: linear-gradient(90deg, #20b26c, #22b573);
 }
 
 .bbai-retention-strip__processed {

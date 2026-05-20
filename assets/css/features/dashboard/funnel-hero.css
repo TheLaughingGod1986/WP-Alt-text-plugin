@@ -266,11 +266,11 @@ body:not(.bbai-dashboard--connected) .bbai-dashboard-shell #bbai-dashboard-main 
 }
 
 .bbai-command-donut__center-value--problem {
-    color: #ef4444;
+    color: #805112;
 }
 
 .bbai-command-donut__center-value--healthy {
-    color: #22c55e;
+    color: #08785c;
 }
 
 .bbai-command-donut__center-value--scanning,
@@ -680,23 +680,23 @@ body:not(.bbai-dashboard--connected) .bbai-dashboard-shell #bbai-dashboard-main 
 }
 
 .bbai-dashboard-credits--low .bbai-dashboard-credits__progress {
-    background: rgba(245, 158, 11, 0.14);
+    background: rgba(91, 110, 168, 0.14);
 }
 
 .bbai-dashboard-credits--low .bbai-dashboard-credits__progress-fill {
-    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    background: linear-gradient(90deg, #5b6ea8 0%, #6274b8 100%);
 }
 
 .bbai-dashboard-credits--exhausted .bbai-dashboard-credits__remaining {
-    color: #b91c1c;
+    color: #4c5f9f;
 }
 
 .bbai-dashboard-credits--exhausted .bbai-dashboard-credits__progress {
-    background: rgba(248, 113, 113, 0.16);
+    background: rgba(91, 110, 168, 0.16);
 }
 
 .bbai-dashboard-credits--exhausted .bbai-dashboard-credits__progress-fill {
-    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+    background: linear-gradient(90deg, #5b6ea8 0%, #6a6fd1 100%);
 }
 
 .bbai-dashboard-credits__remaining {
@@ -990,13 +990,13 @@ body.bbai-guest-conversion-modal-open {
 }
 
 .bbai-header-trial-credits--exhausted {
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.28);
-    color: #fecaca;
+    background: rgba(91, 110, 168, 0.16);
+    border: 1px solid rgba(98, 116, 184, 0.32);
+    color: #d9def5;
 }
 
 .bbai-header-trial-credits--exhausted::before {
-    background: #ef4444;
+    background: #6274b8;
     opacity: 0.9;
 }
 

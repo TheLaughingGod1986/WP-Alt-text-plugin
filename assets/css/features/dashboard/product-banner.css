@@ -281,23 +281,23 @@
 /* Low-credits: slightly desaturated amber (calmer than pure tailwind-amber) */
 .bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
 .bbai-banner--warning.bbai-dashboard-hero--command[data-tone='attention'] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+    background: linear-gradient(90deg, #c97a00 0%, #d48806 100%);
 }
 
 .bbai-banner--warning[data-tone='paused'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
 .bbai-banner--warning.bbai-dashboard-hero--command[data-tone='paused'] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+    background: linear-gradient(90deg, #5b6ea8 0%, #6a6fd1 100%);
 }
 
 /* Dashboard + .bbai-status-banner: ID-safe parity with shared warning progress fills */
 #bbai-dashboard-main .bbai-status-banner.bbai-banner--warning[data-tone='attention'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
 #bbai-dashboard-main .bbai-status-banner.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='attention'] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+    background: linear-gradient(90deg, #c97a00 0%, #d48806 100%);
 }
 
 #bbai-dashboard-main .bbai-status-banner.bbai-banner--warning[data-tone='paused'] .bbai-banner__progress-fill.bbai-dashboard-hero-progress-fill,
 #bbai-dashboard-main .bbai-status-banner.bbai-banner--warning.bbai-dashboard-hero--command[data-tone='paused'] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+    background: linear-gradient(90deg, #5b6ea8 0%, #6a6fd1 100%);
 }
 
 /*
