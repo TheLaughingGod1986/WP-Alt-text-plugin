@@ -172,7 +172,7 @@ $bbai_build_donut_background = static function ( int $optimized, int $weak, int 
 };
 
 $bbai_format_last_scan = static function ( int $timestamp ): string {
-	$now = (int) current_time( 'timestamp' );
+	$now = time();
 	if ( $timestamp <= 0 || $timestamp > $now ) {
 		return '';
 	}
@@ -359,7 +359,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 
 	$bbai_days_until_reset = null;
 	if ( $bbai_has_reset_timestamp ) {
-		$bbai_days_until_reset = Usage_Tracker::calculate_days_until_reset( (int) $bbai_reset_ts, (int) current_time( 'timestamp' ) );
+		$bbai_days_until_reset = Usage_Tracker::calculate_days_until_reset( (int) $bbai_reset_ts, time() );
 	} elseif ( isset( $bbai_usage_stats['days_until_reset'] ) && is_numeric( $bbai_usage_stats['days_until_reset'] ) ) {
 		$bbai_days_until_reset = max( 0, (int) $bbai_usage_stats['days_until_reset'] );
 	}
@@ -376,7 +376,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 				? sprintf(
 					/* translators: %s: formatted reset date. */
 					__( 'Resets %s', 'beepbeep-ai-alt-text-generator' ),
-					date_i18n( get_option( 'date_format' ), $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : current_time( 'timestamp' ) )
+					date_i18n( get_option( 'date_format' ), $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : time() )
 				)
 				: __( 'Resets monthly', 'beepbeep-ai-alt-text-generator' )
 		);
@@ -391,7 +391,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 			? sprintf(
 				/* translators: %s: formatted credit reset date. */
 				__( 'Credits reset %s', 'beepbeep-ai-alt-text-generator' ),
-				date_i18n( 'F j, Y', $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : current_time( 'timestamp' ) )
+				date_i18n( 'F j, Y', $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : time() )
 			)
 			: __( 'Credits reset monthly', 'beepbeep-ai-alt-text-generator' ) );
 	$bbai_plan_label = $bbai_is_anonymous_trial

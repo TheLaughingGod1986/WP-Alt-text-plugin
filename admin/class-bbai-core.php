@@ -5392,6 +5392,7 @@ class Core {
 			$mime = function_exists( 'mime_content_type' ) ? mime_content_type( $file ) : 'image/jpeg';
 		}
 
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Generating a legitimate data: URI for inline image embedding.
 		$base64 = base64_encode( $contents );
 		if ( ! $base64 ) {
 			return new \WP_Error( 'inline_image_encode_failed', __( 'Failed to encode the image for inline embedding.', 'beepbeep-ai-alt-text-generator' ) );
@@ -7007,11 +7008,13 @@ class Core {
 		return $bulk_actions;
 	}
 
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- WordPress filter signature; bulk action is intentionally disabled.
 	public function handle_bulk_action( $redirect_to, $doaction, $post_ids ) {
 		// Media Library bulk action is intentionally disabled.
 		return $redirect_to;
 	}
 
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- WordPress filter signature; row action is intentionally disabled.
 	public function row_action_link( $actions, $post ) {
 		// Media Library row action is intentionally disabled.
 		if ( isset( $actions['bbai_generate_single'] ) ) {
@@ -7020,6 +7023,7 @@ class Core {
 		return $actions;
 	}
 
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- WordPress filter signature; attachment panel is intentionally disabled.
 	public function attachment_fields_to_edit( $fields, $post ) {
 		// Media Library attachment panel button is intentionally disabled.
 		if ( isset( $fields['bbai_regenerate'] ) ) {
@@ -8708,6 +8712,7 @@ class Core {
 		return $data;
 	}
 
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- WordPress action signature; only $post_id is needed to invalidate caches.
 	public function handle_attachment_updated( $post_id, $post_after, $post_before ) {
 		$this->invalidate_stats_cache();
 		if ( $this->queue_attachment( $post_id, 'update' ) ) {
