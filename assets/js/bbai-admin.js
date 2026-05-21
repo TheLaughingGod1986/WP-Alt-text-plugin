@@ -18016,7 +18016,54 @@
             message = sprintf(__('Generated ALT text for %s', 'beepbeep-ai-alt-text-generator'), label);
         }
 
+        updateBulkProgressCurrentImage($modal, type, attachmentId, label);
         appendBulkProgressLogEntry($modal, type, message, options || { dedupe: true });
+    }
+
+    function updateBulkProgressCurrentImage($modal, type, attachmentId, label) {
+        var $current;
+        var $status;
+        var $name;
+        var id = Math.max(0, parseInt(attachmentId, 10) || 0);
+        var tone = String(type || '');
+        var statusText = '';
+
+        if (!$modal || !$modal.length) {
+            return;
+        }
+
+        $current = $modal.find('[data-bbai-bulk-progress-current-image]');
+        if (!$current.length) {
+            return;
+        }
+
+        if (tone === 'queued' && $current.attr('data-bbai-current-image-id')) {
+            return;
+        }
+
+        if (tone === 'processing') {
+            statusText = __('Now generating', 'beepbeep-ai-alt-text-generator');
+        } else if (tone === 'success') {
+            statusText = __('Generated', 'beepbeep-ai-alt-text-generator');
+        } else if (tone === 'error') {
+            statusText = __('Needs attention', 'beepbeep-ai-alt-text-generator');
+        } else if (tone === 'queued') {
+            statusText = __('Up next', 'beepbeep-ai-alt-text-generator');
+        }
+
+        if (!statusText) {
+            return;
+        }
+
+        $status = $current.find('[data-bbai-bulk-progress-current-status]');
+        $name = $current.find('[data-bbai-bulk-progress-current-name]');
+
+        $current
+            .prop('hidden', false)
+            .attr('data-tone', tone)
+            .attr('data-bbai-current-image-id', id > 0 ? String(id) : '');
+        $status.text(statusText);
+        $name.text(label || normalizeBulkProgressImageLabel('', id));
     }
 
     function syncBulkProgressItemFeed($modal, items) {
@@ -18116,9 +18163,8 @@
 
         return {
             primary: {
-                label: __('Continue optimising', 'beepbeep-ai-alt-text-generator'),
-                action: 'library',
-                url: libraryUrl
+                label: __('Back to dashboard', 'beepbeep-ai-alt-text-generator'),
+                action: 'dashboard'
             },
             secondary: getBulkProgressDismissSecondaryCta()
         };
@@ -18165,9 +18211,8 @@
             if (hasConnectedAccount) {
                 ctaConfig = {
                     primary: {
-                        label: __('Review AI suggestions', 'beepbeep-ai-alt-text-generator'),
-                        action: 'library',
-                        url: reviewUrl
+                        label: __('Back to dashboard', 'beepbeep-ai-alt-text-generator'),
+                        action: 'dashboard'
                     },
                     secondary: getBulkProgressDismissSecondaryCta()
                 };
@@ -18179,9 +18224,8 @@
             if (hasConnectedAccount) {
                 ctaConfig = {
                     primary: {
-                        label: __('View optimised images', 'beepbeep-ai-alt-text-generator'),
-                        action: 'library',
-                        url: libraryUrl
+                        label: __('Back to dashboard', 'beepbeep-ai-alt-text-generator'),
+                        action: 'dashboard'
                     },
                     secondary: getBulkProgressDismissSecondaryCta()
                 };
@@ -18201,8 +18245,8 @@
             );
         } else if (ctaConfig.secondary && ctaConfig.secondary.action === 'review-result') {
             supportingLine = __('Continue reviewing your generated ALT text from the dashboard.', 'beepbeep-ai-alt-text-generator');
-        } else if (ctaConfig.primary && ctaConfig.primary.action === 'library') {
-            supportingLine = __('Open your results and keep improving your image SEO.', 'beepbeep-ai-alt-text-generator');
+        } else if (ctaConfig.primary && ctaConfig.primary.action === 'dashboard') {
+            supportingLine = __('Your dashboard has the latest results.', 'beepbeep-ai-alt-text-generator');
         }
 
         if (processedN > 0 && root && root.getAttribute('data-bbai-is-premium') !== '1') {
@@ -18331,8 +18375,8 @@
                     formatDashboardNumber(optimized)
                 ),
                 supporting: __('Your SEO coverage improved. nAi will keep watching new uploads.', 'beepbeep-ai-alt-text-generator'),
-                primary: { label: __('Open ALT Library', 'beepbeep-ai-alt-text-generator'), action: 'library' },
-                secondary: { label: __('Upload more images', 'beepbeep-ai-alt-text-generator'), action: 'upload' }
+                primary: { label: __('Back to dashboard', 'beepbeep-ai-alt-text-generator'), action: 'dashboard' },
+                secondary: { label: __('Close', 'beepbeep-ai-alt-text-generator'), action: 'dismiss-completion' }
             };
         }
 
@@ -18576,16 +18620,7 @@
         }
 
         if (action === 'library') {
-            minimizeBulkProgress('completion_library');
-            if (getLibraryWorkspaceRoot()) {
-                if (typeof scrollLibraryReviewListIntoView === 'function') {
-                    scrollLibraryReviewListIntoView();
-                }
-                return;
-            }
-            if (libraryUrl) {
-                window.location.assign(libraryUrl);
-            }
+            handleBulkProgressCompletionAction({ action: 'dashboard' });
         }
     }
 
@@ -18652,8 +18687,8 @@
         if (isComplete && !hasError) {
             ctaConfig = presentation && presentation.ctaConfig ? presentation.ctaConfig : {
                 primary: {
-                    label: __('Review AI suggestions', 'beepbeep-ai-alt-text-generator'),
-                    action: 'review-result'
+                    label: __('Back to dashboard', 'beepbeep-ai-alt-text-generator'),
+                    action: 'dashboard'
                 },
                 secondary: getBulkProgressDismissSecondaryCta()
             };
@@ -20621,6 +20656,13 @@
             '                <div class="bbai-bulk-progress__log-heading">' +
             '                    <h3 class="bbai-bulk-progress__log-title">' + escapeHtml(__('Live feed', 'beepbeep-ai-alt-text-generator')) + '</h3>' +
             '                    <span class="bbai-bulk-progress__log-count" data-bbai-bulk-progress-log-count>' + escapeHtml(__('Waiting for images', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                </div>' +
+            '                <div class="bbai-bulk-progress__current-image" data-bbai-bulk-progress-current-image hidden>' +
+            '                    <span class="bbai-bulk-progress__current-dot" aria-hidden="true"></span>' +
+            '                    <span class="bbai-bulk-progress__current-copy">' +
+            '                        <span class="bbai-bulk-progress__current-status" data-bbai-bulk-progress-current-status>' + escapeHtml(__('Now generating', 'beepbeep-ai-alt-text-generator')) + '</span>' +
+            '                        <span class="bbai-bulk-progress__current-name" data-bbai-bulk-progress-current-name></span>' +
+            '                    </span>' +
             '                </div>' +
             '                <div class="bbai-bulk-progress__log" data-bbai-bulk-progress-log role="list" aria-live="polite">' +
             '                    <div class="bbai-bulk-progress__log-empty" data-bbai-bulk-progress-log-empty>' + escapeHtml(__('Preparing the first image…', 'beepbeep-ai-alt-text-generator')) + '</div>' +

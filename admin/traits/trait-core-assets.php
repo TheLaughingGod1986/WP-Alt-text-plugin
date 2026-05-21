@@ -384,12 +384,27 @@ JS,
             );
         }
 
+        $job_widget_deps = [ 'jquery', 'bbai-job-state' ];
+        if ( $include_recovery_client ) {
+            $bbai_progress_modal_js = 'assets/js/admin/progress-modal.js';
+            if ( file_exists( $base_path . $bbai_progress_modal_js ) ) {
+                wp_enqueue_script(
+                    'bbai-background-progress-modal',
+                    $base_url . $bbai_progress_modal_js,
+                    [ 'jquery', 'bbai-job-state' ],
+                    $this->get_asset_version( $bbai_progress_modal_js, '1.0.0', $base_path ),
+                    true
+                );
+                $job_widget_deps[] = 'bbai-background-progress-modal';
+            }
+        }
+
         $bbai_job_widget_js = 'assets/js/admin/job-widget.js';
         if ( file_exists( $base_path . $bbai_job_widget_js ) ) {
             wp_enqueue_script(
                 'bbai-job-widget',
                 $base_url . $bbai_job_widget_js,
-                [ 'jquery', 'bbai-job-state' ],
+                $job_widget_deps,
                 $this->get_asset_version( $bbai_job_widget_js, '1.0.0', $base_path ),
                 true
             );
@@ -400,6 +415,18 @@ JS,
                     'dashboardUrl' => esc_url_raw( admin_url( 'admin.php?page=bbai' ) ),
                 ]
             );
+        }
+
+        if ( $include_recovery_client ) {
+            $bbai_bulk_progress_css = 'assets/css/unified/_bulk-progress.css';
+            if ( file_exists( $base_path . $bbai_bulk_progress_css ) ) {
+                wp_enqueue_style(
+                    'bbai-background-progress-modal',
+                    $base_url . $bbai_bulk_progress_css,
+                    [],
+                    $this->get_asset_version( $bbai_bulk_progress_css, '1.0.0', $base_path )
+                );
+            }
         }
 
         if ( $include_recovery_client ) {

@@ -6,6 +6,21 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### Unreleased
 
+### 4.6.13 — 2026-05-21
+
+- **Changed**: Updated the public WordPress.org changelog so the latest dashboard performance and compatibility release notes appear correctly.
+- **Changed**: Rebuilt the release package from the current local dashboard assets.
+
+### 4.6.12 — 2026-05-20
+
+- **Changed**: Rebuilt and republished the WordPress.org package from the latest local dashboard assets so live installs receive the current dashboard speed improvements.
+- **Changed**: Refreshed trunk and release tag metadata for the WordPress 7.0 compatible package.
+
+### 4.6.11 — 2026-05-20
+
+- **Changed**: Improved admin dashboard loading performance and reduced perceived wait time during dashboard refreshes.
+- **Changed**: Confirmed WordPress 7.0 compatibility for the current release package.
+
 ### 4.6.10 — 2026-05-20
 
 - **Changed**: Rebuilt the WordPress.org package from the latest dashboard assets so the live plugin matches the current local dashboard polish.

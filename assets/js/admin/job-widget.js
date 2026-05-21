@@ -61,24 +61,57 @@
         // View → reopen modal
         $widget.on('click', '.bbai-job-widget__view', function (event) {
             var opened = false;
+            var state = window.bbaiJobState && window.bbaiJobState.getState ? window.bbaiJobState.getState() : {};
+            var total = Math.max(0, parseInt(state.total, 10) || 0);
+            var progress = Math.max(0, parseInt(state.progress, 10) || 0);
+            var status = String(state.status || 'processing');
             event.preventDefault();
             event.stopPropagation();
             emitAnalytics('generation_modal_reopened', {
                 source: 'global_job_indicator'
             });
-            if (window.bbaiJobState) {
-                window.bbaiJobState.update({ modalVisible: true });
-            }
             if (typeof window.bbaiOpenBulkProgressFromBackground === 'function') {
                 opened = !!window.bbaiOpenBulkProgressFromBackground();
             }
             if (opened) {
                 return;
             }
+
+            if (typeof window.showBulkProgress === 'function') {
+                window.showBulkProgress(
+                    state && state.label ? state.label : 'Generation continues in background',
+                    total,
+                    progress
+                );
+                if (typeof window.updateBulkProgress === 'function') {
+                    window.updateBulkProgress(progress, total);
+                }
+                if (
+                    (status === 'complete' || status === 'error' || status === 'quota') &&
+                    typeof window.showBulkProgressComplete === 'function'
+                ) {
+                    window.showBulkProgressComplete(
+                        Math.max(0, parseInt(state.successes, 10) || 0),
+                        Math.max(0, parseInt(state.failures, 10) || 0),
+                        total
+                    );
+                }
+                opened = $('#bbai-bulk-progress-modal.active').length > 0;
+            }
+            if (opened) {
+                if (window.bbaiJobState) {
+                    window.bbaiJobState.update({ modalVisible: true });
+                }
+                return;
+            }
+
             var $modal = $('#bbai-bulk-progress-modal');
             if ($modal.length) {
                 $modal.addClass('active');
                 $('body').css('overflow', 'hidden');
+                if (window.bbaiJobState) {
+                    window.bbaiJobState.update({ modalVisible: true });
+                }
                 return;
             }
 
@@ -108,6 +141,15 @@
 
     function render(state) {
         if (!$widget) return;
+
+        if (state.modalVisible && !$('#bbai-bulk-progress-modal.active').length) {
+            if (window.bbaiJobState) {
+                window.bbaiJobState.update({ modalVisible: false });
+            }
+            state = Object.assign({}, state, { modalVisible: false });
+        }
+
+        syncOpenProgressModal(state);
 
         // Show widget when: job running but modal hidden, OR job just completed
         var shouldShow = !state.modalVisible && (
@@ -196,6 +238,39 @@
             $widget.removeClass('bbai-job-widget--complete bbai-job-widget--error')
                    .addClass('bbai-job-widget--processing');
             viewBtn.text('View progress');
+        }
+    }
+
+    function syncOpenProgressModal(state) {
+        var $modal = $('#bbai-bulk-progress-modal.active');
+        var total;
+        var progress;
+        var status;
+
+        if (!$modal.length || !state) {
+            return;
+        }
+
+        total = Math.max(0, parseInt(state.total, 10) || 0);
+        progress = Math.max(0, parseInt(state.progress, 10) || 0);
+        status = String(state.status || 'processing');
+
+        if (typeof window.updateBulkProgress === 'function') {
+            window.updateBulkProgress(progress, total);
+        }
+        if (typeof window.updateBulkProgressTitle === 'function' && state.label) {
+            window.updateBulkProgressTitle(state.label);
+        }
+        if (
+            (status === 'complete' || status === 'error' || status === 'quota') &&
+            !$modal.data('bbaiComplete') &&
+            typeof window.showBulkProgressComplete === 'function'
+        ) {
+            window.showBulkProgressComplete(
+                Math.max(0, parseInt(state.successes, 10) || 0),
+                Math.max(0, parseInt(state.failures, 10) || 0),
+                total
+            );
         }
     }
 
