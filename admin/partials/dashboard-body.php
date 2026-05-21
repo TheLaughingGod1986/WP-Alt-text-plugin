@@ -10,6 +10,50 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ── Local preview flag — ?bbai_preview=nai ─────────────────────────────────
+// Renders the nAi Dashboard with stubbed state, bypassing auth/data dependencies
+// so the new design can be reviewed on a local WordPress without a connected
+// BeepBeep account. Restricted to admins for safety.
+if (
+	isset( $_GET['bbai_preview'] )
+	&& 'nai' === sanitize_key( wp_unslash( (string) $_GET['bbai_preview'] ) )
+	&& current_user_can( 'manage_options' )
+) {
+	$bbai_nai_preview_plan = isset( $_GET['plan'] ) && 'pro' === sanitize_key( wp_unslash( (string) $_GET['plan'] ) ) ? 'pro' : 'free';
+
+	$bbai_li_state = array(
+		'state' => 'PREVIEW',
+		'donut' => array(
+			'segments' => array(
+				'optimized' => 247,
+				'missing'   => 142,
+			),
+		),
+		'meta'  => array(
+			'total_images'    => 412,
+			'new_since_visit' => 3,
+		),
+		'usage' => array(
+			'used'      => 'pro' === $bbai_nai_preview_plan ? 27 : 3,
+			'total'     => 'pro' === $bbai_nai_preview_plan ? 1000 : 50,
+			'remaining' => 'pro' === $bbai_nai_preview_plan ? 973 : 47,
+		),
+	);
+	$bbai_state_is_pro_plan = ( 'pro' === $bbai_nai_preview_plan );
+	$bbai_is_premium        = $bbai_state_is_pro_plan;
+
+	echo '<div class="wrap" style="background:#f6f8fb;min-height:100vh;padding:20px">';
+	echo '<div style="max-width:1180px;margin:0 auto 12px;padding:8px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;font:13px system-ui;color:#78350f">';
+	echo '<strong>nAi preview mode</strong> · plan=' . esc_html( $bbai_nai_preview_plan );
+	echo ' · <a href="' . esc_url( add_query_arg( 'plan', 'pro' ) ) . '">switch to pro</a>';
+	echo ' · <a href="' . esc_url( add_query_arg( 'plan', 'free' ) ) . '">switch to free</a>';
+	echo ' · <a href="' . esc_url( remove_query_arg( array( 'bbai_preview', 'plan' ) ) ) . '">exit preview</a>';
+	echo '</div>';
+	require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-nai-hero.php';
+	echo '</div>';
+	return;
+}
+
 use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 use BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers;
 use BeepBeepAI\AltTextGenerator\Services\Dashboard_State;
