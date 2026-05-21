@@ -63,38 +63,30 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 	?>
 
 	<?php /* Intentionally no top marketing banner on dashboard — copy lives in the hero. */ ?>
-	<?php /* Hero grid — primary action surface */ ?>
-	<div class="bbai-li-hero-shell">
-
-		<?php
-		// ── Hero — mission control: status + single strong action ────────────────
-		$bbai_logged_in_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-hero.php';
-		if ( is_readable( $bbai_logged_in_hero_partial ) ) {
-			require $bbai_logged_in_hero_partial;
-		}
-		?>
-
-	</div><?php /* /.bbai-li-hero-shell */ ?>
-
 	<?php
-	// Phase 14 retention/return strip (compact banner below the hero).
-	$bbai_retention_strip_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-retention-strip.php';
-	if ( isset( $bbai_retention_strip ) && is_readable( $bbai_retention_strip_partial ) ) {
-		require $bbai_retention_strip_partial;
+	// ── nAi Dashboard hero — calm SaaS layout from the claude.ai/design export.
+	// Replaces the legacy donut + insight strip; renders Today's Pass, library
+	// health, autopilot, coverage, activity, and footer metrics in one flow.
+	$bbai_nai_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-nai-hero.php';
+	if ( is_readable( $bbai_nai_partial ) ) {
+		require $bbai_nai_partial;
 	}
 	?>
 
 	<?php
-	// ── Insight stat cards (display-only; values mirror donut + library totals) ──
+	// Legacy retention strip + 3-card insight surface are intentionally omitted —
+	// the nAi hero (above) already renders coverage, activity and footer metrics.
+	?>
+	<?php
 	$bbai_li_seg   = is_array( $bbai_li_state['donut']['segments'] ?? null ) ? $bbai_li_state['donut']['segments'] : array();
 	$bbai_li_opt   = max( 0, (int) ( $bbai_li_seg['optimized'] ?? 0 ) );
 	$bbai_li_miss  = max( 0, (int) ( $bbai_li_seg['missing'] ?? 0 ) );
 	$bbai_li_lib_n = max( 0, (int) ( $bbai_li_state['meta']['total_images'] ?? 0 ) );
 	$bbai_li_with  = $bbai_li_lib_n > 0 ? max( 0, $bbai_li_lib_n - $bbai_li_miss ) : 0;
 	$bbai_li_cov   = $bbai_li_lib_n > 0 ? (int) min( 100, (int) round( ( 100 * $bbai_li_with ) / $bbai_li_lib_n ) ) : 0;
-	// Rough UX estimate: ~2 minutes manual ALT work per optimised image.
-	$bbai_li_mins = $bbai_li_opt * 2;
+	$bbai_li_mins  = $bbai_li_opt * 2;
 	?>
+	<?php if ( false ) : // Disabled: legacy insight cards superseded by nAi footer metrics. ?>
 	<section
 		class="bbai-li-insights"
 		aria-label="<?php echo esc_attr__( 'Library insights', 'beepbeep-ai-alt-text-generator' ); ?>"
@@ -243,5 +235,6 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 			</div>
 		</article>
 	</section>
+	<?php endif; /* End disabled legacy insight strip */ ?>
 
 </section>

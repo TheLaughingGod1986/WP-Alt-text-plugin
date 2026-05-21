@@ -1,0 +1,980 @@
+/**
+ * nAi Dashboard — calm, premium SaaS layout for the BeepBeep AI logged-in surface.
+ *
+ * Implements the design exported from claude.ai/design ("nAi Dashboard"):
+ *  - Today's Pass hero (clickable, with image queue)
+ *  - Library Health (compact ring + steady-improvement projection)
+ *  - Autopilot upsell / active card
+ *  - Library Coverage strip
+ *  - Latest improvements strip
+ *  - Footer metrics row
+ *
+ * All styles are scoped to `.bbai-nai-dash` so they cannot leak into other
+ * admin pages. Loaded after dashboard-composition.css so it wins the cascade.
+ *
+ * @package BeepBeep_AI
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS  (scoped)
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash {
+	--nai-font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+	--nai-font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+	--nai-bg: #f6f8fb;
+	--nai-bg-sunken: #eef2f7;
+	--nai-surface: #ffffff;
+	--nai-surface-2: #f8fafc;
+	--nai-border: #e6eaf0;
+	--nai-border-strong: #d2d8e2;
+	--nai-hairline: #eef1f6;
+
+	--nai-text: #0f172a;
+	--nai-text-2: #475569;
+	--nai-text-3: #64748b;
+	--nai-text-inv: #ffffff;
+
+	--nai-primary: #2563eb;
+	--nai-primary-strong: #1d4ed8;
+	--nai-primary-soft: #eff4fe;
+	--nai-primary-border: #c7d7f7;
+	--nai-primary-ink: #1d4ed8;
+
+	--nai-ok: #10b981;
+	--nai-ok-soft: #ecfdf5;
+	--nai-ok-border: #bbf0d6;
+	--nai-ok-ink: #047857;
+
+	--nai-warn: #d97706;
+	--nai-warn-soft: #fff7ed;
+	--nai-warn-border: #fde3be;
+	--nai-warn-ink: #b45309;
+
+	--nai-danger: #ef4444;
+	--nai-danger-soft: #fef2f2;
+	--nai-danger-border: #fecaca;
+	--nai-danger-ink: #b91c1c;
+
+	--nai-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+	--nai-shadow-md: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px -6px rgba(15, 23, 42, 0.08);
+
+	--nai-r-md: 10px;
+	--nai-r-lg: 14px;
+
+	font-family: var(--nai-font-sans);
+	color: var(--nai-text);
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: 4px 0 32px;
+}
+
+.bbai-nai-dash *,
+.bbai-nai-dash *::before,
+.bbai-nai-dash *::after {
+	box-sizing: border-box;
+}
+
+.bbai-nai-dash .nai-mono {
+	font-family: var(--nai-font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+.bbai-nai-dash .nai-tnum {
+	font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HERO — Today's Pass
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-hero {
+	background: var(--nai-surface);
+	border: 1px solid var(--nai-border);
+	border-radius: var(--nai-r-lg);
+	box-shadow: var(--nai-shadow-sm);
+	overflow: hidden;
+	transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.08s ease;
+}
+
+.bbai-nai-dash .nai-hero--interactive {
+	cursor: pointer;
+}
+
+.bbai-nai-dash .nai-hero--interactive:hover {
+	box-shadow: var(--nai-shadow-md);
+	border-color: var(--nai-border-strong);
+}
+
+.bbai-nai-dash .nai-hero--interactive:focus-visible {
+	outline: 2px solid var(--nai-primary);
+	outline-offset: 2px;
+}
+
+.bbai-nai-dash .nai-hero__head {
+	padding: 16px 20px 0;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.bbai-nai-dash .nai-eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--nai-primary-ink);
+	margin: 0 0 4px;
+	white-space: nowrap;
+}
+
+.bbai-nai-dash .nai-eyebrow--muted {
+	color: var(--nai-text-3);
+	font-weight: 600;
+}
+
+.bbai-nai-dash .nai-eyebrow__icon {
+	color: var(--nai-primary);
+	flex-shrink: 0;
+}
+
+.bbai-nai-dash .nai-hero__headline {
+	font-size: 19px;
+	font-weight: 600;
+	letter-spacing: -0.015em;
+	line-height: 1.3;
+	color: var(--nai-text);
+	margin: 0;
+}
+
+.bbai-nai-dash .nai-hero__headline .nai-mono {
+	font-weight: 600;
+}
+
+/* Image queue row */
+.bbai-nai-dash .nai-queue {
+	padding: 12px 20px 0;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(var(--nai-queue-cols, 5), minmax(0, 1fr));
+}
+
+.bbai-nai-dash .nai-queue-item {
+	padding: 10px;
+	background: var(--nai-surface-2);
+	border: 1px solid var(--nai-hairline);
+	border-radius: var(--nai-r-md);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.bbai-nai-dash .nai-queue-thumb {
+	width: 40px;
+	height: 40px;
+	flex-shrink: 0;
+	border-radius: 7px;
+	overflow: hidden;
+	background-color: #e2e8f0;
+	background-image: repeating-linear-gradient(45deg, #cbd5e1 0, #cbd5e1 6px, #e2e8f0 6px, #e2e8f0 12px);
+	font-family: var(--nai-font-mono);
+	font-size: 10px;
+	color: var(--nai-text-3);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.bbai-nai-dash .nai-queue-thumb img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.bbai-nai-dash .nai-queue-meta {
+	min-width: 0;
+	flex: 1;
+}
+
+.bbai-nai-dash .nai-queue-name {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--nai-text);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bbai-nai-dash .nai-signal {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	background: var(--nai-bg-sunken);
+	color: var(--nai-text-3);
+	border: 1px solid var(--nai-hairline);
+	border-radius: 999px;
+	padding: 1px 7px;
+	margin-top: 3px;
+	font-size: 10.5px;
+	font-weight: 500;
+	line-height: 1.5;
+	letter-spacing: -0.005em;
+	white-space: nowrap;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bbai-nai-dash .nai-signal--warn {
+	background: var(--nai-warn-soft);
+	color: var(--nai-warn-ink);
+	border-color: var(--nai-warn-border);
+	font-weight: 600;
+}
+
+.bbai-nai-dash .nai-signal--warn::before {
+	content: "";
+	width: 5px;
+	height: 5px;
+	border-radius: 999px;
+	background: var(--nai-warn);
+	flex-shrink: 0;
+}
+
+.bbai-nai-dash .nai-signal--danger {
+	background: var(--nai-danger-soft);
+	color: var(--nai-danger-ink);
+	border-color: var(--nai-danger-border);
+	font-weight: 600;
+}
+
+.bbai-nai-dash .nai-signal--danger::before {
+	content: "";
+	width: 5px;
+	height: 5px;
+	border-radius: 999px;
+	background: var(--nai-danger);
+	flex-shrink: 0;
+}
+
+/* Empty state inside the hero */
+.bbai-nai-dash .nai-hero__empty {
+	margin: 10px 20px 0;
+	padding: 12px 14px;
+	background: var(--nai-ok-soft);
+	border: 1px solid var(--nai-ok-border);
+	border-radius: var(--nai-r-md);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 13px;
+	color: var(--nai-ok-ink);
+	line-height: 1.45;
+}
+
+.bbai-nai-dash .nai-hero__empty strong {
+	font-weight: 600;
+}
+
+/* Hero footer: status text + CTA */
+.bbai-nai-dash .nai-hero__foot {
+	padding: 12px 20px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.bbai-nai-dash .nai-hero__status {
+	font-size: 12px;
+	color: var(--nai-text-3);
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-variant-numeric: tabular-nums;
+}
+
+.bbai-nai-dash .nai-hero__status-strong {
+	color: var(--nai-text-2);
+	font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border-radius: var(--nai-r-md);
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 600;
+	letter-spacing: -0.005em;
+	cursor: pointer;
+	white-space: nowrap;
+	padding: 9px 14px;
+	border: 1px solid transparent;
+	text-decoration: none;
+	transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease,
+		transform 0.08s ease;
+}
+
+.bbai-nai-dash .nai-btn--lg {
+	padding: 12px 18px;
+	font-size: 15px;
+}
+
+.bbai-nai-dash .nai-btn--sm {
+	padding: 6px 10px;
+	font-size: 13px;
+}
+
+.bbai-nai-dash .nai-btn--full {
+	width: 100%;
+}
+
+.bbai-nai-dash .nai-btn--primary {
+	background: var(--nai-text);
+	color: #fff;
+	border-color: var(--nai-text);
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.bbai-nai-dash .nai-btn--primary:hover {
+	background: #020617;
+	color: #fff;
+}
+
+.bbai-nai-dash .nai-btn--pro {
+	background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+	color: #fff;
+	border-color: #1d4ed8;
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.bbai-nai-dash .nai-btn--pro:hover {
+	background: linear-gradient(180deg, #1d4ed8 0%, #1e40af 100%);
+	color: #fff;
+}
+
+.bbai-nai-dash .nai-btn--secondary {
+	background: var(--nai-surface);
+	color: var(--nai-text);
+	border-color: var(--nai-border-strong);
+}
+
+.bbai-nai-dash .nai-btn--secondary:hover {
+	background: var(--nai-bg-sunken);
+}
+
+.bbai-nai-dash .nai-btn[disabled],
+.bbai-nai-dash .nai-btn[aria-disabled="true"] {
+	background: #f1f5f9 !important;
+	color: var(--nai-text-3) !important;
+	border-color: #e2e8f0 !important;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+.bbai-nai-dash .nai-btn:active:not([disabled]) {
+	transform: scale(0.98);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CARD SHELL + GRID
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-grid-pair {
+	display: grid;
+	grid-template-columns: 1.25fr 1fr;
+	gap: 14px;
+	margin-top: 20px;
+	align-items: stretch;
+}
+
+.bbai-nai-dash .nai-card {
+	background: var(--nai-surface);
+	border: 1px solid var(--nai-border);
+	border-radius: var(--nai-r-lg);
+	box-shadow: var(--nai-shadow-sm);
+	display: flex;
+	flex-direction: column;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LIBRARY HEALTH CARD
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-health__top {
+	padding: 14px 18px 12px;
+	display: flex;
+	gap: 14px;
+	align-items: center;
+}
+
+.bbai-nai-dash .nai-ring {
+	width: 56px;
+	height: 56px;
+	position: relative;
+	flex-shrink: 0;
+}
+
+.bbai-nai-dash .nai-ring svg {
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+}
+
+.bbai-nai-dash .nai-ring__track {
+	stroke: var(--nai-hairline);
+	fill: none;
+	stroke-width: 5;
+}
+
+.bbai-nai-dash .nai-ring__fill {
+	stroke: var(--nai-primary);
+	fill: none;
+	stroke-width: 5;
+	stroke-linecap: round;
+	transition: stroke-dasharray 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bbai-nai-dash .nai-ring--ok .nai-ring__fill {
+	stroke: var(--nai-ok);
+}
+
+.bbai-nai-dash .nai-ring--warn .nai-ring__fill {
+	stroke: var(--nai-warn);
+}
+
+.bbai-nai-dash .nai-ring__label {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--nai-font-mono);
+	font-variant-numeric: tabular-nums;
+	font-size: 15px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	color: var(--nai-text);
+}
+
+.bbai-nai-dash .nai-health__copy {
+	flex: 1;
+	min-width: 0;
+}
+
+.bbai-nai-dash .nai-health__copy .nai-eyebrow--muted {
+	margin-bottom: 4px;
+}
+
+.bbai-nai-dash .nai-health__numbers {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.bbai-nai-dash .nai-health__value {
+	font-family: var(--nai-font-mono);
+	font-variant-numeric: tabular-nums;
+	font-size: 22px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	line-height: 1.1;
+	color: var(--nai-text);
+}
+
+.bbai-nai-dash .nai-health__total {
+	font-size: 13px;
+	color: var(--nai-text-3);
+}
+
+.bbai-nai-dash .nai-health__delta {
+	font-size: 12px;
+	color: var(--nai-ok-ink);
+	font-weight: 600;
+	margin-left: 2px;
+	white-space: nowrap;
+}
+
+.bbai-nai-dash .nai-health__milestone {
+	font-size: 12px;
+	color: var(--nai-text-2);
+	margin-top: 2px;
+}
+
+.bbai-nai-dash .nai-health__milestone strong {
+	color: var(--nai-text);
+	font-weight: 600;
+	font-family: var(--nai-font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Steady improvement insight */
+.bbai-nai-dash .nai-insight {
+	padding: 12px 18px 14px;
+	border-top: 1px solid var(--nai-hairline);
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 4px;
+}
+
+.bbai-nai-dash .nai-insight__title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--nai-text);
+	letter-spacing: -0.005em;
+}
+
+.bbai-nai-dash .nai-insight__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 999px;
+	background: var(--nai-ok-ink);
+	flex-shrink: 0;
+	animation: bbaiNaiAmbientPulse 3.2s ease-in-out infinite;
+}
+
+.bbai-nai-dash .nai-insight__body {
+	font-size: 12.5px;
+	color: var(--nai-text-2);
+	line-height: 1.55;
+	padding-left: 12px;
+	margin: 0;
+}
+
+.bbai-nai-dash .nai-insight__body strong {
+	color: var(--nai-text);
+	font-weight: 600;
+	font-family: var(--nai-font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Work saved footer */
+.bbai-nai-dash .nai-worksaved {
+	border-top: 1px solid var(--nai-hairline);
+	padding: 9px 18px;
+	background: var(--nai-surface-2);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	border-bottom-left-radius: var(--nai-r-lg);
+	border-bottom-right-radius: var(--nai-r-lg);
+}
+
+.bbai-nai-dash .nai-worksaved__value {
+	font-size: 12px;
+	color: var(--nai-text-3);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.bbai-nai-dash .nai-worksaved__value strong {
+	font-family: var(--nai-font-mono);
+	font-weight: 500;
+	color: var(--nai-text-2);
+}
+
+.bbai-nai-dash .nai-worksaved__sep {
+	color: var(--nai-text-3);
+	margin: 0 6px;
+	opacity: 0.6;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   AUTOPILOT CARD
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-autopilot__head {
+	padding: 18px 22px 14px;
+}
+
+.bbai-nai-dash .nai-autopilot__head .nai-eyebrow--muted {
+	margin-bottom: 6px;
+}
+
+.bbai-nai-dash .nai-autopilot__headline {
+	font-size: 16px;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	color: var(--nai-text);
+	margin: 0 0 4px;
+}
+
+.bbai-nai-dash .nai-autopilot__sub {
+	font-size: 12.5px;
+	color: var(--nai-text-2);
+	margin: 4px 0 0;
+}
+
+.bbai-nai-dash .nai-feature-list {
+	padding: 2px 22px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	list-style: none;
+}
+
+.bbai-nai-dash .nai-feature-list li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--nai-text);
+}
+
+.bbai-nai-dash .nai-feature-list li.nai-feature--muted {
+	color: var(--nai-text-3);
+}
+
+.bbai-nai-dash .nai-feature-check {
+	color: var(--nai-ok-ink);
+	flex-shrink: 0;
+}
+
+.bbai-nai-dash .nai-feature-list li.nai-feature--muted .nai-feature-check {
+	color: var(--nai-text-3);
+}
+
+.bbai-nai-dash .nai-autopilot__cta {
+	padding: 0 22px 18px;
+}
+
+/* Active state */
+.bbai-nai-dash .nai-autopilot--active .nai-autopilot__head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.bbai-nai-dash .nai-autopilot__head-copy {
+	min-width: 0;
+}
+
+.bbai-nai-dash .nai-toggle {
+	width: 34px;
+	height: 20px;
+	border-radius: 999px;
+	background: var(--nai-bg-sunken);
+	border: 1px solid var(--nai-border-strong);
+	position: relative;
+	cursor: pointer;
+	padding: 0;
+	flex-shrink: 0;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.bbai-nai-dash .nai-toggle::after {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 14px;
+	height: 14px;
+	border-radius: 999px;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+	transition: left 0.15s ease;
+}
+
+.bbai-nai-dash .nai-toggle[aria-pressed="true"] {
+	background: var(--nai-primary);
+	border-color: var(--nai-primary);
+}
+
+.bbai-nai-dash .nai-toggle[aria-pressed="true"]::after {
+	left: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LIBRARY COVERAGE STRIP
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-coverage {
+	margin-top: 20px;
+	padding: 12px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.bbai-nai-dash .nai-coverage__row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.bbai-nai-dash .nai-coverage__label {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	min-width: 0;
+}
+
+.bbai-nai-dash .nai-coverage__value {
+	font-family: var(--nai-font-mono);
+	font-variant-numeric: tabular-nums;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nai-text);
+}
+
+.bbai-nai-dash .nai-coverage__hint {
+	font-size: 12px;
+	color: var(--nai-text-3);
+}
+
+.bbai-nai-dash .nai-coverage__counts {
+	font-size: 11.5px;
+	color: var(--nai-text-3);
+	font-variant-numeric: tabular-nums;
+}
+
+.bbai-nai-dash .nai-coverage__counts strong {
+	color: var(--nai-text-2);
+	font-weight: 500;
+	font-family: var(--nai-font-mono);
+}
+
+.bbai-nai-dash .nai-progress {
+	height: 6px;
+	background: var(--nai-bg-sunken);
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.bbai-nai-dash .nai-progress__fill {
+	height: 100%;
+	background: var(--nai-primary);
+	border-radius: 999px;
+	transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bbai-nai-dash .nai-progress__fill--ok {
+	background: var(--nai-ok);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ACTIVITY STRIP
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-activity {
+	margin-top: 22px;
+	border-top: 1px solid var(--nai-hairline);
+	padding-top: 14px;
+}
+
+.bbai-nai-dash .nai-activity__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 4px;
+}
+
+.bbai-nai-dash .nai-activity__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.bbai-nai-dash .nai-activity__item {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 4px 0;
+}
+
+.bbai-nai-dash .nai-activity__item + .nai-activity__item {
+	border-top: 1px solid var(--nai-hairline);
+}
+
+.bbai-nai-dash .nai-activity__icon {
+	width: 16px;
+	height: 16px;
+	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.bbai-nai-dash .nai-activity__icon--ok {
+	background: var(--nai-ok-soft);
+	color: var(--nai-ok-ink);
+}
+
+.bbai-nai-dash .nai-activity__icon--warn {
+	background: var(--nai-warn-soft);
+	color: var(--nai-warn-ink);
+}
+
+.bbai-nai-dash .nai-activity__icon--primary {
+	background: var(--nai-primary-soft);
+	color: var(--nai-primary-ink);
+}
+
+.bbai-nai-dash .nai-activity__text {
+	font-size: 12.5px;
+	color: var(--nai-text-2);
+	flex: 1;
+	min-width: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bbai-nai-dash .nai-activity__time {
+	font-family: var(--nai-font-mono);
+	font-size: 11px;
+	color: var(--nai-text-3);
+	flex-shrink: 0;
+}
+
+.bbai-nai-dash .nai-activity__action {
+	background: transparent;
+	border: none;
+	padding: 2px 4px;
+	font-size: 12px;
+	color: var(--nai-text-2);
+	font-weight: 600;
+	cursor: pointer;
+	border-radius: 4px;
+	transition: color 0.18s ease;
+	font-family: inherit;
+	text-decoration: none;
+}
+
+.bbai-nai-dash .nai-activity__action:hover,
+.bbai-nai-dash .nai-activity__action:focus-visible {
+	color: var(--nai-text);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   FOOTER METRICS
+───────────────────────────────────────────────────────────────────────────── */
+
+.bbai-nai-dash .nai-footer-metrics {
+	display: flex;
+	align-items: center;
+	gap: 40px;
+	flex-wrap: wrap;
+	padding: 14px 4px 4px;
+	border-top: 1px solid var(--nai-hairline);
+	margin-top: 20px;
+}
+
+.bbai-nai-dash .nai-metric {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.bbai-nai-dash .nai-metric__label {
+	font-size: 10px;
+	color: var(--nai-text-3);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.bbai-nai-dash .nai-metric__value {
+	font-size: 13px;
+	color: var(--nai-text);
+	font-weight: 500;
+}
+
+.bbai-nai-dash .nai-metric__value .nai-metric__dim {
+	color: var(--nai-text-3);
+}
+
+.bbai-nai-dash .nai-metric__pulse {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.bbai-nai-dash .nai-metric__pulse::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 999px;
+	background: var(--nai-ok);
+	animation: bbaiNaiAmbientPulse 3.2s ease-in-out infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOTION
+───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes bbaiNaiAmbientPulse {
+	0%,
+	100% {
+		transform: scale(1);
+		opacity: 0.85;
+		box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+	}
+	50% {
+		transform: scale(1.15);
+		opacity: 1;
+		box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.16);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.bbai-nai-dash .nai-insight__dot,
+	.bbai-nai-dash .nai-metric__pulse::before,
+	.bbai-nai-dash .nai-ring__fill,
+	.bbai-nai-dash .nai-progress__fill {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESPONSIVE — small admin widths
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+	.bbai-nai-dash .nai-grid-pair {
+		grid-template-columns: 1fr;
+	}
+	.bbai-nai-dash .nai-queue {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 540px) {
+	.bbai-nai-dash .nai-queue {
+		grid-template-columns: 1fr;
+	}
+	.bbai-nai-dash .nai-hero__foot {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.bbai-nai-dash .nai-footer-metrics {
+		gap: 18px;
+	}
+}

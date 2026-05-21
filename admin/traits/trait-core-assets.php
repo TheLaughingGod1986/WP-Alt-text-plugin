@@ -1288,6 +1288,18 @@ JS,
 			);
 		}
 
+		// nAi Dashboard — calm SaaS layout from the claude.ai/design export.
+		// Loads after composition so its scoped tokens win the cascade for the hero.
+		$bbai_nai_css = 'assets/css/features/dashboard/nai-dashboard.css';
+		if ( file_exists( $base_path . $bbai_nai_css ) ) {
+			wp_enqueue_style(
+				'bbai-nai-dashboard',
+				$base_url . $bbai_nai_css,
+				array( 'bbai-dashboard-composition' ),
+				$asset_version( $bbai_nai_css, '1.0.0' )
+			);
+		}
+
 		// Inline CTA fallback handler — runs when the full modal JS bundle is absent.
 		// Handles show-dashboard-auth and show-upgrade-modal with graceful navigation fallbacks.
 		$bbai_signup_url  = esc_url_raw( 'https://app.beepbeep.ai/register' );
