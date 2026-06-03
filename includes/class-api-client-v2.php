@@ -3709,7 +3709,7 @@ class API_Client_V2 {
 	 * @param int                  $image_id   Attachment ID.
 	 * @param array<string, mixed> $context    From Core::build_generation_context_for_attachment().
 	 * @param bool                 $regenerate Whether to bypass cache / force regeneration.
-	 * @return array<string, mixed>|\WP_Error Item for the `items` array, or error.
+	 * @return array<string, mixed>|\WP_Error Item for the `images` array, or error.
 	 */
 	public function build_alt_text_job_item( int $image_id, array $context, bool $regenerate = false ) {
 		$image_url = wp_get_attachment_url( $image_id );
@@ -3795,8 +3795,10 @@ class API_Client_V2 {
 		}
 
 		$payload = array(
-			'type'  => 'alt_text',
-			'items' => array_values( $job_items ),
+			'images'  => array_values( $job_items ),
+			'context' => array(
+				'source' => 'wordpress_bulk_job',
+			),
 		);
 		$payload = apply_filters( 'bbai_create_alt_text_job_payload', $payload, $job_items );
 
