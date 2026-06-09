@@ -10,6 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
 class API_Client_V2 {
+	const MIN_PAID_MONTHLY_LIMIT = 1000;
+
 	/**
 	 * Singleton instance.
 	 *
@@ -318,7 +320,10 @@ class API_Client_V2 {
 				$remaining = 0;
 			}
 
-			$plan = strtolower( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'free' ) );
+			$plan = sanitize_key( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'free' ) );
+			if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+				$plan = 'free';
+			}
 
 			$org['used']             = $used;
 			$org['limit']            = $limit;
@@ -2060,7 +2065,10 @@ class API_Client_V2 {
 			$reset_ts = strtotime( 'first day of next month' );
 		}
 
-		$plan = strtolower( $org['plan'] ?? $org['plan_type'] ?? 'agency' );
+		$plan = sanitize_key( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'agency' ) );
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+			$plan = 'free';
+		}
 
 		return array(
 			'used'                => $used,
@@ -2618,14 +2626,20 @@ class API_Client_V2 {
 		// Handle quota/rate-limit responses.
 		// Backend may signal exhausted quota as HTTP 429 or HTTP 402 + QUOTA_EXCEEDED.
 		$quota_status_code = isset( $response['status_code'] ) ? intval( $response['status_code'] ) : 0;
-		$quota_error_data  = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
-		$quota_error_code  = isset( $quota_error_data['code'] ) ? strtoupper( (string) $quota_error_data['code'] ) : '';
-		$quota_error_text  = strtolower( trim( (string) ( $quota_error_data['error'] ?? $quota_error_data['message'] ?? '' ) ) );
-		$is_quota_response = (
-			429 === $quota_status_code ||
-			402 === $quota_status_code ||
-			'QUOTA_EXCEEDED' === $quota_error_code ||
-			strpos( $quota_error_text, 'quota exceeded' ) !== false ||
+			$quota_error_data  = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
+			$quota_error_code  = isset( $quota_error_data['code'] ) ? strtoupper( (string) $quota_error_data['code'] ) : '';
+			$quota_error_text  = strtolower( trim( (string) ( $quota_error_data['error'] ?? $quota_error_data['message'] ?? '' ) ) );
+			$is_daily_quota_response = (
+				'DAILY_QUOTA_EXCEEDED' === $quota_error_code ||
+				strpos( $quota_error_text, 'daily free generation limit' ) !== false ||
+				strpos( $quota_error_text, 'daily generation' ) !== false
+			);
+			$is_quota_response = (
+				429 === $quota_status_code ||
+				402 === $quota_status_code ||
+				'QUOTA_EXCEEDED' === $quota_error_code ||
+				$is_daily_quota_response ||
+				strpos( $quota_error_text, 'quota exceeded' ) !== false ||
 			strpos( $quota_error_text, 'quota exhausted' ) !== false ||
 			strpos( $quota_error_text, 'monthly quota' ) !== false ||
 			strpos( $quota_error_text, 'monthly limit' ) !== false ||
@@ -2647,7 +2661,7 @@ class API_Client_V2 {
 				? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining()
 				: 0;
 			$guest_trial_budget         = ! $has_license && $local_trial_remaining > 0;
-			$skip_quota_mismatch_branch = $is_anonymous_trial || $guest_trial_budget;
+				$skip_quota_mismatch_branch = $is_anonymous_trial || $guest_trial_budget || $is_daily_quota_response;
 
 			// Anonymous trial: local Trial_Quota and unauthenticated get_usage() both read the same local
 			// counters, so the "mismatch" branch below would always fire while the API still returns 402/429.
@@ -2699,14 +2713,14 @@ class API_Client_V2 {
 			}
 
 			// Cached usage confirms no credits OR fresh check also shows exhausted
-			return new \WP_Error(
-				'limit_reached',
-				$quota_error_data['error'] ?? $quota_error_data['message'] ?? __( 'Monthly limit reached', 'beepbeep-ai-alt-text-generator' ),
-				array(
-					'usage'        => $quota_error_data['usage'] ?? null,
-					'status_code'  => $quota_status_code,
-					'code'         => 'quota_exhausted',
-					'backend_code' => $quota_error_data['code'] ?? null,
+				return new \WP_Error(
+					$is_daily_quota_response ? 'daily_limit_reached' : 'limit_reached',
+					$quota_error_data['error'] ?? $quota_error_data['message'] ?? ( $is_daily_quota_response ? __( 'Daily free generation limit reached. Upgrade to continue now or wait for the daily refresh.', 'beepbeep-ai-alt-text-generator' ) : __( 'Monthly limit reached', 'beepbeep-ai-alt-text-generator' ) ),
+					array(
+						'usage'        => $quota_error_data['usage'] ?? $quota_error_data,
+						'status_code'  => $quota_status_code,
+						'code'         => $is_daily_quota_response ? 'daily_quota_exceeded' : 'quota_exhausted',
+						'backend_code' => $quota_error_data['code'] ?? null,
 				)
 			);
 		}

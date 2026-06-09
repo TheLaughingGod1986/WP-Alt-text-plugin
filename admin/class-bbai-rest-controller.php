@@ -951,7 +951,7 @@ class REST_Controller {
 
 				// Convert WP_Error to REST error response
 				$status = 500;
-				if ( 'limit_reached' === $error_code || 'bbai_trial_exhausted' === $error_code ) {
+				if ( in_array( $error_code, array( 'limit_reached', 'daily_limit_reached', 'bbai_trial_exhausted' ), true ) ) {
 					$status = 403;
 				} elseif ( 'auth_required' === $error_code || 'user_not_found' === $error_code ) {
 					$status = 401;
@@ -2850,7 +2850,7 @@ class REST_Controller {
 				}
 				$code   = $alt->get_error_code();
 				$status = 500;
-				if ( in_array( $code, array( 'limit_reached', 'bbai_trial_exhausted' ), true ) ) {
+				if ( in_array( $code, array( 'limit_reached', 'daily_limit_reached', 'bbai_trial_exhausted' ), true ) ) {
 					$status = 403;
 				} elseif ( in_array( $code, array( 'auth_required', 'user_not_found' ), true ) ) {
 					$status = 401;

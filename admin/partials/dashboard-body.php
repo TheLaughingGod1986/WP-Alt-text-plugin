@@ -281,6 +281,24 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_credits_remaining = 0;
 	}
 
+	if ( ! $bbai_is_anonymous_trial && 'free' === $bbai_plan_slug_ladder && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+		$bbai_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
+		if ( $bbai_local_generation_count > $bbai_credits_used ) {
+			$bbai_credits_used      = min( $bbai_credits_total, $bbai_local_generation_count );
+			$bbai_credits_remaining = max( 0, $bbai_credits_total - $bbai_credits_used );
+
+			$bbai_usage_stats['used']                         = $bbai_credits_used;
+			$bbai_usage_stats['remaining']                    = $bbai_credits_remaining;
+			$bbai_usage_stats['credits_used']                 = $bbai_credits_used;
+			$bbai_usage_stats['credits_remaining']            = $bbai_credits_remaining;
+			$bbai_usage_stats['creditsUsed']                  = $bbai_credits_used;
+			$bbai_usage_stats['creditsRemaining']             = $bbai_credits_remaining;
+			$bbai_usage_stats['daily_generation_limit']       = max( 1, (int) ( $bbai_usage_stats['daily_generation_limit'] ?? 5 ) );
+			$bbai_usage_stats['daily_generations_used']       = min( (int) $bbai_usage_stats['daily_generation_limit'], $bbai_credits_used );
+			$bbai_usage_stats['daily_generations_remaining']  = max( 0, (int) $bbai_usage_stats['daily_generation_limit'] - (int) $bbai_usage_stats['daily_generations_used'] );
+		}
+	}
+
 	// Guest (no SaaS connection): mirror local guest trial bucket into dashboard credit-shaped fields — free generations only (not monthly credits).
 	if ( $bbai_has_no_saas_account && is_array( $bbai_guest_trial_status ) ) {
 		$bbai_guest_tl                        = max( 1, (int) ( $bbai_guest_trial_status['limit'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() ) );
@@ -307,6 +325,24 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_usage_stats['creditsRemaining']  = $bbai_guest_tr;
 		$bbai_usage_stats['quota_state']       = $bbai_guest_tr <= 0 ? 'exhausted' : 'active';
 		$bbai_usage_stats['signup_required']   = $bbai_guest_tr <= 0;
+	}
+
+	if ( ! $bbai_is_premium && $bbai_credits_total >= 50 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+		$bbai_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
+		if ( $bbai_local_generation_count > $bbai_credits_used ) {
+			$bbai_credits_used      = min( $bbai_credits_total, $bbai_local_generation_count );
+			$bbai_credits_remaining = max( 0, $bbai_credits_total - $bbai_credits_used );
+
+			$bbai_usage_stats['used']                         = $bbai_credits_used;
+			$bbai_usage_stats['remaining']                    = $bbai_credits_remaining;
+			$bbai_usage_stats['credits_used']                 = $bbai_credits_used;
+			$bbai_usage_stats['credits_remaining']            = $bbai_credits_remaining;
+			$bbai_usage_stats['creditsUsed']                  = $bbai_credits_used;
+			$bbai_usage_stats['creditsRemaining']             = $bbai_credits_remaining;
+			$bbai_usage_stats['daily_generation_limit']       = max( 1, (int) ( $bbai_usage_stats['daily_generation_limit'] ?? 5 ) );
+			$bbai_usage_stats['daily_generations_used']       = min( (int) $bbai_usage_stats['daily_generation_limit'], $bbai_credits_used );
+			$bbai_usage_stats['daily_generations_remaining']  = max( 0, (int) $bbai_usage_stats['daily_generation_limit'] - (int) $bbai_usage_stats['daily_generations_used'] );
+		}
 	}
 
 	$bbai_low_credit_threshold = max(
@@ -735,6 +771,10 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_plan_card_credit_resolver = true;
 	}
 
+	$bbai_todays_pass_items = ( isset( $this ) && method_exists( $this, 'get_todays_pass_candidates' ) )
+		? $this->get_todays_pass_candidates( 500 )
+		: array();
+
 	$bbai_dashboard_state = array(
 		'isHealthy'             => $bbai_state_is_healthy,
 		'isProPlan'             => $bbai_state_is_pro_plan,
@@ -746,6 +786,11 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		'creditsUsed'           => $bbai_state_credits_used,
 		'creditsLimit'          => $bbai_state_credits_limit,
 		'creditsRemaining'      => $bbai_state_credits_remaining,
+		'dailyCreditsLimit'     => max( 0, (int) ( $bbai_usage_stats['daily_generation_limit'] ?? $bbai_usage_stats['entitlement_state']['daily_generation_limit'] ?? 0 ) ),
+		'dailyCreditsUsed'      => max( 0, (int) ( $bbai_usage_stats['daily_generations_used'] ?? $bbai_usage_stats['entitlement_state']['daily_generations_used'] ?? 0 ) ),
+		'dailyCreditsRemaining' => max( 0, (int) ( $bbai_usage_stats['daily_generations_remaining'] ?? $bbai_usage_stats['entitlement_state']['daily_generations_remaining'] ?? 0 ) ),
+			'dailyResetDate'        => (string) ( $bbai_usage_stats['daily_reset_date'] ?? $bbai_usage_stats['entitlement_state']['daily_reset_date'] ?? '' ),
+			'todaysPassItems'       => is_array( $bbai_todays_pass_items ) ? $bbai_todays_pass_items : array(),
 		'authState'             => $bbai_auth_state,
 		'quotaType'             => $bbai_quota_type,
 		'quotaState'            => $bbai_quota_state,
@@ -1109,6 +1154,20 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_dashboard_root_credits_total = (int) ( $bbai_li_truth_credits['total'] ?? $bbai_li_truth_credits['limit'] ?? $bbai_li_truth_credits['credits_total'] ?? $bbai_li_truth_credits['creditsTotal'] ?? $bbai_dashboard_root_credits_total );
 		$bbai_dashboard_root_credits_left  = (int) ( $bbai_li_truth_credits['remaining'] ?? $bbai_li_truth_credits['credits_remaining'] ?? $bbai_li_truth_credits['creditsRemaining'] ?? $bbai_dashboard_root_credits_left );
 	}
+
+	if ( ! $bbai_is_premium && $bbai_dashboard_root_credits_total >= 50 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+		$bbai_root_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
+		if ( $bbai_root_local_generation_count > $bbai_dashboard_root_credits_used ) {
+			$bbai_dashboard_root_credits_used = min( $bbai_dashboard_root_credits_total, $bbai_root_local_generation_count );
+			$bbai_dashboard_root_credits_left = max( 0, $bbai_dashboard_root_credits_total - $bbai_dashboard_root_credits_used );
+		}
+	}
+	$bbai_dashboard_state['creditsUsed']      = $bbai_dashboard_root_credits_used;
+	$bbai_dashboard_state['creditsRemaining'] = $bbai_dashboard_root_credits_left;
+	$bbai_dashboard_state['creditsLimit']     = $bbai_dashboard_root_credits_total;
+	$bbai_dashboard_state['dailyCreditsLimit']     = max( 1, (int) ( $bbai_dashboard_state['dailyCreditsLimit'] ?? 5 ) );
+	$bbai_dashboard_state['dailyCreditsUsed']      = min( (int) $bbai_dashboard_state['dailyCreditsLimit'], $bbai_dashboard_root_credits_used );
+	$bbai_dashboard_state['dailyCreditsRemaining'] = max( 0, (int) $bbai_dashboard_state['dailyCreditsLimit'] - (int) $bbai_dashboard_state['dailyCreditsUsed'] );
 
 	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log

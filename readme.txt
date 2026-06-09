@@ -7,7 +7,7 @@ Tags: ai alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.7
+Stable tag: 4.6.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -134,6 +134,11 @@ Privacy policy: https://openai.com/privacy
 
 == Changelog ==
 
+= 4.6.14 =
+* Refactored the nAi dashboard into smaller PHP components and focused JavaScript modules while preserving existing dashboard behaviour.
+* Split ALT Library generation state helpers into focused legacy-compatible modules for locks, notices, bulk orchestration, API request construction, and row/count/filter state.
+* Added regression coverage and release compliance cleanup for dashboard and ALT Library generation flows.
+
 = 4.6.4 =
 * Fixed background generation persistence so progress survives page navigation, refreshes, and multi-tab sessions across all plugin pages.
 * Fixed in-browser background jobs so progress syncs correctly via the shared bbaiJobState subscription, removing duplicate polling and stale state.
@@ -168,3 +173,8 @@ Privacy policy: https://openai.com/privacy
 
 = 4.6.1 =
 * Maintenance release.
+
+== Upgrade Notice ==
+
+= 4.6.14 =
+Dashboard and ALT Library architecture cleanup with preserved generation, review, quota, and telemetry behaviour.

@@ -47,10 +47,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
 	define( 'BEEPBEEP_AI_PLUGIN_DIR', dirname( __DIR__, 2 ) . '/' );
 }
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
+}
 
 $plan          = isset( $_GET['plan'] ) && 'pro' === $_GET['plan'] ? 'pro' : 'free';
 $screen        = isset( $_GET['screen'] ) ? $_GET['screen'] : 'dashboard';
 $library_state = isset( $_GET['state'] ) ? $_GET['state'] : 'mid';
+$locked_state  = isset( $_GET['locked'] ) && '1' === (string) $_GET['locked'];
+$exhausted_state = $locked_state || ( isset( $_GET['credits'] ) && '0' === (string) $_GET['credits'] );
+$daily_exhausted_state = 'free' === $plan && ! $exhausted_state && isset( $_GET['daily'] ) && 'exhausted' === (string) $_GET['daily'];
 
 $states = array(
 	'fresh' => array( 'total' => 412, 'optimised' => 28,  'missing' => 384, 'weak' => 0,  'coverage' => 7  ),
@@ -59,6 +65,14 @@ $states = array(
 	'done'  => array( 'total' => 412, 'optimised' => 412, 'missing' => 0,   'weak' => 0,  'coverage' => 100 ),
 );
 $s = $states[ $library_state ] ?? $states['mid'];
+$preview_pass_items = ( 'fresh' === $library_state || 'done' === $library_state ) ? array() : array(
+	array( 'id' => 101, 'name' => 'hero-spring-collection.jpg', 'signal' => 'Missing ALT', 'tone' => 'danger', 'hue' => 0, 'thumb_url' => 'https://via.placeholder.com/88/f9e4e4/7f1d1d?text=%231' ),
+	array( 'id' => 102, 'name' => 'team-portrait-2026.jpg', 'signal' => 'Missing ALT', 'tone' => 'danger', 'hue' => 70, 'thumb_url' => 'https://via.placeholder.com/88/e1f3f8/164e63?text=%232' ),
+	array( 'id' => 103, 'name' => 'blog-cover-seo-guide.png', 'signal' => 'Needs review', 'tone' => 'warn', 'hue' => 140, 'thumb_url' => 'https://via.placeholder.com/88/e9f8ec/14532d?text=%233' ),
+);
+$preview_daily_used = $daily_exhausted_state ? 5 : ( 'fresh' === $library_state ? 0 : ( 'near' === $library_state ? 1 : 3 ) );
+$preview_daily_limit = 'pro' === $plan ? 200 : 5;
+$preview_daily_remaining = max( 0, $preview_daily_limit - $preview_daily_used );
 
 $bbai_dashboard_state = array(
 	'totalImages'           => $s['total'],
@@ -66,6 +80,12 @@ $bbai_dashboard_state = array(
 	'missingCount'          => $s['missing'],
 	'weakCount'             => $s['weak'],
 	'coveragePercent'       => $s['coverage'],
+	'todaysPassItems'       => $preview_pass_items,
+	'dailyCreditsUsed'      => $preview_daily_used,
+	'dailyCreditsLimit'     => $preview_daily_limit,
+	'dailyCreditsRemaining' => $preview_daily_remaining,
+	'dailyResetDate'        => '2026-05-27T00:00:00Z',
+	'editingStreak'         => 4,
 	'isProPlan'             => ( 'pro' === $plan ),
 	'creditsUsed'           => 'pro' === $plan ? 312 : 27,
 	'creditsLimit'          => 'pro' === $plan ? 1000 : 50,
@@ -78,11 +98,32 @@ $bbai_dashboard_state = array(
 	'usageUrl'              => '#usage',
 );
 $bbai_state_is_pro_plan = ( 'pro' === $plan );
+$bbai_preview_entitlement_state = array(
+	'plan'                   => $plan,
+	'plan_type'              => $plan,
+	'token_limit'            => 'pro' === $plan ? 1000 : 50,
+	'tokens_used_this_month' => $exhausted_state ? 50 : ( 'pro' === $plan ? 312 : 27 ),
+	'total_tokens_used'      => $exhausted_state ? 50 : ( 'pro' === $plan ? 312 : 27 ),
+	'tokens_remaining'       => $exhausted_state ? 0 : ( 'pro' === $plan ? 688 : 23 ),
+	'daily_generation_limit' => $preview_daily_limit,
+	'daily_generations_used' => $preview_daily_used,
+	'daily_generations_remaining' => $preview_daily_remaining,
+	'daily_reset_date'       => '2026-05-27T00:00:00Z',
+	'can_generate'           => 'pro' === $plan || ( ! $exhausted_state && ! $daily_exhausted_state ),
+	'can_autopilot'          => 'pro' === $plan,
+	'is_logged_in'           => true,
+	'is_trial'               => false,
+	'is_unlimited'           => 'pro' === $plan,
+	'upgrade_required'       => 'pro' !== $plan && ( $exhausted_state || $daily_exhausted_state ),
+	'quota_state'            => $exhausted_state ? 'exhausted' : ( $daily_exhausted_state ? 'daily_exhausted' : 'active' ),
+	'message'                => $exhausted_state ? 'Monthly credits exhausted.' : ( $daily_exhausted_state ? 'Daily free generation limit reached.' : '' ),
+);
 
 function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_attr( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
-function esc_url( $s )  { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
-function esc_textarea( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+	function esc_url( $s )  { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
+	function esc_js( $s ) { return str_replace( array( "\r", "\n", '</' ), array( '\r', '\n', '<\/' ), addslashes( (string) $s ) ); }
+	function esc_textarea( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); }
 function esc_html_e( $s, $d = null ) { echo esc_html( $s ); }
 function esc_attr_e( $s, $d = null ) { echo esc_attr( $s ); }
 function esc_html__( $s, $d = null ) { return esc_html( $s ); }
@@ -108,6 +149,14 @@ function admin_url( $path = '' ) { return '/wp-admin/' . ltrim( $path, '/' ); }
 function add_query_arg( ...$args ) {
 	if ( count( $args ) === 1 && is_array( $args[0] ) ) {
 		$params = $args[0]; $url = '';
+	} elseif ( count( $args ) === 2 ) {
+		if ( is_array( $args[0] ) ) {
+			$params = $args[0];
+			$url    = $args[1];
+		} else {
+			$url    = '';
+			$params = array( $args[0] => $args[1] );
+		}
 	} elseif ( count( $args ) >= 3 ) {
 		$url    = $args[2];
 		$params = array( $args[0] => $args[1] );
@@ -119,9 +168,13 @@ function add_query_arg( ...$args ) {
 	$qs  = http_build_query( $params );
 	return $url . $sep . $qs;
 }
-function sanitize_email( $s ) { return filter_var( (string) $s, FILTER_SANITIZE_EMAIL ); }
-function sanitize_key( $s ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $s ) ); }
-function wp_get_attachment_image_src( $id, $size = 'thumbnail' ) { return false; }
+	function sanitize_email( $s ) { return filter_var( (string) $s, FILTER_SANITIZE_EMAIL ); }
+	function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
+	function sanitize_key( $s ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $s ) ); }
+	function wp_json_encode( $data ) { return json_encode( $data ); }
+function wp_get_attachment_image_src( $id, $size = 'thumbnail' ) {
+	return array( 'https://via.placeholder.com/88?text=' . rawurlencode( (string) $id ), 88, 88 );
+}
 function get_attached_file( $id ) { return false; }
 function wp_get_attachment_image_url( $id, $size = 'full' ) { return false; }
 function wp_get_attachment_metadata( $id ) { return array(); }
@@ -144,6 +197,9 @@ $css_href = '/assets/css/nai-dashboard.css';
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?php echo esc_attr( $css_href ); ?>">
 <style>body { margin: 0; background: #F6F8FB; }</style>
+<script>window.bbaiInitialEntitlementState = <?php echo wp_json_encode( $bbai_preview_entitlement_state ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Test-only JSON fixture. ?>;</script>
+<script src="/assets/js/bbai-entitlements.js" defer></script>
+<script src="/assets/js/nai-dashboard.js" defer></script>
 </head>
 <body>
 <?php
@@ -164,10 +220,10 @@ switch ( $screen ) {
 		$bbai_cov_opt_pct      = $s['coverage'];
 		$bbai_total_images     = $s['total'];
 		$bbai_is_pro           = ( 'pro' === $plan );
-		$bbai_limit_reached_state  = false;
+		$bbai_limit_reached_state  = $exhausted_state;
 		$bbai_default_review_filter = isset( $_GET['filter'] ) ? sanitize_key( $_GET['filter'] ) : 'all';
-		$bbai_current_page     = 1;
-		$bbai_total_pages      = 1;
+		$bbai_current_page     = isset( $_GET['alt_page'] ) ? max( 1, (int) $_GET['alt_page'] ) : 1;
+		$bbai_total_pages      = isset( $_GET['pages'] ) ? max( 1, (int) $_GET['pages'] ) : 1;
 		$bbai_all_images       = array();
 		$bbai_library_row_states = array();
 		// Fabricate a handful of mock image rows for the preview.
@@ -179,6 +235,10 @@ switch ( $screen ) {
 			array( 'name' => 'testimonial-jane-d.jpg',     'status' => 'weak'      ),
 			array( 'name' => 'feature-launch-2026.jpg',    'status' => 'optimized' ),
 		);
+		if ( $bbai_total_pages > 1 ) {
+			$nai_preview_mock[] = array( 'name' => 'gallery-event-2026.jpg', 'status' => 'missing' );
+			$nai_preview_mock[] = array( 'name' => 'case-study-hero.png', 'status' => 'optimized' );
+		}
 		foreach ( $nai_preview_mock as $i => $m ) {
 			$row = new stdClass();
 			$row->ID            = 1000 + $i;

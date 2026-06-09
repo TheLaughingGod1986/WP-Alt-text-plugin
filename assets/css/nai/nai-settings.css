@@ -1,0 +1,139 @@
+/* Extracted from assets/css/nai-dashboard.css. Keep imports ordered in the aggregator. */
+
+/* ==========================================================================
+   Settings screen
+   ========================================================================== */
+.nai-screen--settings { max-width: 880px; }
+
+.nai-screen .nai-plan-card {
+	margin-bottom: 18px;
+	background: var(--nai-surface);
+	border: 1px solid var(--nai-border);
+	border-radius: var(--nai-r-lg);
+	overflow: hidden;
+}
+.nai-screen .nai-plan-card--pro {
+	background: var(--nai-primary-soft);
+	border-color: var(--nai-primary-border);
+}
+.nai-screen .nai-plan-card__row {
+	padding: 16px 20px;
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+}
+.nai-screen .nai-plan-card__icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	background: var(--nai-bg-sunken);
+	color: var(--nai-text-2);
+	border: 1px solid var(--nai-border);
+}
+.nai-screen .nai-plan-card--pro .nai-plan-card__icon {
+	background: var(--nai-primary);
+	color: #fff;
+	border: none;
+}
+.nai-screen .nai-plan-card__name {
+	font-size: 14px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+.nai-screen .nai-plan-card__desc {
+	font-size: 12.5px;
+	color: var(--nai-text-2);
+	line-height: 1.45;
+	margin-top: 2px;
+}
+.nai-screen .nai-plan-card__usage {
+	border-top: 1px solid var(--nai-hairline);
+	padding: 12px 20px 14px;
+	background: var(--nai-surface-2);
+}
+.nai-screen .nai-plan-card__usage-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	margin-bottom: 6px;
+	font-size: 11.5px;
+	color: var(--nai-text-3);
+	font-weight: 500;
+}
+.nai-screen .nai-plan-card__usage-num {
+	font-family: var(--nai-font-mono);
+	color: var(--nai-text-2);
+	font-weight: 600;
+}
+.nai-screen .nai-plan-card__usage-foot {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 6px;
+	font-size: 11px;
+	color: var(--nai-text-3);
+	font-family: var(--nai-font-mono);
+}
+
+.nai-screen .nai-set-section {
+	margin-bottom: 12px;
+	background: var(--nai-surface);
+	border: 1px solid var(--nai-border);
+	border-radius: var(--nai-r-lg);
+	overflow: hidden;
+}
+.nai-screen .nai-set-section__head {
+	padding: 12px 20px;
+	border-bottom: 1px solid var(--nai-hairline);
+}
+.nai-screen .nai-set-section__title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nai-text);
+	line-height: 1.25;
+	margin: 0;
+}
+.nai-screen .nai-set-row {
+	padding: 12px 20px;
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	border-bottom: 1px solid var(--nai-hairline);
+}
+.nai-screen .nai-set-row:last-child { border-bottom: none; }
+.nai-screen .nai-set-row__main { flex: 1; min-width: 0; }
+.nai-screen .nai-set-row__label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nai-text);
+	line-height: 1.3;
+}
+.nai-screen .nai-set-row__desc {
+	font-size: 12px;
+	color: var(--nai-text-3);
+	margin-top: 2px;
+	line-height: 1.45;
+}
+.nai-screen .nai-set-row__right { flex-shrink: 0; }
+
+/* Bigger toggle for settings rows */
+.nai-screen .nai-toggle--lg {
+	width: 42px;
+	height: 24px;
+}
+.nai-screen .nai-toggle--lg .nai-toggle__knob {
+	top: 2px;
+	left: 2px;
+	width: 18px;
+	height: 18px;
+}
+.nai-screen .nai-toggle--lg.nai-toggle--on .nai-toggle__knob { left: 20px; }
+.nai-screen .nai-toggle--lg.nai-toggle--ok.nai-toggle--on {
+	background: var(--nai-ok);
+	border-color: var(--nai-ok);
+}

@@ -100,6 +100,113 @@ trait Core_Assets {
 	}
 
 	/**
+	 * Normalize paid entitlement claims against the public monthly allowance floor.
+	 *
+	 * @param string $plan  Plan slug.
+	 * @param int    $limit Monthly token limit.
+	 * @return string
+	 */
+	private function normalize_entitlement_plan_for_limit( string $plan, int $limit ): string {
+		$plan = sanitize_key( $plan );
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && $limit < Usage_Tracker::MIN_PAID_MONTHLY_LIMIT ) {
+			return 'free';
+		}
+
+		return '' !== $plan ? $plan : 'free';
+	}
+
+	/**
+	 * Build a client-safe entitlement bootstrap from current usage data.
+	 *
+	 * @param array $usage_data   Usage payload already resolved for this admin request.
+	 * @param array $trial_status Guest trial payload, when applicable.
+	 * @param array $auth_state   Resolved connected-account state.
+	 * @return array<string, mixed>
+	 */
+	private function get_initial_entitlement_state( array $usage_data, array $trial_status, array $auth_state ): array {
+		$canonical = isset( $usage_data['entitlement_state'] ) && is_array( $usage_data['entitlement_state'] )
+			? $usage_data['entitlement_state']
+			: array();
+		if ( empty( $canonical ) && isset( $usage_data['data']['entitlement_state'] ) && is_array( $usage_data['data']['entitlement_state'] ) ) {
+			$canonical = $usage_data['data']['entitlement_state'];
+		}
+		if ( ! empty( $canonical ) ) {
+			$allowed = array(
+				'plan',
+				'plan_type',
+				'token_limit',
+				'tokens_used_this_month',
+				'total_tokens_used',
+				'tokens_remaining',
+				'daily_generation_limit',
+				'daily_generations_used',
+				'daily_generations_remaining',
+				'daily_reset_date',
+				'can_generate',
+				'can_autopilot',
+				'is_logged_in',
+				'is_trial',
+				'is_unlimited',
+				'reset_date',
+				'last_generation_at',
+				'upgrade_required',
+				'quota_state',
+				'message',
+			);
+			$public = array_intersect_key( $canonical, array_flip( $allowed ) );
+			$limit  = max( 0, (int) ( $public['token_limit'] ?? $usage_data['limit'] ?? $usage_data['credits_total'] ?? 0 ) );
+			$plan   = $this->normalize_entitlement_plan_for_limit( (string) ( $public['plan_type'] ?? $public['plan'] ?? 'free' ), $limit );
+			if ( 'free' === $plan ) {
+				$public['can_autopilot'] = false;
+				$public['is_unlimited']  = false;
+			}
+			$public['plan']      = $plan;
+			$public['plan_type'] = $plan;
+			return $public;
+		}
+
+		$quota       = isset( $usage_data['quota'] ) && is_array( $usage_data['quota'] ) ? $usage_data['quota'] : array();
+		$plan        = strtolower( (string) ( $usage_data['plan_type'] ?? $usage_data['plan'] ?? $quota['plan_type'] ?? $quota['plan'] ?? 'free' ) );
+		$is_logged_in = ! empty( $auth_state['has_connected_account'] );
+		$is_trial    = ! $is_logged_in && ! empty( $trial_status['should_gate'] );
+		if ( $is_trial ) {
+			$plan = 'trial';
+		}
+		$limit = isset( $usage_data['limit'] ) ? (int) $usage_data['limit'] : (int) ( $usage_data['credits_total'] ?? $quota['limit'] ?? $trial_status['limit'] ?? 0 );
+		$used  = isset( $usage_data['used'] ) ? (int) $usage_data['used'] : (int) ( $usage_data['credits_used'] ?? $quota['used'] ?? $trial_status['used'] ?? 0 );
+		$remaining = isset( $usage_data['remaining'] )
+			? (int) $usage_data['remaining']
+			: (int) ( $usage_data['credits_remaining'] ?? $quota['remaining'] ?? $trial_status['remaining'] ?? max( 0, $limit - $used ) );
+		$remaining = max( 0, $remaining );
+		$plan         = $this->normalize_entitlement_plan_for_limit( $plan, $limit );
+		$is_unlimited = in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+		$can_generate = $is_unlimited || $remaining > 0;
+
+		return array(
+			'plan'                   => $plan,
+			'plan_type'              => $plan,
+			'token_limit'            => max( 0, $limit ),
+			'tokens_used_this_month' => max( 0, $used ),
+			'total_tokens_used'      => max( 0, (int) ( $usage_data['total_tokens_used'] ?? $used ) ),
+			'tokens_remaining'       => $remaining,
+			'daily_generation_limit' => isset( $usage_data['daily_generation_limit'] ) ? max( 0, (int) $usage_data['daily_generation_limit'] ) : null,
+			'daily_generations_used' => isset( $usage_data['daily_generations_used'] ) ? max( 0, (int) $usage_data['daily_generations_used'] ) : null,
+			'daily_generations_remaining' => isset( $usage_data['daily_generations_remaining'] ) ? max( 0, (int) $usage_data['daily_generations_remaining'] ) : null,
+			'daily_reset_date'       => (string) ( $usage_data['daily_reset_date'] ?? '' ),
+			'can_generate'           => $can_generate,
+			'can_autopilot'          => $is_unlimited,
+			'is_logged_in'           => $is_logged_in,
+			'is_trial'               => $is_trial,
+			'is_unlimited'           => $is_unlimited,
+			'reset_date'             => (string) ( $usage_data['reset_date'] ?? $quota['reset_date'] ?? '' ),
+			'last_generation_at'     => (string) ( $usage_data['last_generation_at'] ?? '' ),
+			'upgrade_required'       => ! $can_generate && ! $is_trial,
+			'quota_state'            => $can_generate ? 'active' : 'exhausted',
+			'message'                => $can_generate ? '' : __( 'Monthly credits exhausted.', 'beepbeep-ai-alt-text-generator' ),
+		);
+	}
+
+	/**
 	 * Enqueue a tiny no-src bridge for account/admin logout controls.
 	 *
 	 * The main dashboard bundles own this behavior when present, but this
@@ -391,6 +498,7 @@ JS,
 		$auth_state      = Auth_State::resolve( $this->api_client );
 		$usage_data      = Usage_Helper::get_usage( $this->api_client, (bool) ( $auth_state['has_connected_account'] ?? false ) );
 		$trial_status    = method_exists( $this, 'get_trial_status' ) ? $this->get_trial_status() : array();
+		$entitlement_state = $this->get_initial_entitlement_state( $usage_data, $trial_status, $auth_state );
 
 		if ( file_exists( $base_path . $toast_file ) ) {
 			wp_enqueue_script( 'bbai-toast', $base_url . $toast_file, array(), $toast_version, true );
@@ -413,6 +521,71 @@ JS,
 		}
 
 		$bbai_admin_script_deps    = array( 'jquery', 'wp-i18n', 'bbai-toast', 'bbai-banner-message', 'bbai-telemetry' );
+		$bbai_entitlements_js      = 'assets/js/bbai-entitlements.js';
+		if ( file_exists( $base_path . $bbai_entitlements_js ) ) {
+			wp_enqueue_script(
+				'bbai-entitlements',
+				$base_url . $bbai_entitlements_js,
+				array( 'bbai-telemetry' ),
+				$this->get_asset_version( $bbai_entitlements_js, '1.0.0', $base_path ),
+				true
+			);
+			wp_localize_script( 'bbai-entitlements', 'bbaiInitialEntitlementState', $entitlement_state );
+			$bbai_admin_script_deps[] = 'bbai-entitlements';
+		}
+		if ( 'bbai-library' === $this->get_current_admin_page() ) {
+			$bbai_alt_library_modules = array(
+				'bbai-alt-library-generation-locks'   => array(
+					'path' => 'assets/js/alt-library/generation-locks.js',
+					'deps' => array(),
+				),
+				'bbai-alt-library-generation-notices' => array(
+					'path' => 'assets/js/alt-library/generation-notices.js',
+					'deps' => array(),
+				),
+				'bbai-alt-library-bulk-selection'     => array(
+					'path' => 'assets/js/alt-library/bulk-selection.js',
+					'deps' => array(),
+				),
+				'bbai-alt-library-row-updates'        => array(
+					'path' => 'assets/js/alt-library/row-updates.js',
+					'deps' => array(),
+				),
+				'bbai-alt-library-state'              => array(
+					'path' => 'assets/js/alt-library/library-state.js',
+					'deps' => array( 'bbai-alt-library-row-updates' ),
+				),
+				'bbai-alt-library-api'                => array(
+					'path' => 'assets/js/alt-library/api.js',
+					'deps' => array(),
+				),
+				'bbai-alt-library-bulk-progress'      => array(
+					'path' => 'assets/js/alt-library/bulk-progress.js',
+					'deps' => array(),
+				),
+				'bbai-alt-library-bulk-orchestration' => array(
+					'path' => 'assets/js/alt-library/bulk-orchestration.js',
+					'deps' => array( 'bbai-alt-library-api', 'bbai-alt-library-bulk-progress', 'bbai-alt-library-generation-locks', 'bbai-alt-library-generation-notices' ),
+				),
+				'bbai-alt-library-generation-actions' => array(
+					'path' => 'assets/js/alt-library/generation-actions.js',
+					'deps' => array( 'bbai-alt-library-generation-notices' ),
+				),
+			);
+			foreach ( $bbai_alt_library_modules as $handle => $module ) {
+				$module_path = (string) $module['path'];
+				if ( file_exists( $base_path . $module_path ) ) {
+					wp_enqueue_script(
+						$handle,
+						$base_url . $module_path,
+						(array) $module['deps'],
+						$this->get_asset_version( $module_path, '1.0.0', $base_path ),
+						true
+					);
+					$bbai_admin_script_deps[] = $handle;
+				}
+			}
+		}
 		$bbai_licensed_bulk_client = 'assets/js/admin/bbai-licensed-bulk-job-client.js';
 		if ( is_readable( $base_path . $bbai_licensed_bulk_client ) ) {
 			wp_enqueue_script(
@@ -441,6 +614,18 @@ JS,
 		} else {
 			wp_register_script( 'bbai-admin', '', array(), BEEPBEEP_AI_VERSION, true );
 		}
+
+		$bbai_alt_library_filters_js = 'assets/js/alt-library-filters.js';
+		if ( 'bbai-library' === $this->get_current_admin_page() && file_exists( $base_path . $bbai_alt_library_filters_js ) ) {
+			wp_enqueue_script(
+				'bbai-alt-library-filters',
+				$base_url . $bbai_alt_library_filters_js,
+				array( 'bbai-admin' ),
+				$this->get_asset_version( $bbai_alt_library_filters_js, '1.0.0', $base_path ),
+				true
+			);
+		}
+
 		wp_localize_script(
 			'bbai-admin',
 			'BBAI',
@@ -464,6 +649,7 @@ JS,
 				'initialUsage'     => $usage_data,
 				'usage'            => $usage_data,
 				'quota'            => $usage_data['quota'] ?? array(),
+				'entitlementState' => $entitlement_state,
 				'trial'            => $trial_status,
 				'anonymous'        => array(
 					'is_guest_trial'   => ! empty( $trial_status['should_gate'] ),
@@ -667,6 +853,8 @@ JS,
 
 		// nAi redesign — load Geist via Google Fonts + the scoped dashboard styles.
 		if ( apply_filters( 'bbai_use_nai_dashboard', true ) ) {
+			$current_admin_page          = $this->get_current_admin_page();
+				$is_nai_shell_screen         = in_array( $current_admin_page, array( 'bbai', 'bbai-library', 'bbai-autopilot', 'bbai-settings' ), true );
 			wp_enqueue_style(
 				'bbai-nai-geist',
 				'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap',
@@ -680,6 +868,62 @@ JS,
 				array( 'bbai-nai-geist' ),
 				$asset_version( $nai_dashboard_css, '1.0.0' )
 			);
+			if ( ! wp_script_is( 'bbai-entitlements', 'registered' ) && ! wp_script_is( 'bbai-entitlements', 'enqueued' ) ) {
+				wp_register_script( 'bbai-entitlements', '', array(), BEEPBEEP_AI_VERSION, true );
+				wp_localize_script( 'bbai-entitlements', 'bbaiInitialEntitlementState', $entitlement_state );
+			}
+				if ( $is_nai_shell_screen ) {
+				$nai_dashboard_scripts = array(
+					'bbai-nai-dom'        => array(
+						'path' => 'assets/js/nai-shared/dom.js',
+						'deps' => array( 'bbai-entitlements' ),
+					),
+					'bbai-nai-modals'     => array(
+						'path' => 'assets/js/nai-shared/modals.js',
+						'deps' => array( 'bbai-nai-dom' ),
+					),
+					'bbai-nai-notices'    => array(
+						'path' => 'assets/js/nai-shared/notices.js',
+						'deps' => array( 'bbai-nai-dom' ),
+					),
+					'bbai-nai-state'      => array(
+						'path' => 'assets/js/nai-dashboard/state.js',
+						'deps' => array( 'bbai-nai-dom' ),
+					),
+					'bbai-nai-quota'      => array(
+						'path' => 'assets/js/nai-dashboard/quota.js',
+						'deps' => array( 'bbai-nai-modals' ),
+					),
+					'bbai-nai-scan'       => array(
+						'path' => 'assets/js/nai-dashboard/scan.js',
+						'deps' => array( 'bbai-nai-modals' ),
+					),
+					'bbai-nai-generation' => array(
+						'path' => 'assets/js/nai-dashboard/generation.js',
+						'deps' => array( 'bbai-nai-dom' ),
+					),
+					'bbai-nai-events'     => array(
+						'path' => 'assets/js/nai-dashboard/events.js',
+						'deps' => array( 'bbai-nai-dom', 'bbai-nai-modals', 'bbai-nai-notices', 'bbai-nai-quota', 'bbai-nai-scan', 'bbai-nai-generation' ),
+					),
+					'bbai-nai-dashboard'  => array(
+						'path' => 'assets/js/nai-dashboard/index.js',
+						'deps' => array( 'bbai-nai-state', 'bbai-nai-events' ),
+					),
+				);
+				foreach ( $nai_dashboard_scripts as $handle => $script ) {
+					$script_path = (string) $script['path'];
+					if ( file_exists( $base_path . $script_path ) ) {
+						wp_enqueue_script(
+							$handle,
+							$base_url . $script_path,
+							(array) $script['deps'],
+							$asset_version( $script_path, '1.0.0' ),
+							true
+						);
+					}
+				}
+			}
 			// Mark the admin body so the modal overlay rules in the stylesheet
 			// scope correctly (body.nai-design-active #bbai-upgrade-modal …).
 			add_filter(
@@ -1404,6 +1648,7 @@ JS,
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
 		}
 		$bbai_auth_upgrade_path          = \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $this->api_client );
+		$bbai_entitlement_state          = $this->get_initial_entitlement_state( $usage_data, $trial_status, $bbai_auth_upgrade_path );
 		$bbai_has_connected_upgrade_path = ! empty( $bbai_auth_upgrade_path['has_connected_account'] );
 		// Trial ladder (free account signup) when site is not linked to SaaS — not only when Trial_Quota::should_gate.
 		$bbai_upgrade_path_guest = ! empty( $trial_status['should_gate'] ) || ! $bbai_has_connected_upgrade_path;
@@ -1463,6 +1708,7 @@ JS,
 			'initialUsage'           => $usage_data,
 			'usage'                  => $usage_data,
 			'quota'                  => $usage_data['quota'] ?? array(),
+			'entitlementState'       => $bbai_entitlement_state,
 			'trial'                  => $trial_status,
 			'upgradePath'            => $bbai_upgrade_path_model,
 			'upgradeCtaUi'           => $bbai_upgrade_cta_ui,

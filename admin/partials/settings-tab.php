@@ -281,6 +281,7 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 					&& is_readable( $bbai_nai_settings_partial )
 				) {
 					require $bbai_nai_settings_partial;
+					return;
 				}
 				?>
 				<?php

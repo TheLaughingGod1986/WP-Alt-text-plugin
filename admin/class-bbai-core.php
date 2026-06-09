@@ -117,6 +117,9 @@ class Core {
 	private const ALT_COVERAGE_SCAN_JOB_PREFIX          = 'bbai_alt_coverage_job_';
 	private const ALT_COVERAGE_SCAN_JOB_TTL             = 900;
 	private const ALT_COVERAGE_SCAN_BATCH_SIZE          = 150;
+	private const TODAYS_PASS_CANDIDATES_OPTION         = 'bbai_todays_pass_candidates_v1';
+	private const TODAYS_PASS_LAST_SCAN_OPTION          = 'bbai_todays_pass_last_scan_at_v1';
+	private const TODAYS_PASS_HANDLED_OPTION            = 'bbai_todays_pass_handled_v1';
 	private const FREE_PLAN_IMAGE_LIMIT                 = 50;
 	private const MEDIA_UPLOAD_TRIGGER_TRANSIENT_PREFIX = 'bbai_upgrade_upload_';
 
@@ -561,6 +564,7 @@ class Core {
 		$bbai_pages = array(
 			self::MENU_SLUG_DASHBOARD,
 			self::MENU_SLUG_LIBRARY,
+			'bbai-autopilot',
 			'bbai-analytics',
 			'bbai-credit-usage',
 			'bbai-settings',
@@ -2887,6 +2891,14 @@ class Core {
 			$bbai_is_pro_for_admin    = $bbai_is_pro;
 			$bbai_is_agency_for_admin = $bbai_is_agency;
 		}
+		$bbai_use_nai_shell_route = false;
+		if ( apply_filters( 'bbai_use_nai_dashboard', true ) ) {
+			$bbai_nai_shell_routes = array( 'dashboard', 'library', 'autopilot' );
+			if ( 'settings' === (string) $bbai_tab && 'general' === (string) $bbai_settings_section && ( $bbai_is_authenticated || $bbai_has_license ) ) {
+				$bbai_nai_shell_routes[] = 'settings';
+			}
+			$bbai_use_nai_shell_route = in_array( (string) $bbai_tab, $bbai_nai_shell_routes, true );
+		}
 		$bbai_export_url                 = wp_nonce_url( admin_url( 'admin-post.php?action=beepbeepai_usage_export' ), 'bbai_usage_export' );
 		$bbai_audit_rows                 = $bbai_stats['audit'] ?? array();
 		$bbai_debug_bootstrap            = $this->get_debug_bootstrap();
@@ -2907,7 +2919,8 @@ class Core {
 			}
 		}
 		?>
-		<div class="wrap bbai-wrap bbai-modern">
+		<div class="wrap bbai-wrap bbai-modern<?php echo $bbai_use_nai_shell_route ? ' bbai-wrap--nai' : ''; ?>">
+			<?php if ( ! $bbai_use_nai_shell_route ) : ?>
 			<!-- Dark Header -->
 			<div class="bbai-header<?php echo ( ! $bbai_can_show_full_nav || $bbai_is_anonymous_trial ) ? ' bbai-header--trial-funnel' : ''; ?>">
 				<div class="bbai-header-content">
@@ -3037,6 +3050,7 @@ class Core {
 			
 			<!-- Main Content Container - uniform width across all tabs -->
 			<div class="bbai-container bbai-content-shell<?php echo ( isset( $bbai_tab ) && 'dashboard' === $bbai_tab ) ? ' bbai-dashboard-shell' : ''; ?>">
+			<?php endif; ?>
 
 			<?php
 			// Ensure usage stats for banner when on dashboard.
@@ -3375,12 +3389,14 @@ class Core {
 						</li>
 					</ul>
 				</div>
-			</div><!-- .bbai-container -->
+			<?php if ( ! $bbai_use_nai_shell_route ) : ?>
+				</div><!-- .bbai-container -->
 
-			<!-- Footer -->
-			<div class="bbai-footer">
-				<?php esc_html_e( 'BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?> — <a href="<?php echo esc_url( 'https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'WordPress.org Plugin', 'beepbeep-ai-alt-text-generator' ); ?></a>
-			</div>
+				<!-- Footer -->
+				<div class="bbai-footer">
+					<?php esc_html_e( 'BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?> — <a href="<?php echo esc_url( 'https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'WordPress.org Plugin', 'beepbeep-ai-alt-text-generator' ); ?></a>
+				</div>
+			<?php endif; ?>
 		</div>
 		
 				<?php
@@ -3854,16 +3870,18 @@ class Core {
 			'ai_source_count'     => 0,
 			'needs_review_count'  => 0,
 			'approved_count'      => 0,
-			'filename_only_count' => 0,
-			'last_attachment_id'  => 0,
-			'updated_at'          => time(),
-			'scanned_at'          => time(),
+			'filename_only_count'   => 0,
+			'last_attachment_id'    => 0,
+			'updated_at'            => time(),
+			'scanned_at'            => time(),
+			'previous_pass_scan_at' => max( 0, (int) get_option( self::TODAYS_PASS_LAST_SCAN_OPTION, 0 ) ),
 		);
 
 		if ( $total_images <= 0 ) {
 			$coverage_data = $this->get_empty_alt_coverage_data();
 			set_transient( self::ALT_COVERAGE_TRANSIENT_KEY, $coverage_data, self::ALT_COVERAGE_TRANSIENT_TTL );
 			$scan_state['payload'] = $coverage_data;
+			$this->capture_todays_pass_candidates( (int) $scan_state['previous_pass_scan_at'] );
 		}
 
 		$this->persist_alt_coverage_scan_job( $scan_state );
@@ -3969,6 +3987,7 @@ class Core {
 			$scan_state['stage_message']    = __( 'Scan complete.', 'beepbeep-ai-alt-text-generator' );
 
 			set_transient( self::ALT_COVERAGE_TRANSIENT_KEY, $coverage_data, self::ALT_COVERAGE_TRANSIENT_TTL );
+			$this->capture_todays_pass_candidates( max( 0, (int) ( $scan_state['previous_pass_scan_at'] ?? 0 ) ) );
 		} else {
 			$scan_state['stage_message'] = $this->get_alt_coverage_scan_stage_message(
 				(int) ( $scan_state['processed_images'] ?? 0 ),
@@ -4264,8 +4283,10 @@ class Core {
 			return;
 		}
 
+		$previous_pass_scan_at = max( 0, (int) get_option( self::TODAYS_PASS_LAST_SCAN_OPTION, 0 ) );
 		$this->invalidate_stats_cache();
 		$coverage_data = $this->get_alt_text_coverage_scan( true );
+		$this->capture_todays_pass_candidates( $previous_pass_scan_at );
 
 		wp_send_json_success(
 			array_merge(
@@ -4519,10 +4540,11 @@ class Core {
 			$limit = 5; }
 		$image_mime_like = $wpdb->esc_like( 'image/' ) . '%';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		return array_map(
-			'intval',
-			(array) $wpdb->get_col(
-				$wpdb->prepare(
+			return array_map(
+				'intval',
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared media-library lookup; caller limits result size and no persistent cache key exists for this dashboard snapshot.
+				(array) $wpdb->get_col(
+					$wpdb->prepare(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
 					'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
 					'_wp_attachment_image_alt',
@@ -4584,6 +4606,164 @@ class Core {
 		}
 
 		return array_map( 'intval', array_slice( $needs_review_ids, 0, $limit ) );
+	}
+
+	/**
+	 * Store actionable images first detected by an explicit coverage scan.
+	 *
+	 * @param int $previous_scan_at Completion time of the previous explicit scan.
+	 */
+	private function capture_todays_pass_candidates( int $previous_scan_at = 0 ): void {
+		$previous_scan_at = max( 0, $previous_scan_at );
+		$candidate_ids    = array_values(
+			array_unique(
+				array_merge(
+					$this->get_missing_attachment_ids( 500, 0 ),
+					$this->get_needs_review_attachment_ids( 500, 0 )
+				)
+			)
+		);
+		$detected_ids = array();
+
+		foreach ( $candidate_ids as $attachment_id ) {
+			$attachment_id = absint( $attachment_id );
+			if ( $attachment_id <= 0 ) {
+				continue;
+			}
+			$uploaded_at = (int) get_post_time( 'U', true, $attachment_id );
+			if ( $previous_scan_at > 0 && $uploaded_at > 0 && $uploaded_at <= $previous_scan_at ) {
+				continue;
+			}
+			$detected_ids[] = $attachment_id;
+		}
+
+		update_option( self::TODAYS_PASS_CANDIDATES_OPTION, array_slice( $detected_ids, 0, 500 ), false );
+		update_option( self::TODAYS_PASS_LAST_SCAN_OPTION, time(), false );
+	}
+
+	/**
+	 * Remove images that were handled by Today's Pass from the retained pass list.
+	 *
+	 * Generated images may still need editorial review, but they should not continue
+	 * to appear as unprocessed items in the same pass after a successful save.
+	 *
+	 * @param array<int,int> $attachment_ids Attachment IDs to remove.
+	 */
+	private function remove_todays_pass_candidates( array $attachment_ids ): void {
+		$remove_ids = array_values( array_filter( array_map( 'absint', $attachment_ids ) ) );
+		if ( empty( $remove_ids ) ) {
+			return;
+		}
+
+		$handled_ids = get_option( self::TODAYS_PASS_HANDLED_OPTION, array() );
+		$handled_ids = array_values( array_filter( array_map( 'absint', (array) $handled_ids ) ) );
+		update_option( self::TODAYS_PASS_HANDLED_OPTION, array_slice( array_values( array_unique( array_merge( $handled_ids, $remove_ids ) ) ), -500 ), false );
+
+		$stored_ids = get_option( self::TODAYS_PASS_CANDIDATES_OPTION, array() );
+		$stored_ids = array_values( array_filter( array_map( 'absint', (array) $stored_ids ) ) );
+		if ( empty( $stored_ids ) ) {
+			return;
+		}
+
+		$remove_lookup = array_fill_keys( $remove_ids, true );
+		$next_ids      = array_values(
+			array_filter(
+				$stored_ids,
+				static function ( int $attachment_id ) use ( $remove_lookup ): bool {
+					return empty( $remove_lookup[ $attachment_id ] );
+				}
+			)
+		);
+
+		update_option( self::TODAYS_PASS_CANDIDATES_OPTION, $next_ids, false );
+	}
+
+	/**
+	 * Resolve actionable rows retained for Today's Pass.
+	 *
+	 * @param int $limit Maximum candidates to return.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function get_todays_pass_candidates( int $limit = 50 ): array {
+		$limit      = max( 1, min( 500, $limit ) );
+		$stored_ids = get_option( self::TODAYS_PASS_CANDIDATES_OPTION, array() );
+		$stored_ids = array_values( array_filter( array_map( 'absint', (array) $stored_ids ) ) );
+		$handled_ids = get_option( self::TODAYS_PASS_HANDLED_OPTION, array() );
+		$handled_ids = array_values( array_filter( array_map( 'absint', (array) $handled_ids ) ) );
+		if ( ! empty( $handled_ids ) ) {
+			$handled_lookup = array_fill_keys( $handled_ids, true );
+			$stored_ids     = array_values(
+				array_filter(
+					$stored_ids,
+					static function ( int $attachment_id ) use ( $handled_lookup ): bool {
+						return empty( $handled_lookup[ $attachment_id ] );
+					}
+				)
+			);
+		}
+		if ( empty( $stored_ids ) ) {
+			$stored_ids = array_values(
+				array_unique(
+					array_merge(
+						$this->get_missing_attachment_ids( $limit, 0 ),
+						$this->get_needs_review_attachment_ids( $limit, 0 )
+					)
+				)
+			);
+			if ( ! empty( $handled_ids ) ) {
+				$handled_lookup = array_fill_keys( $handled_ids, true );
+				$stored_ids     = array_values(
+					array_filter(
+						$stored_ids,
+						static function ( int $attachment_id ) use ( $handled_lookup ): bool {
+							return empty( $handled_lookup[ $attachment_id ] );
+						}
+					)
+				);
+			}
+			if ( ! empty( $stored_ids ) ) {
+				update_option( self::TODAYS_PASS_CANDIDATES_OPTION, array_slice( $stored_ids, 0, 500 ), false );
+				if ( ! get_option( self::TODAYS_PASS_LAST_SCAN_OPTION, 0 ) ) {
+					update_option( self::TODAYS_PASS_LAST_SCAN_OPTION, time(), false );
+				}
+			}
+		}
+		$candidates = array();
+
+		foreach ( array_slice( $stored_ids, 0, $limit ) as $idx => $attachment_id ) {
+			if ( $attachment_id <= 0 || ! $this->is_image( $attachment_id ) ) {
+				continue;
+			}
+			$alt       = trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) );
+			$row_state = $this->get_library_workspace_row_state(
+				(object) array(
+					'ID'       => $attachment_id,
+					'alt_text' => $alt,
+				)
+			);
+			$status = (string) ( $row_state['status'] ?? '' );
+			if ( ! in_array( $status, array( 'missing', 'weak' ), true ) ) {
+				continue;
+			}
+				$file = get_attached_file( $attachment_id );
+				$name = $file ? wp_basename( $file ) : get_the_title( $attachment_id );
+				if ( '' === trim( (string) $name ) ) {
+					/* translators: %d: attachment ID. */
+					$name = sprintf( __( 'Image #%d', 'beepbeep-ai-alt-text-generator' ), $attachment_id );
+				}
+			$thumb_src = wp_get_attachment_image_src( $attachment_id, 'thumbnail' );
+			$thumb_url = $thumb_src && isset( $thumb_src[0] ) ? (string) $thumb_src[0] : '';
+			$candidates[] = array(
+				'id'        => $attachment_id,
+				'name'      => (string) $name,
+				'signal'    => 'missing' === $status ? __( 'Missing ALT', 'beepbeep-ai-alt-text-generator' ) : __( 'Needs review', 'beepbeep-ai-alt-text-generator' ),
+				'tone'      => 'missing' === $status ? 'danger' : 'warn',
+				'hue'       => ( (int) $idx * 70 ) % 360,
+				'thumb_url' => $thumb_url,
+			);
+		}
+
+		return $candidates;
 	}
 
 	public function get_all_attachment_ids( $limit = 5, $offset = 0 ) {
@@ -6242,6 +6422,7 @@ class Core {
 				if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
 					\BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
 				}
+				\BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success( 1 );
 
 				return $alt_text;
 			}
@@ -6289,6 +6470,7 @@ class Core {
 			if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
 				\BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
 			}
+			\BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success( 1 );
 
 			return $stub_alt;
 		}
@@ -6349,11 +6531,18 @@ class Core {
 				}
 			}
 			$status_code    = ( is_array( $error_data ) && isset( $error_data['status_code'] ) ) ? intval( $error_data['status_code'] ) : 0;
+			$is_daily_quota_error = (
+				'daily_limit_reached' === $error_code ||
+				'daily_quota_exceeded' === $api_error_code ||
+				strpos( $error_message_lower, 'daily free generation limit' ) !== false ||
+				strpos( $error_message_lower, 'daily generation' ) !== false
+			);
 			$is_quota_error = (
 				'limit_reached' === $error_code ||
+				'daily_limit_reached' === $error_code ||
 				'quota_exhausted' === $error_code ||
 				'quota_check_mismatch' === $error_code ||
-				in_array( $api_error_code, array( 'quota_exhausted', 'quota_exceeded', 'limit_reached', 'quota_check_mismatch' ), true ) ||
+				in_array( $api_error_code, array( 'quota_exhausted', 'quota_exceeded', 'daily_quota_exceeded', 'limit_reached', 'quota_check_mismatch' ), true ) ||
 				strpos( $error_message_lower, 'quota exceeded' ) !== false ||
 				strpos( $error_message_lower, 'quota exhausted' ) !== false ||
 				strpos( $error_message_lower, 'monthly limit' ) !== false ||
@@ -6385,7 +6574,7 @@ class Core {
 					$bbai_skip_quota_mismatch = \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user()
 						|| $bbai_guest_trial_budget;
 
-					if ( ! $bbai_skip_quota_mismatch ) {
+					if ( ! $bbai_skip_quota_mismatch && ! $is_daily_quota_error ) {
 						// Check cached usage before accepting the backend's quota error
 						require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 						$cached_usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_usage_snapshot();
@@ -6559,6 +6748,14 @@ class Core {
 			$bbai_usage_data['limit'] = intval( $api_response['limit'] );
 		} elseif ( isset( $bbai_usage_data['used'] ) && isset( $bbai_usage_data['remaining'] ) ) {
 			$bbai_usage_data['limit'] = $bbai_usage_data['used'] + $bbai_usage_data['remaining'];
+		}
+		if ( isset( $api_response['entitlement_state'] ) && is_array( $api_response['entitlement_state'] ) ) {
+			$bbai_usage_data['entitlement_state'] = $api_response['entitlement_state'];
+			foreach ( array( 'daily_generation_limit', 'daily_generations_used', 'daily_generations_remaining', 'daily_reset_date' ) as $daily_key ) {
+				if ( array_key_exists( $daily_key, $api_response['entitlement_state'] ) ) {
+					$bbai_usage_data[ $daily_key ] = $api_response['entitlement_state'][ $daily_key ];
+				}
+			}
 		}
 
 		// Get token info from nested usage object if available
@@ -7741,6 +7938,23 @@ class Core {
 				$user_message = __( 'Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' );
 			} elseif ( 'bbai_trial_exhausted' === $error_code ) {
 				$user_message = \BeepBeepAI\AltTextGenerator\Trial_Quota::get_exhausted_message();
+			} elseif ( 'daily_limit_reached' === $error_code ) {
+				$bbai_reset_date = null;
+				if ( is_array( $error_data ) && isset( $error_data['usage'] ) && is_array( $error_data['usage'] ) ) {
+					$bbai_reset_date = $error_data['usage']['daily_reset_date'] ?? null;
+				}
+
+				$user_message = __( 'You have used today\'s 5 free generations. Upgrade to Pro to continue now, or wait for the daily refresh.', 'beepbeep-ai-alt-text-generator' );
+				if ( $bbai_reset_date ) {
+					$reset_ts = strtotime( $bbai_reset_date );
+					if ( false !== $reset_ts ) {
+						$user_message = sprintf(
+							/* translators: %s: daily reset time */
+							__( 'You have used today\'s 5 free generations. Your daily allowance refreshes at %s. Upgrade to Pro to continue now.', 'beepbeep-ai-alt-text-generator' ),
+							date_i18n( 'g:i a', $reset_ts )
+						);
+					}
+				}
 			} elseif ( 'limit_reached' === $error_code || 'quota_exhausted' === $error_code ) {
 				$bbai_reset_date = null;
 				if ( is_array( $error_data ) && isset( $error_data['usage'] ) && is_array( $error_data['usage'] ) ) {
@@ -8579,7 +8793,7 @@ class Core {
 					continue;
 				}
 
-				if ( 'limit_reached' === $code ) {
+					if ( in_array( $code, array( 'limit_reached', 'daily_limit_reached' ), true ) ) {
 					Queue::mark_retry( $job->id, $message );
 					Queue::schedule_processing( apply_filters( 'bbai_queue_limit_delay', HOUR_IN_SECONDS ) );
 					break;
@@ -10844,6 +11058,8 @@ class Core {
 				'trial_remaining_before' => (int) ( $tb['remaining'] ?? 0 ),
 			);
 		}
+		$bbai_usage_before      = Usage_Tracker::get_local_usage_snapshot();
+		$bbai_usage_used_before = is_array( $bbai_usage_before ) ? max( 0, (int) ( $bbai_usage_before['used'] ?? $bbai_usage_before['credits_used'] ?? $bbai_usage_before['creditsUsed'] ?? 0 ) ) : 0;
 
 		$results = array();
 		foreach ( $ids as $id ) {
@@ -10931,7 +11147,16 @@ class Core {
 			ob_clean();
 		}
 
-		Usage_Tracker::clear_cache();
+		$bbai_has_explicit_backend = defined( 'BEEPBEEP_AI_API_URL' )
+			&& is_string( BEEPBEEP_AI_API_URL )
+			&& '' !== trim( (string) BEEPBEEP_AI_API_URL );
+		$bbai_local_generation_runtime = ( ! $bbai_has_explicit_backend && defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) && BEEPBEEP_AI_LOCAL_ALT_STUB )
+			|| ( ! $bbai_has_explicit_backend && defined( 'WP_LOCAL_DEV' ) && WP_LOCAL_DEV );
+		if ( ! $bbai_local_generation_runtime ) {
+			Usage_Tracker::clear_cache();
+		} else {
+			delete_transient( 'bbai_quota_cache' );
+		}
 		$this->invalidate_stats_cache();
 
 		$trial_snapshot_after = null;
@@ -10950,6 +11175,7 @@ class Core {
 		$skipped_due_to_limit = 0;
 		$updated_images       = array();
 		$processable_count    = 0;
+		$successful_image_ids = array();
 
 		foreach ( $results as $row ) {
 			if ( ! is_array( $row ) ) {
@@ -10964,6 +11190,7 @@ class Core {
 				++$processed_count;
 				$att_id = isset( $row['attachment_id'] ) ? (int) $row['attachment_id'] : 0;
 				if ( $att_id > 0 ) {
+					$successful_image_ids[] = $att_id;
 					$updated_images[] = array(
 						'id'       => $att_id,
 						'src'      => (string) wp_get_attachment_url( $att_id ),
@@ -10974,6 +11201,19 @@ class Core {
 				++$skipped_due_to_limit;
 			} else {
 				++$failed_count;
+			}
+		}
+
+		if ( ! empty( $successful_image_ids ) ) {
+			$this->remove_todays_pass_candidates( $successful_image_ids );
+		}
+
+		if ( $processed_count > 0 ) {
+			$bbai_usage_after      = Usage_Tracker::get_local_usage_snapshot();
+			$bbai_usage_used_after = is_array( $bbai_usage_after ) ? max( 0, (int) ( $bbai_usage_after['used'] ?? $bbai_usage_after['credits_used'] ?? $bbai_usage_after['creditsUsed'] ?? 0 ) ) : 0;
+			if ( $bbai_usage_used_after <= $bbai_usage_used_before ) {
+				$bbai_record_count = $processed_count + max( 0, $bbai_usage_used_before - $bbai_usage_used_after );
+				Usage_Tracker::record_generation_success( $bbai_record_count );
 			}
 		}
 
@@ -11096,9 +11336,10 @@ class Core {
 			return false;
 		}
 		$code        = isset( $row['code'] ) ? (string) $row['code'] : '';
-		$limit_codes = array(
-			'limit_reached',
-			'quota_exhausted',
+			$limit_codes = array(
+				'limit_reached',
+				'daily_limit_reached',
+				'quota_exhausted',
 			'bbai_trial_exhausted',
 			'quota_exceeded',
 			'insufficient_credits',

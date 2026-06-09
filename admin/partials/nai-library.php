@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template locals are scoped to this included partial.
+
 // Defensive defaults so partial renders even when an unexpected upstream
 // branch did not compute everything.
 $nai_lib_total         = isset( $bbai_cov_total ) ? (int) $bbai_cov_total : ( isset( $bbai_total_images ) ? (int) $bbai_total_images : 0 );
@@ -102,8 +104,19 @@ $nai_lib_row_status_label = array(
 	'weak'      => __( 'Needs review', 'beepbeep-ai-alt-text-generator' ),
 	'missing'   => __( 'Missing ALT', 'beepbeep-ai-alt-text-generator' ),
 );
+$nai_shell_active = 'library';
+$nai_shell_is_pro = $nai_lib_is_pro;
+require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 ?>
-<div class="nai-screen nai-screen--library" data-nai-screen="library" data-bbai-library-is-pro="<?php echo $nai_lib_is_pro ? '1' : '0'; ?>" data-bbai-settings-url="<?php echo esc_url( admin_url( 'admin.php?page=bbai-settings' ) ); ?>">
+<div class="nai-screen nai-screen--library bbai-library-container bbai-library-main"
+	data-nai-screen="library"
+	data-bbai-library-is-pro="<?php echo $nai_lib_is_pro ? '1' : '0'; ?>"
+	data-bbai-entitlement-can-generate="<?php echo $nai_lib_limit_lock ? 'false' : 'true'; ?>"
+	data-bbai-settings-url="<?php echo esc_url( admin_url( 'admin.php?page=bbai-settings' ) ); ?>"
+	data-bbai-bulk-mode="true"
+	data-bbai-has-selection="false"
+	data-bbai-empty-filter="<?php esc_attr_e( 'No images match this filter.', 'beepbeep-ai-alt-text-generator' ); ?>"
+	data-bbai-empty-filter-hint="<?php esc_attr_e( 'Try another status or search term.', 'beepbeep-ai-alt-text-generator' ); ?>">
 
 	<div class="nai-page-header">
 		<div class="nai-eyebrow"><?php esc_html_e( 'Library', 'beepbeep-ai-alt-text-generator' ); ?></div>
@@ -156,15 +169,27 @@ $nai_lib_row_status_label = array(
 		</div>
 	</div>
 
+	<div class="nai-card nai-entitlement-notice" role="status" data-bbai-entitlement-exhausted aria-hidden="<?php echo $nai_lib_limit_lock ? 'false' : 'true'; ?>" <?php echo $nai_lib_limit_lock ? '' : 'hidden'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+		<div class="nai-eyebrow"><?php esc_html_e( 'Monthly allowance used', 'beepbeep-ai-alt-text-generator' ); ?></div>
+		<p><?php esc_html_e( 'You can still review and edit existing ALT text. Upgrade to generate new ALT text now.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+	</div>
+
 	<?php // -------- Filter pills + search -------- ?>
-	<div class="nai-filter-row" role="navigation" aria-label="<?php esc_attr_e( 'Filter images by status', 'beepbeep-ai-alt-text-generator' ); ?>">
+	<?php // Compatibility hook: legacy filter JS requires #bbai-review-filter-tabs button[data-filter]. ?>
+	<div id="bbai-review-filter-tabs" class="nai-filter-row" role="navigation" aria-label="<?php esc_attr_e( 'Filter images by status', 'beepbeep-ai-alt-text-generator' ); ?>" data-bbai-default-filter="<?php echo esc_attr( $nai_lib_active_filter ); ?>">
 		<?php foreach ( $nai_lib_filter_items as $item ) : ?>
-			<a class="nai-filter-pill <?php echo $item['key'] === $nai_lib_active_filter ? 'nai-filter-pill--active' : ''; ?>"
-				href="<?php echo esc_url( $nai_lib_filter_href( $item['key'] ) ); ?>"
-				data-bbai-library-filter="<?php echo esc_attr( $item['key'] ); ?>">
-				<?php echo esc_html( $item['label'] ); ?>
-				<span class="nai-filter-pill__count"><?php echo esc_html( number_format_i18n( $item['count'] ) ); ?></span>
-			</a>
+			<?php $nai_lib_filter_active = $item['key'] === $nai_lib_active_filter; ?>
+			<button type="button"
+				class="nai-filter-pill bbai-filter-group__item <?php echo $nai_lib_filter_active ? 'nai-filter-pill--active bbai-filter-group__item--active bbai-alt-review-filters__btn--active' : ''; ?>"
+				data-filter="<?php echo esc_attr( $item['key'] ); ?>"
+				data-bbai-filter-label="<?php echo esc_attr( $item['label'] ); ?>"
+				data-bbai-filter-target="<?php echo esc_attr( $item['key'] ); ?>"
+				data-bbai-library-filter="<?php echo esc_attr( $item['key'] ); ?>"
+				data-bbai-filter-href="<?php echo esc_url( $nai_lib_filter_href( $item['key'] ) ); ?>"
+				aria-pressed="<?php echo $nai_lib_filter_active ? 'true' : 'false'; ?>">
+				<span class="bbai-filter-group__label"><?php echo esc_html( $item['label'] ); ?></span>
+				<span class="nai-filter-pill__count bbai-filter-group__count"><?php echo esc_html( number_format_i18n( $item['count'] ) ); ?></span>
+			</button>
 		<?php endforeach; ?>
 
 		<div class="nai-search">
@@ -175,7 +200,7 @@ $nai_lib_row_status_label = array(
 
 	<?php if ( empty( $nai_lib_images ) ) : ?>
 
-		<div class="nai-card" style="padding:32px 24px;text-align:center;">
+		<div class="nai-card" data-bbai-library-empty-state style="padding:32px 24px;text-align:center;">
 			<div class="nai-eyebrow" style="margin-bottom:6px;"><?php esc_html_e( 'Nothing here', 'beepbeep-ai-alt-text-generator' ); ?></div>
 			<p style="font-size:13.5px;color:var(--nai-text-2);margin:0 0 14px;line-height:1.5;"><?php esc_html_e( 'No images match this filter. Try another or upload some to your media library.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			<a class="nai-btn nai-btn--secondary nai-btn--sm" href="<?php echo esc_url( admin_url( 'upload.php' ) ); ?>">
@@ -188,7 +213,7 @@ $nai_lib_row_status_label = array(
 		<?php // Contextual bulk action bar (hidden until something is selected) ?>
 		<div class="nai-card" id="bbai-library-selection-bar" data-bbai-library-selection-bar style="padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
 			<label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--nai-text-2);font-weight:500;">
-				<input type="checkbox" id="bbai-select-all" />
+				<input type="checkbox" id="bbai-select-all" class="bbai-checkbox" />
 				<?php esc_html_e( 'Select images', 'beepbeep-ai-alt-text-generator' ); ?>
 			</label>
 			<span class="nai-mono nai-tnum" id="bbai-selected-count" data-bbai-selected-count style="font-size:12px;color:var(--nai-text-3);">0 <?php esc_html_e( 'selected', 'beepbeep-ai-alt-text-generator' ); ?></span>
@@ -228,7 +253,8 @@ $nai_lib_row_status_label = array(
 
 		<?php // -------- Row list -------- ?>
 		<div class="nai-card" style="padding:0;overflow:hidden;">
-			<div id="bbai-library-table-body" style="display:flex;flex-direction:column;">
+			<?php // Compatibility hook: legacy Library JS mutates #bbai-library-table-body and .bbai-library-row children. ?>
+			<div id="bbai-library-table-body" class="bbai-library-review-queue" role="list" style="display:flex;flex-direction:column;">
 				<?php
 				foreach ( $nai_lib_images as $nai_lib_idx => $nai_lib_image ) :
 					$nai_lib_attach_id = (int) $nai_lib_image->ID;
@@ -256,15 +282,32 @@ $nai_lib_row_status_label = array(
 
 					$nai_lib_alt_preview = $nai_lib_has_alt ? $nai_lib_alt : __( 'No ALT text yet.', 'beepbeep-ai-alt-text-generator' );
 					$nai_lib_alt_dim     = $nai_lib_has_alt ? '' : 'color:var(--nai-text-3);font-style:italic;';
+					$nai_lib_quality     = 'optimized' === $nai_lib_status ? 'good' : 'poor';
+					$nai_lib_quality_lbl = 'optimized' === $nai_lib_status ? __( 'Good', 'beepbeep-ai-alt-text-generator' ) : __( 'Needs review', 'beepbeep-ai-alt-text-generator' );
+					$nai_lib_file_meta   = trim( $nai_lib_modified );
 					?>
-					<div class="nai-lib-row"
+					<?php // Compatibility hook: legacy JS requires .bbai-library-row plus attachment/status/ALT data attributes. ?>
+					<div class="nai-lib-row bbai-library-row"
+						role="listitem"
 						style="display:flex;align-items:center;gap:14px;padding:10px 16px;border-top:1px solid var(--nai-hairline);"
 						data-attachment-id="<?php echo esc_attr( (string) $nai_lib_attach_id ); ?>"
 						data-id="<?php echo esc_attr( (string) $nai_lib_attach_id ); ?>"
 						data-status="<?php echo esc_attr( $nai_lib_status ); ?>"
-						data-review-state="<?php echo esc_attr( $nai_lib_status ); ?>">
+						data-review-state="<?php echo esc_attr( $nai_lib_status ); ?>"
+						data-alt-missing="<?php echo $nai_lib_has_alt ? 'false' : 'true'; ?>"
+						data-alt-full="<?php echo esc_attr( $nai_lib_alt ); ?>"
+						data-ai-source="<?php echo $nai_lib_has_alt ? 'ai' : ''; ?>"
+						data-quality="<?php echo esc_attr( $nai_lib_quality ); ?>"
+						data-quality-class="<?php echo esc_attr( $nai_lib_quality ); ?>"
+						data-quality-label="<?php echo esc_attr( $nai_lib_quality_lbl ); ?>"
+						data-image-title="<?php echo esc_attr( $nai_lib_display_name ); ?>"
+						data-image-url="<?php echo esc_url( $nai_lib_thumb_url ); ?>"
+						data-file-name="<?php echo esc_attr( $nai_lib_filename ); ?>"
+						data-file-meta="<?php echo esc_attr( $nai_lib_file_meta ); ?>"
+						data-last-updated="<?php echo esc_attr( $nai_lib_modified ); ?>">
 						<label style="display:inline-flex;align-items:center;flex-shrink:0;">
-							<input type="checkbox" class="bbai-image-checkbox" value="<?php echo esc_attr( (string) $nai_lib_attach_id ); ?>" data-attachment-id="<?php echo esc_attr( (string) $nai_lib_attach_id ); ?>" aria-label="
+							<?php // Compatibility hook: legacy bulk JS requires .bbai-library-row-check. ?>
+							<input type="checkbox" class="bbai-checkbox bbai-library-row-check bbai-image-checkbox" value="<?php echo esc_attr( (string) $nai_lib_attach_id ); ?>" data-attachment-id="<?php echo esc_attr( (string) $nai_lib_attach_id ); ?>" aria-label="
 							<?php
 								/* translators: %s: filename */
 								printf( esc_attr__( 'Select %s', 'beepbeep-ai-alt-text-generator' ), esc_attr( $nai_lib_display_name ) );
@@ -273,17 +316,17 @@ $nai_lib_row_status_label = array(
 						</label>
 						<?php if ( '' !== $nai_lib_thumb_url ) : ?>
 							<button type="button" data-action="preview-image" data-attachment-id="<?php echo esc_attr( (string) $nai_lib_attach_id ); ?>" style="border:0;padding:0;background:transparent;cursor:zoom-in;flex-shrink:0;">
-								<img src="<?php echo esc_url( $nai_lib_thumb_url ); ?>" alt="" loading="lazy" decoding="async" style="width:44px;height:44px;border-radius:6px;object-fit:cover;display:block;border:1px solid var(--nai-border);" />
+								<img class="bbai-library-thumbnail" src="<?php echo esc_url( $nai_lib_thumb_url ); ?>" alt="" loading="lazy" decoding="async" style="width:44px;height:44px;border-radius:6px;object-fit:cover;display:block;border:1px solid var(--nai-border);" />
 							</button>
 						<?php else : ?>
 							<div class="nai-thumb" style="flex-shrink:0;"></div>
 						<?php endif; ?>
 
-						<div style="min-width:0;flex:1;">
+						<div class="bbai-library-cell--alt-text" style="min-width:0;flex:1;">
 							<div style="font-size:13px;font-weight:600;color:var(--nai-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?php echo esc_attr( $nai_lib_filename ); ?>">
 								<?php echo esc_html( $nai_lib_display_name ); ?>
 							</div>
-							<div style="font-size:11.5px;color:var(--nai-text-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;<?php echo esc_attr( $nai_lib_dim ?? '' ); ?>" title="<?php echo esc_attr( $nai_lib_has_alt ? $nai_lib_alt : '' ); ?>">
+							<div data-bbai-alt-slot style="font-size:11.5px;color:var(--nai-text-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;<?php echo esc_attr( $nai_lib_dim ?? '' ); ?>" title="<?php echo esc_attr( $nai_lib_has_alt ? $nai_lib_alt : '' ); ?>">
 								<span style="<?php echo esc_attr( $nai_lib_alt_dim ); ?>"><?php echo esc_html( $nai_lib_alt_preview ); ?></span>
 							</div>
 						</div>
@@ -326,7 +369,7 @@ $nai_lib_row_status_label = array(
 
 		<?php // -------- Pagination -------- ?>
 		<?php if ( $nai_lib_total_pages > 1 ) : ?>
-			<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:var(--nai-text-3);">
+			<div data-bbai-library-pagination style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:var(--nai-text-3);">
 				<span class="nai-mono nai-tnum">
 					<?php
 					echo esc_html(
@@ -375,12 +418,15 @@ $nai_lib_row_status_label = array(
 			</div>
 			<div style="flex:1;min-width:0;">
 				<div style="font-size:13.5px;font-weight:600;color:var(--nai-text);"><?php esc_html_e( "Don't optimise images one by one.", 'beepbeep-ai-alt-text-generator' ); ?></div>
-				<div style="font-size:12px;color:var(--nai-text-2);margin-top:2px;line-height:1.45;"><?php esc_html_e( 'Autopilot covers every new upload automatically — no daily limits, no thinking required.', 'beepbeep-ai-alt-text-generator' ); ?></div>
+				<div style="font-size:12px;color:var(--nai-text-2);margin-top:2px;line-height:1.45;"><?php esc_html_e( 'Autopilot covers new uploads automatically with 1,000 AI generations per month and no daily cap inside that allowance.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 			</div>
-			<button type="button" class="nai-btn nai-btn--pro nai-btn--sm" data-action="show-upgrade-modal" data-bbai-pricing-variant="growth">
+			<button type="button" class="nai-btn nai-btn--pro nai-btn--sm" data-nai-open-paywall="default" data-bbai-pricing-variant="growth">
 				<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?>
 			</button>
 		</div>
 	<?php endif; ?>
 
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-prototype-overlays.php'; ?>
+
+</div>
 </div>

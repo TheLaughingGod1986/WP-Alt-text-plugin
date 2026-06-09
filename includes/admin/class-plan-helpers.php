@@ -27,6 +27,67 @@ class Plan_Helpers {
 	private static $cached_plan_data = null;
 
 	/**
+	 * Minimum monthly allowance for a paid public plan.
+	 *
+	 * @var int
+	 */
+	private const MIN_PAID_MONTHLY_LIMIT = 1000;
+
+	/**
+	 * True when a slug represents a paid plan.
+	 *
+	 * @param string $plan_slug Plan slug.
+	 * @return bool
+	 */
+	private static function is_paid_plan_slug( string $plan_slug ): bool {
+		return in_array( sanitize_key( $plan_slug ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Demote stale paid claims that carry free-sized usage.
+	 *
+	 * @param string $plan_slug Plan slug.
+	 * @param int    $limit     Monthly allowance.
+	 * @return string
+	 */
+	private static function normalize_plan_for_limit( string $plan_slug, int $limit ): string {
+		$plan_slug = sanitize_key( $plan_slug );
+		if ( self::is_paid_plan_slug( $plan_slug ) && $limit > 0 && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+			return 'free';
+		}
+
+		return '' !== $plan_slug ? $plan_slug : 'free';
+	}
+
+	/**
+	 * Determine whether cached license data carries explicit paid entitlement proof.
+	 *
+	 * @param array $license_data License data.
+	 * @return bool
+	 */
+	private static function has_paid_entitlement_signal( array $license_data ): bool {
+		$org = isset( $license_data['organization'] ) && is_array( $license_data['organization'] )
+			? $license_data['organization']
+			: array();
+
+		foreach ( array( $license_data, $org ) as $source ) {
+			foreach ( array( 'has_paid_entitlement', 'is_paid' ) as $key ) {
+				if ( isset( $source[ $key ] ) && true === $source[ $key ] ) {
+					return true;
+				}
+			}
+
+			foreach ( array( 'stripe_subscription_id', 'subscription_id' ) as $key ) {
+				if ( isset( $source[ $key ] ) && is_scalar( $source[ $key ] ) && '' !== trim( (string) $source[ $key ] ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Get the current plan slug
 	 *
 	 * @return string Plan slug (free, growth, pro, agency)
@@ -53,7 +114,8 @@ class Plan_Helpers {
 		if ( class_exists( 'BeepBeepAI\\AltTextGenerator\\Usage_Tracker' ) ) {
 			$usage_data = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage();
 			if ( is_array( $usage_data ) && isset( $usage_data['plan'] ) && ! empty( $usage_data['plan'] ) ) {
-				$plan_slug = strtolower( $usage_data['plan'] );
+				$usage_limit = max( 0, (int) ( $usage_data['limit'] ?? $usage_data['credits_total'] ?? $usage_data['creditsTotal'] ?? 0 ) );
+				$plan_slug   = self::normalize_plan_for_limit( strtolower( $usage_data['plan'] ), $usage_limit );
 			}
 		}
 
@@ -65,12 +127,15 @@ class Plan_Helpers {
 				$has_license = ! empty( $license_key );
 
 				// If using license and plan is still free, check license data
-				if ( $has_license && 'free' === $plan_slug ) {
-					$license_data = $api_client->get_license_data();
-					if ( $license_data && isset( $license_data['organization'] ) ) {
-						$plan_slug = strtolower( $license_data['organization']['plan'] ?? 'free' );
+					if ( $has_license && 'free' === $plan_slug ) {
+						$license_data = $api_client->get_license_data();
+						if ( $license_data && isset( $license_data['organization'] ) ) {
+							$license_plan = strtolower( $license_data['organization']['plan'] ?? 'free' );
+							if ( ! self::is_paid_plan_slug( $license_plan ) || self::has_paid_entitlement_signal( (array) $license_data ) ) {
+								$plan_slug = $license_plan;
+							}
+						}
 					}
-				}
 			} catch ( \Exception $e ) {
 				unset( $e ); // Silently skip; fall back to current plan_slug.
 			}
@@ -80,7 +145,7 @@ class Plan_Helpers {
 		$is_free   = ( 'free' === $plan_slug );
 		$is_growth = ( 'pro' === $plan_slug || 'growth' === $plan_slug );
 		$is_agency = ( 'agency' === $plan_slug );
-		$is_pro    = ( 'pro' === $plan_slug || 'agency' === $plan_slug ); // Any paid plan
+		$is_pro    = self::is_paid_plan_slug( $plan_slug ); // Any paid plan
 
 		self::$cached_plan_data = array(
 			'plan_slug' => $plan_slug,

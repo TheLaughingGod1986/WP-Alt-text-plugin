@@ -11,6 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template locals are scoped to this included partial.
+
 if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::class, false ) ) {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
 }
@@ -89,6 +91,9 @@ $nai_set_toggle_html = static function ( bool $on, string $aria_label = '' ): st
 };
 
 $nai_set_progress_tone = $nai_set_pct >= 90 ? 'nai-progress--danger' : ( $nai_set_pct >= 75 ? 'nai-progress--warn' : 'nai-progress--primary' );
+$nai_shell_active = 'settings';
+$nai_shell_is_pro = $nai_set_is_pro;
+require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 ?>
 <div class="nai-screen nai-screen--settings" data-nai-screen="settings">
 
@@ -112,9 +117,9 @@ $nai_set_progress_tone = $nai_set_pct >= 90 ? 'nai-progress--danger' : ( $nai_se
 				<div class="nai-plan-card__desc">
 					<?php
 					echo esc_html(
-						$nai_set_is_pro
-							? __( 'Unlimited AI generations · no daily or monthly limits · automation & priority queue.', 'beepbeep-ai-alt-text-generator' )
-							: sprintf(
+							$nai_set_is_pro
+								? __( '1,000 AI generations per month · no daily cap within your monthly allowance · automation & priority queue.', 'beepbeep-ai-alt-text-generator' )
+								: sprintf(
 								/* translators: %d: monthly free generations included with Free plan. */
 								__( 'Up to %d AI generations per month · manual generation only.', 'beepbeep-ai-alt-text-generator' ),
 								$nai_set_limit
@@ -129,9 +134,9 @@ $nai_set_progress_tone = $nai_set_pct >= 90 ? 'nai-progress--danger' : ( $nai_se
 					<?php esc_html_e( 'Manage billing', 'beepbeep-ai-alt-text-generator' ); ?>
 				</a>
 			<?php else : ?>
-				<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-action="show-upgrade-modal" data-bbai-pricing-variant="growth">
-					<?php echo $nai_set_icon( 'crown', 14, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?>
+					<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-nai-open-paywall="default" data-bbai-pricing-variant="growth">
+						<?php echo $nai_set_icon( 'crown', 14, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?>
 				</button>
 			<?php endif; ?>
 		</div>
@@ -161,13 +166,13 @@ $nai_set_progress_tone = $nai_set_pct >= 90 ? 'nai-progress--danger' : ( $nai_se
 			<?php else : ?>
 				<div class="nai-plan-card__usage-head">
 					<span><?php esc_html_e( 'This billing cycle', 'beepbeep-ai-alt-text-generator' ); ?></span>
-					<span class="nai-plan-card__usage-num"><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?> / <?php echo esc_html( number_format_i18n( $nai_set_limit ) ); ?> <?php esc_html_e( 'AI generations used', 'beepbeep-ai-alt-text-generator' ); ?></span>
+					<span class="nai-plan-card__usage-num"><span data-bbai-entitlement-used><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></span> / <span data-bbai-entitlement-limit><?php echo esc_html( number_format_i18n( $nai_set_limit ) ); ?></span> <?php esc_html_e( 'AI generations used', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				</div>
 				<div class="nai-progress <?php echo esc_attr( $nai_set_progress_tone ); ?>" style="height:5px;">
 					<div class="nai-progress__bar" style="width:<?php echo (int) $nai_set_pct; ?>%;"></div>
 				</div>
 				<div class="nai-plan-card__usage-foot">
-					<span><?php echo esc_html( number_format_i18n( $nai_set_remain ) ); ?> <?php esc_html_e( 'remaining', 'beepbeep-ai-alt-text-generator' ); ?></span>
+					<span><span data-bbai-entitlement-remaining><?php echo esc_html( number_format_i18n( $nai_set_remain ) ); ?></span> <?php esc_html_e( 'remaining', 'beepbeep-ai-alt-text-generator' ); ?></span>
 					<span>
 						<?php
 						echo esc_html(
@@ -254,4 +259,7 @@ $nai_set_progress_tone = $nai_set_pct >= 90 ? 'nai-progress--danger' : ( $nai_se
 	<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
 		<a class="nai-btn nai-btn--secondary nai-btn--md" href="<?php echo esc_url( $nai_set_full_url ); ?>"><?php esc_html_e( 'Open full settings', 'beepbeep-ai-alt-text-generator' ); ?></a>
 	</div>
+
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-prototype-overlays.php'; ?>
+</div>
 </div>

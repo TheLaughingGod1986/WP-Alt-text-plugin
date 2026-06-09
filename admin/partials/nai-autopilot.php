@@ -11,6 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template locals are scoped to this included partial.
+
 $nai_ap_options = is_array( get_option( 'bbai_options', array() ) ) ? get_option( 'bbai_options', array() ) : array();
 $nai_ap_is_pro  = ! empty( $bbai_state_is_pro_plan ?? false );
 if ( ! $nai_ap_is_pro && function_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::get_plan_data' ) ) {
@@ -20,7 +22,7 @@ if ( ! $nai_ap_is_pro && function_exists( '\BeepBeepAI\AltTextGenerator\Admin\Pl
 
 $nai_ap_auto_on        = ! empty( $nai_ap_options['auto_generate'] ) && $nai_ap_is_pro;
 $nai_ap_settings_url   = admin_url( 'admin.php?page=bbai-settings' );
-$nai_ap_upgrade_action = 'show-upgrade-modal';
+$nai_ap_upgrade_action = 'default';
 
 $nai_ap_presets = array(
 	array(
@@ -95,6 +97,9 @@ $nai_ap_samples = array(
 	'accessibility' => __( 'A white ceramic mug containing a cappuccino with leaf-shaped foam latte art, resting on a wooden cafe table.', 'beepbeep-ai-alt-text-generator' ),
 );
 $nai_ap_sample  = $nai_ap_samples[ $nai_ap_active_style ] ?? $nai_ap_samples['descriptive'];
+$nai_shell_active = 'autopilot';
+$nai_shell_is_pro = $nai_ap_is_pro;
+require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 ?>
 <div class="nai-screen nai-screen--autopilot" data-nai-screen="autopilot">
 
@@ -116,7 +121,7 @@ $nai_ap_sample  = $nai_ap_samples[ $nai_ap_active_style ] ?? $nai_ap_samples['de
 					</div>
 					<div class="nai-ap-hero__desc"><?php esc_html_e( 'Every image uploaded to your media library gets ALT text in seconds. Free users can still generate manually from the Library.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 				</div>
-				<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-action="<?php echo esc_attr( $nai_ap_upgrade_action ); ?>" data-bbai-pricing-variant="growth">
+				<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-nai-open-paywall="<?php echo esc_attr( $nai_ap_upgrade_action ); ?>" data-bbai-pricing-variant="growth">
 					<?php echo $nai_ap_icon( 'crown', 14, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<?php esc_html_e( 'Upgrade', 'beepbeep-ai-alt-text-generator' ); ?>
 				</button>
@@ -145,12 +150,13 @@ $nai_ap_sample  = $nai_ap_samples[ $nai_ap_active_style ] ?? $nai_ap_samples['de
 						?>
 					</div>
 				</div>
-				<a class="nai-toggle nai-toggle--lg <?php echo $nai_ap_auto_on ? 'nai-toggle--on nai-toggle--ok' : ''; ?>" href="<?php echo esc_url( $nai_ap_settings_url ); ?>" role="switch" aria-checked="<?php echo $nai_ap_auto_on ? 'true' : 'false'; ?>" aria-label="<?php esc_attr_e( 'Toggle Autopilot in settings', 'beepbeep-ai-alt-text-generator' ); ?>">
+				<a class="nai-toggle nai-toggle--lg <?php echo $nai_ap_auto_on ? 'nai-toggle--on nai-toggle--ok' : ''; ?>" href="<?php echo esc_url( $nai_ap_settings_url ); ?>" role="switch" aria-checked="<?php echo $nai_ap_auto_on ? 'true' : 'false'; ?>" aria-label="<?php esc_attr_e( 'Toggle Autopilot in settings', 'beepbeep-ai-alt-text-generator' ); ?>" data-bbai-entitlement-autopilot-control>
 					<span class="nai-toggle__knob"></span>
 				</a>
 			</div>
 		</div>
 	<?php endif; ?>
+	<p class="nai-ap-section__sub" data-bbai-entitlement-autopilot-blocked-copy hidden><?php esc_html_e( 'Autopilot is unavailable on your current allowance. Upgrade to enable automatic generation.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 
 	<?php // -------- Generation preferences -------- ?>
 	<div class="nai-ap-section">
@@ -282,4 +288,7 @@ $nai_ap_sample  = $nai_ap_samples[ $nai_ap_active_style ] ?? $nai_ap_samples['de
 	<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
 		<a class="nai-btn nai-btn--ghost nai-btn--md" href="<?php echo esc_url( $nai_ap_settings_url ); ?>"><?php esc_html_e( 'Open full settings', 'beepbeep-ai-alt-text-generator' ); ?></a>
 	</div>
+
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-prototype-overlays.php'; ?>
+</div>
 </div>
