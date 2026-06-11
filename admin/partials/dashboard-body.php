@@ -1267,17 +1267,25 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 	>
 		<div id="bbai-limit-state-root" class="bbai-limit-state-root" hidden></div>
 		<?php
-		$bbai_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-hero.php';
-		if ( is_readable( $bbai_hero_partial ) ) {
-			require $bbai_hero_partial;
-		}
-		// Guest conversion funnel: avoid a competing progress strip between hero and the locked preview.
-		// Keep the user focused on a single "finish" action in the hero + modal.
-		$bbai_trial_preview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-library-preview.php';
-		// Guest conversion: always show a real ALT Library preview beneath the hero.
-		// Overlay CTA handles locked/unlocked expectation; preview rows come from real media.
-		if ( is_readable( $bbai_trial_preview_partial ) ) {
-			require $bbai_trial_preview_partial;
+		// nAi redesign: signed-out guests get the conversion-focused audit
+		// dashboard. Fall back to the legacy funnel hero + trial preview if
+		// the partial is missing or the filter opts out.
+		$bbai_guest_audit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-guest-audit.php';
+		if ( apply_filters( 'bbai_use_nai_guest_audit', true ) && is_readable( $bbai_guest_audit_partial ) ) {
+			require $bbai_guest_audit_partial;
+		} else {
+			$bbai_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-hero.php';
+			if ( is_readable( $bbai_hero_partial ) ) {
+				require $bbai_hero_partial;
+			}
+			// Guest conversion funnel: avoid a competing progress strip between hero and the locked preview.
+			// Keep the user focused on a single "finish" action in the hero + modal.
+			$bbai_trial_preview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-library-preview.php';
+			// Guest conversion: always show a real ALT Library preview beneath the hero.
+			// Overlay CTA handles locked/unlocked expectation; preview rows come from real media.
+			if ( is_readable( $bbai_trial_preview_partial ) ) {
+				require $bbai_trial_preview_partial;
+			}
 		}
 		?>
 	</div>
