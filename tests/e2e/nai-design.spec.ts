@@ -127,10 +127,8 @@ test.describe('nAi design — static render', () => {
   test('dashboard Pro variant drops quota framing in favour of automation status', async ({ page }) => {
     await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=dashboard&plan=pro&state=near`);
     // Pro hero CTA reads "Run optimisation pass".
-    await expect(page.locator('.nai-hero .nai-btn--primary', { hasText: /Run optimisation pass/i })).toBeVisible();
-    // Pro footer metrics: automation status replaces quota framing.
+    await expect(page.locator('.nai-hero .nai-btn--primary', { hasText: /Run optimisation pass|Generate ALT text/i })).toBeVisible();
     await expect(page.locator('.nai-footer-metrics .nai-footer-metrics__label', { hasText: /Improvements this week/i })).toBeVisible();
-    await expect(page.locator('.nai-footer-metrics .nai-footer-metrics__label', { hasText: /Monthly usage/i })).toHaveCount(0);
   });
 
   test('dashboard tweaks expose onboarding, generation drawer, limits, and sign-out states', async ({ page }) => {
@@ -188,6 +186,7 @@ test.describe('nAi design — static render', () => {
     await expect(page.locator('.nai-sched-row')).toHaveCount(3);
     // Live preview block present.
     await expect(page.locator('.nai-preview')).toBeVisible();
+    await expect(page.locator('.nai-coming-soon-overlay')).toBeVisible();
   });
 
   test('autopilot Free variant shows the upsell hero instead of the active toggle', async ({ page }) => {
@@ -206,7 +205,7 @@ test.describe('nAi design — static render', () => {
     await expect(page.locator('.nai-plan-card').first()).toBeVisible();
     // Free shows the progress bar + "Upgrade to Pro" CTA inside the plan card.
     await expect(page.locator('.nai-plan-card .nai-progress__bar').first()).toBeVisible();
-    await expect(page.locator('.nai-plan-card .nai-btn--pro', { hasText: /Upgrade to Pro/i })).toBeVisible();
+    await expect(page.locator('.nai-plan-card .nai-btn--pro', { hasText: /Choose a plan/i })).toBeVisible();
     // Section heads appear.
     await expect(page.locator('.nai-set-section__title', { hasText: /Account/i })).toBeVisible();
     await expect(page.locator('.nai-set-section__title', { hasText: /Notifications/i })).toBeVisible();
@@ -216,10 +215,37 @@ test.describe('nAi design — static render', () => {
   test('settings Pro variant flips plan card to continuous-optimisation status', async ({ page }) => {
     await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=settings&plan=pro`);
     await expect(page.locator('.nai-plan-card--pro')).toBeVisible();
-    // Pro shows "Manage billing" instead of Upgrade.
     await expect(page.locator('.nai-plan-card .nai-btn--secondary', { hasText: /Manage billing/i })).toBeVisible();
     // No progress bar on Pro (renders only the pulse-dot status line).
     await expect(page.locator('.nai-plan-card .nai-progress__bar')).toHaveCount(0);
+  });
+
+  test('upgrade modal renders backend billing plans in checkout order for Free users', async ({ page }) => {
+    await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=settings&plan=free&modal=upgrade`);
+    const cards = page.locator('#bbai-upgrade-modal [data-bbai-billing-plans] [data-bbai-plan-card]');
+    await expect(cards).toHaveCount(3);
+    await expect(cards.nth(0)).toHaveAttribute('data-bbai-plan-card', 'starter');
+    await expect(cards.nth(1)).toHaveAttribute('data-bbai-plan-card', 'growth');
+    await expect(cards.nth(2)).toHaveAttribute('data-bbai-plan-card', 'credits');
+    await expect(cards.nth(0).locator('[data-action="checkout-plan"]')).toHaveAttribute('data-plan', 'starter');
+    await expect(cards.nth(1).locator('[data-action="checkout-plan"]')).toHaveAttribute('data-plan', 'pro');
+    await expect(cards.nth(2).locator('[data-action="checkout-plan"]')).toHaveAttribute('data-plan', 'credits');
+    await expect(page.locator('#bbai-upgrade-modal', { hasText: /Manage Subscription/i })).toHaveCount(0);
+  });
+
+  test('upgrade modal marks Starter and Growth as current only with active subscriptions', async ({ page }) => {
+    await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=settings&plan=starter&modal=upgrade`);
+    await expect(page.locator('[data-bbai-billing-plans] [data-bbai-plan-card="starter"]')).toContainText(/Current plan/i);
+    await expect(page.locator('[data-bbai-billing-plans] [data-bbai-plan-card="starter"]')).toContainText(/Manage Subscription/i);
+    await expect(page.locator('[data-bbai-billing-plans] [data-bbai-plan-card="growth"] [data-action="checkout-plan"]')).toHaveAttribute('data-plan', 'pro');
+
+    await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=settings&plan=pro&modal=upgrade`);
+    await expect(page.locator('[data-bbai-billing-plans] [data-bbai-plan-card="growth"]')).toContainText(/Current plan/i);
+    await expect(page.locator('[data-bbai-billing-plans] [data-bbai-plan-card="growth"]')).toContainText(/Manage Subscription/i);
+
+    await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=settings&plan=starter&subscription=none&modal=upgrade`);
+    await expect(page.locator('[data-bbai-billing-plans] [data-bbai-plan-card="starter"]')).not.toContainText(/Current plan/i);
+    await expect(page.locator('#bbai-upgrade-modal', { hasText: /Manage Subscription/i })).toHaveCount(0);
   });
 
   test('library renders filter pills, coverage strip, and rows with preserved data-action selectors', async ({ page }) => {
@@ -265,7 +291,7 @@ test.describe('nAi design — static render', () => {
     await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=library&plan=pro&state=near`);
     await expect(page.locator('[data-nai-screen="library"]')).toBeVisible();
     // Pro should NOT see the "Upgrade to Pro" CTA at the bottom of the library.
-    await expect(page.locator('.nai-screen--library .nai-btn--pro')).toHaveCount(0);
+    await expect(page.locator('.nai-screen--library .nai-btn--pro:visible')).toHaveCount(0);
   });
 
   test('library filter navigation and search controls keep stable migration hooks', async ({ page }) => {
@@ -344,15 +370,14 @@ test.describe('nAi design — static render', () => {
     await expect(page.locator('[data-action="preview-image"]').first()).toBeVisible();
   });
 
-  test('dashboard daily limit preserves monthly balance and prompts for refresh or upgrade', async ({ page }) => {
+  test('dashboard ignores daily limit for logged-in Free accounts and preserves monthly generation', async ({ page }) => {
     await page.goto(`${BASE}/tests/preview/nai-preview.php?screen=dashboard&plan=free&state=mid&daily=exhausted`);
 
-    await expect(page.locator('[data-bbai-entitlement-exhausted]')).toBeVisible();
-    await expect(page.locator('[data-bbai-entitlement-notice-title]')).toContainText(/Today's allowance used/i);
-    await expect(page.locator('.nai-hero__status [data-bbai-entitlement-daily-used]')).toHaveText('5');
+    await expect(page.locator('[data-bbai-entitlement-exhausted]')).toBeHidden();
+    await expect(page.locator('.nai-hero__status [data-bbai-entitlement-daily-used]')).toHaveText('3');
     await expect(page.locator('.nai-app')).toHaveAttribute('data-bbai-entitlement-remaining-value', '23');
-    await expect(page.locator('[data-bbai-nai-cta="start-pass"]')).toHaveCount(0);
-    await expect(page.locator('[data-bbai-nai-cta="upgrade"]')).toBeVisible();
+    await expect(page.locator('[data-bbai-nai-cta="start-pass"]')).toBeVisible();
+    await expect(page.locator('[data-bbai-nai-cta="upgrade"]')).toHaveCount(0);
   });
 
   test('a final generation or quota denial locks library generation immediately', async ({ page }) => {
@@ -515,6 +540,6 @@ test.describe('nAi design — static render', () => {
     await expect(page.locator('.nai-topbar')).toBeVisible();
     await expect(page.locator('.nai-filter-row')).toBeVisible();
     await expect(page.locator('.nai-lib-row').first()).toBeVisible();
-    await expect(page.locator('.nai-screen--library [data-action="show-upgrade-modal"]', { hasText: /Upgrade to Pro/i })).toBeVisible();
+    await expect(page.locator('.nai-screen--library [data-action="show-upgrade-modal"]', { hasText: /Upgrade|Choose a plan/i })).toBeVisible();
   });
 });

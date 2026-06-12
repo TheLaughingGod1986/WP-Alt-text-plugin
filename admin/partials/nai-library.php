@@ -420,7 +420,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 				<div style="font-size:13.5px;font-weight:600;color:var(--nai-text);"><?php esc_html_e( "Don't optimise images one by one.", 'beepbeep-ai-alt-text-generator' ); ?></div>
 				<div style="font-size:12px;color:var(--nai-text-2);margin-top:2px;line-height:1.45;"><?php esc_html_e( 'Autopilot covers new uploads automatically with 1,000 AI generations per month and no daily cap inside that allowance.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 			</div>
-			<button type="button" class="nai-btn nai-btn--pro nai-btn--sm" data-nai-open-paywall="default" data-bbai-pricing-variant="growth">
+			<button type="button" class="nai-btn nai-btn--pro nai-btn--sm" data-action="show-upgrade-modal" data-nai-open-paywall="default" data-bbai-pricing-variant="growth">
 				<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?>
 			</button>
 		</div>

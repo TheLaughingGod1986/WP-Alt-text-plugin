@@ -24,7 +24,7 @@ $nai_set_options = is_array( get_option( 'bbai_options', array() ) ) ? get_optio
 $nai_set_plan    = class_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers' )
 	? \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::get_plan_data()
 	: array();
-$nai_set_is_pro  = ! empty( $nai_set_plan['is_pro'] ) || ! empty( $nai_set_plan['is_agency'] );
+$nai_set_plan_slug = sanitize_key( (string) ( $nai_set_plan['plan_slug'] ?? 'free' ) );
 
 $nai_set_api_client = isset( $this, $this->api_client ) && is_object( $this->api_client ) ? $this->api_client : null;
 $nai_set_usage      = class_exists( '\BeepBeepAI\AltTextGenerator\Services\Usage_Helper' )
@@ -35,6 +35,21 @@ if ( ! is_array( $nai_set_usage ) ) {
 }
 $nai_set_used     = max( 0, (int) ( $nai_set_usage['used'] ?? $nai_set_usage['credits_used'] ?? 0 ) );
 $nai_set_limit    = max( 1, (int) ( $nai_set_usage['limit'] ?? $nai_set_usage['credits_total'] ?? 50 ) );
+$nai_set_min_limit = array(
+	'starter'    => 100,
+	'growth'     => 1000,
+	'pro'        => 1000,
+	'agency'     => 1000,
+	'enterprise' => 1000,
+);
+if ( isset( $nai_set_min_limit[ $nai_set_plan_slug ] ) && $nai_set_limit < $nai_set_min_limit[ $nai_set_plan_slug ] ) {
+	$nai_set_plan_slug = 'free';
+}
+$nai_set_is_paid      = in_array( $nai_set_plan_slug, array( 'starter', 'growth', 'pro', 'agency', 'enterprise' ), true );
+$nai_set_can_autopilot = class_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers' )
+	? \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::plan_can_use_autopilot( $nai_set_plan_slug )
+	: in_array( $nai_set_plan_slug, array( 'growth', 'pro', 'agency', 'enterprise' ), true );
+$nai_set_is_pro       = $nai_set_can_autopilot;
 $nai_set_remain   = max( 0, $nai_set_limit - $nai_set_used );
 $nai_set_pct      = $nai_set_limit > 0 ? min( 100, (int) round( ( $nai_set_used / $nai_set_limit ) * 100 ) ) : 0;
 $nai_set_reset    = isset( $nai_set_usage['reset_date'] ) ? (string) $nai_set_usage['reset_date'] : '';
@@ -46,8 +61,26 @@ if ( isset( $this, $this->api_client ) && is_object( $this->api_client ) && meth
 	$nai_set_user_email = sanitize_email( (string) ( $nai_set_user_data['email'] ?? '' ) );
 }
 
-$nai_set_auto_on   = ! empty( $nai_set_options['auto_generate'] ) && $nai_set_is_pro;
-$nai_set_notif_dig = ! empty( $nai_set_options['weekly_digest'] ) && $nai_set_is_pro;
+$nai_set_has_active_subscription = false;
+$nai_set_billing_sources         = array(
+	$nai_set_usage,
+	is_array( $nai_set_usage['billing'] ?? null ) ? $nai_set_usage['billing'] : array(),
+	is_array( $nai_set_usage['entitlement_state'] ?? null ) ? $nai_set_usage['entitlement_state'] : array(),
+);
+foreach ( $nai_set_billing_sources as $nai_set_billing_source ) {
+	if ( ! is_array( $nai_set_billing_source ) ) {
+		continue;
+	}
+	$nai_set_sub_id = (string) ( $nai_set_billing_source['stripe_subscription_id'] ?? $nai_set_billing_source['subscription_id'] ?? '' );
+	$nai_set_sub_status = strtolower( (string) ( $nai_set_billing_source['subscription_status'] ?? $nai_set_billing_source['stripe_subscription_status'] ?? $nai_set_billing_source['status'] ?? '' ) );
+	if ( '' !== trim( $nai_set_sub_id ) && ( '' === $nai_set_sub_status || in_array( $nai_set_sub_status, array( 'active', 'trialing', 'past_due' ), true ) ) ) {
+		$nai_set_has_active_subscription = true;
+		break;
+	}
+}
+
+$nai_set_auto_on   = ! empty( $nai_set_options['auto_generate'] ) && $nai_set_can_autopilot;
+$nai_set_notif_dig = ! empty( $nai_set_options['weekly_digest'] ) && $nai_set_can_autopilot;
 $nai_set_notif_lim = ! isset( $nai_set_options['quota_warnings'] ) || ! empty( $nai_set_options['quota_warnings'] );
 $nai_set_notif_new = ! isset( $nai_set_options['new_upload_alerts'] ) || ! empty( $nai_set_options['new_upload_alerts'] );
 
@@ -92,8 +125,24 @@ $nai_set_toggle_html = static function ( bool $on, string $aria_label = '' ): st
 
 $nai_set_progress_tone = $nai_set_pct >= 90 ? 'nai-progress--danger' : ( $nai_set_pct >= 75 ? 'nai-progress--warn' : 'nai-progress--primary' );
 $nai_shell_active = 'settings';
-$nai_shell_is_pro = $nai_set_is_pro;
+$nai_shell_is_pro = $nai_set_can_autopilot;
 require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
+
+$nai_set_plan_label = array(
+	'starter'    => __( 'Starter', 'beepbeep-ai-alt-text-generator' ),
+	'growth'     => __( 'Growth', 'beepbeep-ai-alt-text-generator' ),
+	'pro'        => __( 'Growth', 'beepbeep-ai-alt-text-generator' ),
+	'agency'     => __( 'Agency', 'beepbeep-ai-alt-text-generator' ),
+	'enterprise' => __( 'Enterprise', 'beepbeep-ai-alt-text-generator' ),
+	'free'       => __( 'Free', 'beepbeep-ai-alt-text-generator' ),
+)[ $nai_set_plan_slug ] ?? __( 'Free', 'beepbeep-ai-alt-text-generator' );
+$nai_set_plan_name = $nai_set_is_paid
+	? sprintf(
+		/* translators: %s: paid plan label. */
+		__( 'BeepBeep AI %s', 'beepbeep-ai-alt-text-generator' ),
+		$nai_set_plan_label
+	)
+	: __( 'Free plan', 'beepbeep-ai-alt-text-generator' );
 ?>
 <div class="nai-screen nai-screen--settings" data-nai-screen="settings">
 
@@ -104,49 +153,56 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 	</div>
 
 	<?php // -------- PLAN CARD -------- ?>
-	<div class="nai-plan-card <?php echo $nai_set_is_pro ? 'nai-plan-card--pro' : ''; ?>">
+	<div class="nai-plan-card <?php echo $nai_set_is_paid ? 'nai-plan-card--pro' : ''; ?>">
 		<div class="nai-plan-card__row">
 			<div class="nai-plan-card__icon">
-				<?php echo $nai_set_icon( $nai_set_is_pro ? 'crown' : 'shield', 18, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php echo $nai_set_icon( $nai_set_is_paid ? 'crown' : 'shield', 18, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
 			<div style="flex:1;min-width:0;">
 				<div class="nai-plan-card__name">
-					<?php echo esc_html( $nai_set_is_pro ? __( 'BeepBeep AI Pro', 'beepbeep-ai-alt-text-generator' ) : __( 'Free plan', 'beepbeep-ai-alt-text-generator' ) ); ?>
-					<span class="nai-chip <?php echo $nai_set_is_pro ? 'nai-chip--primary' : ''; ?>"><?php echo esc_html( $nai_set_is_pro ? __( 'Pro', 'beepbeep-ai-alt-text-generator' ) : __( 'Free', 'beepbeep-ai-alt-text-generator' ) ); ?></span>
+					<?php echo esc_html( $nai_set_plan_name ); ?>
+					<span class="nai-chip <?php echo $nai_set_is_paid ? 'nai-chip--primary' : ''; ?>"><?php echo esc_html( $nai_set_plan_label ); ?></span>
 				</div>
 				<div class="nai-plan-card__desc">
 					<?php
 					echo esc_html(
-							$nai_set_is_pro
-								? __( '1,000 AI generations per month · no daily cap within your monthly allowance · automation & priority queue.', 'beepbeep-ai-alt-text-generator' )
+							$nai_set_can_autopilot
+								? __( '1,000 AI generations per month · no daily cap within your monthly allowance · bulk processing and Autopilot.', 'beepbeep-ai-alt-text-generator' )
+								: ( $nai_set_is_paid
+								? __( '100 AI generations per month · manual generation only.', 'beepbeep-ai-alt-text-generator' )
 								: sprintf(
 								/* translators: %d: monthly free generations included with Free plan. */
 								__( 'Up to %d AI generations per month · manual generation only.', 'beepbeep-ai-alt-text-generator' ),
 								$nai_set_limit
-							)
+							) )
 					);
 					?>
 				</div>
 			</div>
-			<?php if ( $nai_set_is_pro ) : ?>
+			<?php if ( $nai_set_is_paid && $nai_set_has_active_subscription ) : ?>
 				<a class="nai-btn nai-btn--secondary nai-btn--sm" href="<?php echo esc_url( $nai_set_usage_url ); ?>">
 					<?php echo $nai_set_icon( 'external', 14, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<?php esc_html_e( 'Manage billing', 'beepbeep-ai-alt-text-generator' ); ?>
 				</a>
+			<?php elseif ( $nai_set_is_paid ) : ?>
+				<a class="nai-btn nai-btn--secondary nai-btn--sm" href="<?php echo esc_url( $nai_set_usage_url ); ?>">
+					<?php echo $nai_set_icon( 'external', 14, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php esc_html_e( 'View usage', 'beepbeep-ai-alt-text-generator' ); ?>
+				</a>
 			<?php else : ?>
-					<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-nai-open-paywall="default" data-bbai-pricing-variant="growth">
+					<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-nai-open-paywall="default" data-bbai-pricing-variant="starter">
 						<?php echo $nai_set_icon( 'crown', 14, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-						<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?>
+						<?php esc_html_e( 'Choose a plan', 'beepbeep-ai-alt-text-generator' ); ?>
 				</button>
 			<?php endif; ?>
 		</div>
 
 		<div class="nai-plan-card__usage">
-			<?php if ( $nai_set_is_pro ) : ?>
+			<?php if ( $nai_set_is_paid ) : ?>
 				<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
 					<div style="display:flex;align-items:center;gap:8px;">
 						<span class="nai-pulse-dot" style="width:6px;height:6px;"></span>
-						<span style="font-size:12px;color:var(--nai-text-2);font-weight:500;"><?php esc_html_e( 'Continuous optimisation enabled', 'beepbeep-ai-alt-text-generator' ); ?></span>
+						<span style="font-size:12px;color:var(--nai-text-2);font-weight:500;"><?php echo esc_html( $nai_set_can_autopilot ? __( 'Continuous optimisation available', 'beepbeep-ai-alt-text-generator' ) : __( 'Manual generation plan', 'beepbeep-ai-alt-text-generator' ) ); ?></span>
 					</div>
 					<div class="nai-tnum" style="font-size:11.5px;color:var(--nai-text-3);">
 						<span class="nai-mono" style="color:var(--nai-text-2);font-weight:500;"><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></span>
@@ -223,9 +279,9 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 		);
 		$nai_set_render_row(
 			__( 'Weekly digest', 'beepbeep-ai-alt-text-generator' ),
-			$nai_set_is_pro
+			$nai_set_can_autopilot
 				? __( 'Sunday email with coverage + activity summary.', 'beepbeep-ai-alt-text-generator' )
-				: __( 'Pro · Sunday email with coverage + activity summary.', 'beepbeep-ai-alt-text-generator' ),
+				: __( 'Growth · Sunday email with coverage + activity summary.', 'beepbeep-ai-alt-text-generator' ),
 			$nai_set_toggle_html( $nai_set_notif_dig, __( 'Weekly digest', 'beepbeep-ai-alt-text-generator' ) )
 		);
 		$nai_set_render_row(

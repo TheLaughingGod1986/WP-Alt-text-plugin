@@ -124,6 +124,7 @@ class Core {
 	private const MEDIA_UPLOAD_TRIGGER_TRANSIENT_PREFIX = 'bbai_upgrade_upload_';
 
 	private const DEFAULT_CHECKOUT_PRICE_IDS = array(
+		'starter' => '',
 		'pro'     => 'price_1SMrxaJl9Rm418cMM4iikjlJ',
 		'growth'  => 'price_1SMrxaJl9Rm418cMM4iikjlJ', // alias for pro
 		'agency'  => 'price_1SMrxaJl9Rm418cMnJTShXSY',
@@ -134,6 +135,7 @@ class Core {
 	 * Stripe Payment Link URLs (direct buy links that bypass checkout session creation).
 	 */
 	private const DEFAULT_STRIPE_LINKS = array(
+		'starter' => '',
 		'pro'     => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
 		'growth'  => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
 		'agency'  => 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01',
@@ -811,7 +813,7 @@ class Core {
 
 	private function is_paid_plan_slug( $plan ): bool {
 		$plan = is_scalar( $plan ) ? sanitize_key( (string) $plan ) : '';
-		return in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+		return in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
 	}
 
 	private function current_account_can_use_upload_generation(): bool {

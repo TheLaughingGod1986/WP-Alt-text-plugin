@@ -49,7 +49,35 @@ class Usage_Helper {
 	 * @return bool
 	 */
 	private static function is_paid_plan_slug( string $plan ): bool {
+		return in_array( strtolower( trim( $plan ) ), array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Determine whether a plan includes upload automation/Autopilot.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return bool
+	 */
+	private static function plan_can_use_autopilot( string $plan ): bool {
 		return in_array( strtolower( trim( $plan ) ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Minimum allowance required before trusting a paid plan claim.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return int
+	 */
+	private static function minimum_monthly_limit_for_plan( string $plan ): int {
+		$plan = strtolower( trim( $plan ) );
+		if ( 'starter' === $plan ) {
+			return defined( Usage_Tracker::class . '::STARTER_MONTHLY_LIMIT' ) ? Usage_Tracker::STARTER_MONTHLY_LIMIT : 100;
+		}
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
+			return Usage_Tracker::MIN_PAID_MONTHLY_LIMIT;
+		}
+
+		return 0;
 	}
 
 	/**
@@ -64,7 +92,8 @@ class Usage_Helper {
 		if ( '' === $plan || 'anonymous_trial' === $plan ) {
 			$plan = 'anonymous_trial' === $plan ? 'trial' : 'free';
 		}
-		if ( self::is_paid_plan_slug( $plan ) && $limit < Usage_Tracker::MIN_PAID_MONTHLY_LIMIT ) {
+		$minimum = self::minimum_monthly_limit_for_plan( $plan );
+		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
 			return 'free';
 		}
 
@@ -123,7 +152,7 @@ class Usage_Helper {
 			return true;
 		}
 
-		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) || 'paid' === $quota_type ) {
+		if ( in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) || 'paid' === $quota_type ) {
 			return false;
 		}
 
@@ -530,7 +559,8 @@ class Usage_Helper {
 
 			$raw_plan = strtolower( trim( $plan ) );
 			$plan     = self::normalize_plan_for_limit( $plan, $limit );
-			if ( self::is_paid_plan_slug( $plan ) && $limit <= Usage_Tracker::MIN_PAID_MONTHLY_LIMIT && ! self::has_paid_entitlement_signal( $live_usage ) ) {
+			$plan_minimum = self::minimum_monthly_limit_for_plan( $plan );
+			if ( $plan_minimum > 0 && $limit < $plan_minimum && ! self::has_paid_entitlement_signal( $live_usage ) ) {
 				$plan      = 'free';
 				$limit     = 50;
 				$remaining = max( 0, $limit - $used );
@@ -547,7 +577,7 @@ class Usage_Helper {
 			$usage_stats['creditsRemaining']   = $remaining;
 			$usage_stats['percentage']         = min( 100, max( 0, $percentage ) );
 			$usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label( $usage_stats['percentage'] );
-		if ( ( $demoted_paid_claim || 'paid' === strtolower( trim( $quota_type ) ) ) && $limit < Usage_Tracker::MIN_PAID_MONTHLY_LIMIT ) {
+		if ( ( $demoted_paid_claim || 'paid' === strtolower( trim( $quota_type ) ) ) && $limit < self::minimum_monthly_limit_for_plan( $raw_plan ) ) {
 			$quota_type = 'monthly_account';
 		}
 
@@ -569,12 +599,14 @@ class Usage_Helper {
 			? $live_usage['plan_label']
 			: ( 'trial' === $plan ? __( 'Free trial', 'beepbeep-ai-alt-text-generator' ) : ucfirst( $plan ) ) );
 		$usage_stats['is_free']    = in_array( $plan, array( 'free', 'trial' ), true );
-		$usage_stats['is_pro']     = in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+		$usage_stats['is_pro']     = in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
 		if ( isset( $usage_stats['entitlement_state'] ) && is_array( $usage_stats['entitlement_state'] ) ) {
 			$usage_stats['entitlement_state']['plan']      = $plan;
 			$usage_stats['entitlement_state']['plan_type'] = $plan;
-			if ( ! $usage_stats['is_pro'] ) {
+			if ( ! self::plan_can_use_autopilot( $plan ) ) {
 				$usage_stats['entitlement_state']['can_autopilot'] = false;
+			}
+			if ( ! self::is_paid_plan_slug( $plan ) ) {
 				$usage_stats['entitlement_state']['is_unlimited']  = false;
 			}
 		}
@@ -585,7 +617,7 @@ class Usage_Helper {
 		if ( '' === $quota_type ) {
 			$quota_type = 'trial' === $plan
 				? 'trial'
-				: ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'paid' : 'monthly_account' );
+				: ( in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'paid' : 'monthly_account' );
 		}
 		$usage_stats['auth_state']           = $auth_state;
 		$usage_stats['quota_type']           = $quota_type;

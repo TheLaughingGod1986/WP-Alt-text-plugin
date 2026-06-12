@@ -26,12 +26,8 @@ class Plan_Helpers {
 	 */
 	private static $cached_plan_data = null;
 
-	/**
-	 * Minimum monthly allowance for a paid public plan.
-	 *
-	 * @var int
-	 */
-	private const MIN_PAID_MONTHLY_LIMIT = 1000;
+	private const STARTER_MONTHLY_LIMIT = 100;
+	private const GROWTH_MONTHLY_LIMIT  = 1000;
 
 	/**
 	 * True when a slug represents a paid plan.
@@ -40,7 +36,37 @@ class Plan_Helpers {
 	 * @return bool
 	 */
 	private static function is_paid_plan_slug( string $plan_slug ): bool {
+		return in_array( sanitize_key( $plan_slug ), array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * True when a paid plan includes upload automation / Autopilot.
+	 *
+	 * Starter is paid, but remains manual generation only.
+	 *
+	 * @param string $plan_slug Plan slug.
+	 * @return bool
+	 */
+	public static function plan_can_use_autopilot( string $plan_slug ): bool {
 		return in_array( sanitize_key( $plan_slug ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Minimum allowance required before trusting a paid plan claim.
+	 *
+	 * @param string $plan_slug Plan slug.
+	 * @return int
+	 */
+	private static function minimum_monthly_limit_for_plan( string $plan_slug ): int {
+		$plan_slug = sanitize_key( $plan_slug );
+		if ( 'starter' === $plan_slug ) {
+			return self::STARTER_MONTHLY_LIMIT;
+		}
+		if ( in_array( $plan_slug, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
+			return self::GROWTH_MONTHLY_LIMIT;
+		}
+
+		return 0;
 	}
 
 	/**
@@ -52,11 +78,33 @@ class Plan_Helpers {
 	 */
 	private static function normalize_plan_for_limit( string $plan_slug, int $limit ): string {
 		$plan_slug = sanitize_key( $plan_slug );
-		if ( self::is_paid_plan_slug( $plan_slug ) && $limit > 0 && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+		$minimum   = self::minimum_monthly_limit_for_plan( $plan_slug );
+		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
 			return 'free';
 		}
 
 		return '' !== $plan_slug ? $plan_slug : 'free';
+	}
+
+	/**
+	 * Read the broadest monthly allowance from a remote payload.
+	 *
+	 * @param array $payload Payload.
+	 * @return int
+	 */
+	private static function read_limit_from_payload( array $payload ): int {
+		foreach ( array( $payload, $payload['quota'] ?? array(), $payload['usage'] ?? array(), $payload['entitlement_state'] ?? array(), $payload['organization'] ?? array() ) as $source ) {
+			if ( ! is_array( $source ) ) {
+				continue;
+			}
+			foreach ( array( 'token_limit', 'limit', 'credits_total', 'creditsTotal', 'creditsLimit', 'total_limit', 'monthly_limit', 'monthly_credits', 'monthly_included_credits' ) as $key ) {
+				if ( isset( $source[ $key ] ) && is_numeric( $source[ $key ] ) ) {
+					return max( 0, (int) $source[ $key ] );
+				}
+			}
+		}
+
+		return 0;
 	}
 
 	/**
@@ -101,20 +149,21 @@ class Plan_Helpers {
 	 * Get all plan data including flags
 	 *
 	 * @param bool $force_refresh Force refresh of cached data
-	 * @return array Plan data with keys: plan_slug, is_free, is_growth, is_agency, is_pro
+	 * @return array Plan data with keys: plan_slug, is_free, is_growth, is_agency, is_pro, is_paid, can_autopilot
 	 */
 	public static function get_plan_data( $force_refresh = false ) {
 		if ( null !== self::$cached_plan_data && ! $force_refresh ) {
 			return self::$cached_plan_data;
 		}
 
-		$plan_slug = 'free';
+		$plan_slug   = 'free';
+		$usage_limit = 0;
 
 		// Try to get plan from Usage_Tracker
 		if ( class_exists( 'BeepBeepAI\\AltTextGenerator\\Usage_Tracker' ) ) {
 			$usage_data = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage();
 			if ( is_array( $usage_data ) && isset( $usage_data['plan'] ) && ! empty( $usage_data['plan'] ) ) {
-				$usage_limit = max( 0, (int) ( $usage_data['limit'] ?? $usage_data['credits_total'] ?? $usage_data['creditsTotal'] ?? 0 ) );
+				$usage_limit = self::read_limit_from_payload( $usage_data );
 				$plan_slug   = self::normalize_plan_for_limit( strtolower( $usage_data['plan'] ), $usage_limit );
 			}
 		}
@@ -126,16 +175,19 @@ class Plan_Helpers {
 				$license_key = $api_client->get_license_key();
 				$has_license = ! empty( $license_key );
 
-				// If using license and plan is still free, check license data
-					if ( $has_license && 'free' === $plan_slug ) {
-						$license_data = $api_client->get_license_data();
-						if ( $license_data && isset( $license_data['organization'] ) ) {
-							$license_plan = strtolower( $license_data['organization']['plan'] ?? 'free' );
-							if ( ! self::is_paid_plan_slug( $license_plan ) || self::has_paid_entitlement_signal( (array) $license_data ) ) {
-								$plan_slug = $license_plan;
-							}
+				// If using license and plan is still free, check license data.
+				if ( $has_license && 'free' === $plan_slug ) {
+					$license_data = $api_client->get_license_data();
+					if ( $license_data && isset( $license_data['organization'] ) ) {
+						$license_plan       = strtolower( $license_data['organization']['plan'] ?? 'free' );
+						$license_limit      = self::read_limit_from_payload( (array) $license_data );
+						$license_limit      = $license_limit > 0 ? $license_limit : $usage_limit;
+						$normalized_license = self::normalize_plan_for_limit( $license_plan, $license_limit );
+						if ( ! self::is_paid_plan_slug( $license_plan ) || ( 'free' !== $normalized_license && self::has_paid_entitlement_signal( (array) $license_data ) ) ) {
+							$plan_slug = $normalized_license;
 						}
 					}
+				}
 			} catch ( \Exception $e ) {
 				unset( $e ); // Silently skip; fall back to current plan_slug.
 			}
@@ -146,13 +198,16 @@ class Plan_Helpers {
 		$is_growth = ( 'pro' === $plan_slug || 'growth' === $plan_slug );
 		$is_agency = ( 'agency' === $plan_slug );
 		$is_pro    = self::is_paid_plan_slug( $plan_slug ); // Any paid plan
+		$is_paid   = $is_pro;
 
 		self::$cached_plan_data = array(
-			'plan_slug' => $plan_slug,
-			'is_free'   => $is_free,
-			'is_growth' => $is_growth,
-			'is_agency' => $is_agency,
-			'is_pro'    => $is_pro,
+			'plan_slug'     => $plan_slug,
+			'is_free'       => $is_free,
+			'is_growth'     => $is_growth,
+			'is_agency'     => $is_agency,
+			'is_pro'        => $is_pro,
+			'is_paid'       => $is_paid,
+			'can_autopilot' => self::plan_can_use_autopilot( $plan_slug ),
 		);
 
 		return self::$cached_plan_data;

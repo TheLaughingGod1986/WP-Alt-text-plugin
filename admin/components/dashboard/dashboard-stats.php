@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template locals are scoped to this included component.
+$nai_autopilot_upgrade_variant = ( isset( $nai_plan_slug ) && 'starter' === sanitize_key( (string) $nai_plan_slug ) ) ? 'growth' : 'starter';
 ?>
 	<?php // -------- ROW 2: Library health + Autopilot -------- ?>
 	<div class="nai-row-2">
@@ -126,7 +127,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<?php endforeach; ?>
 				</div>
 				<div class="nai-autopilot__cta">
-					<button class="nai-btn nai-btn--pro nai-btn--md nai-btn--full" type="button" data-nai-open-paywall="default" data-bbai-pricing-variant="growth"><?php esc_html_e( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></button>
+					<button class="nai-btn nai-btn--pro nai-btn--md nai-btn--full" type="button" data-nai-open-paywall="default" data-bbai-pricing-variant="<?php echo esc_attr( $nai_autopilot_upgrade_variant ); ?>"><?php esc_html_e( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></button>
 				</div>
 			</div>
 		<?php endif; ?>

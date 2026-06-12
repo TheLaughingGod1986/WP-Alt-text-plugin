@@ -10,7 +10,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
 class API_Client_V2 {
+	const STARTER_MONTHLY_LIMIT  = 100;
 	const MIN_PAID_MONTHLY_LIMIT = 1000;
+
+	/**
+	 * Minimum monthly allowance expected for a paid plan claim.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return int
+	 */
+	private function minimum_monthly_limit_for_plan( string $plan ): int {
+		$plan = sanitize_key( $plan );
+		if ( 'starter' === $plan ) {
+			return self::STARTER_MONTHLY_LIMIT;
+		}
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
+			return self::MIN_PAID_MONTHLY_LIMIT;
+		}
+		return 0;
+	}
+
+	/**
+	 * Whether the plan is allowed to use upload automation.
+	 *
+	 * Starter is paid but does not include Autopilot.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return bool
+	 */
+	private function plan_can_use_autopilot( string $plan ): bool {
+		return in_array( sanitize_key( $plan ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
 
 	/**
 	 * Singleton instance.
@@ -320,8 +350,9 @@ class API_Client_V2 {
 				$remaining = 0;
 			}
 
-			$plan = sanitize_key( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'free' ) );
-			if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+			$plan    = sanitize_key( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'free' ) );
+			$minimum = $this->minimum_monthly_limit_for_plan( $plan );
+			if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
 				$plan = 'free';
 			}
 
@@ -2066,7 +2097,8 @@ class API_Client_V2 {
 		}
 
 		$plan = sanitize_key( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'agency' ) );
-		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+		$minimum = $this->minimum_monthly_limit_for_plan( $plan );
+		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
 			$plan = 'free';
 		}
 

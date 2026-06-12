@@ -14,6 +14,12 @@
 ./scripts/sync-to-wpenv-slug.bash
 ```
 
+- If the sync script cannot find a local `~/.wp-env/.../WordPress` directory, start `wp-env` first and then re-run the sync:
+
+```bash
+npx wp-env start
+```
+
 - Build a distributable plugin zip from the repo root:
 
 ```bash
@@ -84,9 +90,16 @@ node scripts/check-connected-entitlement-fixture.js
 npx playwright test tests/e2e/nai-entitlement-connected.spec.ts
 ```
 
+- The connected-entitlement spec and fixture checker also accept `WP_BASE_URL`, `WP_ADMIN_USER`, and `WP_ADMIN_PASS` as aliases for the corresponding `BBAI_E2E_*` env vars.
+
 ## Verification Notes
 
 - `tests/e2e` tests skip when `BBAI_E2E_BASE_URL` is unset.
-- For broader live backend/frontend truth checks, use `scripts/verify-live-truth-safe.mjs` with its required WordPress and Supabase env vars.
+- For broader live backend/frontend truth checks, export `WP_BASE_URL`, `WP_ADMIN_USER`, `WP_ADMIN_PASS`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`, then run:
+
+```bash
+RUN_GENERATE=false node scripts/verify-live-truth-safe.mjs
+```
+
 - `scripts/check-connected-entitlement-fixture.js` refuses non-local WordPress URLs and fails unless both destructive opt-in flags are set.
 - TODO: `docs/design-system/REGRESSION.md` references `./scripts/ds-audit.sh`, but that script is not present in this checkout. Verify the intended replacement before documenting it as a supported command.

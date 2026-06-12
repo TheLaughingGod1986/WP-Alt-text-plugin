@@ -14,6 +14,7 @@ class Usage_Tracker {
 	const CACHE_KEY    = 'bbai_usage_cache';
 	const CACHE_EXPIRY = 300; // 5 minutes
 	const MIN_PAID_MONTHLY_LIMIT = 1000;
+	const STARTER_MONTHLY_LIMIT  = 100;
 
 	/**
 	 * Convert remaining seconds to a user-facing day countdown.
@@ -54,7 +55,7 @@ class Usage_Tracker {
 		if ( 'anonymous_trial' === $plan_key ) {
 			return 'trial';
 		}
-		$allowed = array( 'free', 'trial', 'pro', 'growth', 'agency', 'enterprise' );
+		$allowed = array( 'free', 'trial', 'starter', 'pro', 'growth', 'agency', 'enterprise' );
 		return in_array( $plan_key, $allowed, true ) ? $plan_key : 'free';
 	}
 
@@ -65,7 +66,35 @@ class Usage_Tracker {
 	 * @return bool
 	 */
 	private static function is_paid_plan_slug( string $plan ): bool {
+		return in_array( self::normalize_plan_slug( $plan ), array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Determine whether a plan includes upload automation/Autopilot.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return bool
+	 */
+	private static function plan_can_use_autopilot( string $plan ): bool {
 		return in_array( self::normalize_plan_slug( $plan ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Minimum allowance required before trusting a paid plan claim.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return int
+	 */
+	private static function minimum_monthly_limit_for_plan( string $plan ): int {
+		$plan = self::normalize_plan_slug( $plan );
+		if ( 'starter' === $plan ) {
+			return self::STARTER_MONTHLY_LIMIT;
+		}
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
+			return self::MIN_PAID_MONTHLY_LIMIT;
+		}
+
+		return 0;
 	}
 
 	/**
@@ -80,7 +109,8 @@ class Usage_Tracker {
 	 */
 	private static function normalize_plan_for_limit( string $plan, int $limit ): string {
 		$plan = self::normalize_plan_slug( $plan );
-		if ( self::is_paid_plan_slug( $plan ) && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+		$minimum = self::minimum_monthly_limit_for_plan( $plan );
+		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
 			return 'free';
 		}
 
@@ -161,7 +191,8 @@ class Usage_Tracker {
 
 			$raw_plan = self::normalize_plan_slug( $usage_data['plan_type'] ?? $usage_data['plan'] ?? 'free' );
 			$plan     = self::normalize_plan_for_limit( $raw_plan, $limit );
-			if ( self::is_paid_plan_slug( $plan ) && $limit <= self::MIN_PAID_MONTHLY_LIMIT && ! self::has_paid_entitlement_signal( $usage_data ) ) {
+			$plan_minimum = self::minimum_monthly_limit_for_plan( $plan );
+			if ( $plan_minimum > 0 && $limit < $plan_minimum && ! self::has_paid_entitlement_signal( $usage_data ) ) {
 				$plan      = 'free';
 				$limit     = 50;
 				$remaining = max( 0, $limit - $used );
@@ -173,7 +204,7 @@ class Usage_Tracker {
 		if ( '' === $quota_type && isset( $usage_data['quota'] ) && is_array( $usage_data['quota'] ) && isset( $usage_data['quota']['quota_type'] ) && is_scalar( $usage_data['quota']['quota_type'] ) ) {
 			$quota_type = sanitize_key( (string) $usage_data['quota']['quota_type'] );
 		}
-		if ( ( $demoted_paid_claim || 'paid' === $quota_type ) && $limit < self::MIN_PAID_MONTHLY_LIMIT ) {
+		if ( ( $demoted_paid_claim || 'paid' === $quota_type ) && $limit < self::minimum_monthly_limit_for_plan( $raw_plan ) ) {
 			$quota_type = 'monthly_account';
 		}
 
@@ -225,8 +256,10 @@ class Usage_Tracker {
 				$usage_data['entitlement_state']['token_limit'] = $limit;
 				$usage_data['entitlement_state']['tokens_used_this_month'] = $used;
 				$usage_data['entitlement_state']['tokens_remaining'] = $remaining;
-				if ( 'free' === $plan ) {
+				if ( ! self::plan_can_use_autopilot( $plan ) ) {
 					$usage_data['entitlement_state']['can_autopilot'] = false;
+				}
+				if ( ! self::is_paid_plan_slug( $plan ) ) {
 					$usage_data['entitlement_state']['is_unlimited']  = false;
 			}
 		}
@@ -488,7 +521,7 @@ class Usage_Tracker {
 		}
 
 		$plan = self::normalize_plan_slug( $usage['plan_type'] ?? $usage['plan'] ?? 'free' );
-		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && empty( $usage['limit'] ) ) {
+		if ( in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) && empty( $usage['limit'] ) ) {
 			return null;
 		}
 
@@ -846,7 +879,7 @@ class Usage_Tracker {
 				'plan_type'       => $plan,
 			),
 			'is_free'             => in_array( $plan, array( 'free', 'trial' ), true ),
-			'is_pro'              => in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ),
+			'is_pro'              => in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ),
 		);
 	}
 

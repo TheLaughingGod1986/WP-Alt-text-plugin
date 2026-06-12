@@ -14,15 +14,43 @@ if ( ! defined( 'ABSPATH' ) ) {
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- Template locals are scoped to this included partial.
 
 $nai_ap_options = is_array( get_option( 'bbai_options', array() ) ) ? get_option( 'bbai_options', array() ) : array();
-$nai_ap_is_pro  = ! empty( $bbai_state_is_pro_plan ?? false );
-if ( ! $nai_ap_is_pro && function_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::get_plan_data' ) ) {
-	// noop — guard for static analysis. Plan data not strictly needed here.
-	$nai_ap_is_pro = false;
+if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers', false ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
+}
+if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Services\Usage_Helper', false ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
 }
 
-$nai_ap_auto_on        = ! empty( $nai_ap_options['auto_generate'] ) && $nai_ap_is_pro;
+$nai_ap_plan_data = class_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers', false )
+	? \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::get_plan_data()
+	: array();
+$nai_ap_plan_slug = sanitize_key( (string) ( $nai_ap_plan_data['plan_slug'] ?? 'free' ) );
+$nai_ap_usage     = array();
+if ( isset( $this ) && is_object( $this ) && isset( $this->api_client ) && class_exists( '\BeepBeepAI\AltTextGenerator\Services\Usage_Helper', false ) ) {
+	$nai_ap_usage = \BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $this->api_client, true );
+}
+if ( is_array( $nai_ap_usage ) ) {
+	$nai_ap_usage_limit = max( 0, (int) ( $nai_ap_usage['limit'] ?? $nai_ap_usage['credits_total'] ?? $nai_ap_usage['token_limit'] ?? 0 ) );
+	if ( 'pro' === $nai_ap_plan_slug ) {
+		$nai_ap_plan_slug = 'growth';
+	}
+	if ( 'starter' === $nai_ap_plan_slug && $nai_ap_usage_limit > 0 && $nai_ap_usage_limit < 100 ) {
+		$nai_ap_plan_slug = 'free';
+	}
+	if ( in_array( $nai_ap_plan_slug, array( 'growth', 'agency', 'enterprise' ), true ) && $nai_ap_usage_limit > 0 && $nai_ap_usage_limit < 1000 ) {
+		$nai_ap_plan_slug = 'free';
+	}
+}
+$nai_ap_is_paid        = in_array( $nai_ap_plan_slug, array( 'starter', 'growth', 'agency', 'enterprise' ), true );
+$nai_ap_can_autopilot  = class_exists( '\BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers', false )
+	? \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::plan_can_use_autopilot( $nai_ap_plan_slug )
+	: in_array( $nai_ap_plan_slug, array( 'growth', 'agency', 'enterprise' ), true );
+$nai_ap_is_pro         = $nai_ap_can_autopilot;
+$nai_ap_auto_on        = ! empty( $nai_ap_options['auto_generate'] ) && $nai_ap_can_autopilot;
 $nai_ap_settings_url   = admin_url( 'admin.php?page=bbai-settings' );
 $nai_ap_upgrade_action = 'default';
+$nai_ap_upgrade_variant = $nai_ap_is_paid ? 'growth' : 'starter';
+$nai_ap_preferences_coming_soon = true;
 
 $nai_ap_presets = array(
 	array(
@@ -117,11 +145,11 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 				<div class="nai-ap-hero__body">
 					<div class="nai-ap-hero__title">
 						<?php esc_html_e( 'Auto-optimise new uploads', 'beepbeep-ai-alt-text-generator' ); ?>
-						<span class="nai-chip nai-chip--primary"><?php esc_html_e( 'Pro', 'beepbeep-ai-alt-text-generator' ); ?></span>
+						<span class="nai-chip nai-chip--primary"><?php esc_html_e( 'Growth', 'beepbeep-ai-alt-text-generator' ); ?></span>
 					</div>
-					<div class="nai-ap-hero__desc"><?php esc_html_e( 'Every image uploaded to your media library gets ALT text in seconds. Free users can still generate manually from the Library.', 'beepbeep-ai-alt-text-generator' ); ?></div>
+					<div class="nai-ap-hero__desc"><?php esc_html_e( 'Every image uploaded to your media library gets ALT text in seconds. Free and Starter users can still generate manually from the Library.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 				</div>
-				<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-nai-open-paywall="<?php echo esc_attr( $nai_ap_upgrade_action ); ?>" data-bbai-pricing-variant="growth">
+				<button class="nai-btn nai-btn--pro nai-btn--sm" type="button" data-action="show-upgrade-modal" data-nai-open-paywall="<?php echo esc_attr( $nai_ap_upgrade_action ); ?>" data-bbai-pricing-variant="<?php echo esc_attr( $nai_ap_upgrade_variant ); ?>">
 					<?php echo $nai_ap_icon( 'crown', 14, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<?php esc_html_e( 'Upgrade', 'beepbeep-ai-alt-text-generator' ); ?>
 				</button>
@@ -165,12 +193,21 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 		<div class="nai-ap-section__sub"><?php esc_html_e( 'These preferences apply to every image — manual and automated.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 	</div>
 
-	<div class="nai-card" style="margin-bottom:12px;">
+	<div class="nai-card" style="margin-bottom:12px;position:relative;overflow:hidden;">
+		<?php if ( $nai_ap_preferences_coming_soon ) : ?>
+			<div class="nai-coming-soon-overlay" style="position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.78);backdrop-filter:blur(2px);text-align:center;padding:24px;">
+				<div style="max-width:420px;border:1px solid var(--nai-hairline);border-radius:18px;background:#fff;padding:18px 20px;box-shadow:var(--nai-shadow-sm);">
+					<div class="nai-chip nai-chip--primary" style="margin-bottom:8px;"><?php esc_html_e( 'Coming soon', 'beepbeep-ai-alt-text-generator' ); ?></div>
+					<div style="font-weight:700;color:var(--nai-text);margin-bottom:4px;"><?php esc_html_e( 'Advanced writing controls are being finalized.', 'beepbeep-ai-alt-text-generator' ); ?></div>
+					<div style="color:var(--nai-text-2);font-size:13px;"><?php esc_html_e( 'Current generations continue to use the default descriptive style.', 'beepbeep-ai-alt-text-generator' ); ?></div>
+				</div>
+			</div>
+		<?php endif; ?>
 		<div style="padding:16px 20px;border-bottom:1px solid var(--nai-hairline);">
 			<div class="nai-label"><?php esc_html_e( 'Description style', 'beepbeep-ai-alt-text-generator' ); ?></div>
 			<div class="nai-preset-grid">
 				<?php foreach ( $nai_ap_presets as $preset ) : ?>
-					<a class="nai-preset <?php echo $preset['id'] === $nai_ap_active_style ? 'nai-preset--active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'nai_style', $preset['id'], $nai_ap_settings_url ) ); ?>">
+					<a class="nai-preset <?php echo $preset['id'] === $nai_ap_active_style ? 'nai-preset--active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'nai_style', $preset['id'], $nai_ap_settings_url ) ); ?>" aria-disabled="true" tabindex="-1">
 						<div class="nai-preset__head">
 							<span class="nai-preset__radio"></span>
 							<span class="nai-preset__label"><?php echo esc_html( $preset['label'] ); ?></span>
@@ -185,7 +222,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 			<div class="nai-label"><?php esc_html_e( 'Length', 'beepbeep-ai-alt-text-generator' ); ?></div>
 			<div class="nai-seg">
 				<?php foreach ( $nai_ap_lengths as $length_opt ) : ?>
-					<a class="nai-seg__btn <?php echo $length_opt['id'] === $nai_ap_active_length ? 'nai-seg__btn--on' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'nai_length', $length_opt['id'], $nai_ap_settings_url ) ); ?>">
+					<a class="nai-seg__btn <?php echo $length_opt['id'] === $nai_ap_active_length ? 'nai-seg__btn--on' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'nai_length', $length_opt['id'], $nai_ap_settings_url ) ); ?>" aria-disabled="true" tabindex="-1">
 						<?php echo esc_html( $length_opt['label'] ); ?>
 						<span class="nai-seg__range"><?php echo esc_html( $length_opt['range'] ); ?></span>
 					</a>
@@ -236,7 +273,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 	<div class="nai-ap-section">
 		<div class="nai-eyebrow"><?php esc_html_e( 'Run on a schedule', 'beepbeep-ai-alt-text-generator' ); ?></div>
 		<h2><?php esc_html_e( 'Background work', 'beepbeep-ai-alt-text-generator' ); ?></h2>
-		<div class="nai-ap-section__sub"><?php esc_html_e( 'Optional Pro extras that keep your library healthy without you opening BeepBeep AI.', 'beepbeep-ai-alt-text-generator' ); ?></div>
+		<div class="nai-ap-section__sub"><?php esc_html_e( 'Optional Growth extras that keep your library healthy without you opening BeepBeep AI.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 	</div>
 
 	<div class="nai-card" style="margin-bottom:14px;">
@@ -246,13 +283,13 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 				'icon'  => 'calendar',
 				'title' => __( 'Daily library scan', 'beepbeep-ai-alt-text-generator' ),
 				'desc'  => __( 'Sweep your media library every morning to catch missing or low-quality ALT text.', 'beepbeep-ai-alt-text-generator' ),
-				'on'    => $nai_ap_is_pro,
+				'on'    => $nai_ap_can_autopilot,
 			),
 			array(
 				'icon'  => 'mail',
 				'title' => __( 'Weekly digest email', 'beepbeep-ai-alt-text-generator' ),
 				'desc'  => __( 'A Sunday health report: what was optimised, what needs review, coverage trend.', 'beepbeep-ai-alt-text-generator' ),
-				'on'    => $nai_ap_is_pro,
+				'on'    => $nai_ap_can_autopilot,
 			),
 			array(
 				'icon'  => 'bell',
@@ -262,7 +299,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 			),
 		);
 		foreach ( $nai_ap_sched_rows as $row ) :
-			$row_locked = ! $nai_ap_is_pro;
+			$row_locked = ! $nai_ap_can_autopilot;
 			$icon_cls   = $row_locked ? 'nai-sched-row__icon--locked' : ( $row['on'] ? 'nai-sched-row__icon--on' : '' );
 			?>
 			<div class="nai-sched-row">
@@ -273,7 +310,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 					<div class="nai-sched-row__title">
 						<?php echo esc_html( $row['title'] ); ?>
 						<?php if ( $row_locked ) : ?>
-							<span class="nai-chip"><?php esc_html_e( 'Pro', 'beepbeep-ai-alt-text-generator' ); ?></span>
+							<span class="nai-chip"><?php esc_html_e( 'Growth', 'beepbeep-ai-alt-text-generator' ); ?></span>
 						<?php endif; ?>
 					</div>
 					<div class="nai-sched-row__desc"><?php echo esc_html( $row['desc'] ); ?></div>

@@ -19,7 +19,11 @@ $nai_optimized   = max( 0, (int) ( $nai_state['optimizedCount'] ?? 0 ) );
 $nai_missing     = max( 0, (int) ( $nai_state['missingCount'] ?? 0 ) );
 $nai_weak        = max( 0, (int) ( $nai_state['weakCount'] ?? 0 ) );
 $nai_coverage    = max( 0, min( 100, (int) ( $nai_state['coveragePercent'] ?? 0 ) ) );
-$nai_is_pro      = ! empty( $nai_state['isProPlan'] );
+$nai_plan_slug   = sanitize_key( (string) ( $nai_state['planSlug'] ?? $nai_state['plan_slug'] ?? $nai_state['plan'] ?? $nai_state['plan_type'] ?? 'free' ) );
+if ( 'pro' === $nai_plan_slug ) {
+	$nai_plan_slug = 'growth';
+}
+$nai_is_trial = ! empty( $nai_state['isTrial'] ) || ! empty( $nai_state['is_trial'] ) || ! empty( $nai_state['trial'] );
 $nai_credits_use = max( 0, (int) ( $nai_state['creditsUsed'] ?? 0 ) );
 $nai_credits_lim = max( 1, (int) ( $nai_state['creditsLimit'] ?? 1 ) );
 $nai_credits_rem = max( 0, (int) ( $nai_state['creditsRemaining'] ?? 0 ) );
@@ -31,7 +35,17 @@ if ( isset( $bbai_dashboard_root_credits_used, $bbai_dashboard_root_credits_tota
 if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 }
-if ( ! $nai_is_pro && $nai_credits_lim >= 50 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+if ( 'starter' === $nai_plan_slug && $nai_credits_lim > 0 && $nai_credits_lim < 100 ) {
+	$nai_plan_slug = 'free';
+}
+if ( in_array( $nai_plan_slug, array( 'growth', 'agency', 'enterprise' ), true ) && $nai_credits_lim > 0 && $nai_credits_lim < 1000 ) {
+	$nai_plan_slug = 'free';
+}
+$nai_can_autopilot = isset( $nai_state['canAutopilot'] ) || isset( $nai_state['can_autopilot'] )
+	? ( ! empty( $nai_state['canAutopilot'] ) || ! empty( $nai_state['can_autopilot'] ) )
+	: in_array( $nai_plan_slug, array( 'growth', 'agency', 'enterprise' ), true );
+$nai_is_pro = $nai_can_autopilot;
+if ( ! $nai_is_trial && ! $nai_is_pro && $nai_credits_lim >= 50 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
 	$nai_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
 	if ( $nai_local_generation_count > $nai_credits_use ) {
 		$nai_credits_use = min( $nai_credits_lim, $nai_local_generation_count );
@@ -40,12 +54,12 @@ if ( ! $nai_is_pro && $nai_credits_lim >= 50 && class_exists( '\BeepBeepAI\AltTe
 }
 $nai_days_reset  = max( 0, (int) ( $nai_state['daysUntilReset'] ?? 0 ) );
 $nai_daily_limit_seed = (int) ( $nai_state['dailyCreditsLimit'] ?? 0 );
-$nai_daily_limit      = $nai_daily_limit_seed > 0 ? $nai_daily_limit_seed : ( $nai_is_pro ? 200 : 5 );
+$nai_daily_limit      = $nai_daily_limit_seed > 0 ? $nai_daily_limit_seed : ( $nai_is_trial ? 5 : max( 1, $nai_credits_lim ) );
 $nai_daily_use        = max( 0, min( $nai_daily_limit, (int) ( $nai_state['dailyCreditsUsed'] ?? 0 ) ) );
 $nai_daily_rem        = $nai_daily_limit_seed > 0 && isset( $nai_state['dailyCreditsRemaining'] ) && (int) $nai_state['dailyCreditsRemaining'] >= 0
 	? min( $nai_daily_limit, max( 0, (int) $nai_state['dailyCreditsRemaining'] ) )
 	: max( 0, $nai_daily_limit - $nai_daily_use );
-if ( ! $nai_is_pro && $nai_credits_lim >= 50 ) {
+if ( $nai_is_trial && $nai_credits_lim >= 5 ) {
 	$nai_daily_limit = max( 1, $nai_daily_limit );
 	$nai_daily_use   = min( $nai_daily_limit, $nai_credits_use );
 	$nai_daily_rem   = max( 0, $nai_daily_limit - $nai_daily_use );
@@ -115,9 +129,9 @@ $nai_pass_total       = count( $nai_pass_items );
 $nai_queue_items      = array_slice( $nai_pass_items, 0, 5 );
 $nai_queue_size       = count( $nai_queue_items );
 $nai_show_queue       = $nai_queue_size > 0;
-$nai_pass_slots       = $nai_is_pro ? $nai_pass_total : min( $nai_pass_total, $nai_daily_rem, $nai_credits_rem );
+$nai_pass_slots       = $nai_is_trial ? min( $nai_pass_total, $nai_daily_rem, $nai_credits_rem ) : min( $nai_pass_total, $nai_credits_rem );
 $nai_deferred         = max( 0, $nai_pass_total - $nai_pass_slots );
-$nai_pass_blocked     = ! $nai_is_pro && $nai_pass_total > 0 && $nai_pass_slots <= 0;
+$nai_pass_blocked     = $nai_pass_total > 0 && $nai_pass_slots <= 0;
 $nai_existing_count   = $nai_missing > 0 ? $nai_missing : $nai_weak;
 $nai_existing_work    = ! $nai_show_queue && $nai_existing_count > 0;
 $nai_new_since_visit  = $nai_pass_total;

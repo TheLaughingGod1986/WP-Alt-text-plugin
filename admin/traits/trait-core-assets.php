@@ -108,11 +108,34 @@ trait Core_Assets {
 	 */
 	private function normalize_entitlement_plan_for_limit( string $plan, int $limit ): string {
 		$plan = sanitize_key( $plan );
-		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && $limit < Usage_Tracker::MIN_PAID_MONTHLY_LIMIT ) {
+		$minimum = $this->minimum_monthly_limit_for_plan( $plan );
+		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
 			return 'free';
 		}
 
 		return '' !== $plan ? $plan : 'free';
+	}
+
+	/**
+	 * Return the minimum monthly allowance that makes a plan claim credible.
+	 */
+	private function minimum_monthly_limit_for_plan( string $plan ): int {
+		$plan = sanitize_key( $plan );
+		if ( 'starter' === $plan ) {
+			return defined( Usage_Tracker::class . '::STARTER_MONTHLY_LIMIT' ) ? Usage_Tracker::STARTER_MONTHLY_LIMIT : 100;
+		}
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
+			return Usage_Tracker::MIN_PAID_MONTHLY_LIMIT;
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Autopilot is a Growth-or-higher capability. Starter remains manual.
+	 */
+	private function plan_can_use_autopilot( string $plan ): bool {
+		return in_array( sanitize_key( $plan ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
 	}
 
 	/**
@@ -156,10 +179,10 @@ trait Core_Assets {
 			$public = array_intersect_key( $canonical, array_flip( $allowed ) );
 			$limit  = max( 0, (int) ( $public['token_limit'] ?? $usage_data['limit'] ?? $usage_data['credits_total'] ?? 0 ) );
 			$plan   = $this->normalize_entitlement_plan_for_limit( (string) ( $public['plan_type'] ?? $public['plan'] ?? 'free' ), $limit );
-			if ( 'free' === $plan ) {
+			if ( ! $this->plan_can_use_autopilot( $plan ) ) {
 				$public['can_autopilot'] = false;
-				$public['is_unlimited']  = false;
 			}
+			$public['is_unlimited'] = false;
 			$public['plan']      = $plan;
 			$public['plan_type'] = $plan;
 			return $public;
@@ -179,8 +202,8 @@ trait Core_Assets {
 			: (int) ( $usage_data['credits_remaining'] ?? $quota['remaining'] ?? $trial_status['remaining'] ?? max( 0, $limit - $used ) );
 		$remaining = max( 0, $remaining );
 		$plan         = $this->normalize_entitlement_plan_for_limit( $plan, $limit );
-		$is_unlimited = in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
-		$can_generate = $is_unlimited || $remaining > 0;
+		$is_paid_plan = $this->minimum_monthly_limit_for_plan( $plan ) > 0;
+		$can_generate = $remaining > 0 || ( $is_paid_plan && $limit <= 0 );
 
 		return array(
 			'plan'                   => $plan,
@@ -194,10 +217,10 @@ trait Core_Assets {
 			'daily_generations_remaining' => isset( $usage_data['daily_generations_remaining'] ) ? max( 0, (int) $usage_data['daily_generations_remaining'] ) : null,
 			'daily_reset_date'       => (string) ( $usage_data['daily_reset_date'] ?? '' ),
 			'can_generate'           => $can_generate,
-			'can_autopilot'          => $is_unlimited,
+			'can_autopilot'          => $this->plan_can_use_autopilot( $plan ),
 			'is_logged_in'           => $is_logged_in,
 			'is_trial'               => $is_trial,
-			'is_unlimited'           => $is_unlimited,
+			'is_unlimited'           => false,
 			'reset_date'             => (string) ( $usage_data['reset_date'] ?? $quota['reset_date'] ?? '' ),
 			'last_generation_at'     => (string) ( $usage_data['last_generation_at'] ?? '' ),
 			'upgrade_required'       => ! $can_generate && ! $is_trial,
@@ -2155,7 +2178,7 @@ JS,
 	private function get_telemetry_client_config(): array {
 		$usage               = Usage_Tracker::get_stats_display();
 		$plan                = isset( $usage['plan'] ) ? sanitize_key( (string) $usage['plan'] ) : 'free';
-		$plan_type           = in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'pro' : ( 'free' === $plan ? 'free' : 'unknown' );
+		$plan_type           = in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'pro' : ( 'free' === $plan ? 'free' : 'unknown' );
 		$site_hash           = $this->get_posthog_site_hash();
 		$sanitized_user_data = isset( $this->api_client ) ? $this->sanitize_api_user_data_for_localize( $this->api_client->get_user_data() ) : array();
 		$license_data        = ( isset( $this->api_client ) && method_exists( $this->api_client, 'get_license_data' ) )

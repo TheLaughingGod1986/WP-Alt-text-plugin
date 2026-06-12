@@ -2231,7 +2231,7 @@ class REST_Controller {
 			: max( 0, $limit - $used );
 
 		$plan_slug = strtolower( (string) ( $usage_stats['plan_type'] ?? $usage_stats['plan'] ?? 'free' ) );
-		$is_pro    = in_array( $plan_slug, array( 'pro', 'growth', 'agency', 'enterprise' ), true )
+		$is_pro    = in_array( $plan_slug, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true )
 			|| ! empty( $usage_stats['is_pro'] );
 
 		$credits_block = array(
@@ -2511,8 +2511,18 @@ class REST_Controller {
 	 * @return array
 	 */
 	public function handle_plans( \WP_REST_Request $request ) {
+		$plans      = array();
+		$api_client = $this->core->get_api_client();
+		if ( $api_client && method_exists( $api_client, 'get_plans' ) ) {
+			$remote_plans = $api_client->get_plans();
+			if ( ! is_wp_error( $remote_plans ) && is_array( $remote_plans ) ) {
+				$plans = $remote_plans;
+			}
+		}
+
 		return array(
 			'prices' => $this->core->get_checkout_price_ids(),
+			'plans'  => $plans,
 		);
 	}
 

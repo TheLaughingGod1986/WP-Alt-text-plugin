@@ -39,12 +39,29 @@
 
     function isPaidPlan(plan) {
         plan = String(plan || '').toLowerCase();
+        return plan === 'starter' || plan === 'pro' || plan === 'growth' || plan === 'agency' || plan === 'enterprise';
+    }
+
+    function canUseAutopilot(plan) {
+        plan = String(plan || '').toLowerCase();
         return plan === 'pro' || plan === 'growth' || plan === 'agency' || plan === 'enterprise';
+    }
+
+    function minimumLimitForPlan(plan) {
+        plan = String(plan || '').toLowerCase();
+        if (plan === 'starter') {
+            return 100;
+        }
+        if (plan === 'pro' || plan === 'growth' || plan === 'agency' || plan === 'enterprise') {
+            return 1000;
+        }
+        return 0;
     }
 
     function normalizePlanForLimit(plan, limit) {
         plan = String(plan || 'free').toLowerCase();
-        if (isPaidPlan(plan) && limit < 1000) {
+        var minimum = minimumLimitForPlan(plan);
+        if (minimum > 0 && limit > 0 && limit < minimum) {
             return 'free';
         }
         return plan || 'free';
@@ -154,11 +171,11 @@
             daily_generations_used: number(input.daily_generations_used),
             daily_generations_remaining: number(input.daily_generations_remaining),
             daily_reset_date: String(input.daily_reset_date || ''),
-            can_generate: bool(input.can_generate, remaining > 0 || isPaidPlan(plan)),
-            can_autopilot: isPaidPlan(plan) ? bool(input.can_autopilot, true) : false,
+            can_generate: bool(input.can_generate, remaining > 0 || (isPaidPlan(plan) && limit <= 0)),
+            can_autopilot: canUseAutopilot(plan) ? bool(input.can_autopilot, true) : false,
             is_logged_in: bool(input.is_logged_in, String(input.auth_state || quota.auth_state || '') !== 'anonymous'),
             is_trial: bool(input.is_trial, plan === 'trial' || String(input.quota_type || quota.quota_type || '') === 'trial'),
-            is_unlimited: isPaidPlan(plan) ? bool(input.is_unlimited, true) : false,
+            is_unlimited: isPaidPlan(plan) ? bool(input.is_unlimited, false) : false,
             reset_date: String(input.reset_date || quota.reset_date || ''),
             last_generation_at: String(input.last_generation_at || ''),
             upgrade_required: bool(input.upgrade_required, remaining <= 0 && !isPaidPlan(plan)),
@@ -187,7 +204,7 @@
         limit = number(next.token_limit);
         used = number(next.tokens_used_this_month);
         plan = normalizePlanForLimit(next.plan_type || next.plan || 'free', limit === null ? 0 : limit);
-        unlimited = bool(next.is_unlimited, isPaidPlan(plan));
+        unlimited = bool(next.is_unlimited, false);
         if (!isPaidPlan(plan)) {
             unlimited = false;
         }
@@ -195,7 +212,7 @@
         dailyUsed = number(next.daily_generations_used);
         dailyRemaining = number(next.daily_generations_remaining);
 
-        next.plan = String(next.plan || plan);
+        next.plan = plan;
         next.plan_type = plan;
         next.token_limit = Math.max(0, limit === null ? 0 : limit);
         next.tokens_used_this_month = Math.max(0, used === null ? 0 : used);
@@ -206,16 +223,16 @@
         next.daily_generations_remaining = dailyRemaining === null ? null : Math.max(0, dailyRemaining);
         next.daily_reset_date = String(next.daily_reset_date || '');
         next.is_unlimited = unlimited;
+        next.is_trial = bool(next.is_trial, plan === 'trial');
         next.can_generate = bool(next.can_generate, unlimited || next.tokens_remaining > 0);
         if (!unlimited && next.tokens_remaining <= 0) {
             next.can_generate = false;
         }
-        if (!unlimited && next.daily_generations_remaining !== null && next.daily_generations_remaining <= 0) {
+        if (!unlimited && next.is_trial && next.daily_generations_remaining !== null && next.daily_generations_remaining <= 0) {
             next.can_generate = false;
         }
-        next.can_autopilot = isPaidPlan(plan) ? bool(next.can_autopilot, unlimited) : false;
+        next.can_autopilot = canUseAutopilot(plan) ? bool(next.can_autopilot, true) : false;
         next.is_logged_in = bool(next.is_logged_in, true);
-        next.is_trial = bool(next.is_trial, plan === 'trial');
         next.upgrade_required = bool(next.upgrade_required, !unlimited && !next.can_generate);
         next.quota_state = String(next.quota_state || (!next.can_generate ? 'exhausted' : 'active'));
         next.reset_date = String(next.reset_date || '');
@@ -554,6 +571,11 @@
         if (target.hasAttribute('data-bbai-entitlement-autopilot-control') && state && !state.can_autopilot) {
             event.preventDefault();
             track('generation_blocked_no_credits', { surface: 'autopilot' }, 'generation_blocked:autopilot');
+            if (typeof window.bbaiOpenUpgradeModal === 'function') {
+                window.bbaiOpenUpgradeModal('autopilot_locked', { source: 'autopilot', force: true });
+            } else if (typeof window.alttextaiShowModal === 'function') {
+                window.alttextaiShowModal();
+            }
             return;
         }
         if (target.matches(generationSelector) && state && !state.can_generate) {
