@@ -81,7 +81,7 @@
         rootUsed = number(root.getAttribute('data-bbai-credits-used'));
         rootLimit = number(root.getAttribute('data-bbai-credits-total'));
         rootRemaining = number(root.getAttribute('data-bbai-credits-remaining'));
-        if (rootUsed === null || rootLimit === null || rootLimit < 50 || rootUsed <= next.tokens_used_this_month) {
+        if (rootUsed === null || rootLimit === null || rootLimit <= 0 || rootUsed <= next.tokens_used_this_month) {
             return next;
         }
 
@@ -89,10 +89,17 @@
         next.tokens_used_this_month = rootUsed;
         next.token_limit = rootLimit;
         next.tokens_remaining = rootRemaining === null ? Math.max(0, rootLimit - rootUsed) : rootRemaining;
-        dailyLimit = next.daily_generation_limit === null ? 5 : next.daily_generation_limit;
-        next.daily_generation_limit = dailyLimit;
-        next.daily_generations_used = Math.min(dailyLimit, rootUsed);
-        next.daily_generations_remaining = Math.max(0, dailyLimit - next.daily_generations_used);
+        // The shared credit wallet has no daily sub-cap: when the backend sends
+        // daily_generation_limit === null, keep it uncapped instead of
+        // fabricating a phantom "of 5 today" allowance.
+        if (next.daily_generation_limit === null) {
+            next.daily_generations_used = null;
+            next.daily_generations_remaining = null;
+        } else {
+            dailyLimit = next.daily_generation_limit;
+            next.daily_generations_used = Math.min(dailyLimit, rootUsed);
+            next.daily_generations_remaining = Math.max(0, dailyLimit - next.daily_generations_used);
+        }
         return next;
     }
 

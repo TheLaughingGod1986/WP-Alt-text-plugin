@@ -7,7 +7,7 @@ Tags: ai alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.54
+Stable tag: 4.6.55
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -65,7 +65,7 @@ BeepBeep AI is built for WordPress users who want the practical benefits of AI a
 
 = Free plan and paid options =
 
-Start with 10 trial generations and test the workflow before creating an account. The free plan includes 50 AI alt text generations per month. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
+Start with 10 trial generations and test the workflow before creating an account. The free plan includes 15 AI alt text generations per month. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
 
 = Learn more =
 

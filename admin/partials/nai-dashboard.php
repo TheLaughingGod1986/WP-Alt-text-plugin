@@ -45,7 +45,7 @@ $nai_can_autopilot = isset( $nai_state['canAutopilot'] ) || isset( $nai_state['c
 	? ( ! empty( $nai_state['canAutopilot'] ) || ! empty( $nai_state['can_autopilot'] ) )
 	: in_array( $nai_plan_slug, array( 'growth', 'agency', 'enterprise' ), true );
 $nai_is_pro = $nai_can_autopilot;
-if ( ! $nai_is_trial && ! $nai_is_pro && $nai_credits_lim >= 50 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+if ( ! $nai_is_trial && ! $nai_is_pro && $nai_credits_lim > 0 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
 	$nai_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
 	if ( $nai_local_generation_count > $nai_credits_use ) {
 		$nai_credits_use = min( $nai_credits_lim, $nai_local_generation_count );
@@ -64,6 +64,10 @@ if ( $nai_is_trial && $nai_credits_lim >= 5 ) {
 	$nai_daily_use   = min( $nai_daily_limit, $nai_credits_use );
 	$nai_daily_rem   = max( 0, $nai_daily_limit - $nai_daily_use );
 }
+// The shared credit wallet has no daily sub-cap — only the anonymous trial
+// (or an explicit backend daily limit) gates per-day. For connected free/paid
+// accounts we show monthly framing instead of a phantom "of 5 today" cap.
+$nai_has_daily_cap = $nai_is_trial || $nai_daily_limit_seed > 0;
 $nai_daily_reset      = (string) ( $nai_state['dailyResetDate'] ?? '' );
 $nai_daily_reset_ts       = '' !== $nai_daily_reset ? strtotime( $nai_daily_reset ) : false;
 $nai_daily_hours_left     = false !== $nai_daily_reset_ts ? max( 1, (int) ceil( max( 0, $nai_daily_reset_ts - time() ) / HOUR_IN_SECONDS ) ) : 0;

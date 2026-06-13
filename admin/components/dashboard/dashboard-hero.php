@@ -178,6 +178,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<span class="nai-mono nai-tnum"><?php echo esc_html( (string) $nai_credits_use ); ?></span>
 						<?php esc_html_e( 'images improved this period', 'beepbeep-ai-alt-text-generator' ); ?>
 					</span>
+				<?php elseif ( empty( $nai_has_daily_cap ) ) : ?>
+					<span class="nai-hero__status-strong">
+						<span class="nai-mono nai-tnum" data-bbai-entitlement-used><?php echo esc_html( (string) $nai_credits_use ); ?></span>
+						<?php esc_html_e( 'of', 'beepbeep-ai-alt-text-generator' ); ?>
+						<span class="nai-mono nai-tnum" data-bbai-entitlement-limit><?php echo esc_html( (string) $nai_credits_lim ); ?></span>
+						<?php esc_html_e( 'monthly generations used', 'beepbeep-ai-alt-text-generator' ); ?>
+					</span>
+					<?php if ( $nai_days_reset > 0 ) : ?>
+						<span>&middot;
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: days until quota resets. */
+									_n( 'resets in %d day', 'resets in %d days', $nai_days_reset, 'beepbeep-ai-alt-text-generator' ),
+									$nai_days_reset
+								)
+							);
+							?>
+						</span>
+					<?php endif; ?>
 				<?php else : ?>
 					<span class="nai-hero__status-strong">
 						<span class="nai-mono nai-tnum" data-bbai-entitlement-daily-used><?php echo esc_html( (string) $nai_daily_use ); ?></span>

@@ -22,9 +22,11 @@ if ( empty( $nai_is_pro ) && isset( $nai_credits_lim ) && (int) $nai_credits_lim
 	if ( $nai_component_local_generation_count > (int) $nai_credits_use ) {
 		$nai_credits_use = min( (int) $nai_credits_lim, $nai_component_local_generation_count );
 		$nai_credits_rem = max( 0, (int) $nai_credits_lim - (int) $nai_credits_use );
-		$nai_daily_limit = max( 1, (int) ( $nai_daily_limit ?? 5 ) );
-		$nai_daily_use   = min( $nai_daily_limit, (int) $nai_credits_use );
-		$nai_daily_rem   = max( 0, $nai_daily_limit - $nai_daily_use );
+		if ( ! empty( $nai_has_daily_cap ) ) {
+			$nai_daily_limit = max( 1, (int) ( $nai_daily_limit ?? 5 ) );
+			$nai_daily_use   = min( $nai_daily_limit, (int) $nai_credits_use );
+			$nai_daily_rem   = max( 0, $nai_daily_limit - $nai_daily_use );
+		}
 	}
 }
 ?>
@@ -64,6 +66,7 @@ if ( empty( $nai_is_pro ) && isset( $nai_credits_lim ) && (int) $nai_credits_lim
 					<span class="nai-footer-metrics__muted">· <?php esc_html_e( '12 of last 14', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				</div>
 			</div>
+			<?php if ( ! empty( $nai_has_daily_cap ) ) : ?>
 			<div class="nai-footer-metrics__item">
 				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Daily allowance', 'beepbeep-ai-alt-text-generator' ); ?></div>
 					<div class="nai-footer-metrics__value">
@@ -82,6 +85,7 @@ if ( empty( $nai_is_pro ) && isset( $nai_credits_lim ) && (int) $nai_credits_lim
 						<?php endif; ?>
 					</div>
 				</div>
+			<?php endif; ?>
 			<div class="nai-footer-metrics__item">
 				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Monthly usage', 'beepbeep-ai-alt-text-generator' ); ?></div>
 				<div class="nai-footer-metrics__value">
