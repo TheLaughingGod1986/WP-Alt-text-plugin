@@ -85,16 +85,16 @@
 
 	var paywallPriceFilled = false;
 
-	// Fill the Pro CTA with the live Stripe price from the backend /plans
+	// Fill each plan CTA with the live Stripe price from the backend /plans
 	// catalog so the modal never drifts from what the customer is charged.
 	function fillPaywallPrice(modal) {
 		if (paywallPriceFilled || !modal) {
 			return;
 		}
-		var priceEl = modal.querySelector('[data-nai-paywall-price]');
+		var priceEls = modal.querySelectorAll('[data-nai-paywall-price]');
 		var cfg = window.BBAI_DASH || {};
 		var url = cfg.restPlans || (cfg.restRoot ? cfg.restRoot + 'bbai/v1/plans' : '');
-		if (!priceEl || !url || typeof window.fetch !== 'function') {
+		if (!priceEls.length || !url || typeof window.fetch !== 'function') {
 			return;
 		}
 		var headers = {};
@@ -105,14 +105,21 @@
 			.then(function (res) { return res.ok ? res.json() : null; })
 			.then(function (data) {
 				var plans = (data && data.plans) || [];
-				var pro = plans.filter(function (p) { return p.id === 'pro'; })[0];
-				var label = pro ? formatPrice(pro.price, pro.currency) : null;
-				if (label) {
-					priceEl.textContent = ' · ' + label + '/mo';
+				var filledAny = false;
+				Array.prototype.forEach.call(priceEls, function (el) {
+					var planId = el.getAttribute('data-nai-paywall-price') || 'pro';
+					var plan = plans.filter(function (p) { return p.id === planId; })[0];
+					var label = plan ? formatPrice(plan.price, plan.currency) : null;
+					if (label) {
+						el.textContent = ' · ' + label + (plan.interval === 'one-time' ? '' : '/mo');
+						filledAny = true;
+					}
+				});
+				if (filledAny) {
 					paywallPriceFilled = true;
 				}
 			})
-			.catch(function () { /* leave the neutral "Upgrade to Pro" label */ });
+			.catch(function () { /* leave the neutral plan labels */ });
 	}
 
 	function openPaywall(state, trigger) {

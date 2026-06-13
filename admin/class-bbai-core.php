@@ -124,7 +124,7 @@ class Core {
 	private const MEDIA_UPLOAD_TRIGGER_TRANSIENT_PREFIX = 'bbai_upgrade_upload_';
 
 	private const DEFAULT_CHECKOUT_PRICE_IDS = array(
-		'starter' => '',
+		'starter' => 'price_1ThUW5Jl9Rm418cMExwhNXJX',
 		'pro'     => 'price_1SMrxaJl9Rm418cMM4iikjlJ',
 		'growth'  => 'price_1SMrxaJl9Rm418cMM4iikjlJ', // alias for pro
 		'agency'  => 'price_1SMrxaJl9Rm418cMnJTShXSY',
