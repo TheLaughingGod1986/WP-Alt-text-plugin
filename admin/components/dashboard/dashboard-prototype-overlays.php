@@ -137,10 +137,10 @@ if ( ! isset( $nai_icon ) || ! is_callable( $nai_icon ) ) {
 				);
 			};
 			?>
-			<a class="nai-btn nai-btn--pro nai-btn--lg nai-btn--full" href="<?php echo esc_url( $nai_checkout_url( 'pro' ) ); ?>" data-nai-paywall-cta data-nai-paywall-plan="pro">
+			<a class="nai-btn nai-btn--pro nai-btn--lg nai-btn--full" href="<?php echo esc_url( $nai_checkout_url( 'pro' ) ); ?>" target="_blank" rel="noopener noreferrer" data-nai-paywall-cta data-nai-paywall-plan="pro">
 				<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?><span data-nai-paywall-price="pro"></span>
 			</a>
-			<a class="nai-btn nai-btn--ghost nai-btn--full nai-paywall__starter-cta" href="<?php echo esc_url( $nai_checkout_url( 'starter' ) ); ?>" data-nai-paywall-cta data-nai-paywall-plan="starter">
+			<a class="nai-btn nai-btn--ghost nai-btn--full nai-paywall__starter-cta" href="<?php echo esc_url( $nai_checkout_url( 'starter' ) ); ?>" target="_blank" rel="noopener noreferrer" data-nai-paywall-cta data-nai-paywall-plan="starter">
 				<?php esc_html_e( 'Or start with Starter', 'beepbeep-ai-alt-text-generator' ); ?><span data-nai-paywall-price="starter"></span>
 			</a>
 		</section>

@@ -287,10 +287,11 @@
 				var paywallCta = target.closest('[data-nai-paywall-cta]');
 				var checkoutHref = paywallCta.getAttribute('href');
 				if (checkoutHref) {
-					// Real Stripe checkout via the server-side direct-checkout handler.
+					// Real Stripe checkout via the server-side direct-checkout
+					// handler — open in a new tab so the admin stays put.
 					event.preventDefault();
-					notices.toast(root, 'Opening secure checkout…', 'Redirecting you to Stripe.');
-					window.location.assign(checkoutHref);
+					notices.toast(root, 'Opening secure checkout…', 'Stripe will open in a new tab.');
+					window.open(checkoutHref, '_blank', 'noopener,noreferrer');
 				}
 				// No href configured — let the link/default action proceed.
 				return;
