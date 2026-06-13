@@ -120,7 +120,23 @@ if ( ! isset( $nai_icon ) || ! is_callable( $nai_icon ) ) {
 				<div class="nai-paywall__column"><strong><?php esc_html_e( 'Free', 'beepbeep-ai-alt-text-generator' ); ?></strong><span><?php esc_html_e( '5 AI generations per day', 'beepbeep-ai-alt-text-generator' ); ?></span><span><?php esc_html_e( 'Up to 50 per month', 'beepbeep-ai-alt-text-generator' ); ?></span><span><?php esc_html_e( 'Manual generation only', 'beepbeep-ai-alt-text-generator' ); ?></span></div>
 				<div class="nai-paywall__column nai-paywall__column--pro"><strong><?php esc_html_e( 'Pro', 'beepbeep-ai-alt-text-generator' ); ?></strong><span><?php esc_html_e( '1,000 AI generations per month', 'beepbeep-ai-alt-text-generator' ); ?></span><span><?php esc_html_e( 'No daily cap within your 1,000', 'beepbeep-ai-alt-text-generator' ); ?></span><span><?php esc_html_e( 'Autopilot for new uploads', 'beepbeep-ai-alt-text-generator' ); ?></span></div>
 			</div>
-			<button class="nai-btn nai-btn--pro nai-btn--lg nai-btn--full" type="button" data-nai-paywall-cta><?php esc_html_e( 'Start 14-day Pro trial · $9/mo after', 'beepbeep-ai-alt-text-generator' ); ?></button>
+			<?php
+			// Real Stripe checkout: reuse the no-JS direct-checkout handler
+			// (Core::maybe_handle_direct_checkout) which creates a session for
+			// the Pro price and redirects. Price label is filled client-side
+			// from the live /plans catalog so it always matches Stripe.
+			$nai_paywall_checkout_url = add_query_arg(
+				array(
+					'page'        => 'bbai-checkout',
+					'plan'        => 'pro',
+					'_bbai_nonce' => wp_create_nonce( 'bbai_direct_checkout' ),
+				),
+				admin_url( 'admin.php' )
+			);
+			?>
+			<a class="nai-btn nai-btn--pro nai-btn--lg nai-btn--full" href="<?php echo esc_url( $nai_paywall_checkout_url ); ?>" data-nai-paywall-cta data-nai-paywall-plan="pro">
+				<?php esc_html_e( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ); ?><span data-nai-paywall-price></span>
+			</a>
 		</section>
 	</div>
 

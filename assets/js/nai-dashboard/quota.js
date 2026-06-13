@@ -67,6 +67,54 @@
 		}
 	}
 
+	// Format a plan amount in its own currency (gbp 12.99 -> "£12.99").
+	function formatPrice(amount, currency) {
+		if (typeof amount !== 'number') {
+			return null;
+		}
+		try {
+			return new Intl.NumberFormat(undefined, {
+				style: 'currency',
+				currency: (currency || 'gbp').toUpperCase(),
+				minimumFractionDigits: amount % 1 === 0 ? 0 : 2
+			}).format(amount);
+		} catch (e) {
+			return amount + ' ' + (currency || 'gbp').toUpperCase();
+		}
+	}
+
+	var paywallPriceFilled = false;
+
+	// Fill the Pro CTA with the live Stripe price from the backend /plans
+	// catalog so the modal never drifts from what the customer is charged.
+	function fillPaywallPrice(modal) {
+		if (paywallPriceFilled || !modal) {
+			return;
+		}
+		var priceEl = modal.querySelector('[data-nai-paywall-price]');
+		var cfg = window.BBAI_DASH || {};
+		var url = cfg.restPlans || (cfg.restRoot ? cfg.restRoot + 'bbai/v1/plans' : '');
+		if (!priceEl || !url || typeof window.fetch !== 'function') {
+			return;
+		}
+		var headers = {};
+		if (cfg.nonce) {
+			headers['X-WP-Nonce'] = cfg.nonce;
+		}
+		window.fetch(url, { headers: headers, credentials: 'same-origin' })
+			.then(function (res) { return res.ok ? res.json() : null; })
+			.then(function (data) {
+				var plans = (data && data.plans) || [];
+				var pro = plans.filter(function (p) { return p.id === 'pro'; })[0];
+				var label = pro ? formatPrice(pro.price, pro.currency) : null;
+				if (label) {
+					priceEl.textContent = ' · ' + label + '/mo';
+					paywallPriceFilled = true;
+				}
+			})
+			.catch(function () { /* leave the neutral "Upgrade to Pro" label */ });
+	}
+
 	function openPaywall(state, trigger) {
 		var root = state.root;
 		var modal = root.querySelector('[data-nai-modal="paywall"]');
@@ -85,6 +133,7 @@
 			} else {
 				urgency.hidden = true;
 			}
+			fillPaywallPrice(modal);
 		}
 		modals.open(root, 'paywall');
 	}

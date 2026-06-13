@@ -284,8 +284,15 @@
 			}
 
 			if (target.closest('[data-nai-paywall-cta]')) {
-				event.preventDefault();
-				notices.toast(root, 'Pro trial selected', 'Checkout stays disabled in this prototype view.');
+				var paywallCta = target.closest('[data-nai-paywall-cta]');
+				var checkoutHref = paywallCta.getAttribute('href');
+				if (checkoutHref) {
+					// Real Stripe checkout via the server-side direct-checkout handler.
+					event.preventDefault();
+					notices.toast(root, 'Opening secure checkout…', 'Redirecting you to Stripe.');
+					window.location.assign(checkoutHref);
+				}
+				// No href configured — let the link/default action proceed.
 				return;
 			}
 
