@@ -17383,6 +17383,19 @@
         return !!(state.complete || state.quotaBlocked || allDone);
     }
 
+    function getBulkProgressOutcome(state) {
+        var processed = Math.max(0, parseInt(state && state.processed, 10) || 0);
+        var failed = Math.max(0, parseInt(state && state.failed, 10) || 0);
+        var skipped = Math.max(0, parseInt(state && state.skipped, 10) || 0);
+        var hasIssues = !!(state && state.quotaBlocked) || failed > 0 || skipped > 0;
+
+        if (!hasIssues) {
+            return 'success';
+        }
+
+        return processed > 0 ? 'partial' : 'failure';
+    }
+
     function buildBulkProgressHeaderTitle(state) {
         if (isBulkProgressCompleteState(state)) {
             return buildBulkProgressSuccessTitleText(state);
@@ -17869,7 +17882,7 @@
                 animateBulkProgressNumber(countNode, state.processed);
             }, 70);
 
-            if (checkNode) {
+            if (checkNode && getBulkProgressOutcome(state) === 'success') {
                 window.setTimeout(function() {
                     checkNode.classList.add('is-visible');
                 }, 180);
@@ -18056,12 +18069,14 @@
         }
 
         isComplete = isBulkProgressCompleteState(state);
-        var hasError = !!(state && (state.quotaBlocked || (isComplete && (parseInt(state.failed, 10) || 0) > 0)));
-        var mode = hasError ? 'error' : (isComplete ? 'complete' : 'running');
+        var outcome = isComplete ? getBulkProgressOutcome(state) : 'running';
+        var hasIssues = outcome === 'partial' || outcome === 'failure';
+        var isFailure = outcome === 'failure';
+        var mode = hasIssues ? 'error' : (isComplete ? 'complete' : 'running');
 
         presentation = isComplete ? getBulkProgressCompletionPresentation(state) : null;
         ctaConfig = presentation ? presentation.ctaConfig : resolveBulkProgressCompletionCtaConfig(state);
-        if (isComplete && !hasError) {
+        if (isComplete && !hasIssues) {
             ctaConfig = {
                 primary: {
                     label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
@@ -18079,18 +18094,22 @@
         }
 
         $modal.attr('data-bbai-bulk-progress-mode', mode);
-        $modal.toggleClass('bbai-modal--complete', isComplete && !hasError);
-        if (isComplete && !hasError) {
+        $modal.toggleClass('bbai-modal--complete', isComplete && !hasIssues);
+        if (isComplete && !hasIssues) {
             $modal.find('.bbai-bulk-progress__title').text(__('All images processed 🎉', 'beepbeep-ai-alt-text-generator'));
         } else {
             $modal.find('.bbai-bulk-progress__title').text(
-                hasError && isComplete ? __('Generation failed', 'beepbeep-ai-alt-text-generator') : buildBulkProgressHeaderTitle(state)
+                isFailure
+                    ? __('Generation failed', 'beepbeep-ai-alt-text-generator')
+                    : (outcome === 'partial'
+                        ? __('Completed with issues', 'beepbeep-ai-alt-text-generator')
+                        : buildBulkProgressHeaderTitle(state))
             );
         }
 
         $subtitle = $modal.find('.bbai-bulk-progress__subtitle');
         if ($subtitle.length) {
-            if (isComplete && !hasError) {
+            if (isComplete && !hasIssues) {
                 var snap2 = state && state.postGen ? state.postGen : null;
                 var sub = snap2 && snap2.supporting
                     ? String(snap2.supporting)
@@ -18169,7 +18188,7 @@
                 if (current > 0) {
                     setStep('save', 'is-active');
                 }
-            } else if (mode === 'error') {
+            } else if (hasIssues) {
                 setStep('send', 'is-error');
                 setStep('save', 'is-error');
             } else {
@@ -18203,16 +18222,24 @@
 
         if ($completeTitle.length) {
             $completeTitle.text(
-                !hasError
+                !hasIssues
                     ? __('All images processed 🎉', 'beepbeep-ai-alt-text-generator')
-                    : __('Generation failed', 'beepbeep-ai-alt-text-generator')
+                    : (isFailure
+                        ? __('Generation failed', 'beepbeep-ai-alt-text-generator')
+                        : sprintf(
+                            __('%1$s of %2$s images processed', 'beepbeep-ai-alt-text-generator'),
+                            formatDashboardNumber(state.processed),
+                            formatDashboardNumber(state.total)
+                        ))
             );
         }
         if ($completeSubtitle.length) {
             $completeSubtitle.text(
-                !hasError
+                !hasIssues
                     ? __('ALT text is ready to review.', 'beepbeep-ai-alt-text-generator')
-                    : __('Some images could not be processed. Please review the log and try again.', 'beepbeep-ai-alt-text-generator')
+                    : (isFailure
+                        ? __('No images could be processed. Please review the log and try again.', 'beepbeep-ai-alt-text-generator')
+                        : __('Successful ALT text is ready to review. Unprocessed images can be retried.', 'beepbeep-ai-alt-text-generator'))
             );
         }
 
@@ -19818,10 +19845,21 @@
 
     function formatBulkProgressLogDoneLabel(state) {
         var current = Math.max(0, parseInt(state && state.current, 10) || 0);
+        var processed = Math.max(0, parseInt(state && state.processed, 10) || 0);
         var total = Math.max(0, parseInt(state && state.total, 10) || 0);
 
         if (total <= 0) {
             return __('Waiting for images', 'beepbeep-ai-alt-text-generator');
+        }
+
+        // A completed slot may have failed or been skipped. Once the run ends,
+        // report successful optimisations so this count matches the result copy.
+        if (isBulkProgressCompleteState(state)) {
+            return sprintf(
+                __('%1$s of %2$s optimised', 'beepbeep-ai-alt-text-generator'),
+                formatDashboardNumber(processed),
+                formatDashboardNumber(total)
+            );
         }
 
         return sprintf(
