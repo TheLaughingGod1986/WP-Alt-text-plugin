@@ -80,6 +80,120 @@
 	font-family: var(--nai-font-mono);
 }
 
+.nai-screen .nai-credit-card {
+	margin-bottom: 18px;
+	background: var(--nai-surface);
+	border: 1px solid var(--nai-border);
+	border-radius: var(--nai-r-lg);
+	overflow: hidden;
+}
+.nai-screen .nai-credit-card__head {
+	padding: 14px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	border-bottom: 1px solid var(--nai-hairline);
+}
+.nai-screen .nai-credit-card__title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nai-text);
+}
+.nai-screen .nai-credit-card__total {
+	font-size: 13px;
+	color: var(--nai-text-2);
+	white-space: nowrap;
+}
+.nai-screen .nai-credit-card__total strong { color: var(--nai-text); }
+.nai-screen .nai-credit-card__note {
+	padding: 11px 20px;
+	display: flex;
+	align-items: flex-start;
+	gap: 9px;
+	background: var(--nai-surface-2);
+	border-bottom: 1px solid var(--nai-hairline);
+	font-size: 12px;
+	color: var(--nai-text-2);
+	line-height: 1.45;
+}
+.nai-screen .nai-credit-card__note svg {
+	margin-top: 1px;
+	flex-shrink: 0;
+	color: var(--nai-text-3);
+}
+.nai-screen .nai-credit-feature {
+	padding: 12px 20px;
+	display: grid;
+	grid-template-columns: 36px minmax(0, 1fr) auto;
+	gap: 12px;
+	align-items: center;
+	border-bottom: 1px solid var(--nai-hairline);
+}
+.nai-screen .nai-credit-feature:last-child { border-bottom: 0; }
+.nai-screen .nai-credit-feature--current { background: #ecfdf5; }
+.nai-screen .nai-credit-feature__icon {
+	width: 32px;
+	height: 32px;
+	border-radius: 9px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: #64748b;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+}
+.nai-screen .nai-credit-feature--alt .nai-credit-feature__icon { color: #059669; background: #ecfdf5; border-color: #a7f3d0; }
+.nai-screen .nai-credit-feature--titles .nai-credit-feature__icon { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
+.nai-screen .nai-credit-feature--schema .nai-credit-feature__icon { color: #d97706; background: #fffbeb; border-color: #fde68a; }
+.nai-screen .nai-credit-feature__main { min-width: 0; }
+.nai-screen .nai-credit-feature__label {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	flex-wrap: wrap;
+	margin-bottom: 7px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nai-text);
+}
+.nai-screen .nai-credit-feature__track {
+	height: 5px;
+	border-radius: 999px;
+	overflow: hidden;
+	background: var(--nai-bg-sunken);
+}
+.nai-screen .nai-credit-feature__bar {
+	height: 100%;
+	border-radius: 999px;
+	background: #64748b;
+}
+.nai-screen .nai-credit-feature--alt .nai-credit-feature__bar { background: #059669; }
+.nai-screen .nai-credit-feature--titles .nai-credit-feature__bar { background: #2563eb; }
+.nai-screen .nai-credit-feature--schema .nai-credit-feature__bar { background: #d97706; }
+.nai-screen .nai-credit-feature__value {
+	min-width: 46px;
+	text-align: right;
+}
+.nai-screen .nai-credit-feature__value strong {
+	display: block;
+	font-size: 13px;
+	color: var(--nai-text);
+}
+.nai-screen .nai-credit-feature__value span {
+	display: block;
+	margin-top: 1px;
+	font-size: 11px;
+	color: var(--nai-text-3);
+}
+
+@media (max-width: 640px) {
+	.nai-screen .nai-credit-card__head { align-items: flex-start; }
+	.nai-screen .nai-credit-card__total { white-space: normal; text-align: right; }
+	.nai-screen .nai-credit-feature { padding-inline: 14px; }
+}
+
 .nai-screen .nai-set-section {
 	margin-bottom: 12px;
 	background: var(--nai-surface);
