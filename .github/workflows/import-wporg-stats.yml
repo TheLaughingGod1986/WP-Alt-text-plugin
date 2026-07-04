@@ -1,0 +1,28 @@
+name: Import WordPress.org stats to PostHog
+
+on:
+  schedule:
+    # WordPress.org stats can lag, so run after the previous UTC day has settled.
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  import-wporg-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Import WordPress.org stats to PostHog
+        env:
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          POSTHOG_API_HOST: https://us.i.posthog.com
+          WPORG_SLUG: beepbeep-ai-alt-text-generator
+          WPORG_DOWNLOAD_DAYS: 14
+        run: node scripts/import-wporg-stats-to-posthog.mjs
