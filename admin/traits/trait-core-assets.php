@@ -2167,6 +2167,9 @@ JS,
 		$telemetry_consent       = class_exists( BBAI_Telemetry::class ) && BBAI_Telemetry::has_telemetry_consent();
 		$browser_capture_enabled = false;
 		$session_recording       = false;
+		$attribution_payload     = class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' )
+			? \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload()
+			: array();
 
 		return array(
 			'enabled'                 => $browser_capture_enabled,
@@ -2211,7 +2214,8 @@ JS,
 					'quota_state'           => $quota_state,
 					'license_state'         => $license_state,
 				),
-				$identity_context
+				$identity_context,
+				$attribution_payload
 			),
 			'identify'       => array(
 				'id'                => $identify_id,

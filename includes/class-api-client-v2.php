@@ -3080,21 +3080,36 @@ class API_Client_V2 {
 	/**
 	 * Create checkout session
 	 */
-	public function create_checkout_session( $price_id, $success_url, $cancel_url ) {
+	public function create_checkout_session( $price_id, $success_url, $cancel_url, array $attribution = array() ) {
 		// For checkout, try without token if token is invalid/expired
 		// This allows guest checkout - users can create account during checkout
 		$token     = $this->get_token();
 		$had_token = ! empty( $token );
 
+		$payload = array(
+			'priceId'    => $price_id,
+			'successUrl' => $success_url,
+			'cancelUrl'  => $cancel_url,
+		);
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
+			$payload = array_merge( $payload, \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload(), $attribution );
+		} elseif ( ! empty( $attribution ) ) {
+			$payload = array_merge( $payload, $attribution );
+		}
+
+		if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
+			$payload['plugin_version'] = (string) BEEPBEEP_AI_VERSION;
+		}
+		if ( function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
+			$payload['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\get_site_identifier() );
+		}
+
 		// First attempt: with token if available
 		$response = $this->make_request(
 			'/billing/checkout',
 			'POST',
-			array(
-				'priceId'    => $price_id,
-				'successUrl' => $success_url,
-				'cancelUrl'  => $cancel_url,
-			)
+			$payload
 		);
 
 		// Check response body for "user not found" errors (backend returns 500 with this message)

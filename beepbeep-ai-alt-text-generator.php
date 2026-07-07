@@ -190,6 +190,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-attribution.php';
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'flush_queued_lifecycle_events' ), 5 );
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'maybe_record_plugin_update' ), 6 );
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/phase17-content-pipeline.php';

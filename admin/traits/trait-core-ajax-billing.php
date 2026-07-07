@@ -17,6 +17,41 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
 trait Core_Ajax_Billing {
 
 	/**
+	 * AJAX handler: Persist first-touch marketing attribution.
+	 */
+	public function ajax_capture_attribution() {
+		$action = 'beepbeepai_nonce';
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid nonce.', 'beepbeep-ai-alt-text-generator' ) ), 403 );
+			return;
+		}
+		if ( ! $this->user_can_manage() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'beepbeep-ai-alt-text-generator' ) ) );
+			return;
+		}
+
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
+			wp_send_json_success( array( 'stored' => false ) );
+			return;
+		}
+
+		$payload = array();
+		foreach ( \BeepBeepAI\AltTextGenerator\BBAI_Attribution::attribution_keys() as $key ) {
+			if ( isset( $_POST[ $key ] ) ) {
+				$payload[ $key ] = sanitize_text_field( wp_unslash( (string) $_POST[ $key ] ) );
+			}
+		}
+
+		\BeepBeepAI\AltTextGenerator\BBAI_Attribution::maybe_capture( $payload );
+		wp_send_json_success(
+			array(
+				'stored' => true,
+				'keys'   => array_keys( \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload() ),
+			)
+		);
+	}
+
+	/**
 	 * AJAX handler: Create Stripe checkout session
 	 */
 	public function ajax_create_checkout() {

@@ -24,6 +24,10 @@
         id: '',
         propsKey: ''
     };
+    loaderState.aliasState = isObject(loaderState.aliasState) ? loaderState.aliasState : {
+        anonymousId: '',
+        authenticatedId: ''
+    };
 
     function isObject(value) {
         return !!value && Object.prototype.toString.call(value) === '[object Object]';
@@ -649,6 +653,37 @@
         });
     }
 
+    function alias(authenticatedId, anonymousId) {
+        var nextAuthId = authenticatedId === undefined || authenticatedId === null ? '' : String(authenticatedId);
+        var priorAnonymousId = anonymousId === undefined || anonymousId === null ? '' : String(anonymousId);
+
+        if (!cfg.enabled || !nextAuthId || !priorAnonymousId || nextAuthId === priorAnonymousId) {
+            return;
+        }
+
+        if (
+            loaderState.aliasState.authenticatedId === nextAuthId
+            && loaderState.aliasState.anonymousId === priorAnonymousId
+        ) {
+            return;
+        }
+
+        whenPosthogReady(function(client) {
+            try {
+                if (typeof client.alias === 'function') {
+                    client.alias(nextAuthId, priorAnonymousId);
+                }
+            } catch (error) {
+                // Ignore alias failures.
+            }
+
+            loaderState.aliasState = {
+                authenticatedId: nextAuthId,
+                anonymousId: priorAnonymousId
+            };
+        });
+    }
+
     function identify(distinctId, properties) {
         var safeId = distinctId === undefined || distinctId === null ? '' : String(distinctId);
         var safeProperties = sanitizeProperties(properties || {});
@@ -831,15 +866,74 @@
             var detail = event && event.detail ? event.detail : {};
             var user = detail.user || {};
             var identifyId = resolveIdentifyId(user);
+            var anonymousId = resolveSiteInstallId(getContext());
 
             updateContext({ is_logged_in: true, user_state: 'signed_in' });
             updateContext(buildIdentityContext(user));
             updateContext(extractUsageContext(user));
 
+            if (identifyId && anonymousId && identifyId !== anonymousId) {
+                alias(identifyId, anonymousId);
+            }
+
             if (identifyId) {
                 identify(identifyId, buildPersonProperties(user));
             }
         });
+    }
+
+    function captureFirstTouchAttribution() {
+        var context = getContext();
+        if (context.utm_source || context.referrer || context.landing_page || context.acquisition_channel) {
+            return;
+        }
+
+        var params;
+        try {
+            params = new URLSearchParams(window.location.search || '');
+        } catch (error) {
+            params = null;
+        }
+
+        var payload = sanitizeProperties({
+            utm_source: params ? params.get('utm_source') || '' : '',
+            utm_medium: params ? params.get('utm_medium') || '' : '',
+            utm_campaign: params ? params.get('utm_campaign') || '' : '',
+            utm_content: params ? params.get('utm_content') || '' : '',
+            utm_term: params ? params.get('utm_term') || '' : '',
+            referrer: document.referrer || '',
+            landing_page: window.location.pathname || ''
+        });
+
+        if (!Object.keys(payload).length) {
+            return;
+        }
+
+        updateContext(payload);
+
+        if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl || !window.bbai_ajax.nonce) {
+            return;
+        }
+
+        var body = new URLSearchParams({
+            action: 'beepbeepai_capture_attribution',
+            nonce: window.bbai_ajax.nonce
+        });
+
+        Object.keys(payload).forEach(function(key) {
+            body.set(key, payload[key]);
+        });
+
+        try {
+            fetch(window.bbai_ajax.ajaxurl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: body.toString(),
+                credentials: 'same-origin'
+            }).catch(function() {});
+        } catch (fetchError) {}
     }
 
     window.bbaiAnalytics = {
@@ -851,6 +945,7 @@
         whenPosthogReady: whenPosthogReady,
         track: track,
         identify: identify,
+        alias: alias,
         pageView: pageView
     };
     window.bbaiInitPosthog = initPosthog;
@@ -861,6 +956,7 @@
 
     initPosthog();
     bindContextListeners();
+    captureFirstTouchAttribution();
 
     if (cfg.identify && cfg.identify.id) {
         identify(cfg.identify.id, cfg.identify.person_properties || {});
