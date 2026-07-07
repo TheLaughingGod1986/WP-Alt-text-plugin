@@ -60,6 +60,11 @@
 		context = getGenerationTelemetryContext(state, options);
 		context.generation_run_id = window.bbaiCurrentGenerationRunId;
 		dispatchNaiAnalytics('generation_started', context);
+		if (context.generation_mode === 'bulk' || (context.requested_count && context.requested_count > 1)) {
+			dispatchNaiAnalytics('batch_generation_started', Object.assign({}, context, {
+				strategy: 'nai_drawer'
+			}));
+		}
 	}
 
 	function emitGenerationCompleted(detail, state) {

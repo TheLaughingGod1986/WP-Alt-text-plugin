@@ -18543,11 +18543,12 @@
             generation_run_id: window.bbaiCurrentGenerationRunId || ''
         });
 
-        dispatchAnalyticsEvent('bulk_generation_started', {
+        dispatchAnalyticsEvent('batch_generation_started', {
             source: getAnalyticsPageSource(),
             generation_mode: source || 'generate-missing',
             requested_count: normalized.length,
-            strategy: useLicensedBulkJobsApi() ? 'api_jobs' : 'sequential_per_image'
+            strategy: useLicensedBulkJobsApi() ? 'api_jobs' : 'sequential_per_image',
+            generation_run_id: window.bbaiCurrentGenerationRunId || ''
         });
 
         markBulkLibraryRowsQueued(normalized);

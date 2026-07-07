@@ -230,6 +230,21 @@ trait Core_Assets {
 	}
 
 	/**
+	 * Localize only when WordPress has registered and enqueued the script handle.
+	 *
+	 * @param string               $handle      Script handle.
+	 * @param string               $object_name Global JS object name.
+	 * @param array<string, mixed> $data        Serializable localization payload.
+	 */
+	private function localize_script_if_enqueued( string $handle, string $object_name, array $data ): void {
+		if ( ! wp_script_is( $handle, 'registered' ) || ! wp_script_is( $handle, 'enqueued' ) ) {
+			return;
+		}
+
+		wp_localize_script( $handle, $object_name, $data );
+	}
+
+	/**
 	 * Enqueue a tiny no-src bridge for account/admin logout controls.
 	 *
 	 * The main dashboard bundles own this behavior when present, but this
@@ -796,6 +811,14 @@ JS,
 		$checkout_prices = $this->get_checkout_price_ids();
 		$l10n_common     = $this->get_common_l10n();
 
+		if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Auth_State::class, false ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+		}
+		$bbai_dashboard_auth_state   = \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $this->api_client );
+		$bbai_dashboard_trial_status = method_exists( $this, 'get_trial_status' ) ? $this->get_trial_status() : array();
+		$bbai_dashboard_usage_early  = Usage_Tracker::get_stats_display();
+		$entitlement_state           = $this->get_initial_entitlement_state( $bbai_dashboard_usage_early, $bbai_dashboard_trial_status, $bbai_dashboard_auth_state );
+
 		$asset_version = function ( string $relative, string $fallback ) use ( $base_path ): string {
 			return $this->get_asset_version( $relative, $fallback, $base_path );
 		};
@@ -910,7 +933,19 @@ JS,
 				);
 			}
 			if ( ! wp_script_is( 'bbai-entitlements', 'registered' ) && ! wp_script_is( 'bbai-entitlements', 'enqueued' ) ) {
-				wp_register_script( 'bbai-entitlements', '', array(), BEEPBEEP_AI_VERSION, true );
+				$bbai_entitlements_js = 'assets/js/bbai-entitlements.js';
+				if ( file_exists( $base_path . $bbai_entitlements_js ) ) {
+					wp_enqueue_script(
+						'bbai-entitlements',
+						$base_url . $bbai_entitlements_js,
+						array( 'bbai-telemetry' ),
+						$asset_version( $bbai_entitlements_js, '1.0.0' ),
+						true
+					);
+				} else {
+					wp_register_script( 'bbai-entitlements', '', array(), BEEPBEEP_AI_VERSION, true );
+					wp_enqueue_script( 'bbai-entitlements' );
+				}
 				wp_localize_script( 'bbai-entitlements', 'bbaiInitialEntitlementState', $entitlement_state );
 			}
 				if ( $is_nai_shell_screen ) {
@@ -1552,7 +1587,7 @@ JS,
 			$asset_version( $contact_modal_css, '1.0.0' )
 		);
 
-		wp_localize_script(
+		$this->localize_script_if_enqueued(
 			'bbai-contact-modal',
 			'bbaiContactData',
 			array(
@@ -1654,7 +1689,7 @@ JS,
 			? \BeepBeepAI\AltTextGenerator\bbai_get_anon_cookie_name()
 			: 'bbai_anon_id';
 
-		wp_localize_script(
+		$this->localize_script_if_enqueued(
 			'bbai-debug',
 			'BBAI_DEBUG',
 			array(
@@ -1864,7 +1899,7 @@ JS,
 		);
 
 		// Upgrade modal
-		wp_localize_script(
+		$this->localize_script_if_enqueued(
 			'bbai-upgrade',
 			'BBAI_UPGRADE',
 			array(

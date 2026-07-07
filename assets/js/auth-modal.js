@@ -591,6 +591,9 @@ class BbAIAuthModal {
                     plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
                     plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
                 });
+                if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
+                    window.bbaiTelemetry.flush();
+                }
                 this.onAuthSuccess(userData);
                 this.hide();
                 this.showSuccess('Welcome back! You are now signed in to SEO AI Alt Text.');
@@ -710,6 +713,9 @@ class BbAIAuthModal {
                     plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
                     plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
                 });
+                if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
+                    window.bbaiTelemetry.flush();
+                }
                 this.onAuthSuccess(userData);
                 this.hide();
                 this.showSuccess('Account created. Your free monthly credits are now active.');

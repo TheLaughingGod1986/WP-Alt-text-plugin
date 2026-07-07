@@ -681,7 +681,7 @@ bbaiRunWithJQuery(function($) {
 
             if ($btn && $btn.length) {
                 initiateCheckout($btn, priceId, plan);
-            } else if (!openCheckoutUrl(resolveCheckoutFallbackUrl(null, plan))) {
+            } else if (!openCheckoutUrl(resolveCheckoutFallbackUrl(null, plan), plan)) {
                 window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No checkout URL available!');
                 alert(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
             }
@@ -2165,9 +2165,33 @@ bbaiRunWithJQuery(function($) {
         return resolvedLink;
     }
 
-    function openCheckoutUrl(url) {
+    function openCheckoutUrl(url, planName) {
         if (!url) {
             return false;
+        }
+
+        var checkoutProps = {
+            source: 'checkout',
+            location: 'upgrade_modal',
+            trigger: 'checkout_plan',
+            plan: planName || 'unknown',
+            target_plan: planName || 'unknown'
+        };
+
+        try {
+            if (typeof window.bbaiTrack === 'function') {
+                window.bbaiTrack('checkout_started', checkoutProps);
+            } else {
+                document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                    detail: Object.assign({ event: 'checkout_started' }, checkoutProps)
+                }));
+            }
+        } catch (checkoutTrackError) {
+            // Ignore telemetry failures; checkout must still proceed.
+        }
+
+        if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
+            window.bbaiTelemetry.flush();
         }
 
         window.open(url, '_blank', 'noopener,noreferrer');
@@ -2246,7 +2270,7 @@ bbaiRunWithJQuery(function($) {
 
         if (!ajaxUrl || !nonce || !resolvedPriceId || !window.jQuery || typeof $.ajax !== 'function') {
             if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Falling back to Stripe payment link:', fallbackUrl);
-            if (openCheckoutUrl(fallbackUrl)) {
+            if (openCheckoutUrl(fallbackUrl, planName)) {
                 return;
             }
         } else {
@@ -2276,7 +2300,7 @@ bbaiRunWithJQuery(function($) {
 
                 if (checkoutUrl && !invalidHostedSession) {
                     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe checkout session:', checkoutUrl);
-                    openCheckoutUrl(checkoutUrl);
+                    openCheckoutUrl(checkoutUrl, planName);
                     return;
                 }
 
@@ -2285,7 +2309,7 @@ bbaiRunWithJQuery(function($) {
                 }
 
                 if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Checkout session missing URL, falling back to payment link');
-                if (openCheckoutUrl(fallbackUrl)) {
+                if (openCheckoutUrl(fallbackUrl, planName)) {
                     return;
                 }
 
@@ -2302,7 +2326,7 @@ bbaiRunWithJQuery(function($) {
                     });
                 }
 
-                if (openCheckoutUrl(fallbackUrl)) {
+                if (openCheckoutUrl(fallbackUrl, planName)) {
                     return;
                 }
 

@@ -40,6 +40,49 @@
 		}
 	}
 
+	function trackUpgradeCtaClicked(node, trigger) {
+		var sourcePage = 'dashboard';
+		var location = 'nai_paywall';
+
+		if (document.body && document.body.classList.contains('bbai-library')) {
+			sourcePage = 'alt_library';
+		} else if (window.location && String(window.location.search || '').indexOf('page=bbai-library') !== -1) {
+			sourcePage = 'alt_library';
+		}
+
+		if (node && node.getAttribute) {
+			location = node.getAttribute('data-bbai-locked-source')
+				|| node.getAttribute('data-bbai-upgrade-location')
+				|| location;
+		}
+
+		var props = {
+			source: sourcePage,
+			source_page: sourcePage,
+			location: location,
+			trigger: trigger || 'nai_open_paywall',
+			trigger_location: location,
+			feature_context: sourcePage
+		};
+
+		try {
+			if (typeof window.bbaiTrack === 'function') {
+				window.bbaiTrack('upgrade_cta_clicked', props);
+				return;
+			}
+		} catch (err) {
+			// Fall through to the analytics bus.
+		}
+
+		try {
+			document.dispatchEvent(new window.CustomEvent('bbai:analytics', {
+				detail: Object.assign({ event: 'upgrade_cta_clicked' }, props)
+			}));
+		} catch (err2) {
+			// Ignore analytics dispatch failures.
+		}
+	}
+
 	function resolveNaiNavFeature(href) {
 		var url = String(href || '');
 
@@ -339,6 +382,7 @@
 			if (paywallBtn) {
 				event.preventDefault();
 				event.stopPropagation();
+				trackUpgradeCtaClicked(paywallBtn, paywallBtn.getAttribute('data-nai-open-paywall'));
 				quota.openPaywall(state, paywallBtn.getAttribute('data-nai-open-paywall'));
 				return;
 			}

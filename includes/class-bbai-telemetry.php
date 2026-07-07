@@ -727,6 +727,7 @@ class BBAI_Telemetry {
 			'upgrade_started'          => 'upgrade_cta_clicked',
 			'upgrade_completed'        => 'checkout_completed',
 			'checkout_session_created' => 'checkout_started',
+			'bulk_generation_started'  => 'batch_generation_started',
 			'account_created'          => 'signup_succeeded',
 			'first_alt_generated'      => 'first_run_completed',
 			'manual_edit_used'         => 'manual_alt_edit',

@@ -70,6 +70,7 @@
         generation_failed_rate_limit: true,
         generation_failed_network: true,
         generation_failed_unknown: true,
+        batch_generation_started: true,
         batch_generation_completed: true,
         batch_generation_quota_limit_hit: true,
         batch_generation_partial_quota_stop: true,
@@ -504,6 +505,8 @@
             payload.user_state = payload.user_state || 'guest';
         } else if (name === 'upgrade_clicked' || name === 'upgrade_started') {
             name = 'upgrade_cta_clicked';
+        } else if (name === 'bulk_generation_started') {
+            name = 'batch_generation_started';
         } else if (name === 'upgrade_completed') {
             name = 'checkout_completed';
         } else if (name === 'checkout_session_created') {
@@ -1025,6 +1028,20 @@
                 window.bbaiTelemetrySeen.add('generation_started:' + props.generation_run_id);
             } catch (e) {}
         }
+        if (eventName === 'batch_generation_started') {
+            var batchRunId = props.generation_run_id || window.bbaiCurrentGenerationRunId || '';
+            if (!batchRunId) {
+                window.bbaiCurrentGenerationRunId = 'bbai_gen_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+                batchRunId = window.bbaiCurrentGenerationRunId;
+            }
+            props.generation_run_id = batchRunId;
+            try {
+                if (window.bbaiTelemetrySeen.has('batch_generation_started:' + batchRunId)) {
+                    return;
+                }
+                window.bbaiTelemetrySeen.add('batch_generation_started:' + batchRunId);
+            } catch (eBatch) {}
+        }
         if (eventName === 'generation_completed' || eventName.indexOf('generation_failed_') === 0) {
             var runId = props.generation_run_id || window.bbaiCurrentGenerationRunId || '';
             if (!runId) {
@@ -1070,6 +1087,38 @@
             updateLastFeatureUsage(props);
         } else if (eventName === 'upgrade_cta_clicked' || eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
             props = enrichUpgradeAttribution(eventName, props);
+        }
+        if (eventName === 'login_succeeded' || eventName === 'signup_succeeded') {
+            try {
+                var authSuccessKey = eventName + ':' + (window.bbaiTelemetrySessionId || '');
+                if (window.bbaiTelemetrySeen.has(authSuccessKey)) {
+                    return;
+                }
+                window.bbaiTelemetrySeen.add(authSuccessKey);
+            } catch (eAuthSuccess) {}
+        }
+        if (eventName === 'signup_started') {
+            try {
+                var signupStartNow = Date.now();
+                if (window.bbaiTelemetrySignupStartAt && (signupStartNow - window.bbaiTelemetrySignupStartAt) < 800) {
+                    return;
+                }
+                window.bbaiTelemetrySignupStartAt = signupStartNow;
+            } catch (eSignupStart) {}
+        }
+        if (eventName === 'checkout_started') {
+            try {
+                var checkoutKey = [
+                    'checkout_started',
+                    props.page || '',
+                    props.trigger_location || props.location || '',
+                    props.target_plan || props.plan || ''
+                ].join('|');
+                if (window.bbaiTelemetrySeen.has(checkoutKey)) {
+                    return;
+                }
+                window.bbaiTelemetrySeen.add(checkoutKey);
+            } catch (eCheckout) {}
         }
         if (eventName === 'upgrade_cta_clicked' || eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
             var dedupeKey = [
