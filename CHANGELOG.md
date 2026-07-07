@@ -4,6 +4,25 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+
+### 4.6.110 — 2026-07-07
+
+- **Changed**: Central enrichment fills `plugin_slug`, `telemetry_version`, normalized host, `generation_type`, `quota_state`, and `license_state` on all new telemetry events.
+- **Changed**: `feature_used` now always requires `feature_name`.
+- **Added**: PHPUnit regression tests for the canonical telemetry property contract.
+
+### 4.6.109 — 2026-07-07
+
+- **Fixed**: Routed plugin activation and install lifecycle events through the queued PostHog server bridge so `plugin_activated` reaches PostHog after admin bootstrap.
+- **Fixed**: Added the missing `is_posthog_internal_environment()` helper so generation telemetry no longer fatals during `alt_generated` capture.
+- **Fixed**: Defaulted telemetry consent to opt-in for fresh installs so WordPress.org sites emit product analytics without a settings toggle.
+
+### 4.6.90 — 2026-06-23
+
+- **Changed**: Unified logged-out and logged-in dashboard rendering around the shared ALT coverage dashboard structure.
+- **Changed**: Made ALT Coverage, progress ring, scanned/optimised/missing/review counts, and Next Recommended Action the primary dashboard model.
+- **Fixed**: Removed remaining Today’s Pass, ALT Pass, workflow stepper, and duplicate accessibility metric language from dashboard surfaces.
+
 ### 4.6.14 — 2026-05-29
 
 - **Changed**: Refactored the nAi dashboard into smaller PHP components and focused JavaScript modules while preserving existing dashboard behaviour.

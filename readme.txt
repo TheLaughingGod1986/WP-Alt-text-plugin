@@ -7,7 +7,7 @@ Tags: ai alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.55
+Stable tag: 4.6.110
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -132,7 +132,20 @@ Service: OpenAI API (used by the backend service)
 Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
+Service: PostHog (optional product analytics)
+Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. BeepBeep AI does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
+Privacy policy: https://posthog.com/privacy
+
 == Changelog ==
+
+= 4.6.110 =
+* Telemetry hardening: canonical property enrichment for all new events (plugin_slug, telemetry_version, normalized host, generation_type, quota_state, license_state).
+* feature_used events now always require feature_name.
+
+= 4.6.90 =
+* Unified logged-out and logged-in dashboard rendering around the shared ALT coverage dashboard structure.
+* Made ALT Coverage, progress ring, scanned/optimised/missing/review counts, and Next Recommended Action the primary dashboard model.
+* Removed remaining Today's Pass, ALT Pass, workflow stepper, and duplicate accessibility metric language from dashboard surfaces.
 
 = 4.6.14 =
 * Refactored the nAi dashboard into smaller PHP components and focused JavaScript modules while preserving existing dashboard behaviour.
@@ -175,6 +188,12 @@ Privacy policy: https://openai.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.110 =
+Telemetry-only release: canonical PostHog property enrichment for new events.
+
+= 4.6.90 =
+Dashboard UX now uses one ALT coverage-first structure for logged-out and logged-in states.
 
 = 4.6.14 =
 Dashboard and ALT Library architecture cleanup with preserved generation, review, quota, and telemetry behaviour.

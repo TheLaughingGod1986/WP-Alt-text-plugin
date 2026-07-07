@@ -5,6 +5,7 @@
     var runtimeContext = {};
     var instanceName = cfg.instanceName || 'bbaiPosthog';
     var loaderState = window.__BBAI_POSTHOG_STATE || {};
+    var sessionId = window.bbaiTelemetrySessionId || resolveTelemetrySessionId();
 
     window.__BBAI_POSTHOG_STATE = loaderState;
     loaderState.scriptId = loaderState.scriptId || 'bbai-posthog-loader';
@@ -18,6 +19,7 @@
     loaderState.waitingForReady = !!loaderState.waitingForReady;
     loaderState.readyLogSent = !!loaderState.readyLogSent;
     loaderState.timeoutLogSent = !!loaderState.timeoutLogSent;
+    loaderState.sessionRecordingStarted = !!loaderState.sessionRecordingStarted;
     loaderState.identifyState = isObject(loaderState.identifyState) ? loaderState.identifyState : {
         id: '',
         propsKey: ''
@@ -128,8 +130,88 @@
         }).join(',') + '}';
     }
 
+    function resolveTelemetrySessionId() {
+        var key = 'bbai_telemetry_session_id';
+        var existing = '';
+
+        try {
+            existing = window.sessionStorage ? window.sessionStorage.getItem(key) || '' : '';
+        } catch (error) {
+            existing = '';
+        }
+
+        if (!/^[a-z0-9_-]{8,80}$/i.test(existing)) {
+            existing = 'bbai_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 12);
+            try {
+                if (window.sessionStorage) {
+                    window.sessionStorage.setItem(key, existing);
+                }
+            } catch (storageError) {}
+        }
+
+        try {
+            document.cookie = 'bbai_session_id=' + encodeURIComponent(existing) + '; path=/; SameSite=Lax';
+        } catch (cookieError) {}
+
+        return existing;
+    }
+
+    function normalizeHostValue(value) {
+        var host = value === undefined || value === null ? '' : String(value).trim();
+        if (!host) {
+            return '';
+        }
+        if (/^https?:\/\//i.test(host)) {
+            try {
+                host = new URL(host).hostname;
+            } catch (error) {
+                host = host.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+            }
+        } else {
+            host = host.replace(/\/.*$/, '');
+        }
+        return host.toLowerCase();
+    }
+
     function getContext() {
-        return extend({}, sanitizeProperties(cfg.context || {}), runtimeContext);
+        var context = extend({}, sanitizeProperties(cfg.context || {}), runtimeContext);
+        var host = normalizeHostValue(context.host || context.site_host || '');
+        if (!host && context.site_url) {
+            host = normalizeHostValue(context.site_url);
+        }
+        if (host) {
+            context.host = host;
+            context.site_host = context.site_host || host;
+        }
+        context.session_id = context.session_id || sessionId || '';
+        context.journey_id = context.journey_id || resolveSiteInstallId(context);
+        context.user_state = context.user_state || (context.is_logged_in === true ? 'signed_in' : 'guest');
+        context.telemetry_version = context.telemetry_version || '1';
+        context.plugin_slug = context.plugin_slug || 'beepbeep-ai-alt-text-generator';
+        context.wordpress_version = context.wordpress_version || context.wp_version || '';
+        context.environment = context.environment || 'production';
+        context.license_state = context.license_state || (context.is_logged_in ? 'connected' : 'guest');
+        return context;
+    }
+
+    function resolveSiteInstallId(context) {
+        var source = isObject(context) ? context : {};
+        return source.site_install_id || source.siteInstallId || source.install_id || source.installId || source.site_hash || source.site_id || '';
+    }
+
+    function normalizePlanValue(value, fallbackForConnected) {
+        var plan = value === undefined || value === null ? '' : String(value).toLowerCase().replace(/[^a-z0-9_:-]+/g, '_');
+
+        if (plan === 'free' || plan === 'trial' || plan === 'pro' || plan === 'agency') {
+            return plan;
+        }
+        if (plan === 'anonymous_trial') {
+            return 'trial';
+        }
+        if (plan === 'starter' || plan === 'growth' || plan === 'enterprise') {
+            return 'pro';
+        }
+        return fallbackForConnected ? 'free' : 'unknown';
     }
 
     function getPageContext() {
@@ -252,7 +334,28 @@
         }
 
         registerContext();
+        ensureSessionRecording(client);
         flushReadyCallbacks(client);
+    }
+
+    function ensureSessionRecording(client) {
+        var shouldRecord = cfg.sessionRecordingEnabled !== false;
+
+        if (!shouldRecord || loaderState.sessionRecordingStarted || !client) {
+            return;
+        }
+
+        if (typeof client.startSessionRecording !== 'function') {
+            return;
+        }
+
+        try {
+            client.startSessionRecording();
+            loaderState.sessionRecordingStarted = true;
+            logToConsole('log', 'PostHog session recording started');
+        } catch (error) {
+            logToConsole('warn', 'PostHog session recording failed to start', error);
+        }
     }
 
     function registerContext() {
@@ -475,7 +578,7 @@
                     autocapture: false,
                     capture_pageview: false,
                     capture_pageleave: false,
-                    disable_session_recording: true
+                    disable_session_recording: cfg.sessionRecordingEnabled === false
                 });
                 syncNamedInstance(library);
             } catch (error) {
@@ -516,6 +619,10 @@
         var safeName = sanitizeEventName(eventName);
         var payload;
 
+        if (!cfg.enabled) {
+            return;
+        }
+
         if (!safeName) {
             return;
         }
@@ -528,7 +635,8 @@
                     identifier: loaderState.identifyState.id || '',
                     account_id: payload.account_id || '',
                     user_id: payload.user_id || '',
-                    license_key_present: !!payload.license_key,
+                    license_key_present: !!payload.license_key_present,
+                    site_install_id: payload.site_install_id || '',
                     site_id: payload.site_id || '',
                     site_hash: payload.site_hash || ''
                 });
@@ -544,6 +652,10 @@
     function identify(distinctId, properties) {
         var safeId = distinctId === undefined || distinctId === null ? '' : String(distinctId);
         var safeProperties = sanitizeProperties(properties || {});
+
+        if (!cfg.enabled) {
+            return;
+        }
 
         if (!safeId) {
             return;
@@ -633,9 +745,12 @@
         if (!isObject(usage)) {
             return {};
         }
+        var hasConnectedAccount = !!(usage.account_id || usage.user_id || usage.license_key_present || usage.license_key);
+        var plan = normalizePlanValue(usage.plan_type || usage.plan, hasConnectedAccount);
 
         return sanitizeProperties({
-            plan_type: usage.plan_type || usage.plan,
+            plan: plan,
+            plan_type: plan,
             quota_remaining: usage.remaining,
             quota_limit: usage.limit,
             remaining_free_images: usage.remaining_free_images
@@ -658,16 +773,21 @@
         var baseContext = sanitizeProperties(cfg.context || {});
         var source = isObject(user) ? sanitizeProperties(user) : {};
         var sourceSite = isObject(source.site) ? source.site : {};
+        var accountId = source.account_id || source.id || source._id || baseContext.account_id || '';
+        var userId = source.user_id || source.id || source._id || baseContext.user_id || baseContext.account_id || '';
+        var hasLicenseKey = !!(source.license_key_present || baseContext.license_key_present || source.license_key || baseContext.license_key);
+        var hasConnectedAccount = !!(accountId || userId || hasLicenseKey);
+        var plan = normalizePlanValue(source.plan || source.plan_type || source.planSlug || baseContext.plan || baseContext.plan_type || '', hasConnectedAccount);
 
         return sanitizeProperties({
-            account_id: source.account_id || source.id || source._id || baseContext.account_id || '',
-            user_id: source.user_id || source.id || source._id || baseContext.user_id || baseContext.account_id || '',
-            license_key: source.license_key || baseContext.license_key || '',
+            account_id: accountId,
+            user_id: userId,
+            license_key_present: hasLicenseKey,
+            site_install_id: resolveSiteInstallId(extend({}, baseContext, source)),
             site_id: source.site_id || sourceSite.id || sourceSite._id || baseContext.site_id || '',
             site_hash: source.site_hash || baseContext.site_hash || '',
-            email: source.email || baseContext.email || '',
-            plan: source.plan || source.plan_type || source.planSlug || baseContext.plan || baseContext.plan_type || '',
-            plan_type: source.plan_type || source.plan || source.planSlug || baseContext.plan_type || baseContext.plan || '',
+            plan: plan,
+            plan_type: plan,
             wordpress_user_id: source.wordpress_user_id || baseContext.wordpress_user_id || '',
             plugin_version: baseContext.plugin_version || source.plugin_version || ''
         });
@@ -675,7 +795,7 @@
 
     function resolveIdentifyId(user) {
         var identity = buildIdentityContext(user);
-        var priority = ['account_id', 'user_id', 'license_key', 'site_id', 'site_hash'];
+        var priority = ['account_id', 'user_id', 'site_install_id', 'site_id', 'site_hash'];
         var i;
 
         for (i = 0; i < priority.length; i++) {
@@ -712,7 +832,7 @@
             var user = detail.user || {};
             var identifyId = resolveIdentifyId(user);
 
-            updateContext({ is_logged_in: true });
+            updateContext({ is_logged_in: true, user_state: 'signed_in' });
             updateContext(buildIdentityContext(user));
             updateContext(extractUsageContext(user));
 

@@ -891,6 +891,24 @@ JS,
 				array( 'bbai-nai-geist' ),
 				$asset_version( $nai_dashboard_css, '1.0.0' )
 			);
+			if ( 'bbai-settings' === $current_admin_page ) {
+				$nai_settings_css = 'assets/css/nai/nai-settings.css';
+				wp_enqueue_style(
+					'bbai-nai-settings',
+					$base_url . $nai_settings_css,
+					array( 'bbai-nai-dashboard' ),
+					$asset_version( $nai_settings_css, '1.0.0' )
+				);
+			}
+			if ( 'bbai' === $current_admin_page ) {
+				$nai_home_css = 'assets/css/nai/nai-dashboard.css';
+				wp_enqueue_style(
+					'bbai-nai-home',
+					$base_url . $nai_home_css,
+					array( 'bbai-nai-dashboard' ),
+					$asset_version( $nai_home_css, '1.0.0' )
+				);
+			}
 			if ( ! wp_script_is( 'bbai-entitlements', 'registered' ) && ! wp_script_is( 'bbai-entitlements', 'enqueued' ) ) {
 				wp_register_script( 'bbai-entitlements', '', array(), BEEPBEEP_AI_VERSION, true );
 				wp_localize_script( 'bbai-entitlements', 'bbaiInitialEntitlementState', $entitlement_state );
@@ -1917,6 +1935,13 @@ JS,
 	 * Stable site hash for client analytics.
 	 */
 	private function get_posthog_site_hash(): string {
+		return hash( 'sha256', $this->get_posthog_site_install_id() );
+	}
+
+	/**
+	 * Stable install id used as the canonical analytics join key.
+	 */
+	private function get_posthog_site_install_id(): string {
 		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
 			$site_id_helper = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 			if ( is_readable( $site_id_helper ) ) {
@@ -1924,11 +1949,9 @@ JS,
 			}
 		}
 
-		$site_identifier = function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' )
+		return function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' )
 			? (string) \BeepBeepAI\AltTextGenerator\get_site_identifier()
 			: (string) home_url( '/' );
-
-		return hash( 'sha256', $site_identifier );
 	}
 
 	/**
@@ -1954,16 +1977,24 @@ JS,
 			$site_id = sanitize_text_field( (string) ( $license_data['site']['id'] ?? $license_data['site']['_id'] ?? '' ) );
 		}
 
+		$site_install_id = $this->get_posthog_site_install_id();
+
+		$plan_type = class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::normalize_plan_value( $plan_type ) : sanitize_key( $plan_type );
+		if ( 'unknown' === $plan_type && ( '' !== $account_id || '' !== $user_id || '' !== $license_key ) ) {
+			$plan_type = 'free';
+		}
+
 		$context = array(
 			'account_id'          => $account_id,
 			'user_id'             => $user_id,
-			'email'               => sanitize_email( (string) ( $user_data['email'] ?? '' ) ),
 			'plan'                => $plan_type,
 			'plan_type'           => $plan_type,
-			'license_key'         => $license_key,
 			'license_key_present' => '' !== $license_key,
+			'site_install_id'     => sanitize_text_field( $site_install_id ),
 			'site_id'             => $site_id,
 			'site_hash'           => sanitize_key( $site_hash ),
+			'site_url'            => esc_url_raw( home_url( '/' ) ),
+			'site_host'           => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
 			'wordpress_user_id'   => get_current_user_id() > 0 ? absint( get_current_user_id() ) : null,
 			'plugin_version'      => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
 		);
@@ -1983,7 +2014,7 @@ JS,
 	 * @return string
 	 */
 	private function resolve_posthog_identify_id( array $identity_context ): string {
-		foreach ( array( 'account_id', 'user_id', 'license_key', 'site_id', 'site_hash' ) as $key ) {
+		foreach ( array( 'account_id', 'user_id', 'site_install_id', 'site_id', 'site_hash' ) as $key ) {
 			if ( empty( $identity_context[ $key ] ) ) {
 				continue;
 			}
@@ -2006,9 +2037,10 @@ JS,
 		$license_data = ( isset( $this->api_client ) && method_exists( $this->api_client, 'get_license_data' ) )
 			? $this->api_client->get_license_data()
 			: array();
-		$is_logged_in = $this->is_bbai_account_authenticated();
-		$page_key     = $this->get_posthog_page_key();
-		$site_hash    = $this->get_posthog_site_hash();
+		$is_logged_in    = $this->is_bbai_account_authenticated();
+		$page_key        = $this->get_posthog_page_key();
+		$site_install_id = $this->get_posthog_site_install_id();
+		$site_hash       = $this->get_posthog_site_hash();
 
 		$plan_type = sanitize_key(
 			(string) (
@@ -2021,6 +2053,10 @@ JS,
 			)
 		);
 		if ( '' === $plan_type ) {
+			$plan_type = 'free';
+		}
+		$plan_type = class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::normalize_plan_value( $plan_type ) : $plan_type;
+		if ( 'unknown' === $plan_type && $is_logged_in ) {
 			$plan_type = 'free';
 		}
 
@@ -2064,13 +2100,27 @@ JS,
 
 		$page_view_events = array(
 			'dashboard'       => 'dashboard_viewed',
-			'guest_dashboard' => 'guest_dashboard_viewed',
+			'guest_dashboard' => 'dashboard_viewed',
 			'alt_library'     => 'alt_library_viewed',
 			'analytics'       => 'analytics_viewed',
 			'usage'           => 'usage_viewed',
 			'settings'        => 'settings_viewed',
 			'onboarding'      => 'onboarding_viewed',
 		);
+		$environment      = function_exists( 'wp_get_environment_type' ) ? sanitize_key( (string) wp_get_environment_type() ) : 'production';
+		$quota_state      = '';
+		if ( isset( $usage_data['quota_state'] ) && is_scalar( $usage_data['quota_state'] ) ) {
+			$quota_state = sanitize_key( (string) $usage_data['quota_state'] );
+		} elseif ( isset( $usage_data['quota']['quota_state'] ) && is_scalar( $usage_data['quota']['quota_state'] ) ) {
+			$quota_state = sanitize_key( (string) $usage_data['quota']['quota_state'] );
+		}
+		$license_state = 'guest';
+		if ( $is_logged_in ) {
+			$license_key = isset( $this->api_client ) && method_exists( $this->api_client, 'get_license_key' )
+				? sanitize_text_field( (string) $this->api_client->get_license_key() )
+				: '';
+			$license_state = ( '' !== $license_key && ! empty( $license_data ) ) ? 'licensed' : 'connected';
+		}
 
 		$api_host  = class_exists( BBAI_Telemetry::class )
 			? BBAI_Telemetry::get_posthog_api_host()
@@ -2079,25 +2129,37 @@ JS,
 		$api_key   = class_exists( BBAI_Telemetry::class )
 			? BBAI_Telemetry::get_posthog_api_key()
 			: 'phc_6L7JzpjYRC8Gk4Br3YevTmjZnJsJPvoy9GK7RFdo72s';
+		$telemetry_consent       = class_exists( BBAI_Telemetry::class ) && BBAI_Telemetry::has_telemetry_consent();
+		$browser_capture_enabled = false;
+		$session_recording       = false;
 
 		return array(
-			'enabled'        => true,
-			'apiKey'         => $api_key,
-			'apiHost'        => $api_host,
-			'assetUrl'       => $asset_url,
-			'defaults'       => '2026-01-30',
-			'instanceName'   => 'bbaiPosthog',
-			'debug_posthog'  => defined( 'BBAI_DEBUG_POSTHOG' ) && (bool) BBAI_DEBUG_POSTHOG,
-			'debug'          => ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ),
-			'pageViewEvents' => $page_view_events,
-			'context'        => array_merge(
+			'enabled'                 => $browser_capture_enabled,
+			'apiKey'                  => $browser_capture_enabled ? $api_key : '',
+			'apiHost'                 => $browser_capture_enabled ? $api_host : '',
+			'assetUrl'                => $browser_capture_enabled ? $asset_url : '',
+			'serverCaptureEnabled'    => $telemetry_consent,
+			'defaults'                => '2026-01-30',
+			'instanceName'            => 'bbaiPosthog',
+			'sessionRecordingEnabled' => $session_recording,
+			'debug_posthog'           => defined( 'BBAI_DEBUG_POSTHOG' ) && (bool) BBAI_DEBUG_POSTHOG,
+			'debug'                   => ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ),
+			'pageViewEvents'          => $page_view_events,
+			'context'                 => array_merge(
 				array(
 					'page'                  => $page_key,
+					'site_install_id'       => $site_install_id,
 					'site_hash'             => $site_hash,
 					'site_url'              => esc_url_raw( home_url( '/' ) ),
+					'host'                  => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+					'site_host'             => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
 					'is_logged_in'          => $is_logged_in,
+					'user_state'            => $is_logged_in ? 'signed_in' : 'guest',
+					'plan'                  => $plan_type,
 					'plan_type'             => $plan_type,
+					'plugin_plan'           => $plan_type,
 					'quota_remaining'       => $quota_remaining,
+					'credits_remaining'     => $quota_remaining,
 					'quota_limit'           => $quota_limit,
 					'trial_exhausted'       => $trial_exhausted,
 					'remaining_free_images' => $remaining_free_images,
@@ -2105,6 +2167,14 @@ JS,
 					'needs_review_count'    => max( 0, (int) ( $stats_data['needs_review_count'] ?? 0 ) ),
 					'optimized_count'       => max( 0, (int) ( $stats_data['optimized_count'] ?? 0 ) ),
 					'plugin_version'        => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+					'plugin_slug'           => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::get_plugin_slug() : 'beepbeep-ai-alt-text-generator',
+					'telemetry_version'     => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::TELEMETRY_SCHEMA_VERSION : '1',
+					'wp_version'            => get_bloginfo( 'version' ),
+					'wordpress_version'     => get_bloginfo( 'version' ),
+					'php_version'           => PHP_VERSION,
+					'environment'           => $environment,
+					'quota_state'           => $quota_state,
+					'license_state'         => $license_state,
 				),
 				$identity_context
 			),
@@ -2112,10 +2182,13 @@ JS,
 				'id'                => $identify_id,
 				'person_properties' => array_merge(
 					array(
-						'plan_type'      => $plan_type,
-						'plan'           => $plan_type,
-						'site_hash'      => $site_hash,
-						'plugin_version' => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+						'plan_type'       => $plan_type,
+						'plan'            => $plan_type,
+						'plugin_plan'     => $plan_type,
+						'site_install_id' => $site_install_id,
+						'site_hash'       => $site_hash,
+						'plugin_version'  => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+						'environment'     => $environment,
 					),
 					$identity_context
 				),
@@ -2177,8 +2250,15 @@ JS,
 	 */
 	private function get_telemetry_client_config(): array {
 		$usage               = Usage_Tracker::get_stats_display();
-		$plan                = isset( $usage['plan'] ) ? sanitize_key( (string) $usage['plan'] ) : 'free';
-		$plan_type           = in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'pro' : ( 'free' === $plan ? 'free' : 'unknown' );
+		$plan                = isset( $usage['plan'] ) ? sanitize_key( (string) $usage['plan'] ) : (string) ( $usage['plan_type'] ?? 'free' );
+		$plan_type           = class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::normalize_plan_value( $plan ) : sanitize_key( $plan );
+		$quota_remaining     = null;
+		if ( isset( $usage['quota']['remaining'] ) ) {
+			$quota_remaining = max( 0, (int) $usage['quota']['remaining'] );
+		} elseif ( isset( $usage['remaining'] ) ) {
+			$quota_remaining = max( 0, (int) $usage['remaining'] );
+		}
+		$site_install_id     = $this->get_posthog_site_install_id();
 		$site_hash           = $this->get_posthog_site_hash();
 		$sanitized_user_data = isset( $this->api_client ) ? $this->sanitize_api_user_data_for_localize( $this->api_client->get_user_data() ) : array();
 		$license_data        = ( isset( $this->api_client ) && method_exists( $this->api_client, 'get_license_data' ) )
@@ -2190,10 +2270,29 @@ JS,
 			$site_hash,
 			$plan
 		);
+		$is_account_logged_in = $this->is_bbai_account_authenticated();
+		if ( 'unknown' === $plan_type && $is_account_logged_in ) {
+			$plan_type = 'free';
+		}
 
 		$uid            = get_current_user_id();
 		$key            = '_bbai_telemetry_session_images_' . gmdate( 'Ymd' );
 		$session_images = $uid > 0 ? (int) get_user_meta( $uid, $key, true ) : 0;
+		$environment    = function_exists( 'wp_get_environment_type' ) ? sanitize_key( (string) wp_get_environment_type() ) : 'production';
+		$quota_state    = '';
+		if ( isset( $usage['quota_state'] ) && is_scalar( $usage['quota_state'] ) ) {
+			$quota_state = sanitize_key( (string) $usage['quota_state'] );
+		} elseif ( isset( $usage['quota']['quota_state'] ) && is_scalar( $usage['quota']['quota_state'] ) ) {
+			$quota_state = sanitize_key( (string) $usage['quota']['quota_state'] );
+		}
+		$license_state = 'guest';
+		if ( $is_account_logged_in ) {
+			$license_key  = isset( $this->api_client ) && method_exists( $this->api_client, 'get_license_key' )
+				? sanitize_text_field( (string) $this->api_client->get_license_key() )
+				: '';
+			$license_data = is_array( $license_data ) ? $license_data : array();
+			$license_state = ( '' !== $license_key && ! empty( $license_data ) ) ? 'licensed' : 'connected';
+		}
 
 		BBAI_Telemetry::touch_last_active();
 		$days_since = BBAI_Telemetry::inactive_days_at_session_start();
@@ -2205,16 +2304,35 @@ JS,
 			'debug_posthog' => defined( 'BBAI_DEBUG_POSTHOG' ) && (bool) BBAI_DEBUG_POSTHOG,
 			'debug'         => ( defined( 'WP_DEBUG' ) && WP_DEBUG ) || ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ),
 			'context'       => array(
-				'user_id'                  => $uid,
+				'user_id'                  => $identity_context['user_id'] ?? '',
+				'is_logged_in'             => $is_account_logged_in,
+				'user_state'               => $is_account_logged_in ? 'signed_in' : 'guest',
+				'plan'                     => $plan_type,
 				'plan_type'                => $plan_type,
+				'plugin_plan'              => $plan_type,
 				'plugin_version'           => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+				'plugin_slug'              => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::get_plugin_slug() : 'beepbeep-ai-alt-text-generator',
+				'telemetry_version'        => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::TELEMETRY_SCHEMA_VERSION : '1',
+				'wp_version'               => get_bloginfo( 'version' ),
+				'wordpress_version'        => get_bloginfo( 'version' ),
+				'php_version'              => PHP_VERSION,
+				'environment'              => $environment,
+				'quota_state'              => $quota_state,
+				'license_state'            => $license_state,
+				'quota_remaining'          => $quota_remaining,
+				'credits_remaining'        => $quota_remaining,
 				'page'                     => $this->get_telemetry_page_key(),
 				'page_variant'             => $this->get_posthog_page_key(),
 				'days_since_last_active'   => $days_since,
+				'is_returning_user'        => $days_since > 0,
 				'images_processed_session' => $session_images,
 				'account_id'               => $identity_context['account_id'] ?? '',
+				'site_install_id'          => $identity_context['site_install_id'] ?? $site_install_id,
 				'site_id'                  => $identity_context['site_id'] ?? '',
 				'site_hash'                => $site_hash,
+				'site_url'                 => $identity_context['site_url'] ?? esc_url_raw( home_url( '/' ) ),
+				'site_host'                => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+				'host'                     => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
 				'license_key_present'      => ! empty( $identity_context['license_key_present'] ),
 				'wordpress_user_id'        => $identity_context['wordpress_user_id'] ?? ( $uid > 0 ? $uid : null ),
 			),

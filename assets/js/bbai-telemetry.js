@@ -35,9 +35,11 @@
         at: 0
     };
     var posthogAllowlist = {
+        plugin_installed: true,
+        plugin_activated: true,
+        plugin_updated: true,
         plugin_opened: true,
         dashboard_viewed: true,
-        guest_dashboard_viewed: true,
         alt_library_viewed: true,
         analytics_viewed: true,
         usage_viewed: true,
@@ -59,7 +61,15 @@
         scan_completed: true,
         generation_started: true,
         generation_completed: true,
-        generation_failed: true,
+        alt_generated: true,
+        generation_failed_timeout: true,
+        generation_failed_api: true,
+        generation_failed_auth: true,
+        generation_failed_no_credits: true,
+        generation_failed_invalid_image: true,
+        generation_failed_rate_limit: true,
+        generation_failed_network: true,
+        generation_failed_unknown: true,
         batch_generation_completed: true,
         batch_generation_quota_limit_hit: true,
         batch_generation_partial_quota_stop: true,
@@ -70,15 +80,28 @@
         alt_library_item_opened: true,
         alt_library_edit_started: true,
 	        alt_library_edit_saved: true,
-	        feature_used: true,
+        feature_used: true,
         entitlement_state_loaded: true,
         paywall_shown: true,
         generation_blocked_no_credits: true,
         review_completed: true,
         library_state_conflict_detected: true,
-	        upgrade_clicked: true,
-        checkout_started: true,
+        first_run_completed: true,
+        settings_saved: true,
+        bulk_generation_cancelled: true,
         upgrade_cta_clicked: true,
+        checkout_completed: true,
+        subscription_started: true,
+        subscription_cancelled: true,
+        trial_expired: true,
+        credits_purchased: true,
+        image_regenerated: true,
+        manual_alt_edit: true,
+        review_queue_opened: true,
+        support_clicked: true,
+        documentation_opened: true,
+        upgrade_clicked: true,
+        checkout_started: true,
         upgrade_modal_opened: true,
         upgrade_modal_closed: true,
         upgrade_started: true,
@@ -99,6 +122,33 @@
 
     window.bbaiTelemetrySeen = window.bbaiTelemetrySeen || new Set();
     window.bbaiCurrentGenerationRunId = window.bbaiCurrentGenerationRunId || '';
+    window.bbaiTelemetrySessionId = window.bbaiTelemetrySessionId || resolveTelemetrySessionId();
+
+    function resolveTelemetrySessionId() {
+        var key = 'bbai_telemetry_session_id';
+        var existing = '';
+
+        try {
+            existing = window.sessionStorage ? window.sessionStorage.getItem(key) || '' : '';
+        } catch (e) {
+            existing = '';
+        }
+
+        if (!/^[a-z0-9_-]{8,80}$/i.test(existing)) {
+            existing = 'bbai_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 12);
+            try {
+                if (window.sessionStorage) {
+                    window.sessionStorage.setItem(key, existing);
+                }
+            } catch (e2) {}
+        }
+
+        try {
+            document.cookie = 'bbai_session_id=' + encodeURIComponent(existing) + '; path=/; SameSite=Lax';
+        } catch (e3) {}
+
+        return existing;
+    }
 
     function bbaiTrackOnce(eventName, props, key) {
         var seenKey = String(key || eventName || '');
@@ -135,6 +185,21 @@
 
     function readString(value) {
         return value === undefined || value === null ? '' : String(value);
+    }
+
+    function normalizePlanValue(value, fallbackForConnected) {
+        var plan = readString(value).toLowerCase().replace(/[^a-z0-9_:-]+/g, '_');
+
+        if (plan === 'free' || plan === 'trial' || plan === 'pro' || plan === 'agency') {
+            return plan;
+        }
+        if (plan === 'anonymous_trial') {
+            return 'trial';
+        }
+        if (plan === 'starter' || plan === 'growth' || plan === 'enterprise') {
+            return 'pro';
+        }
+        return fallbackForConnected ? 'free' : 'unknown';
     }
 
     function normalizePageName(pageName) {
@@ -213,7 +278,7 @@
             plan = readString(cfg.context.plan_type || cfg.context.plan);
         }
 
-        return plan || 'unknown';
+        return normalizePlanValue(plan, !!(context.account_id || context.user_id || context.license_key_present));
     }
 
     function getSourcePage(properties) {
@@ -234,11 +299,13 @@
         return {
             account_id: identity.account_id || '',
             user_id: identity.user_id || '',
-            license_key: identity.license_key || '',
+            license_key_present: !!identity.license_key_present,
+            site_install_id: identity.site_install_id || '',
             site_id: identity.site_id || '',
             site_hash: identity.site_hash || '',
-            email: readString(context.email || (cfg.context && cfg.context.email)),
-            current_plan: getCurrentPlan(),
+            site_url: context.site_url || (cfg.context && cfg.context.site_url) || '',
+            site_host: context.site_host || (cfg.context && cfg.context.site_host) || '',
+            current_plan: normalizePlanValue(getCurrentPlan()),
             remaining_credits: getRemainingCredits(),
             source_page: getSourcePage(),
             plugin_version: readString(
@@ -250,26 +317,96 @@
 
     function getPostHogIdentityContext() {
         var context = getAnalyticsContext();
+        var siteInstallId = context.site_install_id || context.siteInstallId || context.install_id || context.installId || context.site_hash || context.site_id || '';
 
         return {
             account_id: context.account_id || '',
             user_id: context.user_id || '',
-            license_key: context.license_key || '',
+            license_key_present: !!context.license_key_present,
+            site_install_id: siteInstallId,
             site_id: context.site_id || '',
             site_hash: context.site_hash || '',
+            site_url: context.site_url || (cfg.context && cfg.context.site_url) || '',
+            site_host: context.site_host || (cfg.context && cfg.context.site_host) || '',
             wordpress_user_id: context.wordpress_user_id || ''
+        };
+    }
+
+    function normalizeHostValue(value) {
+        var host = readString(value).trim();
+        if (!host) {
+            return '';
+        }
+        if (/^https?:\/\//i.test(host)) {
+            try {
+                host = new URL(host).hostname;
+            } catch (e) {
+                host = host.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+            }
+        } else {
+            host = host.replace(/\/.*$/, '');
+        }
+        return host.toLowerCase();
+    }
+
+    function getCanonicalContext() {
+        var c = cfg.context || {};
+        var runtime = getTelemetryRuntimeContext();
+        var host = normalizeHostValue(runtime.site_host || c.host || c.site_host || '');
+        if (!host && (runtime.site_url || c.site_url)) {
+            host = normalizeHostValue(runtime.site_url || c.site_url);
+        }
+        return {
+            site_install_id: runtime.site_install_id || c.site_install_id || '',
+            site_id: runtime.site_id || c.site_id || '',
+            site_hash: runtime.site_hash || c.site_hash || '',
+            site_url: runtime.site_url || c.site_url || '',
+            site_host: host,
+            host: host,
+            plugin_version: runtime.plugin_version || c.plugin_version || '',
+            plugin_slug: readString(c.plugin_slug || 'beepbeep-ai-alt-text-generator'),
+            telemetry_version: readString(c.telemetry_version || '1'),
+            wp_version: readString(c.wp_version || ''),
+            wordpress_version: readString(c.wordpress_version || c.wp_version || ''),
+            php_version: readString(c.php_version || ''),
+            environment: readString(c.environment || 'production'),
+            plan: normalizePlanValue(runtime.current_plan || c.plan || c.plan_type),
+            plan_type: normalizePlanValue(runtime.current_plan || c.plan_type || c.plan),
+            quota_state: readString(c.quota_state || ''),
+            license_state: readString(c.license_state || (c.is_logged_in ? 'connected' : 'guest'))
         };
     }
 
     function baseProps() {
         var c = cfg.context || {};
         var runtime = getTelemetryRuntimeContext();
+        var canonical = getCanonicalContext();
         return $.extend({
             page: c.page_variant || c.page || 'unknown',
             client_page: c.page || 'unknown',
             page_variant: c.page_variant || c.page || 'unknown',
-            plan_type: runtime.current_plan || c.plan_type,
-            plugin_version: runtime.plugin_version || c.plugin_version
+            plan_type: canonical.plan_type,
+            plan: canonical.plan,
+            user_state: c.is_logged_in === true ? 'signed_in' : 'guest',
+            journey_id: canonical.site_install_id || c.site_install_id || '',
+            session_id: window.bbaiTelemetrySessionId || '',
+            site_url: canonical.site_url,
+            site_host: canonical.site_host,
+            host: canonical.host,
+            plugin_version: canonical.plugin_version,
+            plugin_slug: canonical.plugin_slug,
+            telemetry_version: canonical.telemetry_version,
+            wp_version: canonical.wp_version,
+            wordpress_version: canonical.wordpress_version,
+            php_version: canonical.php_version,
+            environment: canonical.environment,
+            quota_state: canonical.quota_state,
+            license_state: canonical.license_state,
+            country: c.country || '',
+            is_logged_in: c.is_logged_in === true,
+            credits_remaining: runtime.remaining_credits,
+            is_first_generation: false,
+            is_returning_user: (c.days_since_last_active || 0) > 0
         }, getPostHogIdentityContext());
     }
 
@@ -309,6 +446,95 @@
             cleaned[key] = payload[key];
         });
         return cleaned;
+    }
+
+    function normalizeFailureCode(value) {
+        return readString(value).toLowerCase().replace(/[^a-z0-9_:-]+/g, '_').slice(0, 120);
+    }
+
+    function inferGenerationFailureEvent(props) {
+        var errorCode = normalizeFailureCode(
+            props.error_code ||
+            props.code ||
+            props.error ||
+            props.status_code ||
+            props.http_status ||
+            ''
+        );
+        var message = readString(props.error_message || props.message || props.rawMessage || '').toLowerCase();
+        var combined = [errorCode, message].join(' ');
+
+        if (/timeout|timed_out|deadline|504|gateway_timeout/.test(combined)) {
+            return 'generation_failed_timeout';
+        }
+        if (/auth|unauthori[sz]ed|forbidden|invalid[_ -]?key|session|login|log_in|401|403/.test(combined)) {
+            return 'generation_failed_auth';
+        }
+        if (/credit|quota|limit[_ -]?reached|insufficient|exhausted|no[_ -]?credits|payment_required|402/.test(combined)) {
+            return 'generation_failed_no_credits';
+        }
+        if (/invalid[_ -]?(image|attachment|mime)|unsupported|corrupt|too[_ -]?large|file[_ -]?type|media/.test(combined)) {
+            return 'generation_failed_invalid_image';
+        }
+        if (/rate[_ -]?limit|too[_ -]?many|429/.test(combined)) {
+            return 'generation_failed_rate_limit';
+        }
+        if (/network|offline|fetch|connection|dns|ssl|abort/.test(combined)) {
+            return 'generation_failed_network';
+        }
+        if (/api|provider|openai|server|5\d\d|bad_gateway|service_unavailable/.test(combined)) {
+            return 'generation_failed_api';
+        }
+
+        return 'generation_failed_unknown';
+    }
+
+    function normalizeTelemetryEvent(eventName, props) {
+        var name = readString(eventName);
+        var payload = $.extend({}, props || {});
+
+        if (name === 'generation_failed') {
+            name = inferGenerationFailureEvent(payload);
+            payload.error_code = normalizeFailureCode(payload.error_code || payload.code || payload.error || name);
+            payload.response_time = payload.response_time || payload.response_time_ms || payload.processing_time_ms || payload.generation_latency_ms || '';
+            payload.provider = payload.provider || 'unknown';
+            payload.retry_attempt = payload.retry_attempt || payload.retry_count || 0;
+        } else if (name === 'guest_dashboard_viewed') {
+            name = 'dashboard_viewed';
+            payload.user_state = payload.user_state || 'guest';
+        } else if (name === 'upgrade_clicked' || name === 'upgrade_started') {
+            name = 'upgrade_cta_clicked';
+        } else if (name === 'upgrade_completed') {
+            name = 'checkout_completed';
+        } else if (name === 'checkout_session_created') {
+            name = 'checkout_started';
+        } else if (name === 'account_created') {
+            name = 'signup_succeeded';
+        } else if (name === 'first_alt_generated') {
+            name = 'first_run_completed';
+        } else if (name === 'manual_edit_used') {
+            name = 'manual_alt_edit';
+        } else if (name === 'alt_generated_failed') {
+            name = 'generation_failed_unknown';
+            payload.error_code = normalizeFailureCode(payload.error_code || 'partial_generation_failed');
+            payload.provider = payload.provider || 'unknown';
+            payload.retry_attempt = payload.retry_attempt || 0;
+        } else if (name === 'alt_generated_success') {
+            name = 'generation_completed';
+        }
+
+        if (name === 'feature_used') {
+            payload.feature_name = normalizeFeatureName(payload.feature_name || payload.feature);
+            if (!payload.feature_name) {
+                payload.__drop_event = true;
+            }
+            delete payload.feature;
+        }
+
+        return {
+            eventName: name,
+            properties: payload
+        };
     }
 
     function normalizeFeatureContext(value, fallbackPage) {
@@ -375,7 +601,7 @@
         var featureContext = normalizeFeatureContext(props.feature_context || props.source || props.location, props.source_page || props.page);
 
         if (featureContext === 'woocommerce') {
-            return 'woocommerce_optimisation';
+            return 'woocommerce';
         }
 
         if (
@@ -385,7 +611,7 @@
             return 'bulk_generation';
         }
 
-        return 'alt_generation';
+        return 'single_generation';
     }
 
     function getFeatureSignal(props) {
@@ -408,17 +634,26 @@
             return '';
         }
 
-        if (normalized === 'alt_generation' || normalized === 'alt-generation' || normalized === 'generation' || normalized === 'generate') {
-            return 'alt_generation';
+        if (normalized === 'alt_generation' || normalized === 'alt-generation' || normalized === 'single_generation' || normalized === 'single-generation' || normalized === 'generation' || normalized === 'generate') {
+            return 'single_generation';
         }
         if (normalized === 'bulk_generation' || normalized === 'bulk-generation' || normalized === 'bulk') {
             return 'bulk_generation';
         }
         if (normalized === 'review_workflow' || normalized === 'review-workflow' || normalized === 'review') {
-            return 'review_workflow';
+            return 'review';
         }
-        if (normalized === 'analytics') {
-            return 'analytics';
+        if (normalized === 'analytics' || normalized === 'statistics' || normalized === 'stats') {
+            return 'statistics';
+        }
+        if (normalized === 'alt_library' || normalized === 'alt-library' || normalized === 'library') {
+            return 'library';
+        }
+        if (normalized === 'account' || normalized === 'settings' || normalized === 'billing' || normalized === 'dashboard') {
+            return normalized;
+        }
+        if (normalized === 'login' || normalized === 'signup' || normalized === 'quota' || normalized === 'review_queue') {
+            return normalized;
         }
         if (
             normalized === 'woocommerce_optimisation' ||
@@ -427,7 +662,7 @@
             normalized === 'woocommerce-optimization' ||
             normalized === 'woocommerce'
         ) {
-            return 'woocommerce_optimisation';
+            return 'woocommerce';
         }
 
         return '';
@@ -481,13 +716,13 @@
         var context = normalizeFeatureContext(featureContext || signal, sourcePage);
 
         if (/woo|product|variation|catalog|gallery/.test(signal)) {
-            return 'woocommerce_optimisation';
+            return 'woocommerce';
         }
         if (/analytic|coverage|trend|chart|progress/.test(signal)) {
-            return 'analytics';
+            return 'statistics';
         }
         if (/review|approve|manual|edit|weak/.test(signal)) {
-            return 'review_workflow';
+            return 'review';
         }
         if (
             /bulk|batch|generate[_ -]?missing|reoptimi[sz]e[_ -]?all|regenerate[_ -]?(all|selected)|selected|selection|queue/.test(signal)
@@ -495,22 +730,22 @@
             return 'bulk_generation';
         }
         if (/automation|generate|regenerate|upload|alt text|improve/.test(signal)) {
-            return 'alt_generation';
+            return 'single_generation';
         }
         if (!allowPageFallback) {
             return '';
         }
         if (context === 'analytics' || sourcePage === 'analytics') {
-            return 'analytics';
+            return 'statistics';
         }
         if (context === 'woocommerce' || sourcePage === 'woocommerce') {
-            return 'woocommerce_optimisation';
+            return 'woocommerce';
         }
         if (context === 'alt_library' || sourcePage === 'alt_library') {
-            return 'bulk_generation';
+            return 'library';
         }
 
-        return 'alt_generation';
+        return 'single_generation';
     }
 
     function inferFeatureFromNode(node, fallbackPage, featureContext) {
@@ -568,7 +803,7 @@
 
     function updateLastFeatureUsage(props) {
         lastFeatureUsage = {
-            feature: props.feature || '',
+            feature: props.feature_name || props.feature || '',
             feature_context: props.feature_context || '',
             source_page: props.source_page || '',
             at: Date.now()
@@ -591,7 +826,7 @@
     function trackFeatureUsed(feature, properties) {
         var runtime = getTelemetryRuntimeContext();
         var props = cleanupProps($.extend({
-            feature: feature,
+            feature_name: feature,
             feature_context: normalizeFeatureContext(
                 properties && properties.feature_context,
                 properties && properties.source_page
@@ -601,7 +836,11 @@
             plugin_version: runtime.plugin_version
         }, properties || {}));
 
-        if (!props.feature || !shouldSendFeatureUsage(props.feature, props.feature_context, props.source_page)) {
+        props.feature_name = normalizeFeatureName(props.feature_name);
+        if (!props.feature_name) {
+            return;
+        }
+        if (!shouldSendFeatureUsage(props.feature_name, props.feature_context, props.source_page)) {
             return;
         }
 
@@ -625,12 +864,52 @@
             return;
         }
 
+        if (eventName === 'signup_started' || eventName === 'signup_succeeded') {
+            trackFeatureUsed('signup', {
+                feature_context: normalizeFeatureContext(props.source || props.location, getSourcePage(props)),
+                source_page: getSourcePage(props)
+            });
+            return;
+        }
+
+        if (eventName === 'login_succeeded') {
+            trackFeatureUsed('login', {
+                feature_context: normalizeFeatureContext(props.source || props.location, getSourcePage(props)),
+                source_page: getSourcePage(props)
+            });
+            return;
+        }
+
+        if (eventName === 'review_queue_opened') {
+            trackFeatureUsed('review_queue', {
+                feature_context: 'alt_library',
+                source_page: getSourcePage(props)
+            });
+            return;
+        }
+
+        if (eventName === 'generation_blocked_no_credits') {
+            trackFeatureUsed('quota', {
+                feature_context: normalizeFeatureContext(props.surface || props.source, getSourcePage(props)),
+                source_page: getSourcePage(props)
+            });
+            return;
+        }
+
+        if (eventName === 'settings_saved') {
+            trackFeatureUsed('settings', {
+                feature_context: 'settings',
+                source_page: 'settings'
+            });
+            return;
+        }
+
         if (
             eventName === 'review_alt_clicked' ||
             eventName === 'alt_library_edit_started' ||
             eventName === 'alt_library_edit_saved'
         ) {
-            trackFeatureUsed('review_workflow', {
+            trackFeatureUsed('review', {
                 feature_context: 'alt_library',
                 source_page: getSourcePage(props)
             });
@@ -698,10 +977,10 @@
         var payload = cleanupProps($.extend({
             account_id: runtime.account_id || '',
             user_id: runtime.user_id || '',
-            license_key: runtime.license_key || '',
+            license_key_present: !!runtime.license_key_present,
+            site_install_id: runtime.site_install_id || '',
             site_id: runtime.site_id || '',
             site_hash: runtime.site_hash || '',
-            email: runtime.email || '',
             trigger_feature: stored.trigger_feature || 'unknown',
             trigger_location: stored.trigger_location || 'unknown',
             source_page: stored.source_page || runtime.source_page || 'unknown',
@@ -718,6 +997,15 @@
     }
 
     function track(eventName, properties) {
+        var normalized = normalizeTelemetryEvent(eventName, properties || {});
+
+        eventName = normalized.eventName;
+        properties = normalized.properties;
+
+        if (properties.__drop_event) {
+            return;
+        }
+
         if (!eventName || !/^[a-z0-9_]{1,80}$/.test(eventName)) {
             return;
         }
@@ -736,7 +1024,7 @@
                 window.bbaiTelemetrySeen.add('generation_started:' + props.generation_run_id);
             } catch (e) {}
         }
-        if (eventName === 'generation_completed' || eventName === 'generation_failed') {
+        if (eventName === 'generation_completed' || eventName.indexOf('generation_failed_') === 0) {
             var runId = props.generation_run_id || window.bbaiCurrentGenerationRunId || '';
             if (!runId) {
                 return;
@@ -750,19 +1038,38 @@
                 window.bbaiTelemetrySeen.add(runKey);
             } catch (e2) {}
         }
+        if (eventName === 'generation_started' || eventName === 'generation_completed' || eventName === 'alt_generated' || eventName.indexOf('generation_failed_') === 0 || eventName.indexOf('batch_generation_') === 0) {
+            props.generation_type = props.generation_type || props.generation_mode || 'single';
+            props.generation_mode = props.generation_mode || props.generation_type;
+            if (!props.feature_name) {
+                props.feature_name = props.generation_mode === 'bulk' ? 'bulk_generation' : 'single_generation';
+            }
+        }
+        if ((eventName === 'signup_started' || eventName === 'signup_succeeded') && !props.feature_name) {
+            props.feature_name = 'signup';
+        }
+        if (eventName === 'login_succeeded' && !props.feature_name) {
+            props.feature_name = 'login';
+        }
 
         if (eventName === 'feature_used') {
             props = cleanupProps($.extend({}, props, {
                 source_page: getSourcePage(props),
-                current_plan: props.current_plan || getCurrentPlan(),
+                current_plan: normalizePlanValue(props.current_plan || getCurrentPlan()),
+                plan: normalizePlanValue(props.plan || props.plan_type || getCurrentPlan()),
+                plan_type: normalizePlanValue(props.plan_type || props.plan || getCurrentPlan()),
                 feature_context: normalizeFeatureContext(props.feature_context || props.source || props.location, props.source_page || props.page),
                 plugin_version: props.plugin_version || getTelemetryRuntimeContext().plugin_version
             }));
+            props.feature_name = normalizeFeatureName(props.feature_name);
+            if (!props.feature_name) {
+                return;
+            }
             updateLastFeatureUsage(props);
-        } else if (eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
+        } else if (eventName === 'upgrade_cta_clicked' || eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
             props = enrichUpgradeAttribution(eventName, props);
         }
-        if (eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
+        if (eventName === 'upgrade_cta_clicked' || eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
             var dedupeKey = [
                 eventName,
                 props.page || '',
@@ -782,7 +1089,8 @@
             window.console.debug('[BBAI] checkout_started identity context', {
                 account_id: props.account_id || '',
                 user_id: props.user_id || '',
-                license_key_present: !!props.license_key,
+                license_key_present: !!props.license_key_present,
+                site_install_id: props.site_install_id || '',
                 site_id: props.site_id || '',
                 site_hash: props.site_hash || ''
             });
@@ -826,7 +1134,7 @@
 
         var map = {
             dashboard: 'dashboard_viewed',
-            guest_dashboard: 'guest_dashboard_viewed',
+            guest_dashboard: 'dashboard_viewed',
             alt_library: 'alt_library_viewed',
             analytics: 'analytics_viewed',
             usage: 'usage_viewed',
@@ -835,7 +1143,7 @@
         };
 
         if (pageVariant === 'guest_dashboard') {
-            return 'guest_dashboard_viewed';
+            return 'dashboard_viewed';
         }
 
         return map[pageKey] || 'dashboard_viewed';
@@ -849,10 +1157,24 @@
         var c = cfg.context || {};
         var pk = c.page || 'unknown';
         var pageVariant = c.page_variant || pk;
-        bbaiTrackOnce('plugin_opened', {
-            navigation: 'direct',
-            page: pageVariant
-        }, 'plugin_opened');
+        var sessionOpenKey = 'bbai_plugin_opened_sent:' + (window.bbaiTelemetrySessionId || '');
+        var pluginOpenedSent = false;
+        try {
+            pluginOpenedSent = !!(window.sessionStorage && window.sessionStorage.getItem(sessionOpenKey));
+        } catch (e) {
+            pluginOpenedSent = false;
+        }
+        if (!pluginOpenedSent) {
+            try {
+                if (window.sessionStorage) {
+                    window.sessionStorage.setItem(sessionOpenKey, '1');
+                }
+            } catch (e2) {}
+            bbaiTrackOnce('plugin_opened', {
+                navigation: 'direct',
+                page: pageVariant
+            }, sessionOpenKey);
+        }
         bbaiTrackOnce(mapPageToViewEvent(pk, pageVariant), {
             navigation: 'direct',
             page: pageVariant
@@ -869,6 +1191,10 @@
         $(document).on('click', '[data-bbai-navigation="review-results"], [data-bbai-quick-action="review-weak"], [data-bbai-workflow-review-cta], [data-bbai-review-scroll="1"], a[href*="page=bbai-library"][href*="status=needs_review"]', function () {
             track('review_alt_clicked', {
                 source: getUiSource(this)
+            });
+            track('review_queue_opened', {
+                source: getUiSource(this),
+                source_page: getSourcePage({ source_page: resolveNodeSourcePage(this) })
             });
         });
     }
@@ -1337,7 +1663,7 @@
             }
             if (String($t.val()) !== String(orig)) {
                 $t.data('bbaiTelemetryEdit', 1);
-                track('manual_edit_used', { context: 'alt_field' });
+                track('manual_alt_edit', { context: 'alt_field' });
             }
         });
     }
@@ -1349,7 +1675,7 @@
 
         analyticsFeatureBound = true;
         $(document).on('click', '#bbai-coverage-chart, .bbai-analytics-page canvas', function () {
-            trackFeatureUsed('analytics', {
+            trackFeatureUsed('statistics', {
                 feature_context: 'analytics',
                 source_page: 'analytics'
             });
@@ -1363,9 +1689,48 @@
 
         wooFeatureBound = true;
         $(document).on('click change', '[data-wizard-action="continue-woo"], [data-wizard-action="enable-woo-step"], [data-wizard-field="woo_context"]', function () {
-            trackFeatureUsed('woocommerce_optimisation', {
+            trackFeatureUsed('woocommerce', {
                 feature_context: 'woocommerce',
                 source_page: getSourcePage()
+            });
+        });
+    }
+
+    function bindFounderSignalEvents() {
+        $(document).on('submit', 'form', function () {
+            var page = getSourcePage();
+            if (page === 'settings' || this.closest('.nai-settings, .bbai-settings, [data-bbai-settings]')) {
+                track('settings_saved', {
+                    source_page: 'settings'
+                });
+            }
+        });
+
+        $(document).on('click', 'a[href]', function () {
+            var href = String(this.getAttribute('href') || '').toLowerCase();
+            var label = String(this.getAttribute('aria-label') || this.getAttribute('title') || this.textContent || '').trim().slice(0, 120);
+
+            if (/support|contact|mailto:/.test(href)) {
+                track('support_clicked', {
+                    source_page: resolveNodeSourcePage(this),
+                    cta_label: label
+                });
+            } else if (/docs|documentation|guide|help/.test(href)) {
+                track('documentation_opened', {
+                    source_page: resolveNodeSourcePage(this),
+                    cta_label: label
+                });
+            }
+        });
+
+        $(document).on('click', '[data-bbai-action*="cancel"], [data-action*="cancel"], [data-bbai-generation-cancel], .bbai-cancel-generation', function () {
+            var signal = getNodeSignal(this);
+            if (!/generation|bulk|batch|queue|job/.test(signal)) {
+                return;
+            }
+            track('bulk_generation_cancelled', {
+                source_page: resolveNodeSourcePage(this),
+                generation_mode: /single/.test(signal) ? 'single' : 'bulk'
             });
         });
     }
@@ -1414,6 +1779,7 @@
         bindManualEditSignal();
         bindAnalyticsUsage();
         bindWooCommerceUsage();
+        bindFounderSignalEvents();
         bindCustomEvents();
     });
 
