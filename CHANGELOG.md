@@ -5,6 +5,11 @@ All notable changes to this plugin are documented in this file.
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
 
+### 4.6.113 — 2026-07-07
+
+- **Fixed**: Exposed `trackFeatureUsed` on `window.bbaiTelemetry` for shared client callers.
+- **Fixed**: NAI dashboard `feature_used` helper normalizes feature names and prefers the telemetry wrapper.
+
 ### 4.6.112 — 2026-07-07
 
 - **Fixed**: Rebuilt `bbai-admin.min.js` and `bbai-dashboard.min.js` so production (`SCRIPT_DEBUG` off) serves client telemetry fixes from 4.6.111.

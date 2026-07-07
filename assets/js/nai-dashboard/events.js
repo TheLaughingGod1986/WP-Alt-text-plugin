@@ -15,17 +15,27 @@
 	function trackFeatureUsed(featureName, properties) {
 		var generationApi = getGeneration();
 		var props = properties || {};
+		var normalizedFeature = String(featureName || '').trim().toLowerCase();
+
+		if (!normalizedFeature) {
+			return;
+		}
+
+		if (window.bbaiTelemetry && typeof window.bbaiTelemetry.trackFeatureUsed === 'function') {
+			window.bbaiTelemetry.trackFeatureUsed(normalizedFeature, props);
+			return;
+		}
 
 		if (window.bbaiTelemetry && typeof window.bbaiTelemetry.track === 'function') {
 			window.bbaiTelemetry.track('feature_used', Object.assign({
-				feature_name: featureName
+				feature_name: normalizedFeature
 			}, props));
 			return;
 		}
 
 		if (typeof generationApi.dispatchAnalytics === 'function') {
 			generationApi.dispatchAnalytics('feature_used', Object.assign({
-				feature_name: featureName
+				feature_name: normalizedFeature
 			}, props));
 		}
 	}

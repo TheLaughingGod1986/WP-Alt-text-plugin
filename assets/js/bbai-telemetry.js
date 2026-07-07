@@ -1789,6 +1789,7 @@
 
     window.bbaiTelemetry = {
         track: track,
+        trackFeatureUsed: trackFeatureUsed,
         flush: flushNow,
         getUpgradeAttribution: getStoredUpgradeAttribution,
         buildCheckoutAttribution: buildCheckoutRequestAttribution
