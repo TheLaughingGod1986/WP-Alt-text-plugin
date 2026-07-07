@@ -5,6 +5,10 @@ All notable changes to this plugin are documented in this file.
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
 
+### 4.6.115 — 2026-07-08
+
+- **Changed**: Telemetry-only release — marketing attribution passthrough to checkout metadata and PostHog identity enrichment for backend billing webhook join.
+
 ### 4.6.114 — 2026-07-07
 
 - **Fixed**: Telemetry verification release — `batch_generation_started`, library-page `wp_localize_script` guards, NAI paywall `upgrade_cta_clicked`, checkout redirect `checkout_started`, auth funnel flush, and `$entitlement_state` initialization.
