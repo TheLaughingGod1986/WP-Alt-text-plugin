@@ -5,6 +5,10 @@ All notable changes to this plugin are documented in this file.
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
 
+### 4.6.112 — 2026-07-07
+
+- **Fixed**: Rebuilt `bbai-admin.min.js` and `bbai-dashboard.min.js` so production (`SCRIPT_DEBUG` off) serves client telemetry fixes from 4.6.111.
+
 ### 4.6.111 — 2026-07-07
 
 - **Fixed**: NAI dashboard generation path now emits client `generation_started` / `generation_completed` telemetry when the legacy drawer runs.
