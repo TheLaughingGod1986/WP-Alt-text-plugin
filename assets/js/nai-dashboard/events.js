@@ -12,6 +12,77 @@
 		return window.BBAINaiGeneration || generation || {};
 	}
 
+	function trackFeatureUsed(featureName, properties) {
+		var generationApi = getGeneration();
+		var props = properties || {};
+
+		if (window.bbaiTelemetry && typeof window.bbaiTelemetry.track === 'function') {
+			window.bbaiTelemetry.track('feature_used', Object.assign({
+				feature_name: featureName
+			}, props));
+			return;
+		}
+
+		if (typeof generationApi.dispatchAnalytics === 'function') {
+			generationApi.dispatchAnalytics('feature_used', Object.assign({
+				feature_name: featureName
+			}, props));
+		}
+	}
+
+	function resolveNaiNavFeature(href) {
+		var url = String(href || '');
+
+		if (url.indexOf('page=bbai-library') !== -1) {
+			return { feature_name: 'library', source_page: 'alt_library' };
+		}
+		if (url.indexOf('page=bbai-settings') !== -1 || url.indexOf('page=bbai-debug') !== -1) {
+			return { feature_name: 'settings', source_page: 'settings' };
+		}
+		if (url.indexOf('page=bbai-analytics') !== -1) {
+			return { feature_name: 'statistics', source_page: 'analytics' };
+		}
+		if (url.indexOf('page=bbai-credit-usage') !== -1) {
+			return { feature_name: 'billing', source_page: 'usage' };
+		}
+		if (url.indexOf('page=bbai-autopilot') !== -1) {
+			return { feature_name: 'dashboard', source_page: 'dashboard' };
+		}
+		if (url.indexOf('page=bbai') !== -1) {
+			return { feature_name: 'dashboard', source_page: 'dashboard' };
+		}
+
+		return null;
+	}
+
+	function bindNavigationTelemetry(state) {
+		var root = state.root;
+
+		if (!root || root.getAttribute('data-nai-nav-telemetry-bound') === '1') {
+			return;
+		}
+
+		root.setAttribute('data-nai-nav-telemetry-bound', '1');
+		root.addEventListener('click', function (event) {
+			var link = event.target && event.target.closest ? event.target.closest('.nai-topbar__link[href]') : null;
+			var mapping;
+
+			if (!link || link.getAttribute('aria-current') === 'page') {
+				return;
+			}
+
+			mapping = resolveNaiNavFeature(link.getAttribute('href') || '');
+			if (!mapping) {
+				return;
+			}
+
+			trackFeatureUsed(mapping.feature_name, {
+				feature_context: mapping.source_page,
+				source_page: mapping.source_page
+			});
+		});
+	}
+
 	function parseCount(text) {
 		return Math.max(0, parseInt(String(text || '').replace(/[^0-9]/g, ''), 10) || 0);
 	}
@@ -82,7 +153,7 @@
 		var missingRow = screen.querySelector('[data-nai-activity-missing-row]');
 		var missingNext;
 
-		setText(passText, formatImageText(remainingPass, 'new upload detected', 'new uploads detected') + " for today's pass");
+		setText(passText, formatImageText(remainingPass, 'image needs attention', 'images need attention') + ' before coverage is complete');
 		setText(optimizedText, optimized + ' images generated or improved · coverage at ' + coverage + '%');
 
 		if (missingText && missingResolved > 0) {
@@ -106,35 +177,25 @@
 	function updateDashboardAfterGeneration(root, detail) {
 		var screen = root ? root.querySelector('[data-nai-screen="dashboard"]') : null;
 		var successes = Math.max(0, parseInt(detail && detail.successes, 10) || 0);
-		var queue;
+		var missingMetric;
+		var reviewMetric;
 		var titleNumber;
 		var total;
 		var optimized;
 		var coverage;
-		var remainingPass;
 		var remainingTotal;
 		var missingResolved;
 		var ringFill;
 		var ring;
-		var workSaved;
+		var heroRingFill;
+		var heroRing;
+		var nextActionText;
 
 		if (!screen || successes <= 0) {
 			return;
 		}
 
 		titleNumber = screen.querySelector('.nai-hero__title .nai-tnum');
-		if (titleNumber) {
-			remainingPass = Math.max(0, parseCount(titleNumber.textContent) - successes);
-			setTextNumber(titleNumber, remainingPass);
-		}
-
-		queue = screen.querySelector('.nai-hero__queue');
-		if (queue) {
-			Array.prototype.slice.call(queue.querySelectorAll('.nai-hero__queue-item'), 0, successes).forEach(function (item) {
-				item.remove();
-			});
-			queue.style.gridTemplateColumns = 'repeat(' + Math.max(1, queue.querySelectorAll('.nai-hero__queue-item').length) + ', minmax(0, 1fr))';
-		}
 
 		incrementCounterNodes(screen, '[data-bbai-entitlement-daily-used]', '[data-bbai-entitlement-daily-limit]', successes);
 		incrementCounterNodes(screen, '[data-bbai-entitlement-used]', '[data-bbai-entitlement-limit]', successes);
@@ -146,22 +207,38 @@
 			coverage = Math.max(0, Math.min(100, Math.round((optimized / total) * 100)));
 			remainingTotal = Math.max(0, total - optimized);
 			screen.setAttribute('data-nai-coverage', String(coverage));
-			Array.prototype.forEach.call(screen.querySelectorAll('.nai-ring__center .nai-tnum, .nai-health__num'), function (node) {
+			Array.prototype.forEach.call(screen.querySelectorAll('.nai-ring__center .nai-tnum'), function (node) {
 				setTextNumber(node, coverage);
 			});
 			updateCoverageCard(screen, optimized, remainingTotal, coverage);
 			missingResolved = detail && detail.missingResolved !== undefined ? Math.max(0, parseInt(detail.missingResolved, 10) || 0) : getMissingResolved(root, successes);
-			updateLatestActivity(screen, remainingPass !== undefined ? remainingPass : Math.max(0, parseCount(titleNumber && titleNumber.textContent)), optimized, coverage, missingResolved);
+			missingMetric = screen.querySelector('[data-nai-hero-missing]');
+			reviewMetric = screen.querySelector('[data-nai-hero-review]');
+			if (missingMetric) {
+				setTextNumber(missingMetric, Math.max(0, parseCount(missingMetric.textContent) - missingResolved));
+			}
+			if (titleNumber && missingMetric) {
+				setTextNumber(titleNumber, parseCount(missingMetric.textContent));
+			}
+			nextActionText = screen.querySelector('.nai-next-action__title');
+			if (nextActionText && missingMetric && parseCount(missingMetric.textContent) <= 0 && reviewMetric && parseCount(reviewMetric.textContent) <= 0) {
+				setText(nextActionText, 'Enable Autopilot for future uploads');
+			}
+			updateLatestActivity(screen, parseCount(missingMetric && missingMetric.textContent), optimized, coverage, missingResolved);
+			ringFill = screen.querySelector('.nai-coverage .nai-progress__bar');
+			if (ringFill) {
+				setBarWidth(ringFill, coverage);
+			}
+			heroRingFill = screen.querySelector('.nai-hero__ring .nai-ring__fill');
+			heroRing = heroRingFill && heroRingFill.getAttribute('r') ? parseFloat(heroRingFill.getAttribute('r')) : 0;
+			if (heroRingFill && heroRing > 0) {
+				heroRingFill.setAttribute('stroke-dasharray', ((coverage / 100) * 2 * Math.PI * heroRing) + ' ' + (2 * Math.PI * heroRing));
+			}
 			ringFill = screen.querySelector('.nai-ring__fill');
 			ring = ringFill && ringFill.getAttribute('r') ? parseFloat(ringFill.getAttribute('r')) : 0;
 			if (ringFill && ring > 0) {
 				ringFill.setAttribute('stroke-dasharray', ((coverage / 100) * 2 * Math.PI * ring) + ' ' + (2 * Math.PI * ring));
 			}
-		}
-
-		workSaved = screen.querySelector('.nai-health__work .nai-health__work-strong:last-of-type');
-		if (workSaved) {
-			setTextNumber(workSaved, parseCount(workSaved.textContent) + successes);
 		}
 	}
 
@@ -369,6 +446,9 @@
 				return;
 			}
 			currentGeneration.completeLegacyProgress(event.detail || {});
+			if (typeof currentGeneration.emitGenerationCompleted === 'function') {
+				currentGeneration.emitGenerationCompleted(event.detail || {}, root && root.querySelector('[data-nai-drawer]') ? root.querySelector('[data-nai-drawer]')._naiState : null);
+			}
 			if (root) {
 				applyDrawerDashboardUpdate(root, event.detail || {});
 			}
@@ -450,6 +530,7 @@
 		bindRootEvents(state);
 		bindDocumentEvents(state);
 		bindHero(state);
+		bindNavigationTelemetry(state);
 		runDemoTrigger(state);
 	}
 

@@ -585,7 +585,11 @@ class BbAIAuthModal {
                     window.BBAIEntitlements.consume(data, 'login');
                 }
                 this.emitAnalyticsEvent('login_succeeded', {
-                    source: source
+                    source: source,
+                    user_state: 'signed_in',
+                    is_logged_in: true,
+                    plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
                 });
                 this.onAuthSuccess(userData);
                 this.hide();
@@ -700,7 +704,11 @@ class BbAIAuthModal {
                     window.BBAIEntitlements.consume(data, 'register');
                 }
                 this.emitAnalyticsEvent('signup_succeeded', {
-                    source: source
+                    source: source,
+                    user_state: 'signed_in',
+                    is_logged_in: true,
+                    plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
                 });
                 this.onAuthSuccess(userData);
                 this.hide();

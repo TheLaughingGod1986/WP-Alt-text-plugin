@@ -1013,10 +1013,11 @@
 
         // Generation events: enforce once-per-generation-run.
         if (eventName === 'generation_started') {
-            if (!window.bbaiCurrentGenerationRunId) {
-                window.bbaiCurrentGenerationRunId = String(Date.now());
-            }
-            props.generation_run_id = props.generation_run_id || window.bbaiCurrentGenerationRunId;
+            window.bbaiCurrentGenerationRunId = String(
+                props.generation_run_id ||
+                ('bbai_gen_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8))
+            );
+            props.generation_run_id = window.bbaiCurrentGenerationRunId;
             try {
                 if (window.bbaiTelemetrySeen.has('generation_started:' + props.generation_run_id)) {
                     return;
@@ -1027,7 +1028,8 @@
         if (eventName === 'generation_completed' || eventName.indexOf('generation_failed_') === 0) {
             var runId = props.generation_run_id || window.bbaiCurrentGenerationRunId || '';
             if (!runId) {
-                return;
+                window.bbaiCurrentGenerationRunId = 'bbai_gen_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+                runId = window.bbaiCurrentGenerationRunId;
             }
             props.generation_run_id = runId;
             try {
@@ -1735,6 +1737,44 @@
         });
     }
 
+    function bindNaiShellNavigation() {
+        $(document).on('click', '.nai-topbar__link[href]', function () {
+            var href = String($(this).attr('href') || '');
+            var feature = '';
+            var sourcePage = getSourcePage();
+
+            if ($(this).attr('aria-current') === 'page') {
+                return;
+            }
+
+            if (href.indexOf('page=bbai-library') !== -1) {
+                feature = 'library';
+                sourcePage = 'alt_library';
+            } else if (href.indexOf('page=bbai-settings') !== -1 || href.indexOf('page=bbai-debug') !== -1) {
+                feature = 'settings';
+                sourcePage = 'settings';
+            } else if (href.indexOf('page=bbai-analytics') !== -1) {
+                feature = 'statistics';
+                sourcePage = 'analytics';
+            } else if (href.indexOf('page=bbai-credit-usage') !== -1) {
+                feature = 'billing';
+                sourcePage = 'usage';
+            } else if (href.indexOf('page=bbai-autopilot') !== -1 || href.indexOf('page=bbai') !== -1) {
+                feature = 'dashboard';
+                sourcePage = 'dashboard';
+            }
+
+            if (!feature) {
+                return;
+            }
+
+            trackFeatureUsed(feature, {
+                feature_context: sourcePage,
+                source_page: sourcePage
+            });
+        });
+    }
+
     function bindCustomEvents() {
         document.addEventListener('bbai:analytics', function (e) {
             var d = e.detail || {};
@@ -1780,6 +1820,7 @@
         bindAnalyticsUsage();
         bindWooCommerceUsage();
         bindFounderSignalEvents();
+        bindNaiShellNavigation();
         bindCustomEvents();
     });
 

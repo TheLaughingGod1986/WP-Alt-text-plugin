@@ -5,6 +5,12 @@ All notable changes to this plugin are documented in this file.
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
 
+### 4.6.111 — 2026-07-07
+
+- **Fixed**: NAI dashboard generation path now emits client `generation_started` / `generation_completed` telemetry when the legacy drawer runs.
+- **Fixed**: NAI shell navigation now emits `feature_used` for library, settings, dashboard, billing, and statistics destinations.
+- **Fixed**: Client telemetry assigns a per-run `generation_run_id` so `generation_completed` is not dropped when the drawer path starts before `bbai-admin` dispatches.
+
 ### 4.6.110 — 2026-07-07
 
 - **Changed**: Central enrichment fills `plugin_slug`, `telemetry_version`, normalized host, `generation_type`, `quota_state`, and `license_state` on all new telemetry events.

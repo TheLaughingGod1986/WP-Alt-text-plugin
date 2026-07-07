@@ -7,7 +7,7 @@ Tags: ai alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.110
+Stable tag: 4.6.111
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -138,6 +138,11 @@ Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
 
+= 4.6.111 =
+* Fixed NAI dashboard client telemetry for generation_started and generation_completed on the legacy drawer generation path.
+* Fixed feature_used emissions for NAI shell navigation (library, settings, dashboard, billing, statistics).
+* Fixed per-run generation_run_id assignment so generation_completed is not dropped when the drawer opens before bbai-admin dispatches.
+
 = 4.6.110 =
 * Telemetry hardening: canonical property enrichment for all new events (plugin_slug, telemetry_version, normalized host, generation_type, quota_state, license_state).
 * feature_used events now always require feature_name.
@@ -188,6 +193,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.111 =
+Telemetry-only hotfix: restores NAI client generation and navigation feature_used events.
 
 = 4.6.110 =
 Telemetry-only release: canonical PostHog property enrichment for new events.

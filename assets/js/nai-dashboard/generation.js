@@ -3,6 +3,92 @@
 
 	var dom = window.BBAINaiDom || {};
 
+	function dispatchNaiAnalytics(eventName, payload) {
+		var props = payload || {};
+
+		try {
+			if (window.bbaiTelemetry && typeof window.bbaiTelemetry.track === 'function') {
+				window.bbaiTelemetry.track(eventName, props);
+				return;
+			}
+		} catch (err) {
+			// Fall through to the analytics bus.
+		}
+
+		try {
+			if (typeof window.CustomEvent === 'function') {
+				document.dispatchEvent(new window.CustomEvent('bbai:analytics', {
+					detail: Object.assign({ event: eventName }, props)
+				}));
+			}
+		} catch (err2) {
+			// Ignore analytics dispatch failures.
+		}
+	}
+
+	function getGenerationTelemetryContext(state, options) {
+		var items = state && state.queueItems && state.queueItems.length ? state.queueItems : [];
+		var count = Math.max(1, items.length);
+		var isBulk = count > 1;
+
+		if (options && options.requested_count) {
+			count = Math.max(1, parseInt(options.requested_count, 10) || count);
+			isBulk = count > 1;
+		}
+
+		return {
+			source: 'dashboard',
+			source_page: 'dashboard',
+			feature_context: 'dashboard',
+			generation_mode: isBulk ? 'bulk' : 'generate-missing',
+			generation_type: isBulk ? 'bulk' : 'single',
+			requested_count: count
+		};
+	}
+
+	function emitGenerationStarted(state, options) {
+		var context;
+
+		if (!options || options.simulate !== false) {
+			return;
+		}
+
+		if (!window.bbaiCurrentGenerationRunId) {
+			window.bbaiCurrentGenerationRunId = 'bbai_gen_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+		}
+
+		context = getGenerationTelemetryContext(state, options);
+		context.generation_run_id = window.bbaiCurrentGenerationRunId;
+		dispatchNaiAnalytics('generation_started', context);
+	}
+
+	function emitGenerationCompleted(detail, state) {
+		var successes = Math.max(0, parseInt(detail && detail.successes, 10) || 0);
+		var failures = Math.max(0, parseInt(detail && detail.failures, 10) || 0);
+		var skipped = Math.max(0, parseInt(detail && detail.skipped, 10) || 0);
+		var total = Math.max(successes + failures + skipped, successes);
+		var context;
+
+		if (successes <= 0) {
+			return;
+		}
+
+		context = getGenerationTelemetryContext(state, {
+			requested_count: total
+		});
+		if (window.bbaiCurrentGenerationRunId) {
+			context.generation_run_id = window.bbaiCurrentGenerationRunId;
+		}
+
+		dispatchNaiAnalytics('generation_completed', Object.assign({}, context, {
+			processed_count: successes,
+			accepted_count: successes,
+			success_count: successes,
+			failure_count: failures,
+			skipped_count: skipped
+		}));
+	}
+
 	function createThumb(item, idx) {
 		var thumb = item.thumb_url ? document.createElement('img') : document.createElement('div');
 		var hue = Number(item.hue || 30);
@@ -176,9 +262,9 @@
 
 		parts.drawer.classList.add('is-complete');
 		setProgress(parts, 100);
-		parts.eyebrow.textContent = 'Pass complete';
+		parts.eyebrow.textContent = 'ALT coverage updated';
 		parts.title.textContent = label;
-		parts.status.textContent = hasIssues ? 'Some images may still need review.' : 'Coverage +2% · streak extended';
+		parts.status.textContent = hasIssues ? 'Some images may still need review.' : 'Coverage improved. Review the latest changes in your library.';
 		parts.done.hidden = false;
 		parts.drawer._naiDashboardSuccesses = Math.max(0, parseInt(completed, 10) || 0);
 		if (!parts.drawer._naiLegacyMode && typeof window.CustomEvent === 'function') {
@@ -217,9 +303,9 @@
 		drawer.classList.remove('is-complete');
 		setProgress(parts, 0);
 		done.hidden = true;
-		eyebrow.textContent = state.isPro ? 'Optimisation' : "Today's pass";
-		title.textContent = state.isPro ? 'Optimising latest uploads...' : "Working through today's images...";
-		status.textContent = state.isPro ? 'Autopilot active · improving images...' : "Working through today's images...";
+		eyebrow.textContent = 'ALT coverage';
+		title.textContent = 'Generating ALT text for your remaining images...';
+		status.textContent = state.isPro ? 'Autopilot active while coverage improves.' : 'Improving coverage for the selected images.';
 		drawer._naiState = state;
 		drawer._naiLastCompleted = 0;
 		drawer._naiTotal = items.length;
@@ -231,6 +317,7 @@
 		ensureDrawerRows(parts, state, items.length);
 		setDrawerOpen(drawer);
 		clearInterval(drawer._timer);
+		emitGenerationStarted(state, options);
 		if (!simulate) {
 			return;
 		}
@@ -238,9 +325,9 @@
 			markRowComplete(parts, state, idx, '');
 			idx++;
 			setProgress(parts, Math.round((idx / items.length) * 100));
-			title.textContent = state.isPro ? idx + ' images improved' : idx + ' of ' + items.length + ' complete';
+			title.textContent = idx + ' of ' + items.length + ' images improved';
 			status.textContent = idx >= items.length
-				? (state.isPro ? 'Optimisation complete · Autopilot active.' : 'Your site is now more accessible.')
+				? (state.isPro ? 'Optimisation complete. Autopilot is ready for future uploads.' : 'Your site is now more accessible.')
 				: (items.length - idx) + ' images to go';
 
 			if (idx >= items.length) {
@@ -268,7 +355,7 @@
 		setProgress(parts, pct);
 		parts.title.textContent = completed >= count && count > 0
 			? count + ' images improved'
-			: completed + ' of ' + count + ' complete';
+			: completed + ' of ' + count + ' images improved';
 		parts.status.textContent = completed >= count && count > 0
 			? 'Your site is now more accessible.'
 			: (count > 0 ? (count - completed) + ' images to go' : 'Preparing images...');
@@ -309,12 +396,20 @@
 			trimDrawerRows(parts, successes);
 		}
 		setDrawerComplete(parts, drawer._naiState, displaySuccesses, Math.max(total, displaySuccesses), failures > displaySuccesses || skipped > 0);
+		emitGenerationCompleted({
+			successes: displaySuccesses,
+			failures: failures,
+			skipped: skipped
+		}, drawer._naiState);
 	}
 
 	window.BBAINaiGeneration = {
 		openDrawer: openDrawer,
 		recordLegacyResult: recordLegacyResult,
 		syncLegacyProgress: syncLegacyProgress,
-		completeLegacyProgress: completeLegacyProgress
+		completeLegacyProgress: completeLegacyProgress,
+		dispatchAnalytics: dispatchNaiAnalytics,
+		emitGenerationStarted: emitGenerationStarted,
+		emitGenerationCompleted: emitGenerationCompleted
 	};
 }(window, document));

@@ -18539,7 +18539,8 @@
         dispatchAnalyticsEvent('generation_started', {
             source: getAnalyticsPageSource(),
             generation_mode: source || 'generate-missing',
-            requested_count: normalized.length
+            requested_count: normalized.length,
+            generation_run_id: window.bbaiCurrentGenerationRunId || ''
         });
 
         dispatchAnalyticsEvent('bulk_generation_started', {
@@ -19195,7 +19196,8 @@
                 accepted_count: successes,
                 success_count: successes,
                 failure_count: failures,
-                skipped_count: skipped
+                skipped_count: skipped,
+                generation_run_id: window.bbaiCurrentGenerationRunId || ''
             });
         }
         if (!quotaError && failures > 0) {
