@@ -6,6 +6,11 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### Unreleased
 
+### 4.6.8 — 2026-07-16
+
+- **Changed**: Generation retry correlation and terminal telemetry safeguards
+
+
 ### 4.6.4 — 2026-05-14
 
 - **Fixed**: Background generation persistence now survives page navigation, refreshes, and multi-tab sessions across all plugin pages.
