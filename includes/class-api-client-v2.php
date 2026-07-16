@@ -34,11 +34,41 @@ class API_Client_V2 {
 	 * Helper to make requests with retry/backoff for transient failures.
 	 */
 	protected function request_with_retry( $endpoint, $method = 'GET', $data = null, $max_attempts = 3, $include_user_id = false, $extra_headers = array() ) {
-		$attempt    = 0;
-		$last_error = null;
+		$attempt               = 0;
+		$last_error            = null;
+		$endpoint_string       = is_string( $endpoint ) ? $endpoint : '';
+		$is_generation_request = false !== strpos( $endpoint_string, 'api/alt-text' );
+		$generation_run_id     = isset( $extra_headers['X-Generation-Run-ID'] )
+			? sanitize_text_field( (string) $extra_headers['X-Generation-Run-ID'] )
+			: '';
+
+		if ( $is_generation_request && '' === $generation_run_id ) {
+			$generation_run_id = function_exists( 'wp_generate_uuid4' )
+				? wp_generate_uuid4()
+				: uniqid( 'bbai_generation_', true );
+		}
 
 		while ( $attempt < $max_attempts ) {
-			$response = $this->make_request( $endpoint, $method, $data, null, $include_user_id, $extra_headers );
+			$request_headers = $extra_headers;
+			$request_data    = $data;
+
+			if ( $is_generation_request ) {
+				$request_headers['X-Generation-Run-ID'] = $generation_run_id;
+				$request_headers['X-Generation-Attempt'] = (string) $attempt;
+				$request_headers['X-Retry-Count'] = (string) $attempt;
+				if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
+					$request_headers['X-Plugin-Version'] = (string) BEEPBEEP_AI_VERSION;
+				}
+				if ( is_array( $request_data ) ) {
+					$request_data['generation_run_id'] = $generation_run_id;
+					$request_data['retry_count']       = $attempt;
+					if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
+						$request_data['plugin_version'] = (string) BEEPBEEP_AI_VERSION;
+					}
+				}
+			}
+
+			$response = $this->make_request( $endpoint, $method, $request_data, null, $include_user_id, $request_headers );
 			if ( ! is_wp_error( $response ) ) {
 				if ( $attempt > 0 && class_exists( '\BeepBeepAI\AltTextGenerator\Debug_Log' ) ) {
 					\BeepBeepAI\AltTextGenerator\Debug_Log::log(
@@ -981,6 +1011,7 @@ class API_Client_V2 {
 					'error_details'   => $error_details,
 					'backend_code'    => $backend_error_code,
 					'backend_message' => $backend_error_message,
+					'retryable'       => array_key_exists( 'retryable', $data ) ? (bool) $data['retryable'] : null,
 				)
 			);
 		}
@@ -1011,6 +1042,11 @@ class API_Client_V2 {
 
 		$data   = $error->get_error_data();
 		$status = isset( $data['status_code'] ) ? intval( $data['status_code'] ) : 0;
+
+		// The backend's explicit retryability contract takes precedence over status heuristics.
+		if ( is_array( $data ) && array_key_exists( 'retryable', $data ) && false === $data['retryable'] ) {
+			return false;
+		}
 
 		// Retry network errors without status codes, and HTTP 5xx responses.
 		if ( 0 === $status ) {

@@ -738,7 +738,7 @@
             }
             props.generation_run_id = runId;
             try {
-                var runKey = eventName + ':' + runId;
+                var runKey = 'generation_terminal:' + runId;
                 if (window.bbaiTelemetrySeen.has(runKey)) {
                     return;
                 }
