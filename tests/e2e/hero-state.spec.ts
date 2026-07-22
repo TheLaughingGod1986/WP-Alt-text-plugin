@@ -143,7 +143,7 @@ test.describe('Hero / onboarding state machine', () => {
   // race each other if parallelised.
   test.describe.configure({ mode: 'serial' });
 
-  test.skip(!process.env.BBAI_E2E_BASE_URL && BASE === 'http://127.0.0.1:8888',
+  test.skip(!process.env.BBAI_E2E_BASE_URL,
     'Set BBAI_E2E_BASE_URL to your local WP base to run these tests');
 
   // Saved auth option values — restored after the logged-out tests.

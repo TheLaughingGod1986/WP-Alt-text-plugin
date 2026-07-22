@@ -143,10 +143,12 @@
 
                 // Check for quota exceeded errors (limit_reached or quota-related messages)
                 var isQuotaError = errorData.code === 'limit_reached' ||
+                                  errorData.code === 'daily_limit_reached' ||
                                   errorMessageLower.includes('quota exceeded') ||
                                   errorMessageLower.includes('quota exhausted') ||
                                   errorMessageLower.includes('limit reached') ||
-                                  errorMessageLower.includes('monthly limit');
+                                  errorMessageLower.includes('monthly limit') ||
+                                  errorMessageLower.includes('daily generation');
 
                 if (isQuotaError) {
                     // Reuse shared quota flow when available.
@@ -395,10 +397,12 @@
             } else
             // Check for quota exceeded errors
             if (errorData.code === 'limit_reached' ||
+                              errorData.code === 'daily_limit_reached' ||
                               errorMessageLower.includes('quota exceeded') ||
                               errorMessageLower.includes('quota exhausted') ||
                               errorMessageLower.includes('limit reached') ||
-                              errorMessageLower.includes('monthly limit')) {
+                              errorMessageLower.includes('monthly limit') ||
+                              errorMessageLower.includes('daily generation')) {
                 // Reuse shared quota flow when available.
                 if (typeof window.bbaiHandleLimitReached === 'function') {
                     closeRegenerateModal($modal);

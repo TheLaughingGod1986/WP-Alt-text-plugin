@@ -330,6 +330,7 @@ class Generation_Service {
 			'api_response_invalid' => __( 'The API response was invalid. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
 			'quota_check_mismatch' => __( 'Credits appear available but the backend reported a limit. Please try again in a moment.', 'beepbeep-ai-alt-text-generator' ),
 			'limit_reached'        => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
+			'daily_limit_reached'  => __( 'You have used today\'s 5 free generations. Upgrade to Pro to continue now, or wait for the daily refresh.', 'beepbeep-ai-alt-text-generator' ),
 			'quota_exhausted'      => __( 'Monthly quota exhausted. Please upgrade to continue generating alt text.', 'beepbeep-ai-alt-text-generator' ),
 			'api_timeout'          => __( 'The request timed out. Please try again.', 'beepbeep-ai-alt-text-generator' ),
 			'api_unreachable'      => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),

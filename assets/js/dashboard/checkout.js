@@ -27,7 +27,9 @@ function resolveCheckoutFallbackUrl($btn, plan) {
     var resolvedLink = fallbackUrl || stripeLinks[plan] || '';
 
     if (!resolvedLink) {
-        if (plan === 'pro' || plan === 'growth') {
+        if (plan === 'starter') {
+            resolvedLink = '';
+        } else if (plan === 'pro' || plan === 'growth') {
             resolvedLink = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
         } else if (plan === 'agency') {
             resolvedLink = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';

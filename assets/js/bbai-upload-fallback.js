@@ -312,7 +312,7 @@
                     } else {
                         handleLimitReachedNotice(response.data);
                     }
-                } else if (response.data && response.data.code === 'limit_reached'){
+				} else if (response.data && (response.data.code === 'limit_reached' || response.data.code === 'daily_limit_reached')){
                     handleLimitReachedNotice(response.data);
                 }
             }
