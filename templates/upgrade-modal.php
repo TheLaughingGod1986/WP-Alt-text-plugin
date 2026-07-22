@@ -27,6 +27,7 @@ if ( 'pro' === $bbai_current_plan ) {
 }
 
 // Get price IDs from backend API
+$checkout_prices      = isset( $checkout_prices ) && is_array( $checkout_prices ) ? $checkout_prices : array();
 $bbai_starter_price_id = $checkout_prices['starter'] ?? '';
 $bbai_pro_price_id     = $checkout_prices['pro'] ?? '';
 $bbai_growth_price_id  = $checkout_prices['growth'] ?? $bbai_pro_price_id;
