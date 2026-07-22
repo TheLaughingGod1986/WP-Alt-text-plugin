@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Tooltip System
+ * OpptiAI Tooltip System
  * Handles tooltips with data-bbai-tooltip attribute
  */
 

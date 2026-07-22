@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI - Custom Modal System
+ * OpptiAI - Custom Modal System
  * Replaces native alert() with accessible, branded modals
  *
  * @package BeepBeep_AI_Alt_Text_Generator
@@ -39,7 +39,7 @@
     };
 
     /**
-     * BeepBeep AI Modal Class
+     * OpptiAI Modal Class
      */
     class BBaiModal {
         constructor() {

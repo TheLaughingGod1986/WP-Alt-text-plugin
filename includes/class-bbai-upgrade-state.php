@@ -120,7 +120,7 @@ class BBAI_Upgrade_State {
 				'coverage_pct'    => $coverage_pct,
 				'days_reset'      => $days_reset,
 				'days_since_scan' => $days_since_scan,
-				'upgrade_url'     => $upgrade_url ? $upgrade_url : 'https://beepbeep.ai/pricing',
+				'upgrade_url'     => $upgrade_url ? $upgrade_url : 'https://oppti.dev/pricing',
 				'context'         => $context,
 			)
 		);
@@ -145,7 +145,7 @@ class BBAI_Upgrade_State {
 	 */
 	private static function build( string $state, array $data ): array {
 
-		$upgrade_url = ! empty( $data['upgrade_url'] ) ? $data['upgrade_url'] : 'https://beepbeep.ai/pricing';
+		$upgrade_url = ! empty( $data['upgrade_url'] ) ? $data['upgrade_url'] : 'https://oppti.dev/pricing';
 
 		// Reusable CTAs (all states share these).
 		$enable_auto = array(

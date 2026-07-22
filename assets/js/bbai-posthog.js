@@ -177,6 +177,45 @@
         return host.toLowerCase();
     }
 
+    function classifyEnvironment(rawEnvironment, host, siteUrl) {
+        var env = rawEnvironment === undefined || rawEnvironment === null ? '' : String(rawEnvironment).toLowerCase().replace(/[^a-z0-9_-]+/g, '_');
+        var signal = [
+            host || '',
+            siteUrl || '',
+            window.location && window.location.hostname ? window.location.hostname : ''
+        ].join(' ').toLowerCase();
+
+        if (/localhost|127\.0\.0\.1|::1|\.local\b|\.test\b|tastewp|playground|wp-env|ddev|lndo/.test(signal)) {
+            return 'local';
+        }
+        if (env === 'local' || env === 'development' || env === 'dev') {
+            return 'local';
+        }
+        if (env === 'test' || env === 'testing' || env === 'ci') {
+            return 'test';
+        }
+        if (env === 'staging' || /(^|\.)staging\.|staging-|\.staging\b|dev\.|sandbox|preview/.test(signal)) {
+            return 'staging';
+        }
+        if (env === 'production' || env === 'prod') {
+            return 'production';
+        }
+
+        return host || siteUrl ? 'production' : 'test';
+    }
+
+    function isInternalContext(environment, host, siteUrl) {
+        var signal = [
+            host || '',
+            siteUrl || '',
+            window.location && window.location.hostname ? window.location.hostname : ''
+        ].join(' ').toLowerCase();
+
+        return environment === 'local' ||
+            environment === 'test' ||
+            /localhost|127\.0\.0\.1|::1|tastewp|playground|wp-env|ddev|lndo/.test(signal);
+    }
+
     function getContext() {
         var context = extend({}, sanitizeProperties(cfg.context || {}), runtimeContext);
         var host = normalizeHostValue(context.host || context.site_host || '');
@@ -190,10 +229,13 @@
         context.session_id = context.session_id || sessionId || '';
         context.journey_id = context.journey_id || resolveSiteInstallId(context);
         context.user_state = context.user_state || (context.is_logged_in === true ? 'signed_in' : 'guest');
-        context.telemetry_version = context.telemetry_version || '1';
+        context.event_schema_version = context.event_schema_version || context.telemetry_version || '1';
+        context.telemetry_version = context.telemetry_version || context.event_schema_version;
+        context.app_version = context.app_version || context.plugin_version || '';
         context.plugin_slug = context.plugin_slug || 'beepbeep-ai-alt-text-generator';
         context.wordpress_version = context.wordpress_version || context.wp_version || '';
-        context.environment = context.environment || 'production';
+        context.environment = classifyEnvironment(context.environment, host, context.site_url || '');
+        context.is_internal = context.is_internal === true || context.is_internal === 'true' || isInternalContext(context.environment, host, context.site_url || '');
         context.license_state = context.license_state || (context.is_logged_in ? 'connected' : 'guest');
         return context;
     }
@@ -343,7 +385,7 @@
     }
 
     function ensureSessionRecording(client) {
-        var shouldRecord = cfg.sessionRecordingEnabled !== false;
+        var shouldRecord = cfg.sessionRecordingEnabled === true;
 
         if (!shouldRecord || loaderState.sessionRecordingStarted || !client) {
             return;
@@ -582,7 +624,7 @@
                     autocapture: false,
                     capture_pageview: false,
                     capture_pageleave: false,
-                    disable_session_recording: cfg.sessionRecordingEnabled === false
+                    disable_session_recording: cfg.sessionRecordingEnabled !== true
                 });
                 syncNamedInstance(library);
             } catch (error) {

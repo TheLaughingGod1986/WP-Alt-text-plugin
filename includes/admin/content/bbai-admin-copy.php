@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! function_exists( 'bbai_copy_td' ) ) {
 	/**
-	 * Text domain for BeepBeep AI admin strings.
+	 * Text domain for OpptiAI admin strings.
 	 */
 	function bbai_copy_td(): string {
 		return 'beepbeep-ai-alt-text-generator';

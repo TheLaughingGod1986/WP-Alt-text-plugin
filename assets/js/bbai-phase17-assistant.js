@@ -93,7 +93,7 @@
         '" hidden>' +
         '<div class="bbai-phase17-assistant__head">' +
         '<span>' +
-        esc(cfg.strings && cfg.strings.title ? cfg.strings.title : 'BeepBeep guide') +
+        esc(cfg.strings && cfg.strings.title ? cfg.strings.title : 'OpptiAI guide') +
         '</span>' +
         '<button type="button" class="bbai-phase17-assistant__close" data-bbai-phase17-close aria-label="' +
         esc(cfg.strings && cfg.strings.close ? cfg.strings.close : 'Close') +

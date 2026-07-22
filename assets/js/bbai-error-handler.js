@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Enhanced Error Handling
+ * OpptiAI Enhanced Error Handling
  * User-friendly error messages with retry options
  */
 
@@ -134,7 +134,7 @@
                 message = __('Network error. Please check your internet connection.', 'beepbeep-ai-alt-text-generator');
                 code = 'network_error';
             } else if (xhr.status === 401) {
-                message = __('Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator');
+                message = __('Your OpptiAI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator');
                 code = 'unauthorized';
             } else if (xhr.status === 403) {
                 message = __("You don't have permission to perform this action.", 'beepbeep-ai-alt-text-generator');
@@ -170,7 +170,7 @@
                 message = __('Network error. Please check your internet connection.', 'beepbeep-ai-alt-text-generator');
                 code = 'network_error';
             } else if (response.status === 401) {
-                message = __('Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator');
+                message = __('Your OpptiAI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator');
                 code = 'unauthorized';
             } else if (response.status === 403) {
                 message = __("You don't have permission to perform this action.", 'beepbeep-ai-alt-text-generator');

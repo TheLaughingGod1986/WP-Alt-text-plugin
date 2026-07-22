@@ -26,6 +26,12 @@ npx wp-env start
 ./scripts/build-plugin-zip.bash
 ```
 
+- Rebuild production `.min.js` bundles after editing the large hand-written admin scripts:
+
+```bash
+npm run build:js
+```
+
 - Prepare a release by bumping the plugin version, updating `CHANGELOG.md` and `readme.txt`, building a zip, syncing to `wp-env`, and verifying the synced version:
 
 ```bash
@@ -45,6 +51,16 @@ WPORG_PASS=your-wporg-password \
 
 ```bash
 ./scripts/reset-wpenv-plugin-clean.sh
+```
+
+- Import aggregate WordPress.org plugin stats into PostHog for operator-run cron/CI jobs only; mirror the checked-in GitHub workflow defaults unless there is a reason to override them:
+
+```bash
+POSTHOG_PROJECT_API_KEY=your-posthog-project-key \
+POSTHOG_API_HOST=https://us.i.posthog.com \
+WPORG_SLUG=beepbeep-ai-alt-text-generator \
+WPORG_DOWNLOAD_DAYS=14 \
+node scripts/import-wporg-stats-to-posthog.mjs
 ```
 
 ## E2E Smoke Tests

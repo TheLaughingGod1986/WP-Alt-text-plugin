@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<?php if ( $nai_pass_total > 0 || $nai_optimized > 0 || $nai_missing > 0 || $nai_weak > 0 ) : ?>
 		<div class="nai-activity" data-nai-activity>
 			<div class="nai-activity__head">
-				<span class="nai-eyebrow"><?php esc_html_e( 'Latest activity', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="nai-eyebrow"><?php esc_html_e( 'Latest improvements', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			</div>
 			<?php if ( $nai_pass_total > 0 ) : ?>
 				<div class="nai-activity__row" data-nai-activity-pass-row>

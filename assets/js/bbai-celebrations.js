@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Celebrations System
+ * OpptiAI Celebrations System
  * Success celebrations, confetti, and milestone tracking
  */
 

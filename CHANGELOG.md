@@ -5,6 +5,12 @@ All notable changes to this plugin are documented in this file.
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
 
+### 4.7.0 — 2026-07-10
+
+- Rebrand: BeepBeep AI Alt Text → OpptiAI Alt Text (display naming only; slug, text domain, options, licenses, API untouched).
+- Shared credit balance presented as the OpptiAI Credit Wallet.
+- Fallback marketing URLs moved from beepbeep.ai to oppti.dev (app.beepbeep.ai auth URLs unchanged pending app.oppti.dev).
+
 ### 4.6.115 — 2026-07-08
 
 - **Changed**: Telemetry-only release — marketing attribution passthrough to checkout metadata and PostHog identity enrichment for backend billing webhook join.

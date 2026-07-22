@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI — Phase 12 product telemetry (client batching + DOM hooks).
+ * OpptiAI — Phase 12 product telemetry (client batching + DOM hooks).
  *
  * @package BeepBeep_AI
  */
@@ -61,7 +61,16 @@
         scan_completed: true,
         generation_started: true,
         generation_completed: true,
+        generation_job_started: true,
+        generation_item_completed: true,
+        generation_job_completed: true,
+        generation_job_failed: true,
         alt_generated: true,
+        alt_text_generated: true,
+        alt_text_displayed: true,
+        alt_text_copied: true,
+        alt_text_saved: true,
+        alt_text_applied: true,
         generation_failed_timeout: true,
         generation_failed_api: true,
         generation_failed_auth: true,
@@ -80,7 +89,7 @@
         review_filter_applied: true,
         alt_library_item_opened: true,
         alt_library_edit_started: true,
-	        alt_library_edit_saved: true,
+        alt_library_edit_saved: true,
         feature_used: true,
         entitlement_state_loaded: true,
         paywall_shown: true,
@@ -93,6 +102,7 @@
         upgrade_cta_clicked: true,
         checkout_completed: true,
         subscription_started: true,
+        subscription_activated: true,
         subscription_cancelled: true,
         trial_expired: true,
         credits_purchased: true,
@@ -350,6 +360,75 @@
         return host.toLowerCase();
     }
 
+    function classifyEnvironment(rawEnvironment, host, siteUrl) {
+        var env = readString(rawEnvironment).toLowerCase().replace(/[^a-z0-9_-]+/g, '_');
+        var signal = [
+            host,
+            siteUrl,
+            window.location && window.location.hostname ? window.location.hostname : ''
+        ].map(readString).join(' ').toLowerCase();
+
+        if (/localhost|127\.0\.0\.1|::1|\.local\b|\.test\b|tastewp|playground|wp-env|ddev|lndo/.test(signal)) {
+            return 'local';
+        }
+        if (env === 'local' || env === 'development' || env === 'dev') {
+            return 'local';
+        }
+        if (env === 'test' || env === 'testing' || env === 'ci') {
+            return 'test';
+        }
+        if (env === 'staging' || /(^|\.)staging\.|staging-|\.staging\b|dev\.|sandbox|preview/.test(signal)) {
+            return 'staging';
+        }
+        if (env === 'production' || env === 'prod') {
+            return 'production';
+        }
+
+        return host || siteUrl ? 'production' : 'test';
+    }
+
+    function isInternalContext(environment, host, siteUrl) {
+        var signal = [
+            host,
+            siteUrl,
+            window.location && window.location.hostname ? window.location.hostname : ''
+        ].map(readString).join(' ').toLowerCase();
+
+        return environment === 'local' ||
+            environment === 'test' ||
+            /localhost|127\.0\.0\.1|::1|tastewp|playground|wp-env|ddev|lndo/.test(signal);
+    }
+
+    function normalizeGenerationMode(value, props) {
+        var payload = props || {};
+        var mode = readString(value || payload.generation_mode || payload.generation_type).toLowerCase().replace(/[^a-z0-9_-]+/g, '_');
+        var itemCount = Math.max(
+            readNumber(payload.item_count),
+            readNumber(payload.requested_count),
+            readNumber(payload.number_of_images),
+            readNumber(payload.success_count) + readNumber(payload.failure_count),
+            readNumber(payload.processed_count) + readNumber(payload.failed_count)
+        );
+
+        if (itemCount > 1 && /generate_missing|missing|selected|bulk|batch|fix_all_issues/.test(mode)) {
+            return 'bulk';
+        }
+        if (/bulk|batch/.test(mode)) {
+            return 'bulk';
+        }
+        if (/regeneration|regenerate|reoptimize|retry/.test(mode)) {
+            return 'regeneration';
+        }
+        if (/automatic|auto|background|scheduled/.test(mode)) {
+            return 'automatic';
+        }
+        if (mode === 'single' || mode === 'generate_missing' || mode === 'missing' || itemCount === 1) {
+            return 'single';
+        }
+
+        return 'unknown';
+    }
+
     function getCanonicalContext() {
         var c = cfg.context || {};
         var runtime = getTelemetryRuntimeContext();
@@ -357,20 +436,26 @@
         if (!host && (runtime.site_url || c.site_url)) {
             host = normalizeHostValue(runtime.site_url || c.site_url);
         }
+        var schemaVersion = readString(c.event_schema_version || c.telemetry_version || '1');
+        var siteUrl = runtime.site_url || c.site_url || '';
+        var environment = classifyEnvironment(c.environment, host, siteUrl);
         return {
             site_install_id: runtime.site_install_id || c.site_install_id || '',
             site_id: runtime.site_id || c.site_id || '',
             site_hash: runtime.site_hash || c.site_hash || '',
-            site_url: runtime.site_url || c.site_url || '',
+            site_url: siteUrl,
             site_host: host,
             host: host,
             plugin_version: runtime.plugin_version || c.plugin_version || '',
+            app_version: runtime.app_version || c.app_version || runtime.plugin_version || c.plugin_version || '',
             plugin_slug: readString(c.plugin_slug || 'beepbeep-ai-alt-text-generator'),
-            telemetry_version: readString(c.telemetry_version || '1'),
+            telemetry_version: schemaVersion,
+            event_schema_version: schemaVersion,
             wp_version: readString(c.wp_version || ''),
             wordpress_version: readString(c.wordpress_version || c.wp_version || ''),
             php_version: readString(c.php_version || ''),
-            environment: readString(c.environment || 'production'),
+            environment: environment,
+            is_internal: c.is_internal === true || c.is_internal === 'true' || isInternalContext(environment, host, siteUrl),
             plan: normalizePlanValue(runtime.current_plan || c.plan || c.plan_type),
             plan_type: normalizePlanValue(runtime.current_plan || c.plan_type || c.plan),
             quota_state: readString(c.quota_state || ''),
@@ -395,12 +480,15 @@
             site_host: canonical.site_host,
             host: canonical.host,
             plugin_version: canonical.plugin_version,
+            app_version: canonical.app_version,
             plugin_slug: canonical.plugin_slug,
             telemetry_version: canonical.telemetry_version,
+            event_schema_version: canonical.event_schema_version,
             wp_version: canonical.wp_version,
             wordpress_version: canonical.wordpress_version,
             php_version: canonical.php_version,
             environment: canonical.environment,
+            is_internal: canonical.is_internal,
             quota_state: canonical.quota_state,
             license_state: canonical.license_state,
             country: c.country || '',
@@ -420,7 +508,7 @@
     }
 
     function buildPostHogProps(props) {
-        var payload = $.extend({}, props || {});
+        var payload = scrubPrivateProps($.extend({}, props || {}));
         delete payload.client_page;
         delete payload.page_variant;
         return payload;
@@ -447,6 +535,54 @@
             cleaned[key] = payload[key];
         });
         return cleaned;
+    }
+
+    function scrubPrivateProps(payload) {
+        var cleaned = $.extend({}, payload || {});
+        [
+            'email',
+            'license_key',
+            'password',
+            'token',
+            'jwt',
+            'api_key',
+            'secret',
+            'alt_text',
+            'prompt',
+            'raw_response',
+            'image_url',
+            'filename',
+            'file_name'
+        ].forEach(function(key) {
+            delete cleaned[key];
+        });
+        return cleaned;
+    }
+
+    function buildStableInsertId(eventName, props) {
+        var p = props || {};
+        var stable = p.idempotency_key ||
+            p.request_id ||
+            p.generation_item_id ||
+            p.attachment_id ||
+            p.image_id ||
+            p.generation_run_id ||
+            p.signup_attempt_id ||
+            p.checkout_attempt_id ||
+            p.page_view_id ||
+            '';
+        var siteKey = p.site_install_id || p.site_hash || p.site_id || p.journey_id || p.session_id || 'unknown_site';
+
+        if (!stable) {
+            stable = [
+                p.session_id || '',
+                p.page || '',
+                p.trigger_location || p.location || '',
+                Math.floor(Date.now() / 5000)
+            ].join(':');
+        }
+
+        return [eventName, siteKey, stable].map(readString).join(':').replace(/[^a-zA-Z0-9_:-]+/g, '_').slice(0, 180);
     }
 
     function normalizeFailureCode(value) {
@@ -600,7 +736,7 @@
 
     function inferGenerationFeature(props) {
         var requestedCount = readNumber(props.requested_count);
-        var mode = readString(props.generation_mode || props.trigger || props.reason).toLowerCase();
+        var mode = normalizeGenerationMode(props.generation_mode || props.generation_type || props.trigger || props.reason, props);
         var featureContext = normalizeFeatureContext(props.feature_context || props.source || props.location, props.source_page || props.page);
 
         if (featureContext === 'woocommerce') {
@@ -609,7 +745,7 @@
 
         if (
             (!isNaN(requestedCount) && requestedCount > 1) ||
-            /bulk|batch|selected|generate-missing|generate_missing|regenerate-selected|reoptimize|fix-all-issues/.test(mode)
+            mode === 'bulk'
         ) {
             return 'bulk_generation';
         }
@@ -655,8 +791,14 @@
         if (normalized === 'account' || normalized === 'settings' || normalized === 'billing' || normalized === 'dashboard') {
             return normalized;
         }
-        if (normalized === 'login' || normalized === 'signup' || normalized === 'quota' || normalized === 'review_queue') {
-            return normalized;
+        if (normalized === 'login' || normalized === 'signup' || normalized === 'auth') {
+            return 'account';
+        }
+        if (normalized === 'quota') {
+            return 'billing';
+        }
+        if (normalized === 'review_queue') {
+            return 'review';
         }
         if (
             normalized === 'woocommerce_optimisation' ||
@@ -868,7 +1010,7 @@
         }
 
         if (eventName === 'signup_started' || eventName === 'signup_succeeded') {
-            trackFeatureUsed('signup', {
+            trackFeatureUsed('account', {
                 feature_context: normalizeFeatureContext(props.source || props.location, getSourcePage(props)),
                 source_page: getSourcePage(props)
             });
@@ -876,7 +1018,7 @@
         }
 
         if (eventName === 'login_succeeded') {
-            trackFeatureUsed('login', {
+            trackFeatureUsed('account', {
                 feature_context: normalizeFeatureContext(props.source || props.location, getSourcePage(props)),
                 source_page: getSourcePage(props)
             });
@@ -884,7 +1026,7 @@
         }
 
         if (eventName === 'review_queue_opened') {
-            trackFeatureUsed('review_queue', {
+            trackFeatureUsed('review', {
                 feature_context: 'alt_library',
                 source_page: getSourcePage(props)
             });
@@ -892,7 +1034,7 @@
         }
 
         if (eventName === 'generation_blocked_no_credits') {
-            trackFeatureUsed('quota', {
+            trackFeatureUsed('billing', {
                 feature_context: normalizeFeatureContext(props.surface || props.source, getSourcePage(props)),
                 source_page: getSourcePage(props)
             });
@@ -1057,18 +1199,27 @@
                 window.bbaiTelemetrySeen.add(runKey);
             } catch (e2) {}
         }
-        if (eventName === 'generation_started' || eventName === 'generation_completed' || eventName === 'alt_generated' || eventName.indexOf('generation_failed_') === 0 || eventName.indexOf('batch_generation_') === 0) {
-            props.generation_type = props.generation_type || props.generation_mode || 'single';
-            props.generation_mode = props.generation_mode || props.generation_type;
+        if (eventName === 'generation_started' || eventName === 'generation_completed' || eventName === 'alt_generated' || eventName.indexOf('generation_failed_') === 0 || eventName.indexOf('batch_generation_') === 0 || eventName.indexOf('generation_job_') === 0 || eventName.indexOf('generation_item_') === 0 || eventName.indexOf('alt_text_') === 0) {
+            props.generation_mode = normalizeGenerationMode(props.generation_mode || props.generation_type, props);
+            props.generation_type = props.generation_mode;
             if (!props.feature_name) {
                 props.feature_name = props.generation_mode === 'bulk' ? 'bulk_generation' : 'single_generation';
             }
+            if (!props.correlation_id) {
+                props.correlation_id = props.generation_run_id || props.request_id || props.session_id || '';
+            }
         }
         if ((eventName === 'signup_started' || eventName === 'signup_succeeded') && !props.feature_name) {
-            props.feature_name = 'signup';
+            props.feature_name = 'account';
         }
         if (eventName === 'login_succeeded' && !props.feature_name) {
-            props.feature_name = 'login';
+            props.feature_name = 'account';
+        }
+        if (eventName === 'signup_started' || eventName === 'signup_succeeded') {
+            if (!window.bbaiTelemetrySignupAttemptId) {
+                window.bbaiTelemetrySignupAttemptId = 'signup_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+            }
+            props.signup_attempt_id = props.signup_attempt_id || window.bbaiTelemetrySignupAttemptId;
         }
 
         if (eventName === 'feature_used') {
@@ -1146,6 +1297,18 @@
                 site_hash: props.site_hash || ''
             });
         }
+        if (!props.event_schema_version) {
+            props.event_schema_version = props.telemetry_version || '1';
+        }
+        if (!props.telemetry_version) {
+            props.telemetry_version = props.event_schema_version;
+        }
+        if (!props.app_version) {
+            props.app_version = props.plugin_version || '';
+        }
+        if (!props['$insert_id']) {
+            props['$insert_id'] = buildStableInsertId(eventName, props);
+        }
         if (posthogAllowlist[eventName]) {
             bbaiTrack(eventName, buildPostHogProps(props));
         }
@@ -1208,6 +1371,7 @@
         var c = cfg.context || {};
         var pk = c.page || 'unknown';
         var pageVariant = c.page_variant || pk;
+        var pageViewId = 'pv_' + (window.bbaiTelemetrySessionId || 'session') + '_' + String(pageVariant || pk || 'unknown');
         var sessionOpenKey = 'bbai_plugin_opened_sent:' + (window.bbaiTelemetrySessionId || '');
         var pluginOpenedSent = false;
         try {
@@ -1223,12 +1387,15 @@
             } catch (e2) {}
             bbaiTrackOnce('plugin_opened', {
                 navigation: 'direct',
-                page: pageVariant
+                page: pageVariant,
+                page_view_id: pageViewId,
+                plugin_opened_semantics: 'once_per_browser_session'
             }, sessionOpenKey);
         }
         bbaiTrackOnce(mapPageToViewEvent(pk, pageVariant), {
             navigation: 'direct',
-            page: pageVariant
+            page: pageVariant,
+            page_view_id: pageViewId
         }, 'dashboard_viewed:' + String(pageVariant || pk || 'unknown'));
         if ((c.days_since_last_active || 0) > 0) {
             track('returning_user_session', {

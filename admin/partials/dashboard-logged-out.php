@@ -50,7 +50,7 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
 	data-bbai-trial-remaining="<?php echo esc_attr( (string) $bbai_lo_trial_remaining ); ?>"
 	data-bbai-trial-limit="<?php echo esc_attr( (string) $bbai_lo_trial_limit ); ?>"
 	<?php echo $bbai_lo_show_conversion_modal ? ' data-bbai-conversion-modal="1"' : ''; ?>
-	aria-label="<?php esc_attr_e( 'Get started with BeepBeep AI', 'beepbeep-ai-alt-text-generator' ); ?>"
+	aria-label="<?php esc_attr_e( 'Get started with OpptiAI', 'beepbeep-ai-alt-text-generator' ); ?>"
 >
 	<div class="bbai-logged-out__container">
 

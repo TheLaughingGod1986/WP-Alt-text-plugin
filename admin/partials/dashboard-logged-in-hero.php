@@ -695,6 +695,43 @@ endif;
 					<p class="bbai-hero-cta-hint bbai-hero-cta-hint--passive" data-bbai-gen-running-note="1" hidden>
 						<?php esc_html_e( 'Generation is running in the background.', 'beepbeep-ai-alt-text-generator' ); ?>
 					</p>
+					<div
+						class="bbai-hero-generation-progress bbai-live-region--visible"
+						data-bbai-hero-generation-progress="1"
+						role="region"
+						aria-label="<?php esc_attr_e( 'Background ALT text generation', 'beepbeep-ai-alt-text-generator' ); ?>"
+						aria-live="polite"
+						hidden
+					>
+						<div class="bbai-hero-generation-progress__summary">
+							<span data-bbai-hero-generation-progress-label="1">
+								<?php esc_html_e( 'Generating ALT text…', 'beepbeep-ai-alt-text-generator' ); ?>
+							</span>
+							<span data-bbai-hero-generation-progress-count="1">0 / 0</span>
+						</div>
+						<div
+							class="bbai-hero-generation-progress__track"
+							data-bbai-hero-generation-progress-track="1"
+							role="progressbar"
+							aria-valuemin="0"
+							aria-valuemax="100"
+							aria-valuenow="0"
+							aria-label="<?php esc_attr_e( 'ALT text generation progress', 'beepbeep-ai-alt-text-generator' ); ?>"
+						>
+							<span
+								class="bbai-hero-generation-progress__fill"
+								data-bbai-hero-generation-progress-fill="1"
+								style="width: 0%;"
+							></span>
+						</div>
+						<button
+							type="button"
+							class="bbai-hero-generation-progress__view"
+							data-bbai-hero-progress-view="1"
+						>
+							<?php esc_html_e( 'View detailed progress', 'beepbeep-ai-alt-text-generator' ); ?>
+						</button>
+					</div>
 					<a
 						class="bbai-hero-review-inline-link"
 						href="<?php echo esc_url( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['href'] ) ? $bbai_li_secondary_cta['href'] : '#' ); ?>"
@@ -1386,7 +1423,7 @@ endif;
 		checkSettingsToContinue: '<?php echo esc_js( __( 'Check settings to continue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		libraryReadyToOptimise: '<?php echo esc_js( __( 'Library ready to optimise', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactQueued: '<?php echo esc_js( __( 'Ready when you are — start generating to move images into review.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		impactProcessing: '<?php echo esc_js( __( 'BeepBeep is working through your library now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		impactProcessing: '<?php echo esc_js( __( 'OpptiAI is working through your library now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactAllClearSingle: '<?php echo esc_js( /* translators: %s: value */ _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactAllClearPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactAllClearFallback: '<?php echo esc_js( __( 'Your library is fully optimised for accessibility and search.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -5597,6 +5634,25 @@ endif;
 
 		var limit = Math.max( 1, Math.min( 500, BBAI_HERO_CFG.missingCount || 500 ) );
 		var idsQueued = null;
+		var preflightProgressShown = false;
+
+		function hidePreflightProgress() {
+			if ( ! preflightProgressShown ) {
+				return;
+			}
+			preflightProgressShown = false;
+			if ( typeof window.bbaiHideGenerationPreflightProgress === 'function' ) {
+				window.bbaiHideGenerationPreflightProgress();
+			}
+		}
+
+		if ( typeof window.bbaiShowGenerationPreflightProgress === 'function' ) {
+			preflightProgressShown = window.bbaiShowGenerationPreflightProgress( {
+				total:  limit,
+				title:  ACTION_STATUS[ 'generate-missing' ],
+				helper: '<?php echo esc_js( __( 'Finding images that need ALT text...', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+			} );
+		}
 
 		// Step 1: fetch missing attachment IDs through the registered WP Ajax action.
 		fetchMissingAttachmentIds( limit )
@@ -5604,6 +5660,7 @@ endif;
 			if ( ids.length === 0 ) {
 				releaseInlineGenerationLock();
 				clearOptimisticAction();
+				hidePreflightProgress();
 				showStatusLine( TEXT.noMissingFoundRescan );
 				var showMismatch = ( BBAI_HERO_CFG.missingCount || 0 ) > 0;
 				if ( showMismatch && BBAI_HERO_CFG.wpDebug === '1' ) {
@@ -5618,6 +5675,14 @@ endif;
 			}
 
 			idsQueued = ids;
+			if ( typeof window.bbaiUpdateGenerationPreflightProgress === 'function' ) {
+				window.bbaiUpdateGenerationPreflightProgress( {
+					total:  idsQueued.length,
+					source: 'generate-missing',
+					title:  ACTION_STATUS[ 'generate-missing' ],
+					helper: '<?php echo esc_js( __( 'Preparing this batch...', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				} );
+			}
 			return postBulkQueue( ids );
 		} )
 		.then( function ( queueJson ) {
@@ -5625,6 +5690,7 @@ endif;
 			if ( ! queueJson.success ) {
 				releaseInlineGenerationLock();
 				clearOptimisticAction();
+				hidePreflightProgress();
 				var failRaw = queueJson.data && queueJson.data.message ? String( queueJson.data.message ) : '';
 				if ( bbaiHeroLooksLikeSessionOrNonceMessage( failRaw ) ) {
 					showStatusLine( TEXT.sessionExpired );
@@ -5646,6 +5712,7 @@ endif;
 
 			var flowOk = false;
 			if ( typeof window.startGenerationFlow === 'function' ) {
+				preflightProgressShown = false;
 				flowOk = window.startGenerationFlow( idsQueued, {
 					source: 'generate-missing',
 					entry: 'dashboard_hero',
@@ -5658,6 +5725,7 @@ endif;
 			if ( ! flowOk ) {
 				releaseInlineGenerationLock();
 				clearOptimisticAction();
+				hidePreflightProgress();
 				showStatusLine( TEXT.startFailed );
 				return;
 			}
@@ -5706,6 +5774,7 @@ endif;
 		.catch( function ( err ) {
 			releaseInlineGenerationLock();
 			clearOptimisticAction();
+			hidePreflightProgress();
 			var ajaxMsg = err && err.bbaiAjaxMessage ? String( err.bbaiAjaxMessage ) : '';
 			if ( ajaxMsg && bbaiHeroLooksLikeSessionOrNonceMessage( ajaxMsg ) ) {
 				showStatusLine( TEXT.sessionExpired );

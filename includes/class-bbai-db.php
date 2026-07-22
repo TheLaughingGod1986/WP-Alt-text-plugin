@@ -1,6 +1,6 @@
 <?php
 /**
- * Centralized DB schema manager for BeepBeep AI.
+ * Centralized DB schema manager for OpptiAI.
  *
  * Handles table creation, versioned upgrades, and performance indexes.
  * All schema operations run ONLY during activation or version upgrades,

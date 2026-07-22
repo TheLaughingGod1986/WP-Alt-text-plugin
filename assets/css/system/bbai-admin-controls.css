@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI — Phase 2 shared controls (buttons, links, fields, icon buttons)
+ * OpptiAI — Phase 2 shared controls (buttons, links, fields, icon buttons)
  *
  * Scoped to body.bbai-dashboard. Source of truth: bbai-admin-foundation-tokens.css + unified :root.
  * Aliases: .bbai-btn--* (BEM) ↔ .bbai-btn-* (legacy) ↔ .bbai-ds-* (design-system primitives).

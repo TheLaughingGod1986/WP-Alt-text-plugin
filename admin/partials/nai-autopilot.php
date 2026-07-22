@@ -2,7 +2,7 @@
 /**
  * nAi Autopilot screen — generation preferences + scheduled background work.
  *
- * Pure presentation; reads the BeepBeep plugin option for auto_generate to
+ * Pure presentation; reads the OpptiAI plugin option for auto_generate to
  * surface the master toggle's state. Form submits stay on existing settings
  * endpoints so this view is safe to drop in without rewiring backend code.
  */
@@ -134,7 +134,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 	<div class="nai-page-header">
 		<div class="nai-eyebrow"><?php esc_html_e( 'Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></div>
 		<h1 class="nai-page-header__title"><?php esc_html_e( 'Hands-off image SEO', 'beepbeep-ai-alt-text-generator' ); ?></h1>
-		<p class="nai-page-header__sub"><?php esc_html_e( 'Decide how BeepBeep AI writes ALT text — and let it run quietly in the background on every new upload.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+		<p class="nai-page-header__sub"><?php esc_html_e( 'Decide how OpptiAI writes ALT text — and let it run quietly in the background on every new upload.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 	</div>
 
 	<?php // -------- HERO: master Autopilot toggle / upsell -------- ?>
@@ -172,7 +172,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 						<?php
 						echo esc_html(
 							$nai_ap_auto_on
-								? __( 'BeepBeep AI will generate ALT text for every new image the moment it hits your media library.', 'beepbeep-ai-alt-text-generator' )
+								? __( 'OpptiAI will generate ALT text for every new image the moment it hits your media library.', 'beepbeep-ai-alt-text-generator' )
 								: __( 'Turn this on so you never have to think about ALT text again.', 'beepbeep-ai-alt-text-generator' )
 						);
 						?>
@@ -189,7 +189,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 	<?php // -------- Generation preferences -------- ?>
 	<div class="nai-ap-section">
 		<div class="nai-eyebrow"><?php esc_html_e( 'Generation', 'beepbeep-ai-alt-text-generator' ); ?></div>
-		<h2><?php esc_html_e( 'How BeepBeep AI writes', 'beepbeep-ai-alt-text-generator' ); ?></h2>
+		<h2><?php esc_html_e( 'How OpptiAI writes', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 		<div class="nai-ap-section__sub"><?php esc_html_e( 'These preferences apply to every image — manual and automated.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 	</div>
 
@@ -273,7 +273,7 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 	<div class="nai-ap-section">
 		<div class="nai-eyebrow"><?php esc_html_e( 'Run on a schedule', 'beepbeep-ai-alt-text-generator' ); ?></div>
 		<h2><?php esc_html_e( 'Background work', 'beepbeep-ai-alt-text-generator' ); ?></h2>
-		<div class="nai-ap-section__sub"><?php esc_html_e( 'Optional Growth extras that keep your library healthy without you opening BeepBeep AI.', 'beepbeep-ai-alt-text-generator' ); ?></div>
+		<div class="nai-ap-section__sub"><?php esc_html_e( 'Optional Growth extras that keep your library healthy without you opening OpptiAI.', 'beepbeep-ai-alt-text-generator' ); ?></div>
 	</div>
 
 	<div class="nai-card" style="margin-bottom:14px;">

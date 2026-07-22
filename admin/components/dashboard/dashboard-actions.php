@@ -37,7 +37,6 @@ if ( empty( $nai_is_pro ) && isset( $nai_credits_lim ) && (int) $nai_credits_lim
 				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Editing streak', 'beepbeep-ai-alt-text-generator' ); ?></div>
 				<div class="nai-footer-metrics__value">
 					<span class="nai-mono nai-tnum"><?php echo esc_html( (string) $nai_streak ); ?></span><?php esc_html_e( '-day streak', 'beepbeep-ai-alt-text-generator' ); ?>
-					<span class="nai-footer-metrics__muted">· <?php esc_html_e( '12 of last 14', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				</div>
 			</div>
 			<div class="nai-footer-metrics__item">
@@ -45,7 +44,6 @@ if ( empty( $nai_is_pro ) && isset( $nai_credits_lim ) && (int) $nai_credits_lim
 				<div class="nai-footer-metrics__value">
 					<span class="nai-mono nai-tnum"><?php echo esc_html( number_format_i18n( $nai_daily_use > 0 ? $nai_daily_use : min( $nai_credits_use, 18 ) ) ); ?></span>
 					<?php esc_html_e( 'images', 'beepbeep-ai-alt-text-generator' ); ?>
-					<span class="nai-footer-metrics__muted">· <?php esc_html_e( '+18% vs last week', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				</div>
 			</div>
 			<div class="nai-footer-metrics__item">
@@ -63,7 +61,6 @@ if ( empty( $nai_is_pro ) && isset( $nai_credits_lim ) && (int) $nai_credits_lim
 				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Editing streak', 'beepbeep-ai-alt-text-generator' ); ?></div>
 				<div class="nai-footer-metrics__value">
 					<span class="nai-mono nai-tnum"><?php echo esc_html( (string) $nai_streak ); ?></span><?php esc_html_e( '-day streak', 'beepbeep-ai-alt-text-generator' ); ?>
-					<span class="nai-footer-metrics__muted">· <?php esc_html_e( '12 of last 14', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				</div>
 			</div>
 			<?php if ( ! empty( $nai_has_daily_cap ) ) : ?>

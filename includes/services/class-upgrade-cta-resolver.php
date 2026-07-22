@@ -224,7 +224,7 @@ final class Upgrade_Cta_Resolver {
 				'default'           => $pro,
 			),
 			'modal_primary_label'    => $pro,
-			'modal_title_default'    => __( 'Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator' ),
+			'modal_title_default'    => __( 'Manage your OpptiAI plan', 'beepbeep-ai-alt-text-generator' ),
 			'modal_subtitle_default' => __( 'Compare plans or open billing to adjust your subscription.', 'beepbeep-ai-alt-text-generator' ),
 			'show_credit_pack'       => true,
 			'analytics'              => array(
@@ -259,7 +259,7 @@ final class Upgrade_Cta_Resolver {
 				'default'           => $usage,
 			),
 			'modal_primary_label'    => __( 'Open billing portal', 'beepbeep-ai-alt-text-generator' ),
-			'modal_title_default'    => __( 'Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator' ),
+			'modal_title_default'    => __( 'Manage your OpptiAI plan', 'beepbeep-ai-alt-text-generator' ),
 			'modal_subtitle_default' => __( 'Compare plans, manage billing, or add credits.', 'beepbeep-ai-alt-text-generator' ),
 			'show_credit_pack'       => true,
 			'analytics'              => array(

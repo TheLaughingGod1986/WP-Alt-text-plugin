@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI — State-aware micro-motion system.
+ * OpptiAI — State-aware micro-motion system.
  *
  * Subscribes to bbaiJobState and orchestrates coordinated visual feedback
  * across CTA, donut, inline messaging, and success states.

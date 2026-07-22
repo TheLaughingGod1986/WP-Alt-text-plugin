@@ -1,6 +1,6 @@
 <?php
 /**
- * Usage Logs Manager for BeepBeep AI
+ * Usage Logs Manager for OpptiAI
  * Tracks per-user token usage events for multi-user visualization
  */
 

@@ -337,7 +337,7 @@ class Generation_Service {
 			'network_error'        => __( 'Unable to reach the server. Please check your internet connection and try again.', 'beepbeep-ai-alt-text-generator' ),
 			'rate_limited'         => __( 'Too many requests were sent at once. Please wait a moment and retry.', 'beepbeep-ai-alt-text-generator' ),
 			'server_error'         => __( 'The service is temporarily unavailable. Please retry in a moment.', 'beepbeep-ai-alt-text-generator' ),
-			'auth_required'        => __( 'Your BeepBeep AI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator' ),
+			'auth_required'        => __( 'Your OpptiAI account session has expired. Please sign in again.', 'beepbeep-ai-alt-text-generator' ),
 		);
 
 		return $messages[ $error_code ] ?? $error_message;

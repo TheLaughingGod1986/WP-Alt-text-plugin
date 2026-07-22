@@ -5169,7 +5169,7 @@
 
         if (!optimizedOnly) {
             return {
-                summary: __('Follow this simple workflow to use BeepBeep AI:', 'beepbeep-ai-alt-text-generator'),
+                summary: __('Follow this simple workflow to use OpptiAI:', 'beepbeep-ai-alt-text-generator'),
                 label: '',
                 steps: workflowSteps
             };
@@ -9446,7 +9446,7 @@
         var intro = document.createElement('p');
         intro.className = 'bbai-dashboard-generator-modal__intro';
         intro.id = descriptionId;
-        intro.textContent = __('BeepBeep AI will automatically generate ALT text for images missing descriptions.', 'beepbeep-ai-alt-text-generator');
+        intro.textContent = __('OpptiAI will automatically generate ALT text for images missing descriptions.', 'beepbeep-ai-alt-text-generator');
         messageNode.appendChild(intro);
 
         var summaryCard = document.createElement('div');
@@ -21528,6 +21528,49 @@
     window.bbaiApplyLoggedInDashboardStatePayload = applyLoggedInDashboardStatePayload;
     window.bbaiRenderLoggedInDashboardHeroState = renderLoggedInDashboardHeroState;
     window.startGenerationFlow = startGenerationFlow;
+    window.bbaiShowGenerationPreflightProgress = function(options) {
+        options = options || {};
+        var total = Math.max(1, parseInt(options.total, 10) || 1);
+        var title = options.title || __('Processing your images', 'beepbeep-ai-alt-text-generator');
+
+        showBulkProgress(title, total, 0);
+        updateBulkProgressTitle(title);
+        setBulkProgressHelperText(
+            options.helper || __('Finding images that need ALT text...', 'beepbeep-ai-alt-text-generator')
+        );
+
+        return true;
+    };
+    window.bbaiUpdateGenerationPreflightProgress = function(options) {
+        options = options || {};
+        var $modal = $('#bbai-bulk-progress-modal');
+        var total = Math.max(1, parseInt(options.total, 10) || 1);
+
+        if (!$modal.length) {
+            return window.bbaiShowGenerationPreflightProgress(options);
+        }
+
+        $modal.data('source', options.source || String($modal.data('source') || 'generate-missing'));
+        syncBulkProgressState($modal, {
+            total: total,
+            processed: 0,
+            failed: 0,
+            skipped: 0,
+            source: String($modal.data('source') || 'generate-missing'),
+            activeTitle: options.title || __('Processing your images', 'beepbeep-ai-alt-text-generator'),
+            quotaBlocked: false,
+            quotaError: null,
+            complete: false
+        });
+        updateBulkProgressTitle(options.title || __('Processing your images', 'beepbeep-ai-alt-text-generator'));
+        if (options.helper) {
+            setBulkProgressHelperText(options.helper);
+        }
+        updateBulkProgress(0, total);
+
+        return true;
+    };
+    window.bbaiHideGenerationPreflightProgress = hideBulkProgress;
     window.bbaiBeginDashboardGenerateMissingProgress = function(idList) {
         if (!bbaiAcquireGenerationLock(null, 'dashboard_generate', null)) {
             return false;
@@ -22160,7 +22203,7 @@
         }
 
         // Avoid binding heavy delegated handlers + observers on wp-admin screens that
-        // don't include any BeepBeep AI UI. This keeps page-to-page navigation snappy
+        // don't include any OpptiAI UI. This keeps page-to-page navigation snappy
         // and prevents duplicate "state" pipelines from ever starting.
         var qs = (typeof window !== 'undefined' && window.location && window.location.search) ? String(window.location.search) : '';
         var isBbaiAdminPage = /[?&]page=bbai(?:[&#]|$)/.test(qs) || /[?&]page=bbai-[^&#]+/.test(qs);

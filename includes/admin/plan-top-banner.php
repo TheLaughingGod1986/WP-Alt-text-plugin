@@ -248,7 +248,7 @@ function bbai_plan_top_banner_build_command_hero( string $page_context, array $i
 		'tone'                    => (string) $resolved['tone'],
 		'banner_variant'          => (string) $resolved['banner_variant'],
 		'suppress_banner_render'  => false,
-		'aria_label'              => (string) ( $opts['aria_label'] ?? __( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ) ),
+		'aria_label'              => (string) ( $opts['aria_label'] ?? __( 'OpptiAI', 'beepbeep-ai-alt-text-generator' ) ),
 		'eyebrow'                 => (string) ( $opts['eyebrow'] ?? '' ),
 		'title'                   => (string) $resolved['headline'],
 		'body'                    => (string) $resolved['subtext'],

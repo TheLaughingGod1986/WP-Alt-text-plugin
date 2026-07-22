@@ -128,12 +128,12 @@ class BBAI_Schema_Markup {
 			);
 		}
 
-		echo "\n<!-- BeepBeep AI - Image Schema Markup -->\n";
+		echo "\n<!-- OpptiAI - Image Schema Markup -->\n";
 		wp_print_inline_script_tag(
 			wp_json_encode( $schema ),
 			array( 'type' => 'application/ld+json' )
 		);
-		echo "<!-- /BeepBeep AI - Image Schema Markup -->\n";
+		echo "<!-- /OpptiAI - Image Schema Markup -->\n";
 	}
 
 	/**

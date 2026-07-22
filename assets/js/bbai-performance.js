@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Performance Optimizations
+ * OpptiAI Performance Optimizations
  * Lazy loading, caching, and query optimization helpers
  */
 

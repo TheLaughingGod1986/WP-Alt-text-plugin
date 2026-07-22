@@ -1,6 +1,6 @@
 <?php
 /**
- * Debug helper functions for BeepBeep AI.
+ * Debug helper functions for OpptiAI.
  *
  * @package BeepBeep_AI
  * @since 4.4.2

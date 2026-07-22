@@ -82,9 +82,9 @@ $nai_shell_nav_items = array(
 ?>
 <div class="nai-app" data-nai-app-shell="1" data-nai-is-pro="<?php echo $nai_shell_is_pro ? '1' : '0'; ?>" data-nai-prototype="<?php echo $nai_shell_prototype ? '1' : '0'; ?>" data-nai-demo-trigger="<?php echo esc_attr( $nai_shell_demo_trigger ); ?>">
 	<div hidden data-nai-drawer-items data-nai-drawer-items-json="<?php echo esc_attr( $nai_shell_json ); ?>"></div>
-	<header class="nai-topbar" aria-label="<?php esc_attr_e( 'BeepBeep AI navigation', 'beepbeep-ai-alt-text-generator' ); ?>">
-		<div class="nai-topbar__brand"><?php esc_html_e( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ); ?></div>
-		<nav class="nai-topbar__nav" aria-label="<?php esc_attr_e( 'BeepBeep AI sections', 'beepbeep-ai-alt-text-generator' ); ?>">
+	<header class="nai-topbar" aria-label="<?php esc_attr_e( 'OpptiAI navigation', 'beepbeep-ai-alt-text-generator' ); ?>">
+		<div class="nai-topbar__brand"><?php esc_html_e( 'OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ); ?></div>
+		<nav class="nai-topbar__nav" aria-label="<?php esc_attr_e( 'OpptiAI sections', 'beepbeep-ai-alt-text-generator' ); ?>">
 			<?php foreach ( $nai_shell_nav_items as $slug => $item ) : ?>
 				<?php $active = $nai_shell_active === $slug; ?>
 				<a
@@ -135,7 +135,7 @@ $nai_shell_nav_items = array(
 	</header>
 	<div class="nai-signedout" hidden data-nai-signedout>
 		<div class="nai-signedout__card">
-			<div class="nai-signedout__brand"><?php echo $nai_shell_icon( 'shield', 24, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><strong><?php esc_html_e( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ); ?></strong><span><?php esc_html_e( 'Image SEO', 'beepbeep-ai-alt-text-generator' ); ?></span></div>
+			<div class="nai-signedout__brand"><?php echo $nai_shell_icon( 'shield', 24, 2 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?><strong><?php esc_html_e( 'OpptiAI', 'beepbeep-ai-alt-text-generator' ); ?></strong><span><?php esc_html_e( 'Image SEO', 'beepbeep-ai-alt-text-generator' ); ?></span></div>
 			<h2><?php esc_html_e( 'Welcome back', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 			<p><?php esc_html_e( 'Sign in to keep your images covered. Existing ALT text stays on your site while Autopilot is paused.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			<label class="nai-field">

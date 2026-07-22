@@ -1,6 +1,6 @@
 <?php
 /**
- * Credit Usage Admin Page for BeepBeep AI
+ * Credit Usage Admin Page for OpptiAI
  * Displays per-user credit usage breakdown and detailed statistics
  */
 

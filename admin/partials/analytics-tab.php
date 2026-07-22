@@ -477,7 +477,7 @@ $bbai_before_after_story_title = 0 === $bbai_total_images
 		$bbai_alt_coverage_display
 	);
 $bbai_before_after_story_description = 0 === $bbai_total_images
-	? __( 'This section becomes a proof-of-value snapshot once BeepBeep AI starts optimizing your library.', 'beepbeep-ai-alt-text-generator' )
+	? __( 'This section becomes a proof-of-value snapshot once OpptiAI starts optimizing your library.', 'beepbeep-ai-alt-text-generator' )
 	: __( 'This is the clearest proof of value on the page: fewer missing descriptions, better accessibility coverage, and less manual work.', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_before_after_actions = array(

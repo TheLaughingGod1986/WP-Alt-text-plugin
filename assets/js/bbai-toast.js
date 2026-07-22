@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Toast Notification System
+ * OpptiAI Toast Notification System
  * Replaces alerts with accessible, branded toast notifications
  */
 

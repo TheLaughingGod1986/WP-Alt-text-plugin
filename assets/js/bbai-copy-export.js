@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Copy to Clipboard and Export Features
+ * OpptiAI Copy to Clipboard and Export Features
  * Copy alt text to clipboard and export data in various formats
  */
 

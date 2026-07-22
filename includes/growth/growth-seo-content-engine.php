@@ -82,7 +82,7 @@ function bbai_growth_seo_engine_data(): array {
 			'wporg_link'    => $plugin_url,
 		),
 		'internal_linking_rules'   => array(
-			'Every commercial landing page links to the WordPress.org plugin page with branded anchor (e.g. “BeepBeep AI on WordPress.org”).',
+			'Every commercial landing page links to the WordPress.org plugin page with branded anchor (e.g. “OpptiAI on WordPress.org”).',
 			'Blog posts link pillar → cluster articles → plugin page in footer CTA.',
 			'Use “ALT text” and “alternative text” variants naturally; avoid duplicate anchors sitewide.',
 		),

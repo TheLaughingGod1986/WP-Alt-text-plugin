@@ -1,6 +1,6 @@
 <?php
 /**
- * Auth state helper for BeepBeep AI.
+ * Auth state helper for OpptiAI.
  *
  * Centralizes authentication and stored credential checks used across admin rendering.
  */

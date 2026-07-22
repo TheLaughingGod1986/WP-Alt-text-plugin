@@ -68,8 +68,11 @@ mkdir -p "${WORK_DIR}/trunk"
 
 rsync -av --delete \
   --exclude=".git" \
+  --exclude=".gitignore" \
+  --exclude=".github" \
   --exclude=".wp-env.json" \
   --exclude="node_modules" \
+  --exclude="vendor" \
   --exclude=".playwright-cli" \
   --exclude=".playwright-mcp" \
   --exclude="scripts" \
@@ -88,6 +91,8 @@ rsync -av --delete \
   --exclude="tmp" \
   --exclude="test-results" \
   --exclude="playwright-report" \
+  --exclude=".phpunit.result.cache" \
+  --exclude="AGENTS.md" \
   --exclude="*.png" \
   --exclude="login-helper.js" \
   --exclude="wp-login.js" \

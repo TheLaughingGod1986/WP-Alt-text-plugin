@@ -1,114 +1,130 @@
-=== BeepBeep AI – Alt Text Generator ===
-Plugin Name: BeepBeep AI – Alt Text Generator
+=== OpptiAI Alt Text - AI Alt Text Generator for Image SEO ===
+Plugin Name: OpptiAI Alt Text - AI Alt Text Generator for Image SEO
 Contributors: beepbeepv2
-Plugin URI: https://oppti.dev/beepbeep-ai-alt-text-generator
+Plugin URI: https://oppti.dev/plugins/alt-text
 Author URI: https://oppti.dev
-Tags: ai alt text, alt text generator, image seo, accessibility, woocommerce
+Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.115
+Stable tag: 4.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-AI alt text generator for WordPress. Bulk-generate image alt text for SEO, accessibility, WooCommerce, and media libraries.
+Bulk-generate AI alt text for WordPress & WooCommerce images. Fix missing alt text, boost image SEO and accessibility - with full review control.
 
 == Description ==
 
-BeepBeep AI is a WordPress AI alt text generator for site owners who want faster image SEO, stronger accessibility, and less manual image admin. It scans your WordPress Media Library and WooCommerce product images, finds missing alt text and weak image descriptions, and helps you generate AI alt text in bulk from one clean workflow. Instead of editing image alt attributes one by one, you can scan the library, bulk-generate descriptive alt text, review the results, and save approved changes back into WordPress.
+**OpptiAI Alt Text is an AI alt text generator for WordPress that fixes missing image alt text in bulk** - so your Media Library and WooCommerce products get the descriptions search engines and screen readers need, without you editing images one at a time.
 
-Better image alt text helps search engines understand your images, supports Google Images and product discovery, and improves the experience for screen readers. That makes BeepBeep AI useful for bloggers, publishers, WooCommerce stores, agencies, SEO teams, and accessibility-focused site owners who need a practical alt text workflow inside wp-admin. Use one-click scans to identify missing alt text, process many images at once, review suggestions that need extra context, and optionally turn on automatic alt text for new uploads. The result is a faster path to cleaner WordPress image SEO, more consistent media library coverage, and better accessibility across your site.
+Point it at your site and it scans the WordPress Media Library and WooCommerce product images, flags the ones with missing, generic, or weak alt text, and generates clear, descriptive alt text you review and approve. Scan, bulk-generate, review the handful that need a human touch, and save - a job that used to take an afternoon takes minutes.
 
-= Why site owners choose BeepBeep AI =
+Good alt text does two jobs at once: it tells Google Images and product search what each picture shows (real image-search traffic, especially for stores), and it gives screen-reader users the description they rely on. OpptiAI Alt Text is built for bloggers, publishers, WooCommerce stores, agencies, SEO teams, and accessibility-focused site owners who want that handled properly inside wp-admin.
 
-* **Bulk-generate WordPress alt text** so large media libraries can be cleaned up in minutes instead of image by image.
-* **Fix missing image alt attributes** across WordPress posts, pages, products, and media attachments.
+**No separate OpenAI key to set up, no per-image busywork, and nothing published without your approval.**
+
+= Why site owners choose OpptiAI Alt Text =
+
+* **Bulk-generate WordPress alt text** so large media libraries get cleaned up in minutes, not image by image.
+* **No OpenAI API key required** - generation runs through OpptiAI's backend, so you don't manage or pay for a separate AI key.
+* **Fix missing image alt attributes** across posts, pages, WooCommerce products, and media attachments.
 * **Improve image SEO with clearer descriptions** that help search engines understand posts, products, and category images.
 * **Support accessibility and WCAG workflows** by finding missing alt text fast and reviewing AI suggestions before they go live.
-* **Scan once, prioritise quickly, and act** with clear views for missing, needs review, and optimised images.
-* **Keep humans in control** with edit, review, regenerate, and approve actions built into the workflow.
-* **Optimise WooCommerce product images** across featured images and galleries without changing your theme or catalog setup.
-* **Automate future uploads** with optional AI alt text generation for new media.
+* **Keep humans in control** with edit, review, regenerate, and approve actions built into the workflow - nothing overwrites your work automatically.
+* **Optimise WooCommerce product images** across featured images and galleries without touching your theme or catalog.
+* **Automate future uploads** with optional AI alt text for new media, so coverage never slips again.
 
 = Features =
 
-* **Bulk AI alt text generation for WordPress** so you can update many images in one action instead of editing the media library one file at a time.
+* **Bulk AI alt text generation for WordPress** - update many images in one action instead of editing the Media Library file by file.
 * **One-click scan for missing alt text** to surface the images most likely to hurt accessibility and image SEO.
-* **Alt tag and alt attribute cleanup** for WordPress images that are empty, generic, or ready for a better description.
+* **Alt tag and alt attribute cleanup** for images that are empty, generic, or ready for a better description.
 * **Review, edit, and regenerate workflow** that keeps quality high when AI suggestions need extra context.
 * **Image SEO-focused output** designed to help Google Images and product search understand what each image shows.
 * **WooCommerce-ready optimisation** for product featured images, gallery images, and broader store content.
-* **Automatic alt text for new uploads** so future media stays covered without repeating the same cleanup process.
-* **Clear dashboard, usage, and coverage views** so teams can track progress and prioritise the next fixes.
-* **Native WordPress admin experience** that feels like a practical plugin workflow, not a disconnected external tool.
+* **Automatic alt text for new uploads** so future media stays covered without repeating the cleanup.
+* **Clear dashboard, usage, and coverage views** so you can track progress and prioritise the next fixes.
+* **Native WordPress admin experience** that feels like a real wp-admin workflow, not an external tool bolted on.
 
 = How it works =
 
 1. **Scan your WordPress media library** to find missing alt text, weak descriptions, and optimisation opportunities.
 2. **Generate AI alt text in bulk** for the images you want to improve.
 3. **Review and edit suggestions** so the final text matches your content, products, and brand voice.
-4. **Save approved alt text** back to WordPress and keep your media library moving toward full coverage.
+4. **Save approved alt text** back to WordPress and move your library toward full coverage.
 5. **Turn on automatic optimisation** if you want new uploads to get AI alt text going forward.
 
 = Use cases =
 
-* **Bloggers and publishers** who want faster image SEO improvements across existing posts and future uploads.
-* **WooCommerce stores** that need bulk alt text for product images, galleries, and category visuals.
+* **Bloggers and publishers** wanting faster image SEO across existing posts and future uploads.
+* **WooCommerce stores** needing bulk alt text for product images, galleries, and category visuals.
 * **Agencies and freelancers** managing multiple WordPress sites and large client media libraries.
 * **SEO teams** improving image discoverability and consistency across content and commerce pages.
-* **Accessibility-focused site owners** improving image descriptions as part of broader WCAG and content quality work.
-
-= Why choose BeepBeep AI =
-
-BeepBeep AI is built for WordPress users who want the practical benefits of AI alt text without giving up review control. It focuses on the workflows that actually matter in wp-admin: scanning the media library, fixing images in bulk, reviewing edge cases, improving WooCommerce image coverage, and keeping future uploads organised. The result feels closer to a premium WordPress workflow than a generic AI tool bolted onto your site.
+* **Accessibility-focused site owners** improving image descriptions as part of WCAG and content-quality work.
 
 = Free plan and paid options =
 
-Start with 10 trial generations and test the workflow before creating an account. The free plan includes 15 AI alt text generations per month. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
+Try 10 generations before you even create an account. The free plan then includes 15 AI alt text generations per month - enough to fix your highest-value images and see the workflow on your own site. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
+
+= A quick favour =
+
+OpptiAI Alt Text is built and supported by an independent developer. If it saves you time, a short review genuinely helps other site owners find it - thank you.
 
 = Learn more =
 
-Want a deeper look at AI alt text workflows and alternatives for WordPress? [Compare AI alt text options for WordPress](https://oppti.dev/alttext-ai-alternative).
+Weighing up options? [Compare AI alt text tools for WordPress](https://oppti.dev/alttext-ai-alternative), or [run a free image SEO audit](https://oppti.dev/image-seo-audit) to see how many of your images are missing alt text right now.
 
 = Demo Video =
 
-https://www.youtube.com/watch?v=XK9snigPH2c
+https://www.youtube.com/watch?v=VLP302GcMBs
 
 == Installation ==
 
 1. Go to WordPress Admin -> Plugins -> Add New.
-2. Search for "BeepBeep AI Alt Text Generator".
+2. Search for "OpptiAI Alt Text" (or "alt text generator").
 3. Click Install Now, then Activate.
-4. Open BeepBeep AI -> Dashboard (or ALT Library) to generate your first descriptions.
+4. Open OpptiAI Alt Text -> Dashboard (or ALT Library) and generate your first descriptions - no API key setup required.
 5. Optional: enable auto-generation in Settings to process new uploads automatically.
-6. For WooCommerce stores, run bulk generation to fix existing product images and galleries.
+6. Running a store? Run bulk generation to fix existing WooCommerce product images and galleries.
 
 == Frequently Asked Questions ==
 
+= Is there a free AI alt text generator for WordPress? =
+
+Yes. OpptiAI Alt Text has a free plan: 10 generations to try before signing up, then 15 AI alt text generations per month. That's enough to fix your most important images and judge the quality on your own content before deciding on a paid plan.
+
+= Do I need my own OpenAI API key? =
+
+No. Generation runs through OpptiAI's backend, so you don't have to create, manage, or pay for a separate OpenAI key. Install, activate, and start generating.
+
 = Can I bulk generate alt text in WordPress? =
 
-Yes. BeepBeep AI is built for bulk alt text generation in WordPress. You can scan large libraries, select images that need work, generate AI suggestions in bulk, and review them before saving.
+Yes. Bulk generation is the core of the plugin. Scan large libraries, select the images that need work, generate AI suggestions in bulk, and review them before saving.
+
+= Is this a good AltText.ai alternative? =
+
+If you want bulk AI alt text with review control, WooCommerce support, and a free plan that doesn't require your own AI key, yes - OpptiAI Alt Text is a practical alternative. See a full [comparison of AI alt text tools for WordPress](https://oppti.dev/alttext-ai-alternative).
 
 = Can it fix missing alt tags and image alt attributes? =
 
-Yes. WordPress stores image descriptions as alt attributes, often called alt tags. BeepBeep AI finds images with missing alt text and helps you generate clearer descriptions for media attachments, posts, pages, and WooCommerce products.
+Yes. WordPress stores image descriptions as alt attributes (often called alt tags). OpptiAI Alt Text finds images with missing alt text and helps you generate clearer descriptions for media attachments, posts, pages, and WooCommerce products.
 
 = Does this plugin help with accessibility and WCAG? =
 
-Yes. The plugin helps teams add and review alt text at scale, which supports accessibility and WCAG-oriented workflows. It does not replace human judgment, though.
+Yes. It helps you add and review alt text at scale, which supports accessibility and WCAG-oriented workflows. It assists your judgment rather than replacing it.
 
-= Does BeepBeep AI work with WooCommerce product images? =
+= Does OpptiAI Alt Text work with WooCommerce product images? =
 
-Yes. BeepBeep AI supports WooCommerce featured images, gallery images, and standard WordPress media attachments used throughout product pages and shop content.
+Yes. It supports WooCommerce featured images, gallery images, and standard WordPress media attachments used across product pages and shop content.
 
-= Can BeepBeep AI generate alt text automatically for new uploads? =
+= Can it generate alt text automatically for new uploads? =
 
-Yes. You can use automatic optimisation for new uploads so future WordPress media gets AI-generated alt text without repeating the same manual cleanup workflow.
+Yes. Turn on automatic optimisation so future WordPress media gets AI-generated alt text without repeating the manual cleanup.
 
 = Will it overwrite my existing alt text? =
 
-BeepBeep AI is designed around review and approval. You can inspect, edit, regenerate, and approve suggested alt text before saving changes back to WordPress.
+No - it's built around review and approval. You inspect, edit, regenerate, and approve suggested alt text before anything is saved back to WordPress.
 
 == Screenshots ==
 1. Dashboard overview showing missing ALT text, monthly usage, and the next best action for WordPress image SEO and accessibility.
@@ -116,7 +132,7 @@ BeepBeep AI is designed around review and approval. You can inspect, edit, regen
 3. Generate AI alt text in bulk for WordPress and WooCommerce images from one review workspace.
 4. Review, edit, and score AI alt text before saving it live.
 5. Before and after example showing an image with missing ALT text transformed into descriptive AI-generated ALT text.
-6. BeepBeep AI works inside WordPress so you can scan, review, and optimise images without leaving wp-admin.
+6. OpptiAI Alt Text works inside WordPress so you can scan, review, and optimise images without leaving wp-admin.
 7. WooCommerce image workflow for product featured images and gallery images.
 8. Settings screen for automatic AI alt text on new uploads.
 
@@ -133,10 +149,14 @@ Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
 Service: PostHog (optional product analytics)
-Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. BeepBeep AI does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
+Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. OpptiAI Alt Text does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.7.0 =
+* Rebrand: BeepBeep AI Alt Text is now **OpptiAI Alt Text**, part of the OpptiAI platform. Display naming only — the plugin slug, settings, accounts, licenses, credits, and all data are unchanged and existing installs are unaffected.
+* The shared credit balance is now presented as the OpptiAI Credit Wallet.
 
 = 4.6.114 =
 * Fixed telemetry validation gaps: batch_generation_started, upgrade_cta_clicked on NAI paywall paths, checkout_started before Stripe redirect, and auth funnel flush before redirect.

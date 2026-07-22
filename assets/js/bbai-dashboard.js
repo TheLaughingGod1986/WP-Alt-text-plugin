@@ -6256,13 +6256,13 @@ bbaiRunWithJQuery(function($) {
         };
 
         impact.altText = sprintf(
-            __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+            __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by OpptiAI', 'beepbeep-ai-alt-text-generator'),
             impact.coverageLabel,
             impact.optimizedLabel
         );
-        impact.embedHtml = '<a href="https://beepbeep.ai" target="_blank" rel="noreferrer noopener">\n<img src="' + getAccessibilityBadgeDataUrl(impact) + '"\nalt="' + escapeSvgText(impact.altText) + '">\n</a>';
+        impact.embedHtml = '<a href="https://oppti.dev" target="_blank" rel="noreferrer noopener">\n<img src="' + getAccessibilityBadgeDataUrl(impact) + '"\nalt="' + escapeSvgText(impact.altText) + '">\n</a>';
         impact.shareText = sprintf(
-            __('My WordPress site has an accessibility score of %1$s%% with %2$s optimized images powered by BeepBeep AI.', 'beepbeep-ai-alt-text-generator'),
+            __('My WordPress site has an accessibility score of %1$s%% with %2$s optimized images powered by OpptiAI.', 'beepbeep-ai-alt-text-generator'),
             impact.coverageLabel,
             impact.optimizedLabel
         );
@@ -6280,11 +6280,11 @@ bbaiRunWithJQuery(function($) {
     }
 
     function buildAccessibilityBadgeSvg(impact) {
-        var titleText = __('Accessibility badge powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator');
+        var titleText = __('Accessibility badge powered by OpptiAI', 'beepbeep-ai-alt-text-generator');
         var descText = impact && impact.altText
             ? impact.altText
             : sprintf(
-                __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+                __('Shareable accessibility badge showing a %1$s%% accessibility score and %2$s optimized images powered by OpptiAI', 'beepbeep-ai-alt-text-generator'),
                 impact.coverageLabel,
                 impact.optimizedLabel
             );
@@ -6312,7 +6312,7 @@ bbaiRunWithJQuery(function($) {
             '<path d="M36 138h388" stroke="#CDE7D2" stroke-width="1"/>',
             '<text x="36" y="170" fill="#166534" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600">', escapeSvgText(__('Images optimized', 'beepbeep-ai-alt-text-generator')), '</text>',
             '<text x="424" y="170" text-anchor="end" fill="#0F172A" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">', escapeSvgText(impact.optimizedLabel), '</text>',
-            '<text x="36" y="196" fill="#166534" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">', escapeSvgText(__('Powered by BeepBeep AI', 'beepbeep-ai-alt-text-generator')), '</text>',
+            '<text x="36" y="196" fill="#166534" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">', escapeSvgText(__('Powered by OpptiAI', 'beepbeep-ai-alt-text-generator')), '</text>',
             '</svg>'
         ].join('');
     }
@@ -6524,7 +6524,7 @@ bbaiRunWithJQuery(function($) {
         if (shareNode) {
             shareNode.setAttribute(
                 'href',
-                'https://twitter.com/intent/tweet?text=' + encodeURIComponent(impact.shareText) + '&url=' + encodeURIComponent('https://beepbeep.ai')
+                'https://twitter.com/intent/tweet?text=' + encodeURIComponent(impact.shareText) + '&url=' + encodeURIComponent('https://oppti.dev')
             );
         }
     }
@@ -6624,7 +6624,7 @@ bbaiRunWithJQuery(function($) {
                     ? __('Free trial complete', 'beepbeep-ai-alt-text-generator')
                     : (String(data.quotaState || '').toLowerCase() === 'near_limit'
                         ? __('You’re close to the end of your free trial', 'beepbeep-ai-alt-text-generator')
-                        : __('Try BeepBeep AI before creating an account', 'beepbeep-ai-alt-text-generator'));
+                        : __('Try OpptiAI before creating an account', 'beepbeep-ai-alt-text-generator'));
             }
             if (upgradeSubNode) {
                 upgradeSubNode.textContent = planRemaining <= 0

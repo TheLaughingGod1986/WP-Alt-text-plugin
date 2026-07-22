@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Contact Modal
+ * OpptiAI Contact Modal
  * Contact form modal for user support requests via Resend API
  *
  * @package BeepBeep_AI_Alt_Text_Generator

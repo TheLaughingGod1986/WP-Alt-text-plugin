@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI - Safe Logger
+ * OpptiAI - Safe Logger
  *
  * @package BeepBeep_AI_Alt_Text_Generator
  * @since 4.4.2

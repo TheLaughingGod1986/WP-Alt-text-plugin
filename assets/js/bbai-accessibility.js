@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Accessibility Enhancements
+ * OpptiAI Accessibility Enhancements
  * ARIA labels, focus management, keyboard navigation, high contrast mode
  */
 

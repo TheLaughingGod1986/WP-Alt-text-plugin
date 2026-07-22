@@ -4,7 +4,7 @@
  * Publish-subscribe pattern for decoupled component communication.
  * Allows components to communicate without direct dependencies.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 

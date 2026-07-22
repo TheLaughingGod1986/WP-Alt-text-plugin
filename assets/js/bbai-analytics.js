@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Analytics Dashboard
+ * OpptiAI Analytics Dashboard
  * Lightweight coverage chart with hover emphasis.
  */
 

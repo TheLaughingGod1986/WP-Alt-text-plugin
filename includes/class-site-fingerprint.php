@@ -1,6 +1,6 @@
 <?php
 /**
- * Site Fingerprint Manager for BeepBeep AI
+ * Site Fingerprint Manager for OpptiAI
  * Generates and validates unique site fingerprint for abuse prevention
  */
 

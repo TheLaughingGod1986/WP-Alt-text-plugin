@@ -3005,13 +3005,19 @@ class API_Client_V2 {
 			return $response;
 		}
 
-		if ( $response['success'] ) {
-			return $response['data']['billing'];
+		if ( ! empty( $response['success'] ) ) {
+			$data = ( isset( $response['data'] ) && is_array( $response['data'] ) ) ? $response['data'] : array();
+			if ( isset( $data['billing'] ) && is_array( $data['billing'] ) ) {
+				return $data['billing'];
+			}
+			// Free / alternate payloads may omit the nested billing key.
+			return $data;
 		}
 
+		$error_data = ( isset( $response['data'] ) && is_array( $response['data'] ) ) ? $response['data'] : array();
 		return new \WP_Error(
 			'billing_failed',
-			$response['data']['error'] ?? __( 'Failed to get billing info', 'beepbeep-ai-alt-text-generator' )
+			$error_data['error'] ?? __( 'Failed to get billing info', 'beepbeep-ai-alt-text-generator' )
 		);
 	}
 

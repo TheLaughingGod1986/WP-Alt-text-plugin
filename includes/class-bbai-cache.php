@@ -1,6 +1,6 @@
 <?php
 /**
- * Cache generation helper for BeepBeep AI.
+ * Cache generation helper for OpptiAI.
  *
  * Uses a generation counter pattern to enable efficient cache invalidation
  * without requiring wildcard/prefix deletion support from the object cache.

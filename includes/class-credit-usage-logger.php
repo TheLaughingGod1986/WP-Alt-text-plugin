@@ -1,6 +1,6 @@
 <?php
 /**
- * Credit Usage Logger for BeepBeep AI
+ * Credit Usage Logger for OpptiAI
  * Tracks per-user credit consumption and maintains detailed audit trail
  */
 

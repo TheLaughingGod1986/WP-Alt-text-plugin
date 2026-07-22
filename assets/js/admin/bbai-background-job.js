@@ -1,7 +1,7 @@
 /**
  * Background Job Persistence Layer
  *
- * Polls /bbai/v1/queue on every BeepBeep AI admin page so generation progress
+ * Polls /bbai/v1/queue on every OpptiAI admin page so generation progress
  * survives navigation, page refresh, and multiple browser tabs.
  *
  * State machine:

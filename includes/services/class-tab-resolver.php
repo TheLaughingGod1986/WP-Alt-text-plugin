@@ -1,6 +1,6 @@
 <?php
 /**
- * Tab resolution helper for BeepBeep AI.
+ * Tab resolution helper for OpptiAI.
  *
  * Maps page slugs and URL parameters to a valid tab key.
  */

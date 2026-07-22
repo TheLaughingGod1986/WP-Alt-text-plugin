@@ -455,7 +455,7 @@
 				event.preventDefault();
 				if (state.onboardingStep >= 2) {
 					modals.closeAll(root);
-					notices.toast(root, 'Welcome to BeepBeep AI', 'Your first daily optimisations are ready.');
+					notices.toast(root, 'Welcome to OpptiAI', 'Your first daily optimisations are ready.');
 				} else {
 					state.onboardingStep++;
 					scan.renderOnboarding(state);

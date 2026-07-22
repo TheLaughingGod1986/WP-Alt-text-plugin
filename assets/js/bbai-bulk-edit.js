@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Bulk Edit Functionality
+ * OpptiAI Bulk Edit Functionality
  * Select multiple images, edit alt text in bulk, undo last action
  */
 

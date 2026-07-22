@@ -72,7 +72,7 @@ class Phase17_Engine {
 						$review_key,
 						wp_json_encode(
 							array(
-								'text'  => __( 'You’ve been polishing ALT quality — thanks for taking accessibility seriously. If BeepBeep saves you time, a quick review on WordPress.org helps other site owners find the plugin.', 'beepbeep-ai-alt-text-generator' ),
+								'text'  => __( 'You’ve been polishing ALT quality — thanks for taking accessibility seriously. If OpptiAI saves you time, a quick review on WordPress.org helps other site owners find the plugin.', 'beepbeep-ai-alt-text-generator' ),
 								'until' => time() + WEEK_IN_SECONDS,
 								'tier'  => 'review_prompt',
 								'links' => array(
@@ -163,7 +163,7 @@ class Phase17_Engine {
 			if ( is_email( $admin ) ) {
 				wp_mail(
 					$admin,
-					'[BeepBeep AI] Upgrade CTA clicked (site)',
+					'[OpptiAI] Upgrade CTA clicked (site)',
 					sprintf(
 						"Event: upgrade_cta_clicked\nUser ID: %d\nProps: %s\n",
 						$uid,

@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Social Proof Widget
+ * OpptiAI Social Proof Widget
  * Handles testimonials carousel
  */
 

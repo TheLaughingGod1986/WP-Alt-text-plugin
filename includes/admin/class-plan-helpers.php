@@ -1,6 +1,6 @@
 <?php
 /**
- * Plan Detection Helpers for BeepBeep AI
+ * Plan Detection Helpers for OpptiAI
  * Centralized helper functions for detecting user plan types
  *
  * @package BeepBeep_AI

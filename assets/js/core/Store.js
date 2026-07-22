@@ -4,7 +4,7 @@
  * Simple state management store with reactive updates.
  * Provides centralized state for the application.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 

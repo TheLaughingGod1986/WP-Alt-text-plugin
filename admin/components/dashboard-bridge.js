@@ -115,7 +115,7 @@
 
     // Check if React and ReactDOM are available
     if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
-        window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] React is not loaded. Dashboard requires React and ReactDOM.');
+        window.BBAI_LOG && window.BBAI_LOG.warn('[OpptiAI] React is not loaded. Dashboard requires React and ReactDOM.');
         return;
     }
 
@@ -128,7 +128,7 @@
 
 	        const restRoot = window.BBAI?.restRoot || ((window.wpApiSettings && window.wpApiSettings.root) ? window.wpApiSettings.root : '');
 	        if (!restRoot) {
-	            window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] REST root is not available. Dashboard bridge will not initialize.');
+	            window.BBAI_LOG && window.BBAI_LOG.warn('[OpptiAI] REST root is not available. Dashboard bridge will not initialize.');
 	            return;
 	        }
 	        const apiUrl = `${String(restRoot).replace(/\/$/, '')}/bbai/v1`;
@@ -168,7 +168,7 @@
                         queueStats = await queueResponse.json();
                     }
                 } catch (e) {
-                    window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] Could not fetch queue stats:', e);
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[OpptiAI] Could not fetch queue stats:', e);
                 }
 
                 const usage = normalizeUsage(usageStats) || {
@@ -218,7 +218,7 @@
                     queueStats
                 };
             } catch (error) {
-                window.BBAI_LOG && window.BBAI_LOG.error('[BeepBeep AI] Error fetching dashboard data:', error);
+                window.BBAI_LOG && window.BBAI_LOG.error('[OpptiAI] Error fetching dashboard data:', error);
                 // Return defaults on error
                 return {
                     plan: 'free',
@@ -349,11 +349,11 @@
                         nonce: nonce
                     }));
                 } else {
-                    window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] Dashboard component not found. Make sure dashboard components are loaded.');
+                    window.BBAI_LOG && window.BBAI_LOG.warn('[OpptiAI] Dashboard component not found. Make sure dashboard components are loaded.');
                     dashboardContainer.innerHTML = '<p>' + __('Loading dashboard...', 'beepbeep-ai-alt-text-generator') + '</p>';
                 }
             } catch (error) {
-                window.BBAI_LOG && window.BBAI_LOG.error('[BeepBeep AI] Error rendering dashboard:', error);
+                window.BBAI_LOG && window.BBAI_LOG.error('[OpptiAI] Error rendering dashboard:', error);
                 dashboardContainer.innerHTML = '<p>' + __('Error loading dashboard. Please refresh the page.', 'beepbeep-ai-alt-text-generator') + '</p>';
             }
         }

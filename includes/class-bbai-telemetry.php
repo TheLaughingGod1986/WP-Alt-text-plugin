@@ -67,10 +67,10 @@ class BBAI_Telemetry {
 		$event_name = self::normalize_event_name( $event_name, $properties );
 		if ( ! preg_match( '/^[a-z0-9_]{1,80}$/', $event_name ) ) {
 			return;
-		}
+			}
 
-		$site_install_id = self::resolve_site_id();
-		$properties      = self::with_site_identity( self::sanitize_properties( $properties ), $site_install_id );
+			$site_install_id = self::resolve_site_id();
+			$properties      = self::with_site_identity( self::sanitize_properties( $properties ), $site_install_id, $event_name );
 
 		$envelope = array(
 			'event'           => $event_name,
@@ -434,7 +434,7 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$properties = self::with_site_identity( self::sanitize_properties( $properties ) );
+			$properties = self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name );
 
 		$payload = wp_json_encode(
 			array(
@@ -485,12 +485,30 @@ class BBAI_Telemetry {
 	 */
 	private static function sanitize_properties( array $props ): array {
 		$out = array();
+		$deny_keys = array(
+			'email',
+			'license_key',
+			'password',
+			'token',
+			'jwt',
+			'api_key',
+			'secret',
+			'alt_text',
+			'prompt',
+			'raw_response',
+			'image_url',
+			'filename',
+			'file_name',
+		);
 		foreach ( $props as $k => $v ) {
 			$key = is_string( $k ) ? sanitize_key( $k ) : '';
 			if ( is_string( $k ) && in_array( $k, array( '$insert_id', '$set', '$set_once' ), true ) ) {
 				$key = $k;
 			}
 			if ( '' === $key || strlen( $key ) > 48 ) {
+				continue;
+			}
+			if ( in_array( $key, $deny_keys, true ) ) {
 				continue;
 			}
 			if ( is_bool( $v ) ) {
@@ -541,7 +559,7 @@ class BBAI_Telemetry {
 	 * @param string|null         $site_install_id Optional pre-resolved install id.
 	 * @return array<string,mixed>
 	 */
-	private static function with_site_identity( array $props, ?string $site_install_id = null ): array {
+	private static function with_site_identity( array $props, ?string $site_install_id = null, string $event_name = '' ): array {
 		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
 		if ( '' === $site_install_id && function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
 			$site_install_id = sanitize_text_field( (string) get_site_identifier() );
@@ -581,8 +599,11 @@ class BBAI_Telemetry {
 		if ( empty( $props['plugin_slug'] ) ) {
 			$props['plugin_slug'] = self::get_plugin_slug();
 		}
+		if ( empty( $props['event_schema_version'] ) ) {
+			$props['event_schema_version'] = $props['telemetry_version'] ?? self::TELEMETRY_SCHEMA_VERSION;
+		}
 		if ( empty( $props['telemetry_version'] ) ) {
-			$props['telemetry_version'] = self::TELEMETRY_SCHEMA_VERSION;
+			$props['telemetry_version'] = $props['event_schema_version'];
 		}
 		if ( empty( $props['journey_id'] ) ) {
 			$props['journey_id'] = $site_install_id;
@@ -596,8 +617,19 @@ class BBAI_Telemetry {
 		if ( empty( $props['plugin_version'] ) && defined( 'BEEPBEEP_AI_VERSION' ) ) {
 			$props['plugin_version'] = (string) BEEPBEEP_AI_VERSION;
 		}
+		if ( empty( $props['app_version'] ) ) {
+			$props['app_version'] = $props['plugin_version'] ?? '';
+		}
+		if ( empty( $props['$insert_id'] ) ) {
+			$props['$insert_id'] = self::build_insert_id( $event_name, $props );
+		}
 		if ( empty( $props['environment'] ) ) {
-			$props['environment'] = self::resolve_environment();
+			$props['environment'] = self::resolve_environment( $props['host'] ?? $props['site_url'] ?? '' );
+		} else {
+			$props['environment'] = self::normalize_environment_value( $props['environment'], $props['host'] ?? $props['site_url'] ?? '' );
+		}
+		if ( ! isset( $props['is_internal'] ) ) {
+			$props['is_internal'] = self::is_internal_environment( $props['environment'] ?? '', $props['host'] ?? $props['site_url'] ?? '' );
 		}
 		if ( empty( $props['wp_version'] ) && function_exists( 'get_bloginfo' ) ) {
 			$props['wp_version'] = (string) get_bloginfo( 'version' );
@@ -649,10 +681,12 @@ class BBAI_Telemetry {
 			$props['license_state'] = self::resolve_license_state();
 		}
 		if ( empty( $props['generation_type'] ) && ! empty( $props['generation_mode'] ) ) {
-			$props['generation_type'] = sanitize_key( (string) $props['generation_mode'] );
+			$props['generation_mode'] = self::normalize_generation_mode( $props['generation_mode'], $props );
+			$props['generation_type'] = $props['generation_mode'];
 		}
 		if ( empty( $props['generation_mode'] ) && ! empty( $props['generation_type'] ) ) {
-			$props['generation_mode'] = sanitize_key( (string) $props['generation_type'] );
+			$props['generation_mode'] = self::normalize_generation_mode( $props['generation_type'], $props );
+			$props['generation_type'] = $props['generation_mode'];
 		}
 
 		return $props;
@@ -693,14 +727,108 @@ class BBAI_Telemetry {
 		return hash( 'sha256', implode( '|', $parts ) );
 	}
 
-	private static function resolve_environment(): string {
+	public static function resolve_environment_name( $host_or_url = '' ): string {
+		return self::resolve_environment( $host_or_url );
+	}
+
+	/**
+	 * Stable idempotency key for PostHog insert de-duplication.
+	 *
+	 * @param array<string,mixed> $properties Event properties.
+	 */
+	private static function build_insert_id( string $event_name, array $properties ): string {
+		$stable = $properties['idempotency_key']
+			?? $properties['request_id']
+			?? $properties['generation_item_id']
+			?? $properties['attachment_id']
+			?? $properties['image_id']
+			?? $properties['generation_run_id']
+			?? $properties['signup_attempt_id']
+			?? $properties['checkout_attempt_id']
+			?? $properties['page_view_id']
+			?? '';
+		$site_key = $properties['site_install_id']
+			?? $properties['site_hash']
+			?? $properties['site_id']
+			?? $properties['journey_id']
+			?? $properties['session_id']
+			?? 'unknown_site';
+		if ( '' === (string) $stable ) {
+			$stable = ( $properties['session_id'] ?? '' ) . ':' . ( $properties['page'] ?? '' ) . ':' . ( $properties['source'] ?? '' ) . ':' . (string) floor( time() / 5 );
+		}
+
+		return substr( sanitize_text_field( (string) ( sanitize_key( $event_name ) . ':' . $site_key . ':' . $stable ) ), 0, 180 );
+	}
+
+	private static function resolve_environment( $host_or_url = '' ): string {
+		$raw = '';
 		if ( function_exists( 'wp_get_environment_type' ) ) {
-			return sanitize_key( (string) wp_get_environment_type() );
+			$raw = (string) wp_get_environment_type();
+		} elseif ( defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+			$raw = (string) WP_ENVIRONMENT_TYPE;
 		}
-		if ( defined( 'WP_ENVIRONMENT_TYPE' ) ) {
-			return sanitize_key( (string) WP_ENVIRONMENT_TYPE );
+		if ( '' === (string) $host_or_url && function_exists( 'home_url' ) ) {
+			$host_or_url = (string) home_url( '/' );
 		}
-		return 'production';
+		return self::normalize_environment_value( $raw, $host_or_url );
+	}
+
+	private static function normalize_environment_value( $environment, $host_or_url = '' ): string {
+		$env    = sanitize_key( is_scalar( $environment ) ? (string) $environment : '' );
+		$signal = strtolower( (string) $host_or_url );
+		if ( preg_match( '/localhost|127\.0\.0\.1|::1|\.local\b|\.test\b|tastewp|playground|wp-env|ddev|lndo/', $signal ) ) {
+			return 'local';
+		}
+		if ( in_array( $env, array( 'local', 'development', 'dev' ), true ) ) {
+			return 'local';
+		}
+		if ( in_array( $env, array( 'test', 'testing', 'ci' ), true ) ) {
+			return 'test';
+		}
+		if ( 'staging' === $env || preg_match( '/(^|\.)staging\.|staging-|\.staging\b|dev\.|sandbox|preview/', $signal ) ) {
+			return 'staging';
+		}
+		if ( in_array( $env, array( 'production', 'prod' ), true ) ) {
+			return 'production';
+		}
+		return '' !== $signal ? 'production' : 'test';
+	}
+
+	private static function is_internal_environment( $environment, $host_or_url = '' ): bool {
+		$env    = sanitize_key( is_scalar( $environment ) ? (string) $environment : '' );
+		$signal = strtolower( (string) $host_or_url );
+		return in_array( $env, array( 'local', 'test' ), true )
+			|| (bool) preg_match( '/localhost|127\.0\.0\.1|::1|tastewp|playground|wp-env|ddev|lndo/', $signal );
+	}
+
+	private static function normalize_generation_mode( $value, array $properties = array() ): string {
+		$mode = sanitize_key( is_scalar( $value ) ? (string) $value : '' );
+		$count = max(
+			isset( $properties['item_count'] ) && is_numeric( $properties['item_count'] ) ? (int) $properties['item_count'] : 0,
+			isset( $properties['requested_count'] ) && is_numeric( $properties['requested_count'] ) ? (int) $properties['requested_count'] : 0,
+			isset( $properties['number_of_images'] ) && is_numeric( $properties['number_of_images'] ) ? (int) $properties['number_of_images'] : 0,
+			( isset( $properties['success_count'] ) && is_numeric( $properties['success_count'] ) ? (int) $properties['success_count'] : 0 )
+				+ ( isset( $properties['failure_count'] ) && is_numeric( $properties['failure_count'] ) ? (int) $properties['failure_count'] : 0 ),
+			( isset( $properties['processed_count'] ) && is_numeric( $properties['processed_count'] ) ? (int) $properties['processed_count'] : 0 )
+				+ ( isset( $properties['failed_count'] ) && is_numeric( $properties['failed_count'] ) ? (int) $properties['failed_count'] : 0 )
+		);
+
+		if ( $count > 1 && preg_match( '/generate_missing|missing|selected|bulk|batch|fix_all_issues/', $mode ) ) {
+			return 'bulk';
+		}
+		if ( preg_match( '/bulk|batch/', $mode ) ) {
+			return 'bulk';
+		}
+		if ( preg_match( '/regeneration|regenerate|reoptimize|retry/', $mode ) ) {
+			return 'regeneration';
+		}
+		if ( preg_match( '/automatic|auto|background|scheduled/', $mode ) ) {
+			return 'automatic';
+		}
+		if ( in_array( $mode, array( 'single', 'generate_missing', 'missing' ), true ) || 1 === $count ) {
+			return 'single';
+		}
+		return 'unknown';
 	}
 
 	/**
@@ -756,37 +884,42 @@ class BBAI_Telemetry {
 			$properties['provider']      = isset( $properties['provider'] ) ? sanitize_key( (string) $properties['provider'] ) : 'unknown';
 			$properties['retry_attempt'] = isset( $properties['retry_attempt'] ) ? max( 0, (int) $properties['retry_attempt'] ) : ( isset( $properties['retry_count'] ) ? max( 0, (int) $properties['retry_count'] ) : 0 );
 		}
-		if ( in_array( $event_name, array( 'generation_started', 'generation_completed', 'alt_generated', 'generation_blocked_no_credits' ), true ) && empty( $properties['generation_mode'] ) ) {
-			$properties['generation_mode'] = 'single';
-		}
-		if ( 0 === strpos( $event_name, 'batch_generation_' ) && empty( $properties['generation_mode'] ) ) {
-			$properties['generation_mode'] = 'bulk';
+			if ( in_array( $event_name, array( 'generation_started', 'generation_completed', 'alt_generated', 'generation_blocked_no_credits' ), true ) && empty( $properties['generation_mode'] ) ) {
+				$properties['generation_mode'] = 'single';
+			}
+			if ( 0 === strpos( $event_name, 'batch_generation_' ) && empty( $properties['generation_mode'] ) ) {
+				$properties['generation_mode'] = 'bulk';
 		}
 		if (
 			in_array( $event_name, array( 'generation_started', 'generation_completed', 'alt_generated', 'generation_blocked_no_credits' ), true )
-			|| 0 === strpos( $event_name, 'generation_failed_' )
-			|| 0 === strpos( $event_name, 'batch_generation_' )
-		) {
-			if ( empty( $properties['generation_type'] ) && ! empty( $properties['generation_mode'] ) ) {
-				$properties['generation_type'] = sanitize_key( (string) $properties['generation_mode'] );
-			}
-			if ( empty( $properties['feature_name'] ) ) {
-				$mode = sanitize_key( (string) ( $properties['generation_mode'] ?? $properties['generation_type'] ?? 'single' ) );
+				|| 0 === strpos( $event_name, 'generation_failed_' )
+				|| 0 === strpos( $event_name, 'batch_generation_' )
+			) {
+				$properties['generation_mode'] = self::normalize_generation_mode( $properties['generation_mode'] ?? $properties['generation_type'] ?? '', $properties );
+				$properties['generation_type'] = $properties['generation_mode'];
+				if ( empty( $properties['correlation_id'] ) ) {
+					$properties['correlation_id'] = $properties['generation_run_id'] ?? $properties['request_id'] ?? $properties['session_id'] ?? '';
+				}
+				if ( empty( $properties['generation_type'] ) && ! empty( $properties['generation_mode'] ) ) {
+					$properties['generation_type'] = sanitize_key( (string) $properties['generation_mode'] );
+				}
+				if ( empty( $properties['feature_name'] ) ) {
+					$mode = sanitize_key( (string) ( $properties['generation_mode'] ?? $properties['generation_type'] ?? 'single' ) );
 				$properties['feature_name'] = 'bulk' === $mode ? 'bulk_generation' : 'single_generation';
 			}
-		}
-		if ( in_array( $event_name, array( 'signup_started', 'signup_succeeded', 'signup_cta_clicked' ), true ) && empty( $properties['feature_name'] ) ) {
-			$properties['feature_name'] = 'signup';
-		}
-		if ( in_array( $event_name, array( 'login_succeeded', 'login_cta_clicked', 'login_modal_opened', 'login_submitted', 'login_failed' ), true ) && empty( $properties['feature_name'] ) ) {
-			$properties['feature_name'] = 'login';
-		}
-		if ( 'review_queue_opened' === $event_name && empty( $properties['feature_name'] ) ) {
-			$properties['feature_name'] = 'review_queue';
-		}
-		if ( 'generation_blocked_no_credits' === $event_name && empty( $properties['feature_name'] ) ) {
-			$properties['feature_name'] = 'quota';
-		}
+			}
+			if ( in_array( $event_name, array( 'signup_started', 'signup_succeeded', 'signup_cta_clicked' ), true ) && empty( $properties['feature_name'] ) ) {
+				$properties['feature_name'] = 'account';
+			}
+			if ( in_array( $event_name, array( 'login_succeeded', 'login_cta_clicked', 'login_modal_opened', 'login_submitted', 'login_failed' ), true ) && empty( $properties['feature_name'] ) ) {
+				$properties['feature_name'] = 'account';
+			}
+			if ( 'review_queue_opened' === $event_name && empty( $properties['feature_name'] ) ) {
+				$properties['feature_name'] = 'review';
+			}
+			if ( 'generation_blocked_no_credits' === $event_name && empty( $properties['feature_name'] ) ) {
+				$properties['feature_name'] = 'billing';
+			}
 
 		return $event_name;
 	}
@@ -842,31 +975,31 @@ class BBAI_Telemetry {
 			'review_workflow'          => 'review',
 			'alt_library'              => 'library',
 			'analytics'                => 'statistics',
-			'stats'                    => 'statistics',
-			'woocommerce_optimisation' => 'woocommerce',
-			'woocommerce_optimization' => 'woocommerce',
-			'queue'                    => 'review_queue',
-			'auth'                     => 'account',
-		);
+				'stats'                    => 'statistics',
+				'woocommerce_optimisation' => 'woocommerce',
+				'woocommerce_optimization' => 'woocommerce',
+				'queue'                    => 'review',
+				'review_queue'             => 'review',
+				'auth'                     => 'account',
+				'login'                    => 'account',
+				'signup'                   => 'account',
+				'quota'                    => 'billing',
+			);
 		if ( isset( $aliases[ $feature ] ) ) {
 			$feature = $aliases[ $feature ];
 		}
 		$allowed = array(
 			'dashboard',
 			'library',
-			'single_generation',
-			'bulk_generation',
-			'review',
-			'review_queue',
-			'settings',
-			'statistics',
-			'woocommerce',
-			'billing',
-			'account',
-			'login',
-			'signup',
-			'quota',
-		);
+				'single_generation',
+				'bulk_generation',
+				'review',
+				'settings',
+				'statistics',
+				'woocommerce',
+				'billing',
+				'account',
+			);
 		return in_array( $feature, $allowed, true ) ? $feature : '';
 	}
 

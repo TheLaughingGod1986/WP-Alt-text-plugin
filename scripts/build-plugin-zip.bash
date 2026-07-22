@@ -20,6 +20,7 @@ rm -f "$OUTPUT_ZIP"
 
 rsync -a \
     --exclude '.git/' \
+	--exclude '.github/' \
     --exclude '.gitattributes' \
     --exclude '.gitignore' \
     --exclude '.claude/' \
@@ -42,6 +43,9 @@ rsync -a \
     --exclude '.wporg-svn/' \
     --exclude 'AGENTS.md' \
     --exclude 'node_modules/' \
+	--exclude 'vendor/' \
+	--exclude '.phpunit.result.cache' \
+	--exclude 'phpunit.xml.dist' \
     --exclude 'composer.json' \
     --exclude 'composer.lock' \
     --exclude 'package.json' \

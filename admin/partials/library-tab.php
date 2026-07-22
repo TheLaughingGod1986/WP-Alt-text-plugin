@@ -1,7 +1,7 @@
 <?php
 /**
  * ALT Library tab content partial.
- * Modernized to match BeepBeep AI SaaS style with unified.css components
+ * Modernized to match OpptiAI SaaS style with unified.css components
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -1192,7 +1192,7 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 						'variant'      => 'empty',
 						'icon_html'    => $bbai_lib_empty_icon,
 						'title'        => __( 'No images analyzed yet', 'beepbeep-ai-alt-text-generator' ),
-						'body'         => __( 'Upload images to your media library and BeepBeep will generate alt text here.', 'beepbeep-ai-alt-text-generator' ),
+						'body'         => __( 'Upload images to your media library and OpptiAI will generate alt text here.', 'beepbeep-ai-alt-text-generator' ),
 						'actions_html' => $bbai_lib_empty_actions,
 					)
 				);

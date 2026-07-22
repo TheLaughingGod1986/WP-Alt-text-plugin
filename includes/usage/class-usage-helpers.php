@@ -1,6 +1,6 @@
 <?php
 /**
- * Usage Helpers for BeepBeep AI
+ * Usage Helpers for OpptiAI
  * Helper functions for recording and retrieving usage data
  */
 

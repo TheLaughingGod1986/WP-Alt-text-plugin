@@ -2,7 +2,7 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: BeepBeep AI – Alt Text Generator 4.4.1\n"
+"Project-Id-Version: OpptiAI Alt Text 4.4.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/app\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,7 +21,7 @@ msgstr ""
 #: admin/class-bbai-core.php:1779
 #: includes/class-privacy.php:34
 #: includes/class-privacy.php:49
-msgid "BeepBeep AI – Alt Text Generator"
+msgid "OpptiAI Alt Text"
 msgstr ""
 
 #. Plugin URI of the plugin
@@ -124,7 +124,7 @@ msgstr ""
 #. translators: 1: tokens used, 2: token threshold
 #: admin/class-bbai-core.php:641
 #, php-format
-msgid "BeepBeep AI – Alt Text Generator has used %1$s tokens (threshold %2$s). Consider reviewing usage."
+msgid "OpptiAI Alt Text has used %1$s tokens (threshold %2$s). Consider reviewing usage."
 msgstr ""
 
 #: admin/class-bbai-core.php:658
@@ -633,7 +633,7 @@ msgstr ""
 
 #: admin/class-bbai-core.php:2137
 #: admin/class-bbai-core.php:2178
-msgid "BeepBeep AI • WordPress AI Tools"
+msgid "OpptiAI • WordPress AI Tools"
 msgstr ""
 
 #: admin/class-bbai-core.php:2137
@@ -2652,7 +2652,7 @@ msgid "Next"
 msgstr ""
 
 #: admin/partials/guide-tab.php:41
-msgid "How to Use BeepBeep AI"
+msgid "How to Use OpptiAI"
 msgstr ""
 
 #: admin/partials/guide-tab.php:42
@@ -3250,7 +3250,7 @@ msgid "Join %s+ sites"
 msgstr ""
 
 #: admin/partials/social-proof-widget.php:80
-msgid "Using BeepBeep AI"
+msgid "Using OpptiAI"
 msgstr ""
 
 #. translators: 1: star rating
@@ -3517,7 +3517,7 @@ msgstr ""
 
 #: includes/admin/class-bbai-admin-dashboard.php:447
 #: templates/upgrade-modal.php:66
-msgid "Choose your BeepBeep AI plan"
+msgid "Choose your OpptiAI plan"
 msgstr ""
 
 #: includes/admin/class-bbai-admin-dashboard.php:448
@@ -3871,11 +3871,11 @@ msgid "Migration completed. Migrated %d usage records."
 msgstr ""
 
 #: includes/class-privacy.php:116
-msgid "No BeepBeep AI data found for this email address."
+msgid "No OpptiAI data found for this email address."
 msgstr ""
 
 #: includes/class-privacy.php:179
-msgid "BeepBeep AI Contact Submissions"
+msgid "OpptiAI Contact Submissions"
 msgstr ""
 
 #: includes/class-privacy.php:182
@@ -3896,7 +3896,7 @@ msgid "Site URL"
 msgstr ""
 
 #: includes/class-privacy.php:214
-msgid "BeepBeep AI Account Data"
+msgid "OpptiAI Account Data"
 msgstr ""
 
 #: includes/class-privacy.php:219
@@ -3904,7 +3904,7 @@ msgid "Plan"
 msgstr ""
 
 #: includes/class-privacy.php:256
-msgid "BeepBeep AI Credit Usage"
+msgid "OpptiAI Credit Usage"
 msgstr ""
 
 #: includes/class-privacy.php:259
@@ -3913,7 +3913,7 @@ msgid "Events"
 msgstr ""
 
 #: includes/class-privacy.php:283
-msgid "BeepBeep AI Usage Logs"
+msgid "OpptiAI Usage Logs"
 msgstr ""
 
 #: includes/class-privacy.php:287
@@ -4106,7 +4106,7 @@ msgid "50 AI alt text per month"
 msgstr ""
 
 #: templates/upgrade-modal.php:98
-msgid "Great for trying BeepBeep AI"
+msgid "Great for trying OpptiAI"
 msgstr ""
 
 #: templates/upgrade-modal.php:108

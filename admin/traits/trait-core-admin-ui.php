@@ -51,8 +51,8 @@ trait Core_Admin_UI {
 
 		// Top-level menu uses the brand name; the first submenu is "Dashboard".
 		add_menu_page(
-			__( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ),
-			__( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ),
+			__( 'OpptiAI', 'beepbeep-ai-alt-text-generator' ),
+			__( 'OpptiAI', 'beepbeep-ai-alt-text-generator' ),
 			$cap,
 			self::MENU_SLUG_DASHBOARD,
 			array( $this, 'render_settings_page' ),
@@ -516,7 +516,7 @@ trait Core_Admin_UI {
 							</defs>
 						</svg>
 						<div class="bbai-logo-content">
-							<span class="bbai-logo-text"><?php esc_html_e( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ); ?></span>
+							<span class="bbai-logo-text"><?php esc_html_e( 'OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ); ?></span>
 							<span class="bbai-logo-tagline"><?php esc_html_e( 'WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?></span>
 						</div>
 					</div>
@@ -958,7 +958,7 @@ trait Core_Admin_UI {
 			
 			<!-- Footer -->
 			<div class="bbai-footer">
-				<?php esc_html_e( 'BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?> — <a href="<?php echo esc_url( 'https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'WordPress.org Plugin', 'beepbeep-ai-alt-text-generator' ); ?></a>
+				<?php esc_html_e( 'OpptiAI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?> — <a href="<?php echo esc_url( 'https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'WordPress.org Plugin', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			<?php else : ?>
 				<!-- Fallback: No tab matched -->
 				<div class="bbai-container bbai-unauth-container">
@@ -1011,7 +1011,7 @@ trait Core_Admin_UI {
 
 			<!-- Footer -->
 			<div class="bbai-footer">
-				<?php esc_html_e( 'BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?> — <a href="<?php echo esc_url( 'https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'WordPress.org Plugin', 'beepbeep-ai-alt-text-generator' ); ?></a>
+				<?php esc_html_e( 'OpptiAI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator' ); ?> — <a href="<?php echo esc_url( 'https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/' ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'WordPress.org Plugin', 'beepbeep-ai-alt-text-generator' ); ?></a>
 			</div>
 		</div>
 		

@@ -1,6 +1,6 @@
 <?php
 /**
- * Contact Submissions Manager for BeepBeep AI
+ * Contact Submissions Manager for OpptiAI
  * Stores and retrieves contact form submissions
  *
  * @package BeepBeepAI\AltTextGenerator

@@ -567,7 +567,7 @@
 			event.preventDefault();
 			if (onboardingStep >= 2) {
 				closeModals();
-				toast('Welcome to BeepBeep AI', 'Your first daily optimisations are ready.');
+				toast('Welcome to OpptiAI', 'Your first daily optimisations are ready.');
 			} else {
 				onboardingStep++;
 				renderOnboarding();

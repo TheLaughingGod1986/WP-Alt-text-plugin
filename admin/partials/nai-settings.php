@@ -164,7 +164,7 @@ if ( ! function_exists( 'is_plugin_active' ) ) {
 }
 $nai_set_titles_installed = is_plugin_active( 'beepbeep-titles/beepbeep-titles.php' );
 
-// Fixed catalog of BeepBeep AI plugins that draw from the shared pool, this
+// Fixed catalog of OpptiAI plugins that draw from the shared pool, this
 // plugin (ALT Text) first. Always rendered so the card reads as a roster.
 $nai_set_catalog = array(
 	array( 'id' => 'alt_text',   'label' => __( 'Image ALT Text', 'beepbeep-ai-alt-text-generator' ),               'icon' => 'image', 'class' => 'nai-credit-feature--alt',    'current' => true,  'installed' => true ),
@@ -202,7 +202,7 @@ $nai_set_plan_label = array(
 $nai_set_plan_name = $nai_set_is_paid
 	? sprintf(
 		/* translators: %s: paid plan label. */
-		__( 'BeepBeep AI %s', 'beepbeep-ai-alt-text-generator' ),
+		__( 'OpptiAI %s', 'beepbeep-ai-alt-text-generator' ),
 		$nai_set_plan_label
 	)
 	: __( 'Free plan', 'beepbeep-ai-alt-text-generator' );
@@ -312,7 +312,7 @@ $nai_set_plan_name = $nai_set_is_paid
 	<div class="nai-credit-card">
 		<div class="nai-credit-card__head">
 			<div>
-				<div class="nai-eyebrow" style="margin-bottom:2px;"><?php esc_html_e( 'Shared across BeepBeep AI', 'beepbeep-ai-alt-text-generator' ); ?></div>
+				<div class="nai-eyebrow" style="margin-bottom:2px;"><?php esc_html_e( 'OpptiAI Credit Wallet', 'beepbeep-ai-alt-text-generator' ); ?></div>
 				<h2 class="nai-credit-card__title"><?php esc_html_e( 'Credit usage', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 			</div>
 			<div class="nai-credit-card__total nai-tnum"><strong><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></strong> / <?php echo esc_html( number_format_i18n( $nai_set_limit ) ); ?> <?php esc_html_e( 'credits used', 'beepbeep-ai-alt-text-generator' ); ?></div>
@@ -325,12 +325,12 @@ $nai_set_plan_name = $nai_set_is_paid
 					$nai_set_show_breakdown
 						? sprintf(
 							/* translators: %s: credit reset date. */
-							__( 'One credit pool is shared by every BeepBeep AI plugin on this site. The breakdown below shows which plugin consumed each credit · resets %s.', 'beepbeep-ai-alt-text-generator' ),
+							__( 'One monthly credit balance shared across every OpptiAI solution on this site. The breakdown below shows which plugin consumed each credit · resets %s.', 'beepbeep-ai-alt-text-generator' ),
 							$nai_set_resetfmt
 						)
 						: sprintf(
 							/* translators: %s: credit reset date. */
-							__( "One credit pool is shared by every BeepBeep AI plugin on this site. Per-plugin credits aren't itemised yet — the total above is shared across these plugins · resets %s.", 'beepbeep-ai-alt-text-generator' ),
+							__( "One monthly credit balance shared across every OpptiAI solution on this site. Per-plugin credits aren't itemised yet — the total above is shared across these plugins · resets %s.", 'beepbeep-ai-alt-text-generator' ),
 							$nai_set_resetfmt
 						)
 				);
@@ -391,12 +391,12 @@ $nai_set_plan_name = $nai_set_is_paid
 		<?php
 		$nai_set_render_row(
 			__( 'Email', 'beepbeep-ai-alt-text-generator' ),
-			__( 'The address connected to your BeepBeep AI account.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'The address connected to your OpptiAI account.', 'beepbeep-ai-alt-text-generator' ),
 			'<span class="nai-mono" style="font-size:13px;color:var(--nai-text-2);">' . esc_html( '' !== $nai_set_user_email ? $nai_set_user_email : __( 'Not connected', 'beepbeep-ai-alt-text-generator' ) ) . '</span>'
 		);
 		$nai_set_render_row(
 			__( 'Connection', 'beepbeep-ai-alt-text-generator' ),
-			__( 'Last successful sync with BeepBeep AI servers.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Last successful sync with OpptiAI servers.', 'beepbeep-ai-alt-text-generator' ),
 			'<span class="nai-chip nai-chip--ok"><span class="nai-chip__dot" style="background:var(--nai-ok)"></span>' . esc_html__( 'Connected', 'beepbeep-ai-alt-text-generator' ) . '</span>'
 		);
 		?>
@@ -438,12 +438,12 @@ $nai_set_plan_name = $nai_set_is_paid
 		<?php
 		$nai_set_render_row(
 			__( 'Reset generated ALT text', 'beepbeep-ai-alt-text-generator' ),
-			__( 'Clear all BeepBeep AI-generated ALT from your library. This cannot be undone.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Clear all OpptiAI-generated ALT from your library. This cannot be undone.', 'beepbeep-ai-alt-text-generator' ),
 			'<a class="nai-btn nai-btn--secondary nai-btn--sm" href="' . esc_url( $nai_set_full_url ) . '">' . esc_html__( 'Reset…', 'beepbeep-ai-alt-text-generator' ) . '</a>'
 		);
 		$nai_set_render_row(
 			__( 'Delete data on uninstall', 'beepbeep-ai-alt-text-generator' ),
-			__( 'Remove all BeepBeep AI settings and history when the plugin is uninstalled.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Remove all OpptiAI settings and history when the plugin is uninstalled.', 'beepbeep-ai-alt-text-generator' ),
 			$nai_set_toggle_html( ! empty( $nai_set_options['uninstall_remove_data'] ), __( 'Delete data on uninstall', 'beepbeep-ai-alt-text-generator' ) )
 		);
 		?>

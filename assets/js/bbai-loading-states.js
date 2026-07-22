@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Loading States Manager
+ * OpptiAI Loading States Manager
  * Handles skeleton loaders, progress bars, and loading indicators
  */
 

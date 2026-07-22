@@ -161,7 +161,7 @@ $bbai_ga_ring_open = static function ( int $size, int $stroke, int $pct, string 
 	<div class="nai-audit__header">
 		<div class="nai-audit__brand">
 			<span class="nai-audit__brand-logo"><?php echo $bbai_ga_icon( 'logo', 24 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG. ?></span>
-			<span class="nai-audit__brand-name"><?php esc_html_e( 'BeepBeep AI', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			<span class="nai-audit__brand-name"><?php esc_html_e( 'OpptiAI', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			<span class="nai-audit__brand-divider" aria-hidden="true"></span>
 			<span class="nai-audit__brand-sub"><?php esc_html_e( 'Image SEO', 'beepbeep-ai-alt-text-generator' ); ?></span>
 		</div>
@@ -436,7 +436,7 @@ $bbai_ga_ring_open = static function ( int $size, int $stroke, int $pct, string 
 				</div>
 				<div class="nai-audit__compare">
 					<div class="nai-audit__compare-head">
-						<span class="nai-audit__compare-label"><?php esc_html_e( 'With BeepBeep AI', 'beepbeep-ai-alt-text-generator' ); ?></span>
+						<span class="nai-audit__compare-label"><?php esc_html_e( 'With OpptiAI', 'beepbeep-ai-alt-text-generator' ); ?></span>
 						<span class="nai-mono nai-tnum nai-audit__compare-value"><?php esc_html_e( '30 seconds', 'beepbeep-ai-alt-text-generator' ); ?></span>
 					</div>
 					<div class="nai-audit__compare-track"><span class="nai-audit__compare-fill nai-audit__compare-fill--ok" style="width: 6%;"></span></div>

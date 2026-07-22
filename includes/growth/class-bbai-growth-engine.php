@@ -57,7 +57,7 @@ class Growth_Engine {
 	}
 
 	/**
-	 * Whether current admin screen is a BeepBeep AI plugin page.
+	 * Whether current admin screen is an OpptiAI plugin page.
 	 */
 	public static function is_bbai_admin_screen(): bool {
 		if ( ! is_admin() ) {
@@ -198,7 +198,7 @@ class Growth_Engine {
 		echo '<div class="notice notice-info bbai-growth-review-notice" data-bbai-growth-review-notice="1"><p>';
 		echo esc_html(
 			__(
-				'If BeepBeep AI saves you time on ALT text and image SEO, a short WordPress.org review helps other site owners find the plugin. Thank you for considering it — no obligation.',
+				'If OpptiAI saves you time on ALT text and image SEO, a short WordPress.org review helps other site owners find the plugin. Thank you for considering it — no obligation.',
 				'beepbeep-ai-alt-text-generator'
 			)
 		);

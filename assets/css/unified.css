@@ -20,7 +20,7 @@
 
 /* Imported from: _tokens.css */
 /**
- * Design Tokens - BeepBeep AI
+ * Design Tokens - OpptiAI
  * Premium SaaS Design System
  *
  * Version: 8.0.0
@@ -8312,7 +8312,7 @@ h1.bbai-heading {
 
 /* Imported from: _ui-restoration.css */
 /**
- * UI Restoration - Complete styling system for BeepBeep AI admin pages
+ * UI Restoration - Complete styling system for OpptiAI admin pages
  * Restores polished SaaS design across Dashboard, ALT Library, Analytics, Credit Usage
  *
  * @package BeepBeep_AI
@@ -9410,7 +9410,7 @@ h1.bbai-heading,
 
 /* Imported from: _dashboard-reference.css */
 /**
- * BeepBeep AI Dashboard - Premium SaaS Design System
+ * OpptiAI Dashboard - Premium SaaS Design System
  * Inspired by Vercel, Stripe, Linear
  * Scoped to .bbai-container to override _ui-restoration and ensure styles apply
  *
@@ -9455,7 +9455,7 @@ h1.bbai-heading,
 }
 
 /* ==========================================================================
-   Remove WordPress admin spacing for BeepBeep dashboard page only
+   Remove WordPress admin spacing for OpptiAI dashboard page only
    Scoped to body.toplevel_page_bbai so other admin pages are unaffected
    ========================================================================== */
 
@@ -12426,7 +12426,7 @@ h4.bbai-heading {
 
 /* Imported from: _animations.css */
 /**
- * Animation System - BeepBeep AI
+ * Animation System - OpptiAI
  * Standard animations for consistent UX across the plugin
  * 
  * All animations respect prefers-reduced-motion

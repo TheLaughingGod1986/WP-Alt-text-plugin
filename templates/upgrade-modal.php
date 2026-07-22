@@ -63,8 +63,7 @@ $bbai_format_plan_price = static function ( $amount, $interval = 'month' ) use (
 		? __( ' one-time', 'beepbeep-ai-alt-text-generator' )
 		: __( '/month', 'beepbeep-ai-alt-text-generator' );
 	return sprintf(
-		/* translators: 1: currency symbol, 2: amount, 3: billing interval suffix. */
-		__( '%1$s%2$s%3$s', 'beepbeep-ai-alt-text-generator' ),
+		'%1$s%2$s%3$s',
 		$bbai_currency['symbol'],
 		number_format( $amount, 2 ),
 		$suffix
@@ -641,8 +640,16 @@ $bbai_show_agency_by_default   = $bbai_is_agency_plan;
 										<?php
 										echo esc_html(
 											'credits' === $bbai_plan_id
-												? sprintf( __( '%s one-time credits', 'beepbeep-ai-alt-text-generator' ), number_format_i18n( $bbai_plan_credits ) )
-												: sprintf( __( '%s credits/month', 'beepbeep-ai-alt-text-generator' ), number_format_i18n( $bbai_plan_credits ) )
+											? sprintf(
+												/* translators: %s: number of one-time credits. */
+												__( '%s one-time credits', 'beepbeep-ai-alt-text-generator' ),
+												number_format_i18n( $bbai_plan_credits )
+											)
+											: sprintf(
+												/* translators: %s: number of monthly credits. */
+												__( '%s credits/month', 'beepbeep-ai-alt-text-generator' ),
+												number_format_i18n( $bbai_plan_credits )
+											)
 										);
 										?>
 									</div>

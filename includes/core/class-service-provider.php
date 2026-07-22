@@ -77,7 +77,7 @@ class Service_Provider {
 	 * @return void
 	 */
 	private static function register_api_clients( Container $container ): void {
-		// BeepBeep API client - singleton.
+		// OpptiAI API client - singleton.
 		$container->singleton(
 			'api.beepbeep',
 			function ( $c ) {

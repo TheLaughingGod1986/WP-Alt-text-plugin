@@ -409,7 +409,7 @@ JS,
 	}
 
 	/**
-	 * Check if current hook is a BeepBeep AI admin page
+	 * Check if current hook is an OpptiAI admin page
 	 *
 	 * @param string $hook WordPress admin hook
 	 * @return bool
@@ -453,7 +453,7 @@ JS,
 	}
 
 	/**
-	 * Get the current BeepBeep AI admin page slug.
+	 * Get the current OpptiAI admin page slug.
 	 *
 	 * @return string
 	 */
@@ -783,7 +783,7 @@ JS,
 			);
 		}
 
-		// Background job persistence layer — runs on every BeepBeep AI admin page
+		// Background job persistence layer — runs on every OpptiAI admin page
 		// so generation progress survives navigation, page refreshes, and multi-tab.
 		$bbai_bg_job_js = 'assets/js/admin/bbai-background-job.js';
 		if ( file_exists( $base_path . $bbai_bg_job_js ) ) {
@@ -1482,7 +1482,7 @@ JS,
 					'nonce'              => wp_create_nonce( 'wp_rest' ),
 					'strings'            => array(
 						'fab'            => __( 'Help', 'beepbeep-ai-alt-text-generator' ),
-						'title'          => __( 'BeepBeep guide', 'beepbeep-ai-alt-text-generator' ),
+						'title'          => __( 'OpptiAI guide', 'beepbeep-ai-alt-text-generator' ),
 						'close'          => __( 'Close', 'beepbeep-ai-alt-text-generator' ),
 						'ask'            => __( 'Your question', 'beepbeep-ai-alt-text-generator' ),
 						'placeholder'    => __( 'e.g. How do credits work? What does “needs review” mean?', 'beepbeep-ai-alt-text-generator' ),
@@ -1929,7 +1929,7 @@ JS,
 	}
 
 	/**
-	 * Determine whether the current plugin session is connected to a BeepBeep AI account.
+	 * Determine whether the current plugin session is connected to an OpptiAI account.
 	 */
 	private function is_bbai_account_authenticated(): bool {
 		if ( isset( $this->api_client ) && $this->api_client ) {
@@ -2142,7 +2142,11 @@ JS,
 			'settings'        => 'settings_viewed',
 			'onboarding'      => 'onboarding_viewed',
 		);
-		$environment      = function_exists( 'wp_get_environment_type' ) ? sanitize_key( (string) wp_get_environment_type() ) : 'production';
+		$site_host        = sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) );
+		$environment      = class_exists( BBAI_Telemetry::class )
+			? BBAI_Telemetry::resolve_environment_name( $site_host )
+			: ( function_exists( 'wp_get_environment_type' ) ? sanitize_key( (string) wp_get_environment_type() ) : 'production' );
+		$is_internal      = in_array( $environment, array( 'local', 'test' ), true );
 		$quota_state      = '';
 		if ( isset( $usage_data['quota_state'] ) && is_scalar( $usage_data['quota_state'] ) ) {
 			$quota_state = sanitize_key( (string) $usage_data['quota_state'] );
@@ -2189,8 +2193,8 @@ JS,
 					'site_install_id'       => $site_install_id,
 					'site_hash'             => $site_hash,
 					'site_url'              => esc_url_raw( home_url( '/' ) ),
-					'host'                  => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
-					'site_host'             => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+					'host'                  => $site_host,
+					'site_host'             => $site_host,
 					'is_logged_in'          => $is_logged_in,
 					'user_state'            => $is_logged_in ? 'signed_in' : 'guest',
 					'plan'                  => $plan_type,
@@ -2205,12 +2209,15 @@ JS,
 					'needs_review_count'    => max( 0, (int) ( $stats_data['needs_review_count'] ?? 0 ) ),
 					'optimized_count'       => max( 0, (int) ( $stats_data['optimized_count'] ?? 0 ) ),
 					'plugin_version'        => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+					'app_version'           => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
 					'plugin_slug'           => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::get_plugin_slug() : 'beepbeep-ai-alt-text-generator',
 					'telemetry_version'     => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::TELEMETRY_SCHEMA_VERSION : '1',
+					'event_schema_version'  => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::TELEMETRY_SCHEMA_VERSION : '1',
 					'wp_version'            => get_bloginfo( 'version' ),
 					'wordpress_version'     => get_bloginfo( 'version' ),
 					'php_version'           => PHP_VERSION,
 					'environment'           => $environment,
+					'is_internal'           => $is_internal,
 					'quota_state'           => $quota_state,
 					'license_state'         => $license_state,
 				),
@@ -2236,7 +2243,7 @@ JS,
 	}
 
 	/**
-	 * Register + enqueue the PostHog bridge for BeepBeep AI admin pages only.
+	 * Register + enqueue the PostHog bridge for OpptiAI admin pages only.
 	 */
 	private function enqueue_posthog_layer( string $base_url, string $base_path ): void {
 		$rel  = 'assets/js/bbai-posthog.js';
@@ -2317,7 +2324,11 @@ JS,
 		$uid            = get_current_user_id();
 		$key            = '_bbai_telemetry_session_images_' . gmdate( 'Ymd' );
 		$session_images = $uid > 0 ? (int) get_user_meta( $uid, $key, true ) : 0;
-		$environment    = function_exists( 'wp_get_environment_type' ) ? sanitize_key( (string) wp_get_environment_type() ) : 'production';
+		$site_host      = sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) );
+		$environment    = class_exists( BBAI_Telemetry::class )
+			? BBAI_Telemetry::resolve_environment_name( $site_host )
+			: ( function_exists( 'wp_get_environment_type' ) ? sanitize_key( (string) wp_get_environment_type() ) : 'production' );
+		$is_internal    = in_array( $environment, array( 'local', 'test' ), true );
 		$quota_state    = '';
 		if ( isset( $usage['quota_state'] ) && is_scalar( $usage['quota_state'] ) ) {
 			$quota_state = sanitize_key( (string) $usage['quota_state'] );
@@ -2350,12 +2361,15 @@ JS,
 				'plan_type'                => $plan_type,
 				'plugin_plan'              => $plan_type,
 				'plugin_version'           => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+				'app_version'              => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
 				'plugin_slug'              => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::get_plugin_slug() : 'beepbeep-ai-alt-text-generator',
 				'telemetry_version'        => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::TELEMETRY_SCHEMA_VERSION : '1',
+				'event_schema_version'     => class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::TELEMETRY_SCHEMA_VERSION : '1',
 				'wp_version'               => get_bloginfo( 'version' ),
 				'wordpress_version'        => get_bloginfo( 'version' ),
 				'php_version'              => PHP_VERSION,
 				'environment'              => $environment,
+				'is_internal'              => $is_internal,
 				'quota_state'              => $quota_state,
 				'license_state'            => $license_state,
 				'quota_remaining'          => $quota_remaining,
@@ -2370,8 +2384,8 @@ JS,
 				'site_id'                  => $identity_context['site_id'] ?? '',
 				'site_hash'                => $site_hash,
 				'site_url'                 => $identity_context['site_url'] ?? esc_url_raw( home_url( '/' ) ),
-				'site_host'                => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
-				'host'                     => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+				'site_host'                => $identity_context['site_host'] ?? $site_host,
+				'host'                     => $identity_context['site_host'] ?? $site_host,
 				'license_key_present'      => ! empty( $identity_context['license_key_present'] ),
 				'wordpress_user_id'        => $identity_context['wordpress_user_id'] ?? ( $uid > 0 ? $uid : null ),
 			),
@@ -2413,7 +2427,7 @@ JS,
 
 		$is_bbai_page = $this->is_bbai_admin_page( $hook );
 
-		// Restrict plugin assets to BeepBeep AI admin pages.
+		// Restrict plugin assets to OpptiAI admin pages.
 		if ( ! $is_bbai_page ) {
 			return;
 		}

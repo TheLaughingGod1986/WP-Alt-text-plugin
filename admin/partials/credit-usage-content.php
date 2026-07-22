@@ -87,7 +87,7 @@ if ( $bbai_time_saved_min >= 120 ) {
 
 $bbai_automation_url       = (string) ( $bbai_usage_surface['automationUrl'] ?? '' );
 $bbai_upgrade_cta_url      = (string) ( $bbai_usage_surface['upgradeCtaUrl'] ?? '' );
-$bbai_plan_url             = ! empty( $bbai_upgrade_cta_url ) ? $bbai_upgrade_cta_url : 'https://beepbeep.ai/pricing';
+$bbai_plan_url             = ! empty( $bbai_upgrade_cta_url ) ? $bbai_upgrade_cta_url : 'https://oppti.dev/pricing';
 $bbai_usage_billing_portal = class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' )
 	? (string) \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_billing_portal_url()
 	: '';

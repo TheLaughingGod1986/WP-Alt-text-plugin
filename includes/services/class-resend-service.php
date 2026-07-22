@@ -164,9 +164,9 @@ class Resend_Service {
 
 		// Prepare request payload
 		$payload = array(
-			'from'     => 'BeepBeep AI Support <noreply@resend.dev>', // Default, should be configured in Resend
+			'from'     => 'OpptiAI Support <noreply@resend.dev>', // Default, should be configured in Resend
 			'to'       => array( $recipient_email ),
-			'subject'  => sprintf( '[BeepBeep AI Support] %s', sanitize_text_field( $data['subject'] ) ),
+			'subject'  => sprintf( '[OpptiAI Support] %s', sanitize_text_field( $data['subject'] ) ),
 			'html'     => $html_content,
 			'reply_to' => array(
 				sanitize_email( $data['email'] ) => sanitize_text_field( $data['name'] ),

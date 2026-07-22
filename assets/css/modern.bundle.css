@@ -1,10 +1,10 @@
 /**
- * BeepBeep AI - Modern CSS Bundle
+ * OpptiAI - Modern CSS Bundle
  * @generated 2026-03-09T14:06:33.135Z
  */
 
 /**
- * BeepBeep AI Alt Text Generator - Modern CSS (Modular)
+ * OpptiAI Alt Text - Modern CSS (Modular)
  * Main entry point for modular CSS architecture
  *
  * @package BeepBeep_AI
@@ -25,7 +25,7 @@
  * All colors centralized for easy theming and consistency.
  * Based on modern color system with semantic naming.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 
@@ -101,7 +101,7 @@
  * Type scale and font system.
  * Based on modular scale for harmonious typography.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 
@@ -147,7 +147,7 @@
  * Consistent spacing scale based on 4px baseline grid.
  * Provides predictable rhythm and alignment.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 
@@ -185,7 +185,7 @@
  * Elevation system using box shadows.
  * Creates depth and visual hierarchy.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 
@@ -219,7 +219,7 @@
  * Transition durations, easing functions, and keyframes.
  * Provides smooth, consistent motion.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 

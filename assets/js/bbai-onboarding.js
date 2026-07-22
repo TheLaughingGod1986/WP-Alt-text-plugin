@@ -1,5 +1,5 @@
 /**
- * BeepBeep AI Onboarding System
+ * OpptiAI Onboarding System
  * Handles welcome modal and interactive tour
  */
 
@@ -167,7 +167,7 @@
                         this.hide();
                         // Show success toast if available
                         if (window.bbaiToast) {
-                            window.bbaiToast.success('Welcome to BeepBeep AI! You\'re all set.');
+                            window.bbaiToast.success('Welcome to OpptiAI! You\'re all set.');
                         }
                     },
                     error: () => {

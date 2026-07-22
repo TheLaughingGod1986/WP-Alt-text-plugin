@@ -197,7 +197,7 @@ $bbai_is_authenticated      = (bool) ( $bbai_is_authenticated ?? false );
 $bbai_has_license           = (bool) ( $bbai_has_license ?? false );
 $bbai_has_registered_user   = (bool) ( $bbai_has_registered_user ?? false );
 $bbai_has_connected_account = (bool) ( $bbai_has_connected_account ?? $bbai_has_registered_user );
-// Canonical auth separation: wp-admin login is NOT BeepBeep auth.
+// Canonical auth separation: wp-admin login is NOT OpptiAI auth.
 // Treat any non-authenticated session as guest_logged_out even if stale flags suggest a connection.
 if ( ! $bbai_is_authenticated ) {
 	$bbai_has_connected_account = false;
@@ -995,7 +995,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 	$bbai_retention_strip = null;
 	$bbai_return_loop     = null;
 	if ( $bbai_current_user_id ) {
-		// Retention tracking uses wp-admin user ID (site-level progress), not BeepBeep auth.
+		// Retention tracking uses wp-admin user ID (site-level progress), not OpptiAI auth.
 		bbai_retention_schedule_snapshot_update( $bbai_current_user_id, $bbai_total_images );
 		$bbai_return_loop     = bbai_return_loop_resolve(
 			array(
@@ -1417,8 +1417,8 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 						id="bbai-review-prompt-title"
 						class="bbai-dashboard-review-overlay__headline"
 						data-bbai-review-headline
-					><?php esc_html_e( 'Enjoying BeepBeep AI?', 'beepbeep-ai-alt-text-generator' ); ?></p>
-					<p class="bbai-dashboard-review-overlay__copy" data-bbai-review-copy><?php esc_html_e( 'You\'ve already optimised a good chunk of your library. If BeepBeep AI has saved you time, a quick WordPress.org review really helps.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					><?php esc_html_e( 'Enjoying OpptiAI?', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<p class="bbai-dashboard-review-overlay__copy" data-bbai-review-copy><?php esc_html_e( 'You\'ve already optimised a good chunk of your library. If OpptiAI has saved you time, a quick WordPress.org review really helps.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					<div class="bbai-dashboard-review-overlay__actions">
 						<a
 							href="<?php echo esc_url( $bbai_review_prompt_url ); ?>"

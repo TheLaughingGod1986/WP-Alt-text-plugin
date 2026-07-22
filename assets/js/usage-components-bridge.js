@@ -11,7 +11,7 @@
 
     // Check if React runtime is available
     if (!reactRuntime || !reactDomRuntime || typeof reactDomRuntime.createRoot !== 'function') {
-        window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] React is not loaded. Usage components require React and ReactDOM.');
+        window.BBAI_LOG && window.BBAI_LOG.warn('[OpptiAI] React is not loaded. Usage components require React and ReactDOM.');
         return;
     }
 
@@ -19,7 +19,7 @@
     function initComponents() {
         const apiRoot = (window.BBAI && window.BBAI.restRoot) || (window.wpApiSettings && window.wpApiSettings.root) || '';
         if (!apiRoot) {
-            window.BBAI_LOG && window.BBAI_LOG.warn('[BeepBeep AI] REST API root is not available (missing localized rest root).');
+            window.BBAI_LOG && window.BBAI_LOG.warn('[OpptiAI] REST API root is not available (missing localized rest root).');
             return;
         }
 
@@ -33,7 +33,7 @@
                 // Dynamic import of React components
                 // Note: In production, these should be bundled with webpack/build tool
                 // For now, we'll create a simple initialization
-                window.BBAI_LOG && window.BBAI_LOG.log('[BeepBeep AI] Initializing multi-user token bar...');
+                window.BBAI_LOG && window.BBAI_LOG.log('[OpptiAI] Initializing multi-user token bar...');
                 
                 // The actual React components should be loaded via webpack/build process
                 // This is a placeholder that will be replaced with actual component loading
@@ -48,7 +48,7 @@
                     }
                 }
             } catch (error) {
-                window.BBAI_LOG && window.BBAI_LOG.error('[BeepBeep AI] Error initializing token bar:', error);
+                window.BBAI_LOG && window.BBAI_LOG.error('[OpptiAI] Error initializing token bar:', error);
             }
         }
 
@@ -56,7 +56,7 @@
         const usageTabContainer = document.getElementById('bbai-multiuser-usage-tab-root');
         if (usageTabContainer) {
             try {
-                window.BBAI_LOG && window.BBAI_LOG.log('[BeepBeep AI] Initializing team usage tab...');
+                window.BBAI_LOG && window.BBAI_LOG.log('[OpptiAI] Initializing team usage tab...');
                 
                 if (window.bbaiUsageComponents) {
                     const { MultiUserUsageTab } = window.bbaiUsageComponents;
@@ -69,7 +69,7 @@
                     }
                 }
             } catch (error) {
-                window.BBAI_LOG && window.BBAI_LOG.error('[BeepBeep AI] Error initializing usage tab:', error);
+                window.BBAI_LOG && window.BBAI_LOG.error('[OpptiAI] Error initializing usage tab:', error);
             }
         }
     }

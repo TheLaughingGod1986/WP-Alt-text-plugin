@@ -4,7 +4,7 @@
  * WordPress AJAX client with automatic nonce handling.
  * Provides clean interface for making AJAX requests.
  *
- * @package BeepBeep\AltText
+ * @package OpptiAI\AltText
  * @since   5.0.0
  */
 
