@@ -1,0 +1,12 @@
+/* nAi design CSS aggregator.
+   Shared/page rules live in assets/css/nai/*.css; keep this file as the
+   compatibility entrypoint for the existing WordPress enqueue handle. */
+
+@import url("nai/nai-tokens.css");
+@import url("nai/nai-components.css");
+@import url("nai/nai-dashboard.css");
+@import url("nai/nai-autopilot.css");
+@import url("nai/nai-settings.css");
+@import url("nai/nai-library.css");
+@import url("nai/nai-shell.css");
+@import url("nai/nai-guest-audit.css");

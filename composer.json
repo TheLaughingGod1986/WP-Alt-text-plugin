@@ -2,6 +2,7 @@
     "require-dev": {
         "squizlabs/php_codesniffer": "*",
         "wp-coding-standards/wpcs": "*",
-        "phpcompatibility/phpcompatibility-wp": "*"
+        "phpcompatibility/phpcompatibility-wp": "*",
+        "phpcsstandards/phpcsextra": "^1.5"
     }
 }

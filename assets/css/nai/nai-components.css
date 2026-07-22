@@ -1,0 +1,370 @@
+/* nAi shared components and primitives. */
+
+.nai-screen {
+	background: var(--nai-bg);
+	color: var(--nai-text);
+	font-family: var(--nai-font-sans);
+	font-feature-settings: "ss01", "cv11";
+	-webkit-font-smoothing: antialiased;
+	padding: 24px 32px 48px;
+	max-width: 1180px;
+	margin: 0 auto;
+	box-sizing: border-box;
+}
+
+.nai-screen *,
+.nai-screen *::before,
+.nai-screen *::after { box-sizing: border-box; }
+
+.nai-screen .nai-mono { font-family: var(--nai-font-mono); font-feature-settings: "tnum", "zero"; }
+.nai-screen .nai-tnum { font-variant-numeric: tabular-nums; }
+.nai-screen .nai-is-precedence-hidden { display: none !important; }
+
+/* ---------- Card ---------- */
+.nai-screen .nai-card {
+	background: var(--nai-surface);
+	border: 1px solid var(--nai-border);
+	border-radius: var(--nai-r-lg);
+	box-shadow: var(--nai-shadow-sm);
+	overflow: hidden;
+}
+
+/* ---------- Buttons ---------- */
+.nai-screen .nai-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border-radius: var(--nai-r-md);
+	font-family: inherit;
+	font-weight: 600;
+	letter-spacing: -0.005em;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background .18s ease, border-color .18s ease, color .18s ease, transform .08s ease, box-shadow .18s ease;
+	border: 1px solid transparent;
+	text-decoration: none;
+}
+.nai-screen .nai-btn:active { transform: scale(0.98); }
+.nai-screen .nai-btn:focus-visible { outline: 2px solid var(--nai-primary); outline-offset: 2px; }
+
+.nai-screen .nai-btn--sm { padding: 6px 10px; font-size: 13px; gap: 6px; }
+.nai-screen .nai-btn--md { padding: 9px 14px; font-size: 14px; }
+.nai-screen .nai-btn--lg { padding: 12px 18px; font-size: 15px; }
+.nai-screen .nai-btn--full { width: 100%; }
+
+.nai-screen .nai-btn--primary {
+	background: var(--nai-text);
+	color: #fff;
+	border-color: var(--nai-text);
+	box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 1px 2px rgba(0,0,0,0.18);
+}
+.nai-screen .nai-btn--primary:hover { background: #020617; }
+
+.nai-screen .nai-btn--secondary {
+	background: var(--nai-surface);
+	color: var(--nai-text);
+	border-color: var(--nai-border-strong);
+}
+.nai-screen .nai-btn--secondary:hover { background: var(--nai-bg-sunken); }
+.nai-screen .nai-btn--secondary[disabled],
+.nai-screen .nai-btn--secondary[aria-disabled="true"] {
+	background: #F1F5F9; color: var(--nai-text-3); border-color: var(--nai-border); cursor: not-allowed;
+}
+
+.nai-screen .nai-btn--ghost {
+	background: transparent;
+	color: var(--nai-text-2);
+}
+.nai-screen .nai-btn--ghost:hover { background: var(--nai-bg-sunken); }
+
+.nai-screen .nai-btn--pro {
+	background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+	color: #fff;
+	border-color: #1D4ED8;
+	box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 1px 2px rgba(0,0,0,0.18);
+}
+.nai-screen .nai-btn--pro:hover { background: linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%); }
+
+.nai-screen .nai-btn svg { flex-shrink: 0; }
+
+.nai-app .nai-topbar .nai-btn,
+.nai-app .nai-signedout .nai-btn,
+.nai-app .nai-modal .nai-btn,
+.nai-app .nai-drawer .nai-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	border-radius: var(--nai-r-md);
+	font-family: inherit;
+	font-weight: 600;
+	letter-spacing: -0.005em;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background .18s ease, border-color .18s ease, color .18s ease, transform .08s ease, box-shadow .18s ease;
+	border: 1px solid transparent;
+	text-decoration: none;
+}
+.nai-app .nai-btn:active { transform: scale(0.98); }
+.nai-app .nai-btn:focus-visible { outline: 2px solid var(--nai-primary); outline-offset: 2px; }
+.nai-app .nai-btn--sm { padding: 6px 10px; font-size: 13px; gap: 6px; }
+.nai-app .nai-btn--md { padding: 9px 14px; font-size: 14px; }
+.nai-app .nai-btn--lg { padding: 12px 18px; font-size: 15px; }
+.nai-app .nai-btn--full { width: 100%; }
+.nai-app .nai-btn--primary {
+	background: var(--nai-text);
+	color: #fff;
+	border-color: var(--nai-text);
+	box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 1px 2px rgba(0,0,0,0.18);
+}
+.nai-app .nai-btn--primary:hover { background: #020617; }
+.nai-app .nai-btn--secondary {
+	background: var(--nai-surface);
+	color: var(--nai-text);
+	border-color: var(--nai-border-strong);
+}
+.nai-app .nai-btn--secondary:hover { background: var(--nai-bg-sunken); }
+.nai-app .nai-btn--secondary[disabled],
+.nai-app .nai-btn--secondary[aria-disabled="true"] {
+	background: #F1F5F9;
+	color: var(--nai-text-3);
+	border-color: var(--nai-border);
+	cursor: not-allowed;
+}
+.nai-app .nai-btn--ghost {
+	background: transparent;
+	color: var(--nai-text-2);
+}
+.nai-app .nai-btn--ghost:hover { background: var(--nai-bg-sunken); }
+.nai-app .nai-btn--pro {
+	background: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+	color: #fff;
+	border-color: #1D4ED8;
+	box-shadow: 0 1px 0 rgba(255,255,255,0.18) inset, 0 1px 2px rgba(0,0,0,0.18);
+}
+.nai-app .nai-btn--pro:hover { background: linear-gradient(180deg, #1D4ED8 0%, #1E40AF 100%); }
+.nai-app .nai-btn svg { flex-shrink: 0; }
+
+/* ---------- Pill / SignalChip ---------- */
+.nai-screen .nai-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	border-radius: 999px;
+	padding: 1px 7px;
+	font-size: 10.5px;
+	font-weight: 500;
+	line-height: 1.5;
+	letter-spacing: -0.005em;
+	white-space: nowrap;
+	border: 1px solid var(--nai-hairline);
+	background: var(--nai-bg-sunken);
+	color: var(--nai-text-3);
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.nai-screen .nai-chip--warn   { background: var(--nai-warn-soft);   color: var(--nai-warn-ink);   border-color: var(--nai-warn-border);   font-weight: 600; }
+.nai-screen .nai-chip--danger { background: var(--nai-danger-soft); color: var(--nai-danger-ink); border-color: var(--nai-danger-border); font-weight: 600; }
+.nai-screen .nai-chip--ok     { background: var(--nai-ok-soft);     color: var(--nai-ok-ink);     border-color: var(--nai-ok-border); }
+.nai-screen .nai-chip--primary{ background: var(--nai-primary-soft);color: var(--nai-primary-ink);border-color: var(--nai-primary-border); }
+.nai-screen .nai-chip__dot {
+	width: 5px; height: 5px; border-radius: 999px;
+	flex-shrink: 0;
+}
+.nai-screen .nai-chip--warn   .nai-chip__dot { background: var(--nai-warn); }
+.nai-screen .nai-chip--danger .nai-chip__dot { background: var(--nai-danger); }
+
+/* ---------- Eyebrow / labels ---------- */
+.nai-screen .nai-eyebrow {
+	font-size: 10.5px;
+	color: var(--nai-text-3);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+.nai-screen .nai-eyebrow--primary { color: var(--nai-primary-ink); }
+
+/* ---------- Progress / Ring ---------- */
+.nai-screen .nai-progress {
+	background: var(--nai-bg-sunken);
+	border: 1px solid var(--nai-hairline);
+	border-radius: 999px;
+	overflow: hidden;
+	height: 6px;
+}
+.nai-screen .nai-progress__bar {
+	height: 100%;
+	border-radius: 999px;
+	transition: width .6s cubic-bezier(.2,.8,.2,1);
+	background: var(--nai-ok);
+}
+.nai-screen .nai-progress--primary .nai-progress__bar { background: var(--nai-primary); }
+.nai-screen .nai-progress--warn    .nai-progress__bar { background: var(--nai-warn); }
+.nai-screen .nai-progress--danger  .nai-progress__bar { background: var(--nai-danger); }
+
+.nai-screen .nai-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.nai-screen .nai-ring svg { transform: rotate(-90deg); }
+.nai-screen .nai-ring__track { stroke: var(--nai-bg-sunken); fill: none; }
+.nai-screen .nai-ring__fill { fill: none; stroke-linecap: round; transition: stroke-dasharray .8s cubic-bezier(.2,.8,.2,1); }
+.nai-screen .nai-ring--ok      .nai-ring__fill { stroke: var(--nai-ok); }
+.nai-screen .nai-ring--warn    .nai-ring__fill { stroke: var(--nai-warn); }
+.nai-screen .nai-ring--danger  .nai-ring__fill { stroke: var(--nai-danger); }
+.nai-screen .nai-ring--primary .nai-ring__fill { stroke: var(--nai-primary); }
+.nai-screen .nai-ring__center {
+	position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+}
+
+/* ---------- Thumb placeholder ---------- */
+.nai-screen .nai-thumb {
+	width: 40px; height: 40px;
+	border-radius: 6px;
+	border: 1px solid var(--nai-border);
+	display: flex; align-items: center; justify-content: center;
+	font-size: 9px; font-family: var(--nai-font-mono);
+	color: #475569;
+	flex-shrink: 0;
+	overflow: hidden;
+	background-color: #E2E8F0;
+	background-image: repeating-linear-gradient(45deg, #CBD5E1 0, #CBD5E1 6px, #E2E8F0 6px, #E2E8F0 12px);
+}
+
+/* ---------- Pulse dots ---------- */
+.nai-screen .nai-pulse-dot {
+	display: inline-block;
+	width: 8px; height: 8px;
+	border-radius: 999px;
+	background: var(--nai-ok);
+	box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45);
+	animation: nai-pulse 2.4s ease-out infinite;
+}
+@keyframes nai-pulse {
+	0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+	70%  { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+	100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.nai-screen .nai-ambient-pulse {
+	display: inline-block;
+	width: 6px; height: 6px;
+	border-radius: 999px;
+	background: var(--nai-ok-ink);
+	flex-shrink: 0;
+	animation: nai-ambient 3.2s ease-in-out infinite;
+}
+@keyframes nai-ambient {
+	0%, 100% { transform: scale(1);   opacity: 0.85; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+	50%      { transform: scale(1.15); opacity: 1;    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.16); }
+}
+
+/* ==========================================================================
+   Page header — shared by Library / Autopilot / Settings
+   ========================================================================== */
+.nai-screen .nai-page-header { margin-bottom: 18px; }
+.nai-screen .nai-page-header__title {
+	font-size: 24px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	margin: 0;
+	line-height: 1.2;
+	color: var(--nai-text);
+}
+.nai-screen .nai-page-header__sub {
+	font-size: 13px;
+	color: var(--nai-text-2);
+	margin: 4px 0 0;
+	max-width: 560px;
+	line-height: 1.5;
+}
+.nai-screen .nai-page-header__row {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Modal — paywall / generic overlay
+   ========================================================================== */
+.nai-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	background: rgba(15,23,42,0.45);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	animation: nai-fade 0.15s ease;
+}
+@keyframes nai-fade {
+	from { opacity: 0; }
+	to   { opacity: 1; }
+}
+.nai-modal {
+	width: 560px;
+	max-width: 100%;
+	max-height: 90vh;
+	overflow: auto;
+	background: #FFFFFF;
+	color: #0F172A;
+	border-radius: 20px;
+	border: 1px solid #E6EAF0;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 20px 40px -12px rgba(15, 23, 42, 0.18);
+	font-family: "Geist", "Helvetica Neue", system-ui, -apple-system, sans-serif;
+	animation: nai-scale 0.2s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes nai-scale {
+	from { transform: scale(0.96); opacity: 0; }
+	to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ==========================================================================
+   Upgrade modal — apply nAi design tokens to the existing #bbai-upgrade-modal
+   without disturbing its working DOM. Scoped to body.nai-design-active so the
+   overlay only loads when the redesign filter is on.
+   ========================================================================== */
+body.nai-design-active #bbai-upgrade-modal {
+	font-family: var(--nai-font-sans, "Geist", system-ui, -apple-system, sans-serif);
+}
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__content {
+	border-radius: 20px;
+	border: 1px solid #E6EAF0;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 20px 40px -12px rgba(15, 23, 42, 0.18);
+	background: #FFFFFF;
+	overflow: hidden;
+}
+body.nai-design-active #bbai-upgrade-modal,
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__backdrop {
+	background: rgba(15, 23, 42, 0.45);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+}
+body.nai-design-active #bbai-upgrade-modal-title {
+	font-size: 24px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	color: #0F172A;
+	line-height: 1.2;
+}
+body.nai-design-active #bbai-upgrade-modal-description,
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__subtitle {
+	color: #475569;
+	font-size: 13.5px;
+	line-height: 1.55;
+}
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__section-label {
+	font-size: 10.5px;
+	color: #64748B;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+body.nai-design-active #bbai-upgrade-modal .bbai-upgrade-modal__footer-link {
+	color: #1D4ED8;
+	font-weight: 600;
+}

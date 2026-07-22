@@ -333,7 +333,7 @@
             return;
         }
 
-        if (error && (error.code === 'limit_reached' || error.code === 'quota_exhausted')) {
+        if (error && (error.code === 'limit_reached' || error.code === 'daily_limit_reached' || error.code === 'quota_exhausted')) {
             hideBulkProgress();
             window.bbaiHandleLimitReached(error);
             return;

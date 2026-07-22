@@ -13,6 +13,8 @@ class Usage_Tracker {
 
 	const CACHE_KEY    = 'bbai_usage_cache';
 	const CACHE_EXPIRY = 300; // 5 minutes
+	const MIN_PAID_MONTHLY_LIMIT = 1000;
+	const STARTER_MONTHLY_LIMIT  = 100;
 
 	/**
 	 * Convert remaining seconds to a user-facing day countdown.
@@ -53,8 +55,92 @@ class Usage_Tracker {
 		if ( 'anonymous_trial' === $plan_key ) {
 			return 'trial';
 		}
-		$allowed = array( 'free', 'trial', 'pro', 'growth', 'agency', 'enterprise' );
+		$allowed = array( 'free', 'trial', 'starter', 'pro', 'growth', 'agency', 'enterprise' );
 		return in_array( $plan_key, $allowed, true ) ? $plan_key : 'free';
+	}
+
+	/**
+	 * Determine whether a normalized plan slug represents a paid entitlement.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return bool
+	 */
+	private static function is_paid_plan_slug( string $plan ): bool {
+		return in_array( self::normalize_plan_slug( $plan ), array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Determine whether a plan includes upload automation/Autopilot.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return bool
+	 */
+	private static function plan_can_use_autopilot( string $plan ): bool {
+		return in_array( self::normalize_plan_slug( $plan ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
+	/**
+	 * Minimum allowance required before trusting a paid plan claim.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return int
+	 */
+	private static function minimum_monthly_limit_for_plan( string $plan ): int {
+		$plan = self::normalize_plan_slug( $plan );
+		if ( 'starter' === $plan ) {
+			return self::STARTER_MONTHLY_LIMIT;
+		}
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
+			return self::MIN_PAID_MONTHLY_LIMIT;
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Prevent stale paid plan claims from promoting free users in admin UI.
+	 *
+	 * The public Growth/Pro allowance starts at 1,000 monthly generations. A payload
+	 * that claims a paid plan but carries a free-sized allowance is stale or malformed.
+	 *
+	 * @param string $plan  Normalized plan slug.
+	 * @param int    $limit Normalized monthly limit.
+	 * @return string
+	 */
+	private static function normalize_plan_for_limit( string $plan, int $limit ): string {
+		$plan = self::normalize_plan_slug( $plan );
+		$minimum = self::minimum_monthly_limit_for_plan( $plan );
+		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
+			return 'free';
+		}
+
+		return $plan;
+	}
+
+	/**
+	 * Determine whether a payload carries an explicit paid entitlement signal.
+	 *
+	 * @param array $usage_data Usage payload.
+	 * @return bool
+	 */
+	private static function has_paid_entitlement_signal( array $usage_data ): bool {
+		if ( isset( $usage_data['has_paid_entitlement'] ) ) {
+			return true === $usage_data['has_paid_entitlement'];
+		}
+
+		if ( isset( $usage_data['entitlement_state'] ) && is_array( $usage_data['entitlement_state'] ) && isset( $usage_data['entitlement_state']['has_paid_entitlement'] ) ) {
+			return true === $usage_data['entitlement_state']['has_paid_entitlement'];
+		}
+
+		if ( isset( $usage_data['stripe_subscription_id'] ) && is_scalar( $usage_data['stripe_subscription_id'] ) && '' !== trim( (string) $usage_data['stripe_subscription_id'] ) ) {
+			return true;
+		}
+
+		if ( isset( $usage_data['subscription_id'] ) && is_scalar( $usage_data['subscription_id'] ) && '' !== trim( (string) $usage_data['subscription_id'] ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -103,7 +189,24 @@ class Usage_Tracker {
 			$remaining = 0;
 		}
 
-		$plan = self::normalize_plan_slug( $usage_data['plan_type'] ?? $usage_data['plan'] ?? 'free' );
+			$raw_plan = self::normalize_plan_slug( $usage_data['plan_type'] ?? $usage_data['plan'] ?? 'free' );
+			$plan     = self::normalize_plan_for_limit( $raw_plan, $limit );
+			$plan_minimum = self::minimum_monthly_limit_for_plan( $plan );
+			if ( $plan_minimum > 0 && $limit < $plan_minimum && ! self::has_paid_entitlement_signal( $usage_data ) ) {
+				$plan      = 'free';
+				$limit     = 50;
+				$remaining = max( 0, $limit - $used );
+			}
+			$demoted_paid_claim = $plan !== $raw_plan && 'free' === $plan;
+		$quota_type         = isset( $usage_data['quota_type'] ) && is_scalar( $usage_data['quota_type'] )
+			? sanitize_key( (string) $usage_data['quota_type'] )
+			: '';
+		if ( '' === $quota_type && isset( $usage_data['quota'] ) && is_array( $usage_data['quota'] ) && isset( $usage_data['quota']['quota_type'] ) && is_scalar( $usage_data['quota']['quota_type'] ) ) {
+			$quota_type = sanitize_key( (string) $usage_data['quota']['quota_type'] );
+		}
+		if ( ( $demoted_paid_claim || 'paid' === $quota_type ) && $limit < self::minimum_monthly_limit_for_plan( $raw_plan ) ) {
+			$quota_type = 'monthly_account';
+		}
 
 		$reset_input = $usage_data['resetDate'] ?? $usage_data['reset_date'] ?? '';
 		$reset_ts    = isset( $usage_data['reset_timestamp'] ) ? intval( $usage_data['reset_timestamp'] ) : 0;
@@ -118,15 +221,22 @@ class Usage_Tracker {
 		}
 
 		$usage_data['source']              = $usage_data['source'] ?? 'remote_usage';
-		$usage_data['used']                = $used;
-		$usage_data['limit']               = $limit;
-		$usage_data['remaining']           = $remaining;
-		$usage_data['creditsUsed']         = $used;
-		$usage_data['creditsTotal']        = $limit;
-		$usage_data['creditsLimit']        = $limit;
+			$usage_data['used']                = $used;
+			$usage_data['limit']               = $limit;
+			$usage_data['remaining']           = $remaining;
+			$usage_data['credits_used']        = $used;
+			$usage_data['credits_total']       = $limit;
+			$usage_data['credits_remaining']   = $remaining;
+			$usage_data['creditsUsed']         = $used;
+			$usage_data['creditsTotal']        = $limit;
+			$usage_data['creditsLimit']        = $limit;
 		$usage_data['creditsRemaining']    = $remaining;
 		$usage_data['plan']                = $plan;
 		$usage_data['plan_type']           = $plan;
+		$usage_data['quota_type']          = $quota_type;
+		if ( $demoted_paid_claim || ( 'free' === $plan && isset( $usage_data['plan_label'] ) && is_string( $usage_data['plan_label'] ) && preg_match( '/growth|pro|agency|enterprise/i', $usage_data['plan_label'] ) ) ) {
+			$usage_data['plan_label'] = __( 'Free', 'beepbeep-ai-alt-text-generator' );
+		}
 		$usage_data['resetDate']           = wp_date( 'Y-m-d', $reset_ts );
 		$usage_data['reset_date']          = date_i18n( 'F j, Y', $reset_ts );
 		$usage_data['reset_timestamp']     = $reset_ts;
@@ -138,9 +248,77 @@ class Usage_Tracker {
 			'reset_date'      => $usage_data['reset_date'],
 			'reset_timestamp' => $reset_ts,
 			'plan_type'       => $plan,
+			'quota_type'      => $quota_type,
 		);
+		if ( isset( $usage_data['entitlement_state'] ) && is_array( $usage_data['entitlement_state'] ) ) {
+				$usage_data['entitlement_state']['plan']      = $plan;
+				$usage_data['entitlement_state']['plan_type'] = $plan;
+				$usage_data['entitlement_state']['token_limit'] = $limit;
+				$usage_data['entitlement_state']['tokens_used_this_month'] = $used;
+				$usage_data['entitlement_state']['tokens_remaining'] = $remaining;
+				if ( ! self::plan_can_use_autopilot( $plan ) ) {
+					$usage_data['entitlement_state']['can_autopilot'] = false;
+				}
+				if ( ! self::is_paid_plan_slug( $plan ) ) {
+					$usage_data['entitlement_state']['is_unlimited']  = false;
+			}
+		}
+		if ( isset( $usage_data['usage'] ) && is_array( $usage_data['usage'] ) ) {
+			$usage_data['usage']['plan']       = $plan;
+			$usage_data['usage']['plan_type']  = $plan;
+			$usage_data['usage']['quota_type'] = $quota_type;
+		}
 
 		return $usage_data;
+	}
+
+	/**
+	 * Keep cached free-plan usage from displaying below locally saved generations.
+	 *
+	 * @param array<string,mixed> $usage Normalized usage payload.
+	 * @return array<string,mixed>
+	 */
+	private static function apply_local_success_floor( array $usage ): array {
+		$plan = self::normalize_plan_slug( $usage['plan_type'] ?? $usage['plan'] ?? 'free' );
+		if ( 'free' !== $plan ) {
+			return $usage;
+		}
+
+		$local_success_count = self::get_local_successful_generations_this_month();
+		$used                = max( 0, (int) ( $usage['used'] ?? $usage['credits_used'] ?? $usage['creditsUsed'] ?? 0 ) );
+		if ( $local_success_count <= $used ) {
+			return $usage;
+		}
+
+		$limit           = max( 1, (int) ( $usage['limit'] ?? $usage['credits_total'] ?? $usage['creditsTotal'] ?? 50 ) );
+		$next_used       = min( $limit, $local_success_count );
+		$next_remaining  = max( 0, $limit - $next_used );
+		$daily_limit     = max( 1, (int) ( $usage['daily_generation_limit'] ?? 5 ) );
+		$daily_used      = min( $daily_limit, $next_used );
+		$daily_remaining = max( 0, $daily_limit - $daily_used );
+
+		$usage['used']                         = $next_used;
+		$usage['remaining']                    = $next_remaining;
+		$usage['credits_used']                 = $next_used;
+		$usage['credits_remaining']            = $next_remaining;
+		$usage['creditsUsed']                  = $next_used;
+		$usage['creditsRemaining']             = $next_remaining;
+		$usage['daily_generation_limit']       = $daily_limit;
+		$usage['daily_generations_used']       = $daily_used;
+		$usage['daily_generations_remaining']  = $daily_remaining;
+		$usage['source']                       = 'local_generation_floor';
+
+		if ( isset( $usage['usage'] ) && is_array( $usage['usage'] ) ) {
+			$usage['usage']['used']      = $next_used;
+			$usage['usage']['remaining'] = $next_remaining;
+			$usage['usage']['limit']     = $limit;
+		}
+		if ( isset( $usage['entitlement_state'] ) && is_array( $usage['entitlement_state'] ) ) {
+			$usage['entitlement_state']['tokens_used_this_month'] = $next_used;
+			$usage['entitlement_state']['tokens_remaining']       = $next_remaining;
+		}
+
+		return $usage;
 	}
 
 	/**
@@ -173,7 +351,7 @@ class Usage_Tracker {
 
 		$cached = get_transient( self::CACHE_KEY );
 		if ( false !== $cached && is_array( $cached ) ) {
-			return self::normalize_usage_payload( $cached );
+			return self::apply_local_success_floor( self::normalize_usage_payload( $cached ) );
 		}
 
 		$free_credits_allocated = get_option( 'beepbeepai_free_credits_allocated', false );
@@ -286,21 +464,28 @@ class Usage_Tracker {
 
 		$new_used      = min( $limit, $used + $count );
 		$new_remaining = max( 0, $limit - $new_used );
+		$daily_limit     = max( 1, (int) ( $usage['daily_generation_limit'] ?? 5 ) );
+		$daily_used      = max( 0, (int) ( $usage['daily_generations_used'] ?? 0 ) );
+		$daily_new_used  = min( $daily_limit, $daily_used + $count );
+		$daily_remaining = max( 0, $daily_limit - $daily_new_used );
 
 		$next = array_merge(
 			$usage,
 			array(
-				'used'              => $new_used,
-				'remaining'         => $new_remaining,
-				'limit'             => $limit,
-				'credits_used'      => $new_used,
-				'credits_remaining' => $new_remaining,
-				'credits_total'     => $limit,
-				'creditsUsed'       => $new_used,
-				'creditsRemaining'  => $new_remaining,
-				'creditsTotal'      => $limit,
-				'creditsLimit'      => $limit,
-				'source'            => 'local_snapshot',
+				'used'                         => $new_used,
+				'remaining'                    => $new_remaining,
+				'limit'                        => $limit,
+				'credits_used'                 => $new_used,
+				'credits_remaining'            => $new_remaining,
+				'credits_total'                => $limit,
+				'creditsUsed'                  => $new_used,
+				'creditsRemaining'             => $new_remaining,
+				'creditsTotal'                 => $limit,
+				'creditsLimit'                 => $limit,
+				'daily_generation_limit'       => $daily_limit,
+				'daily_generations_used'       => $daily_new_used,
+				'daily_generations_remaining'  => $daily_remaining,
+				'source'                       => 'local_snapshot',
 			)
 		);
 
@@ -336,7 +521,7 @@ class Usage_Tracker {
 		}
 
 		$plan = self::normalize_plan_slug( $usage['plan_type'] ?? $usage['plan'] ?? 'free' );
-		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) && empty( $usage['limit'] ) ) {
+		if ( in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) && empty( $usage['limit'] ) ) {
 			return null;
 		}
 
@@ -345,6 +530,10 @@ class Usage_Tracker {
 
 		$new_used      = min( $limit, $used + $count );
 		$new_remaining = max( 0, $limit - $new_used );
+		$daily_limit     = max( 1, (int) ( $usage['daily_generation_limit'] ?? 5 ) );
+		$daily_used      = max( 0, (int) ( $usage['daily_generations_used'] ?? 0 ) );
+		$daily_new_used  = min( $daily_limit, $daily_used + $count );
+		$daily_remaining = max( 0, $daily_limit - $daily_new_used );
 
 		$next = array_merge(
 			$usage,
@@ -359,6 +548,9 @@ class Usage_Tracker {
 				'creditsRemaining'               => $new_remaining,
 				'creditsTotal'                   => $limit,
 				'creditsLimit'                   => $limit,
+				'daily_generation_limit'         => $daily_limit,
+				'daily_generations_used'         => $daily_new_used,
+				'daily_generations_remaining'    => $daily_remaining,
 				'source'                         => 'generation_success',
 				'generation_success_recorded_at' => current_time( 'mysql' ),
 			)
@@ -426,7 +618,7 @@ class Usage_Tracker {
 
 		$cache_key    = 'bbai_local_generated_count_' . md5( $month_start . '|' . $month_end );
 		$cached_count = wp_cache_get( $cache_key, 'bbai_usage' );
-		if ( false !== $cached_count ) {
+		if ( false !== $cached_count && (int) $cached_count > 0 ) {
 			return max( 0, (int) $cached_count );
 		}
 
@@ -548,6 +740,11 @@ class Usage_Tracker {
 		if ( $has_credentialed_account ) {
 			$live_usage = $api_client->get_usage();
 			if ( ! is_wp_error( $live_usage ) && is_array( $live_usage ) && ! empty( $live_usage ) ) {
+				$newer_success_usage = self::get_newer_generation_success_snapshot( $live_usage );
+				if ( is_array( $newer_success_usage ) ) {
+					return self::normalize_usage_payload( $newer_success_usage );
+				}
+
 				if ( ( $live_usage['source'] ?? '' ) !== 'local_snapshot' ) {
 					self::update_usage( $live_usage );
 				}
@@ -639,7 +836,8 @@ class Usage_Tracker {
 		$days_until_reset    = self::seconds_to_days_until_reset( $seconds_until_reset );
 
 		// Get plan with fallback
-		$plan = isset( $usage['plan'] ) && ! empty( $usage['plan'] ) ? $usage['plan'] : 'free';
+		$raw_plan = self::normalize_plan_slug( isset( $usage['plan'] ) && ! empty( $usage['plan'] ) ? $usage['plan'] : 'free' );
+		$plan     = self::normalize_plan_for_limit( $raw_plan, $limit );
 
 		// Get reset date with fallback - format: "February 1, 2026"
 		$reset_date_display = $reset_timestamp ? date_i18n( 'F j, Y', $reset_timestamp ) : '';
@@ -647,9 +845,11 @@ class Usage_Tracker {
 			$reset_date_display = date_i18n( 'F j, Y', strtotime( 'first day of next month' ) );
 		}
 
-		$plan_label = isset( $usage['plan_label'] ) && is_string( $usage['plan_label'] ) && '' !== trim( $usage['plan_label'] )
+		$plan_label = 'free' === $plan && self::is_paid_plan_slug( $raw_plan )
+			? __( 'Free', 'beepbeep-ai-alt-text-generator' )
+			: ( isset( $usage['plan_label'] ) && is_string( $usage['plan_label'] ) && '' !== trim( $usage['plan_label'] )
 			? sanitize_text_field( $usage['plan_label'] )
-			: ucfirst( $plan );
+			: ucfirst( $plan ) );
 
 		return array(
 			'used'                => $used,
@@ -679,7 +879,7 @@ class Usage_Tracker {
 				'plan_type'       => $plan,
 			),
 			'is_free'             => in_array( $plan, array( 'free', 'trial' ), true ),
-			'is_pro'              => in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ),
+			'is_pro'              => in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ),
 		);
 	}
 

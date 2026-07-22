@@ -37,14 +37,20 @@ rsync -a \
     --exclude 'gitignore' \
     --exclude 'tests/' \
     --exclude 'test-results/' \
+    --exclude 'tmp/' \
     --exclude '.wp-env.json' \
     --exclude '.wporg-svn/' \
     --exclude 'AGENTS.md' \
     --exclude 'node_modules/' \
+    --exclude 'composer.json' \
+    --exclude 'composer.lock' \
     --exclude 'package.json' \
     --exclude 'package-lock.json' \
+    --exclude 'phpcs.xml' \
+    --exclude 'fix-phpcs.py' \
     --exclude 'jest.config.js' \
     --exclude 'playwright.config.ts' \
+    --exclude 'dashboard-premium-refinement.png' \
     --exclude 'output-dashboard-after.png' \
     --exclude 'output-dashboard-before.png' \
     --exclude 'output-dashboard-final.png' \
@@ -54,6 +60,7 @@ rsync -a \
     --exclude '.DS_Store' \
     --exclude '*/.DS_Store' \
     --exclude 'assets/img/screenshots/' \
+    --exclude 'assets/wporg-art-source/' \
     "$ROOT_DIR/" "$STAGE_DIR/"
 
 (cd "$TMP_DIR" && zip -qr "$OUTPUT_ZIP" "$PLUGIN_SLUG")

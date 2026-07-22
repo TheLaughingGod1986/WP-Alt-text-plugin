@@ -334,6 +334,18 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 	}
 	$bbai_quick_actions_stats_slot = '';
 
+	// nAi redesign: render the design-language library when the filter
+	// opts in. Falls back to the workspace partial otherwise. All existing
+	// data already computed above flows into the new partial via locals.
+	$bbai_nai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-library.php';
+	if ( apply_filters( 'bbai_use_nai_dashboard', true ) && is_readable( $bbai_nai_library_partial ) ) {
+		while ( ob_get_level() > $bbai_library_template_buffer_level ) {
+			ob_end_clean();
+		}
+		include $bbai_nai_library_partial;
+		return;
+	}
+
 	if ( $bbai_use_library_workspace ) {
 		while ( ob_get_level() > $bbai_library_template_buffer_level ) {
 			ob_end_clean();
@@ -720,7 +732,7 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 							$bbai_file_meta = implode( ' • ', $bbai_file_meta_parts );
 
 							// Determine queue state
-							$bbai_row_status                = 'missing';
+							$bbai_row_status       = 'missing';
 							$bbai_status_label     = bbai_copy_status_missing();
 							$bbai_quality_class    = 'poor';
 							$bbai_quality_label    = bbai_copy_score_poor();
@@ -801,10 +813,10 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 								$bbai_row_optimized_lt = $bbai_opt_eligible_lt && $bbai_quality_score >= 70;
 
 								if ( $bbai_row_optimized_lt ) {
-									$bbai_row_status            = 'optimized';
+									$bbai_row_status   = 'optimized';
 									$bbai_status_label = bbai_copy_status_optimized();
 								} else {
-									$bbai_row_status            = 'weak';
+									$bbai_row_status   = 'weak';
 									$bbai_status_label = bbai_copy_status_needs_review();
 								}
 							}

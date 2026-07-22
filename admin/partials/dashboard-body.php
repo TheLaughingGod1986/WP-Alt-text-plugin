@@ -172,7 +172,7 @@ $bbai_build_donut_background = static function ( int $optimized, int $weak, int 
 };
 
 $bbai_format_last_scan = static function ( int $timestamp ): string {
-	$now = (int) current_time( 'timestamp' );
+	$now = time();
 	if ( $timestamp <= 0 || $timestamp > $now ) {
 		return '';
 	}
@@ -281,6 +281,24 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_credits_remaining = 0;
 	}
 
+	if ( ! $bbai_is_anonymous_trial && 'free' === $bbai_plan_slug_ladder && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+		$bbai_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
+		if ( $bbai_local_generation_count > $bbai_credits_used ) {
+			$bbai_credits_used      = min( $bbai_credits_total, $bbai_local_generation_count );
+			$bbai_credits_remaining = max( 0, $bbai_credits_total - $bbai_credits_used );
+
+			$bbai_usage_stats['used']                         = $bbai_credits_used;
+			$bbai_usage_stats['remaining']                    = $bbai_credits_remaining;
+			$bbai_usage_stats['credits_used']                 = $bbai_credits_used;
+			$bbai_usage_stats['credits_remaining']            = $bbai_credits_remaining;
+			$bbai_usage_stats['creditsUsed']                  = $bbai_credits_used;
+			$bbai_usage_stats['creditsRemaining']             = $bbai_credits_remaining;
+			$bbai_usage_stats['daily_generation_limit']       = max( 1, (int) ( $bbai_usage_stats['daily_generation_limit'] ?? 5 ) );
+			$bbai_usage_stats['daily_generations_used']       = min( (int) $bbai_usage_stats['daily_generation_limit'], $bbai_credits_used );
+			$bbai_usage_stats['daily_generations_remaining']  = max( 0, (int) $bbai_usage_stats['daily_generation_limit'] - (int) $bbai_usage_stats['daily_generations_used'] );
+		}
+	}
+
 	// Guest (no SaaS connection): mirror local guest trial bucket into dashboard credit-shaped fields — free generations only (not monthly credits).
 	if ( $bbai_has_no_saas_account && is_array( $bbai_guest_trial_status ) ) {
 		$bbai_guest_tl                        = max( 1, (int) ( $bbai_guest_trial_status['limit'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_limit() ) );
@@ -307,6 +325,24 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_usage_stats['creditsRemaining']  = $bbai_guest_tr;
 		$bbai_usage_stats['quota_state']       = $bbai_guest_tr <= 0 ? 'exhausted' : 'active';
 		$bbai_usage_stats['signup_required']   = $bbai_guest_tr <= 0;
+	}
+
+	if ( ! $bbai_is_premium && $bbai_credits_total >= 50 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+		$bbai_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
+		if ( $bbai_local_generation_count > $bbai_credits_used ) {
+			$bbai_credits_used      = min( $bbai_credits_total, $bbai_local_generation_count );
+			$bbai_credits_remaining = max( 0, $bbai_credits_total - $bbai_credits_used );
+
+			$bbai_usage_stats['used']                         = $bbai_credits_used;
+			$bbai_usage_stats['remaining']                    = $bbai_credits_remaining;
+			$bbai_usage_stats['credits_used']                 = $bbai_credits_used;
+			$bbai_usage_stats['credits_remaining']            = $bbai_credits_remaining;
+			$bbai_usage_stats['creditsUsed']                  = $bbai_credits_used;
+			$bbai_usage_stats['creditsRemaining']             = $bbai_credits_remaining;
+			$bbai_usage_stats['daily_generation_limit']       = max( 1, (int) ( $bbai_usage_stats['daily_generation_limit'] ?? 5 ) );
+			$bbai_usage_stats['daily_generations_used']       = min( (int) $bbai_usage_stats['daily_generation_limit'], $bbai_credits_used );
+			$bbai_usage_stats['daily_generations_remaining']  = max( 0, (int) $bbai_usage_stats['daily_generation_limit'] - (int) $bbai_usage_stats['daily_generations_used'] );
+		}
 	}
 
 	$bbai_low_credit_threshold = max(
@@ -359,7 +395,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 
 	$bbai_days_until_reset = null;
 	if ( $bbai_has_reset_timestamp ) {
-		$bbai_days_until_reset = Usage_Tracker::calculate_days_until_reset( (int) $bbai_reset_ts, (int) current_time( 'timestamp' ) );
+		$bbai_days_until_reset = Usage_Tracker::calculate_days_until_reset( (int) $bbai_reset_ts, time() );
 	} elseif ( isset( $bbai_usage_stats['days_until_reset'] ) && is_numeric( $bbai_usage_stats['days_until_reset'] ) ) {
 		$bbai_days_until_reset = max( 0, (int) $bbai_usage_stats['days_until_reset'] );
 	}
@@ -376,7 +412,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 				? sprintf(
 					/* translators: %s: formatted reset date. */
 					__( 'Resets %s', 'beepbeep-ai-alt-text-generator' ),
-					date_i18n( get_option( 'date_format' ), $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : current_time( 'timestamp' ) )
+					date_i18n( get_option( 'date_format' ), $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : time() )
 				)
 				: __( 'Resets monthly', 'beepbeep-ai-alt-text-generator' )
 		);
@@ -391,7 +427,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 			? sprintf(
 				/* translators: %s: formatted credit reset date. */
 				__( 'Credits reset %s', 'beepbeep-ai-alt-text-generator' ),
-				date_i18n( 'F j, Y', $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : current_time( 'timestamp' ) )
+				date_i18n( 'F j, Y', $bbai_has_reset_timestamp ? (int) $bbai_reset_ts : time() )
 			)
 			: __( 'Credits reset monthly', 'beepbeep-ai-alt-text-generator' ) );
 	$bbai_plan_label = $bbai_is_anonymous_trial
@@ -735,6 +771,10 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_plan_card_credit_resolver = true;
 	}
 
+	$bbai_todays_pass_items = ( isset( $this ) && method_exists( $this, 'get_todays_pass_candidates' ) )
+		? $this->get_todays_pass_candidates( 500 )
+		: array();
+
 	$bbai_dashboard_state = array(
 		'isHealthy'             => $bbai_state_is_healthy,
 		'isProPlan'             => $bbai_state_is_pro_plan,
@@ -746,6 +786,11 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		'creditsUsed'           => $bbai_state_credits_used,
 		'creditsLimit'          => $bbai_state_credits_limit,
 		'creditsRemaining'      => $bbai_state_credits_remaining,
+		'dailyCreditsLimit'     => max( 0, (int) ( $bbai_usage_stats['daily_generation_limit'] ?? $bbai_usage_stats['entitlement_state']['daily_generation_limit'] ?? 0 ) ),
+		'dailyCreditsUsed'      => max( 0, (int) ( $bbai_usage_stats['daily_generations_used'] ?? $bbai_usage_stats['entitlement_state']['daily_generations_used'] ?? 0 ) ),
+		'dailyCreditsRemaining' => max( 0, (int) ( $bbai_usage_stats['daily_generations_remaining'] ?? $bbai_usage_stats['entitlement_state']['daily_generations_remaining'] ?? 0 ) ),
+			'dailyResetDate'        => (string) ( $bbai_usage_stats['daily_reset_date'] ?? $bbai_usage_stats['entitlement_state']['daily_reset_date'] ?? '' ),
+			'todaysPassItems'       => is_array( $bbai_todays_pass_items ) ? $bbai_todays_pass_items : array(),
 		'authState'             => $bbai_auth_state,
 		'quotaType'             => $bbai_quota_type,
 		'quotaState'            => $bbai_quota_state,
@@ -1110,6 +1155,20 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		$bbai_dashboard_root_credits_left  = (int) ( $bbai_li_truth_credits['remaining'] ?? $bbai_li_truth_credits['credits_remaining'] ?? $bbai_li_truth_credits['creditsRemaining'] ?? $bbai_dashboard_root_credits_left );
 	}
 
+	if ( ! $bbai_is_premium && $bbai_dashboard_root_credits_total >= 50 && class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+		$bbai_root_local_generation_count = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_local_successful_generations_this_month();
+		if ( $bbai_root_local_generation_count > $bbai_dashboard_root_credits_used ) {
+			$bbai_dashboard_root_credits_used = min( $bbai_dashboard_root_credits_total, $bbai_root_local_generation_count );
+			$bbai_dashboard_root_credits_left = max( 0, $bbai_dashboard_root_credits_total - $bbai_dashboard_root_credits_used );
+		}
+	}
+	$bbai_dashboard_state['creditsUsed']      = $bbai_dashboard_root_credits_used;
+	$bbai_dashboard_state['creditsRemaining'] = $bbai_dashboard_root_credits_left;
+	$bbai_dashboard_state['creditsLimit']     = $bbai_dashboard_root_credits_total;
+	$bbai_dashboard_state['dailyCreditsLimit']     = max( 1, (int) ( $bbai_dashboard_state['dailyCreditsLimit'] ?? 5 ) );
+	$bbai_dashboard_state['dailyCreditsUsed']      = min( (int) $bbai_dashboard_state['dailyCreditsLimit'], $bbai_dashboard_root_credits_used );
+	$bbai_dashboard_state['dailyCreditsRemaining'] = max( 0, (int) $bbai_dashboard_state['dailyCreditsLimit'] - (int) $bbai_dashboard_state['dailyCreditsUsed'] );
+
 	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
         // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log(
@@ -1208,17 +1267,25 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 	>
 		<div id="bbai-limit-state-root" class="bbai-limit-state-root" hidden></div>
 		<?php
-		$bbai_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-hero.php';
-		if ( is_readable( $bbai_hero_partial ) ) {
-			require $bbai_hero_partial;
-		}
-		// Guest conversion funnel: avoid a competing progress strip between hero and the locked preview.
-		// Keep the user focused on a single "finish" action in the hero + modal.
-		$bbai_trial_preview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-library-preview.php';
-		// Guest conversion: always show a real ALT Library preview beneath the hero.
-		// Overlay CTA handles locked/unlocked expectation; preview rows come from real media.
-		if ( is_readable( $bbai_trial_preview_partial ) ) {
-			require $bbai_trial_preview_partial;
+		// nAi redesign: signed-out guests get the conversion-focused audit
+		// dashboard. Fall back to the legacy funnel hero + trial preview if
+		// the partial is missing or the filter opts out.
+		$bbai_guest_audit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-guest-audit.php';
+		if ( apply_filters( 'bbai_use_nai_guest_audit', true ) && is_readable( $bbai_guest_audit_partial ) ) {
+			require $bbai_guest_audit_partial;
+		} else {
+			$bbai_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-hero.php';
+			if ( is_readable( $bbai_hero_partial ) ) {
+				require $bbai_hero_partial;
+			}
+			// Guest conversion funnel: avoid a competing progress strip between hero and the locked preview.
+			// Keep the user focused on a single "finish" action in the hero + modal.
+			$bbai_trial_preview_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-library-preview.php';
+			// Guest conversion: always show a real ALT Library preview beneath the hero.
+			// Overlay CTA handles locked/unlocked expectation; preview rows come from real media.
+			if ( is_readable( $bbai_trial_preview_partial ) ) {
+				require $bbai_trial_preview_partial;
+			}
 		}
 		?>
 	</div>
@@ -1283,8 +1350,16 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 	>
 		<div id="bbai-limit-state-root" class="bbai-limit-state-root" hidden></div>
 		<?php
-		$bbai_li_page_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-page.php';
-		if ( is_readable( $bbai_li_page_partial ) ) {
+		// nAi redesign: the connected dashboard uses the Linear/Vercel-inspired
+		// surface. Fall back to the legacy logged-in page if the new partial
+		// is missing or the filter opts out.
+		$bbai_nai_dashboard_enabled = apply_filters( 'bbai_use_nai_dashboard', true );
+		$bbai_nai_partial           = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-dashboard.php';
+		$bbai_li_page_partial       = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-page.php';
+
+		if ( $bbai_nai_dashboard_enabled && is_readable( $bbai_nai_partial ) ) {
+			require $bbai_nai_partial;
+		} elseif ( is_readable( $bbai_li_page_partial ) ) {
 			if ( isset( $this ) && is_object( $this ) ) {
 				require $bbai_li_page_partial;
 			} else {
