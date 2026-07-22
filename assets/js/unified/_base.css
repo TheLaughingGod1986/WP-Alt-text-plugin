@@ -1,0 +1,19 @@
+/**
+ * Base Styles & Reset
+ */
+.bbai-wrap, .bbai-wrap *, .bbai-modern, .bbai-modern * { box-sizing: border-box; }
+
+.bbai-wrap, .bbai-modern {
+    margin: 0;
+    padding: var(--bbai-space-6);
+    background: var(--bbai-bg-page);
+    font-family: var(--bbai-font);
+    font-size: var(--bbai-text-base);
+    line-height: 1.5;
+    color: var(--bbai-text);
+    -webkit-font-smoothing: antialiased;
+}
+
+body.media_page_bbai #wpwrap,
+body.media_page_bbai #wpcontent,
+body.media_page_bbai #wpbody-content { overflow-x: hidden; }

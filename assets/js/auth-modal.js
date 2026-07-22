@@ -581,9 +581,6 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
-                if (window.BBAIEntitlements && typeof window.BBAIEntitlements.consume === 'function') {
-                    window.BBAIEntitlements.consume(data, 'login');
-                }
                 this.emitAnalyticsEvent('login_succeeded', {
                     source: source
                 });
@@ -696,15 +693,12 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
-                if (window.BBAIEntitlements && typeof window.BBAIEntitlements.consume === 'function') {
-                    window.BBAIEntitlements.consume(data, 'register');
-                }
                 this.emitAnalyticsEvent('signup_succeeded', {
                     source: source
                 });
                 this.onAuthSuccess(userData);
                 this.hide();
-                this.showSuccess('Account created. Your free monthly credits are now active.');
+                this.showSuccess('Account created successfully! Welcome to SEO AI Alt Text.');
 
                 const redirectUrl = this.getPostAuthRedirectUrl();
                 setTimeout(() => {

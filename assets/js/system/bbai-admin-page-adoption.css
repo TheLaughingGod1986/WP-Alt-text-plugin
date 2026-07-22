@@ -1,0 +1,244 @@
+/**
+ * BeepBeep AI — Phase 6 page adoption (Usage + shared shells)
+ *
+ * Uses foundation + surface tokens only. Depends on surfaces / semantic-status.
+ * Scope: body.bbai-dashboard
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Usage workspace root                                                         */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-credit-usage-page.bbai-usage-workspace {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.bbai-dashboard .bbai-usage-back-wrap {
+    margin-bottom: var(--bbai-admin-space-card-gap, var(--card-gap, 16px));
+}
+
+body.bbai-dashboard .bbai-usage-after-banner {
+    margin-top: var(--bbai-admin-space-section, var(--section-spacing, 24px));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Usage insights — standard card (not a banner; shared section header)         */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-usage-insights-card {
+    margin-bottom: var(--bbai-admin-space-section, var(--section-spacing, 24px));
+    overflow: hidden;
+    border-left: var(--bbai-status-row-rail-width, 3px) solid var(--bbai-status-neutral-indicator);
+}
+
+body.bbai-dashboard .bbai-usage-insights-card--healthy {
+    border-left-color: var(--bbai-status-optimized-accent);
+}
+
+body.bbai-dashboard .bbai-usage-insights-card--warning {
+    border-left-color: var(--bbai-status-needs-review-accent);
+}
+
+body.bbai-dashboard .bbai-usage-insights-card--danger {
+    border-left-color: var(--bbai-status-missing-accent);
+}
+
+body.bbai-dashboard .bbai-usage-insights-card__header {
+    padding: var(--bbai-card-padding-y-header) var(--bbai-card-padding-x) var(--bbai-space-3);
+    border-bottom: 1px solid var(--bbai-surface-divider-color);
+}
+
+body.bbai-dashboard .bbai-usage-insights-card.bbai-card {
+    padding: 0;
+}
+
+body.bbai-dashboard .bbai-usage-insights-card__body {
+    padding: var(--bbai-card-padding-y-body) var(--bbai-card-padding-x) var(--bbai-card-padding-y-body);
+}
+
+body.bbai-dashboard .bbai-usage-insights-card__footer {
+    margin: 0;
+    font-size: var(--bbai-card-description-size, 14px);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Usage activity card — interior rhythm                                      */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-usage-activity-section.bbai-card {
+    overflow: hidden;
+    margin-bottom: var(--bbai-admin-space-section, var(--section-spacing, 24px));
+}
+
+body.bbai-dashboard .bbai-usage-activity-section.bbai-card {
+    padding: 0;
+}
+
+body.bbai-dashboard .bbai-usage-activity-section__header {
+    padding: var(--bbai-card-padding-y-header) var(--bbai-card-padding-x) var(--bbai-card-padding-y-header);
+    border-bottom: 1px solid var(--bbai-surface-divider-color);
+}
+
+body.bbai-dashboard .bbai-usage-activity-section__body {
+    padding: var(--bbai-card-padding-y-body) var(--bbai-card-padding-x) var(--bbai-card-section-gap);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Credit activity results title                                              */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-credit-activity-results .bbai-card-title {
+    margin: 0 0 var(--bbai-rhythm-title-to-description, var(--bbai-space-2));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Usage log table — row affordance                                             */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-usage-table {
+    width: 100%;
+}
+
+body.bbai-dashboard .bbai-usage-table__row {
+    transition: background-color 0.16s ease;
+}
+
+body.bbai-dashboard .bbai-usage-table__row.is-clickable {
+    cursor: pointer;
+}
+
+body.bbai-dashboard .bbai-usage-table__row.is-clickable:hover,
+body.bbai-dashboard .bbai-usage-table__row.is-clickable:focus-within {
+    background: var(--bbai-admin-table-hover-bg, var(--bbai-bg-secondary));
+}
+
+body.bbai-dashboard .bbai-table-subtitle {
+    font-size: var(--bbai-admin-type-caption);
+    color: var(--bbai-admin-color-text-muted);
+    margin-top: var(--bbai-space-0-5, 2px);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Billing + contributors                                                       */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-usage-billing {
+    border-radius: var(--bbai-surface-card-radius);
+    border: var(--bbai-surface-card-border);
+    background: var(--bbai-surface-soft-bg);
+    padding: var(--bbai-space-5) var(--bbai-space-6);
+    margin-bottom: var(--bbai-admin-space-section, var(--section-spacing, 24px));
+}
+
+body.bbai-dashboard .bbai-usage-billing__title {
+    margin: 0 0 var(--bbai-admin-space-3);
+}
+
+/* Billing block title uses section title scale (not eyebrow/label) */
+body.bbai-dashboard .bbai-usage-billing__title.bbai-section-title {
+    font-size: var(--bbai-section-title-size, var(--bbai-text-lg));
+    font-weight: var(--bbai-section-title-weight, 600);
+    line-height: var(--bbai-section-title-leading, 25px);
+    letter-spacing: var(--bbai-section-title-tracking, -0.02em);
+    color: var(--bbai-section-title-color, #0f172a);
+    text-transform: none;
+}
+
+body.bbai-dashboard .bbai-usage-billing__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--bbai-admin-space-3) var(--bbai-admin-space-6);
+    margin-bottom: var(--bbai-admin-space-3);
+}
+
+body.bbai-dashboard .bbai-usage-billing__item dt {
+    margin: 0 0 var(--bbai-space-1);
+    font-size: var(--bbai-admin-type-label);
+    font-weight: var(--bbai-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: var(--bbai-tracking-wide);
+    color: var(--bbai-admin-color-text-muted);
+}
+
+body.bbai-dashboard .bbai-usage-billing__item dd {
+    margin: 0;
+    font-size: var(--bbai-admin-type-body-lg);
+    font-weight: var(--bbai-admin-type-weight-semibold);
+    color: var(--bbai-admin-color-text);
+    line-height: var(--bbai-admin-type-leading-snug);
+}
+
+body.bbai-dashboard .bbai-usage-billing__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-admin-space-3) var(--bbai-admin-space-4);
+    padding-top: var(--bbai-admin-space-3);
+    border-top: 1px solid var(--bbai-surface-divider-color);
+    font-size: var(--bbai-admin-type-body-sm);
+}
+
+body.bbai-dashboard .bbai-usage-billing__links a {
+    color: var(--bbai-admin-color-primary);
+    text-decoration: none;
+    font-weight: var(--bbai-admin-type-weight-semibold);
+}
+
+body.bbai-dashboard .bbai-usage-billing__links a:hover {
+    text-decoration: underline;
+}
+
+body.bbai-dashboard .bbai-usage-billing__note {
+    margin: var(--bbai-admin-space-3) 0 0;
+    font-size: var(--bbai-admin-type-caption);
+    color: var(--bbai-admin-color-text-muted);
+    line-height: var(--bbai-admin-type-leading-snug);
+}
+
+body.bbai-dashboard .bbai-usage-contributors {
+    border-radius: var(--bbai-surface-card-radius);
+    border: var(--bbai-surface-card-border);
+    background: var(--bbai-surface-card-bg);
+    box-shadow: var(--bbai-surface-card-shadow);
+    padding: var(--bbai-space-4) var(--bbai-space-5);
+    margin-bottom: var(--bbai-admin-space-card-gap, var(--card-gap, 16px));
+}
+
+body.bbai-dashboard .bbai-usage-contributors__title {
+    margin: 0 0 var(--bbai-space-1);
+}
+
+body.bbai-dashboard .bbai-usage-contributors__lead {
+    margin: 0 0 var(--bbai-admin-space-3);
+    font-size: var(--bbai-admin-type-meta);
+    color: var(--bbai-admin-color-text-muted);
+    line-height: var(--bbai-admin-type-leading-snug);
+}
+
+body.bbai-dashboard .bbai-usage-contributors .widefat {
+    font-size: var(--bbai-admin-type-body-sm);
+}
+
+body.bbai-dashboard .bbai-usage-contributors .widefat th,
+body.bbai-dashboard .bbai-usage-contributors .widefat td {
+    padding: var(--bbai-space-2) 10px;
+}
+
+body.bbai-dashboard .bbai-usage-supplemental {
+    margin-top: var(--bbai-admin-space-card-gap, var(--card-gap, 16px));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive                                                                 */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+    body.bbai-dashboard .bbai-usage-activity-section__header,
+    body.bbai-dashboard .bbai-usage-activity-section__body {
+        padding-left: var(--bbai-space-5);
+        padding-right: var(--bbai-space-5);
+    }
+}

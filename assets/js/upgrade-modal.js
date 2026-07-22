@@ -99,20 +99,6 @@
     }
 
     function getUsageSnapshot(context) {
-        var entitlement = window.BBAIEntitlements && typeof window.BBAIEntitlements.get === 'function'
-            ? window.BBAIEntitlements.get()
-            : null;
-        if (entitlement) {
-            return {
-                used: entitlement.tokens_used_this_month,
-                limit: entitlement.token_limit,
-                remaining: entitlement.tokens_remaining,
-                plan: entitlement.plan_type,
-                plan_type: entitlement.plan_type,
-                quota_state: entitlement.quota_state,
-                has_credit: !!entitlement.can_generate
-            };
-        }
         var state = window.BBAI_DASHBOARD_STATE_STORE && typeof window.BBAI_DASHBOARD_STATE_STORE.getState === 'function'
             ? window.BBAI_DASHBOARD_STATE_STORE.getState()
             : null;

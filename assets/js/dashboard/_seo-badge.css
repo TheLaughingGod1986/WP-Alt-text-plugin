@@ -1,0 +1,133 @@
+/**
+ * SEO Quality Badges
+ * Displays SEO grade with hover tooltips
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+.bbai-seo-metrics {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    margin-top: var(--bbai-space-2);
+}
+
+.bbai-seo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: var(--bbai-radius-sm);
+    cursor: help;
+    transition: all 0.15s ease;
+}
+
+.bbai-seo-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.bbai-seo-badge__icon {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+}
+
+/* Grade A - Excellent */
+.bbai-seo-badge--excellent {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.bbai-seo-badge--excellent:hover {
+    background: rgba(16, 185, 129, 0.18);
+}
+
+/* Grade B - Good */
+.bbai-seo-badge--good {
+    color: #2563eb;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.bbai-seo-badge--good:hover {
+    background: rgba(59, 130, 246, 0.18);
+}
+
+/* Grade C - Fair */
+.bbai-seo-badge--fair {
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.bbai-seo-badge--fair:hover {
+    background: rgba(245, 158, 11, 0.18);
+}
+
+/* Grade D - Poor */
+.bbai-seo-badge--poor {
+    color: #ea580c;
+    background: rgba(249, 115, 22, 0.12);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.bbai-seo-badge--poor:hover {
+    background: rgba(249, 115, 22, 0.18);
+}
+
+/* Grade F - Needs Work */
+.bbai-seo-badge--needs-work {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.bbai-seo-badge--needs-work:hover {
+    background: rgba(239, 68, 68, 0.18);
+}
+
+/* Character Counter */
+.bbai-char-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--bbai-text-muted);
+    white-space: nowrap;
+}
+
+.bbai-char-counter__icon {
+    display: inline-flex;
+    align-items: center;
+    width: 12px;
+    height: 12px;
+}
+
+.bbai-char-counter__number {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.bbai-char-counter__label {
+    opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .bbai-seo-metrics {
+        flex-wrap: wrap;
+        gap: var(--bbai-space-1);
+    }
+
+    .bbai-seo-badge {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+}

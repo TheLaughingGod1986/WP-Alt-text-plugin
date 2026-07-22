@@ -1,0 +1,250 @@
+/**
+ * BeepBeep AI — Phase 3 structural surfaces (cards, section headers, dividers)
+ *
+ * Depends: bbai-admin-foundation-tokens, bbai-admin-controls, bbai-section-header.css (typography scale).
+ * Scope: body.bbai-dashboard
+ *
+ * Pairs with: .bbai-section-label, .bbai-section-title, .bbai-section-meta (bbai-section-header.css)
+ */
+
+:root {
+    --bbai-surface-card-radius: var(--bbai-admin-radius-card);
+    --bbai-surface-card-border: var(--bbai-admin-border-default);
+    --bbai-surface-card-bg: var(--bbai-admin-color-bg);
+    --bbai-surface-card-shadow: var(--bbai-admin-shadow-card);
+    --bbai-surface-card-shadow-hover: var(--bbai-admin-shadow-card-hover);
+    --bbai-surface-padding-outer: var(--bbai-admin-space-inset-card);
+    --bbai-surface-padding-outer-sm: var(--bbai-admin-space-inset-card-sm);
+    --bbai-surface-soft-bg: var(--bbai-admin-color-bg-muted);
+    --bbai-surface-soft-shadow: var(--bbai-shadow-sm);
+    --bbai-surface-divider-color: var(--bbai-gray-200);
+    --bbai-surface-header-content-gap: var(--bbai-section-title-content-gap, 8px);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Card shell — .bbai-card family + DS aliases                                 */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-card,
+body.bbai-dashboard .bbai-ds-card {
+    box-sizing: border-box;
+    border-radius: var(--bbai-surface-card-radius);
+    border: var(--bbai-surface-card-border);
+    background: var(--bbai-surface-card-bg);
+    box-shadow: var(--bbai-surface-card-shadow);
+}
+
+body.bbai-dashboard .bbai-card--soft {
+    background: var(--bbai-surface-soft-bg);
+    box-shadow: var(--bbai-surface-soft-shadow);
+    border-color: var(--bbai-gray-200);
+}
+
+body.bbai-dashboard .bbai-card--compact {
+    --bbai-surface-padding-outer: var(--bbai-surface-padding-outer-sm);
+}
+
+body.bbai-dashboard .bbai-card--interactive,
+body.bbai-dashboard .bbai-ds-card--interactive {
+    transition: box-shadow var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+}
+
+body.bbai-dashboard .bbai-card--interactive:hover,
+body.bbai-dashboard .bbai-ds-card--interactive:hover {
+    box-shadow: var(--bbai-surface-card-shadow-hover);
+}
+
+/* Padding utilities (compose with shell; does not replace page-specific gutters) */
+body.bbai-dashboard .bbai-card--pad-sm,
+body.bbai-dashboard .bbai-ds-pad-sm {
+    padding: var(--bbai-surface-padding-outer-sm);
+}
+
+body.bbai-dashboard .bbai-card--pad-md,
+body.bbai-dashboard .bbai-ds-pad-md {
+    padding: var(--bbai-surface-padding-outer);
+}
+
+body.bbai-dashboard .bbai-card--pad-lg,
+body.bbai-dashboard .bbai-ds-pad-lg {
+    padding: var(--bbai-card-padding-lg);
+}
+
+/* Existing dashboard / analytics shells: align radius & border weight when paired */
+body.bbai-dashboard .bbai-dashboard-surface-card.bbai-card,
+body.bbai-dashboard .bbai-ui-section-card.bbai-card {
+    border-radius: var(--bbai-surface-card-radius);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Section header layout (typography stays in bbai-section-header.css)        */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-section-header {
+    box-sizing: border-box;
+}
+
+/* Default stack: matches .bbai-ui-section-header rhythm */
+body.bbai-dashboard .bbai-section-header:not(.bbai-section-header--split-end) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bbai-admin-space-3) var(--bbai-admin-space-5);
+}
+
+body.bbai-dashboard .bbai-section-header .bbai-ui-section-header__text {
+    flex: 1 1 15rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-section-label-title-gap, 2px);
+}
+
+body.bbai-dashboard .bbai-section-header .bbai-ui-section-header__actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-admin-space-2-5);
+}
+
+/* Title → description/meta spacing */
+body.bbai-dashboard .bbai-section-header .bbai-section-title + .bbai-section-description,
+body.bbai-dashboard .bbai-section-header .bbai-section-title + .bbai-ui-section-header__description,
+body.bbai-dashboard .bbai-section-header .bbai-ui-section-header__title + .bbai-section-description,
+body.bbai-dashboard .bbai-section-header .bbai-ui-section-header__title + .bbai-ui-section-header__description {
+    margin-top: var(--bbai-surface-header-content-gap);
+}
+
+body.bbai-dashboard .bbai-section-header .bbai-section-label + .bbai-section-title,
+body.bbai-dashboard .bbai-section-header .bbai-ui-section-header__eyebrow + .bbai-section-title,
+body.bbai-dashboard .bbai-section-header .bbai-ui-section-header__eyebrow + .bbai-ui-section-header__title {
+    margin-top: 0;
+}
+
+body.bbai-dashboard .bbai-section-header .bbai-ui-section-header__title {
+    margin-bottom: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Section description (body copy under title — not hero scale)                 */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-section-description,
+body.bbai-dashboard .bbai-ui-section-header__description {
+    margin: 0;
+    max-width: 68ch;
+    font-size: var(--bbai-admin-type-body);
+    font-weight: var(--bbai-admin-type-weight-regular);
+    line-height: var(--bbai-admin-type-leading-relaxed);
+    color: var(--bbai-admin-color-text-muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Inner regions                                                              */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-card-section {
+    box-sizing: border-box;
+}
+
+body.bbai-dashboard .bbai-card-section--padded {
+    padding-left: var(--bbai-surface-padding-outer);
+    padding-right: var(--bbai-surface-padding-outer);
+}
+
+body.bbai-dashboard .bbai-card-section + .bbai-card-section {
+    margin-top: var(--bbai-admin-space-4);
+    padding-top: var(--bbai-admin-space-4);
+    border-top: 1px solid var(--bbai-surface-divider-color);
+}
+
+body.bbai-dashboard hr.bbai-surface-divider,
+body.bbai-dashboard .bbai-surface-divider {
+    display: block;
+    width: 100%;
+    height: 0;
+    margin: var(--bbai-admin-space-4) 0;
+    padding: 0;
+    border: none;
+    border-top: 1px solid var(--bbai-surface-divider-color);
+    background: transparent;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Usage / insights: map legacy headings onto section scale                    */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-usage-insights__lead.bbai-section-description,
+body.bbai-dashboard .bbai-usage-activity-section__lead.bbai-section-description {
+    margin-top: var(--bbai-surface-header-content-gap);
+}
+
+body.bbai-dashboard .bbai-usage-insights__label.bbai-section-label {
+    display: block;
+    margin-bottom: var(--bbai-admin-space-1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Settings: plan summary title uses section title scale                        */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-settings-plan-summary-card .bbai-settings-card-title:not(.bbai-card-title) {
+    font-size: var(--bbai-section-title-size);
+    font-weight: var(--bbai-section-title-weight);
+    line-height: var(--bbai-section-title-leading);
+    letter-spacing: var(--bbai-section-title-tracking);
+    color: var(--bbai-section-title-color);
+    margin: 0 0 var(--bbai-rhythm-title-to-description, var(--bbai-space-2));
+}
+
+/* -------------------------------------------------------------------------- */
+/* DS composition aliases (same tokens as .bbai-card)                          */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-ds-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bbai-space-3) var(--bbai-space-5);
+}
+
+body.bbai-dashboard .bbai-ds-section-head__text {
+    flex: 1 1 15rem;
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-ds-section-head__eyebrow {
+    margin: 0 0 var(--bbai-space-1-5);
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    letter-spacing: var(--bbai-tracking-wider);
+    text-transform: uppercase;
+    color: var(--bbai-text-muted);
+}
+
+body.bbai-dashboard .bbai-ds-section-head__title {
+    margin: 0 0 var(--bbai-space-2);
+    font-size: var(--bbai-ds-section-title);
+    font-weight: var(--bbai-font-bold);
+    line-height: var(--bbai-leading-tight);
+    color: var(--bbai-text-primary);
+}
+
+body.bbai-dashboard .bbai-ds-section-head__desc {
+    margin: 0;
+    max-width: 68ch;
+    font-size: var(--bbai-ds-body);
+    line-height: var(--bbai-leading-relaxed);
+    color: var(--bbai-text-muted);
+}
+
+body.bbai-dashboard .bbai-ds-section-head__actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bbai-space-2-5);
+}

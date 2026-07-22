@@ -1,0 +1,451 @@
+/**
+ * BeepBeep AI — Phase 11: shared product states (loading, empty, error, partial, retry)
+ *
+ * Scoped: body.bbai-dashboard
+ * Depends: bbai-admin-foundation-tokens.css, bbai-admin-interactions.css (spinner)
+ *
+ * @package BeepBeep_AI
+ */
+
+/* -------------------------------------------------------------------------- */
+/* Base block                                                                */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-state {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--bbai-admin-space-3);
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: var(--bbai-admin-space-8) var(--bbai-admin-space-6);
+    border-radius: var(--bbai-admin-radius-lg);
+    border: var(--bbai-admin-border-default);
+    background: var(--bbai-admin-color-bg);
+    color: var(--bbai-admin-color-text);
+    transition: opacity var(--bbai-admin-ix-duration) var(--bbai-admin-ix-ease);
+}
+
+body.bbai-dashboard .bbai-state--compact {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    padding: var(--bbai-admin-space-5) var(--bbai-admin-space-4);
+    gap: var(--bbai-admin-space-2);
+}
+
+body.bbai-dashboard .bbai-state--section {
+    max-width: none;
+    width: 100%;
+    min-height: 8rem;
+    justify-content: center;
+}
+
+body.bbai-dashboard tr.bbai-state-row > td {
+    padding: 0 !important;
+    vertical-align: middle;
+    border-bottom: none !important;
+}
+
+body.bbai-dashboard tr.bbai-state-row .bbai-state {
+    border: none;
+    background: transparent;
+    margin: 0;
+    max-width: none;
+}
+
+body.bbai-dashboard .bbai-library-filter-empty__cell .bbai-state {
+    border: none;
+    background: transparent;
+    margin: 0 auto;
+    max-width: 28rem;
+    padding: var(--bbai-admin-space-4) var(--bbai-admin-space-3);
+}
+
+body.bbai-dashboard .bbai-analytics-result-card .bbai-analytics-trend-block__empty.bbai-state {
+    width: 100%;
+    margin-top: var(--bbai-admin-space-2);
+    margin-bottom: var(--bbai-admin-space-1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Elements                                                                  */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-state__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bbai-admin-color-text-muted);
+}
+
+body.bbai-dashboard .bbai-state__icon svg {
+    display: block;
+}
+
+body.bbai-dashboard .bbai-state__icon--loading {
+    color: var(--bbai-admin-color-primary);
+}
+
+body.bbai-dashboard .bbai-state__title {
+    margin: 0;
+    font-size: var(--bbai-admin-type-h5);
+    font-weight: var(--bbai-admin-type-weight-semibold);
+    line-height: var(--bbai-admin-type-leading-snug);
+    color: var(--bbai-admin-color-text);
+}
+
+body.bbai-dashboard .bbai-state--compact .bbai-state__title {
+    font-size: var(--bbai-admin-type-body);
+}
+
+body.bbai-dashboard .bbai-state__body {
+    margin: 0;
+    font-size: var(--bbai-admin-type-body);
+    line-height: var(--bbai-admin-type-leading-relaxed);
+    color: var(--bbai-admin-color-text-secondary);
+    max-width: 32rem;
+}
+
+body.bbai-dashboard .bbai-state--compact .bbai-state__body {
+    font-size: var(--bbai-admin-type-body-sm);
+}
+
+body.bbai-dashboard .bbai-state__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-admin-space-2);
+    margin-top: var(--bbai-admin-space-1);
+}
+
+body.bbai-dashboard .bbai-state__meta {
+    margin: 0;
+    font-size: var(--bbai-admin-type-meta);
+    color: var(--bbai-admin-color-text-muted);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Modifiers — tone                                                          */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-state--loading {
+    border-style: dashed;
+    border-color: var(--bbai-admin-color-border-strong);
+    background: var(--bbai-admin-color-bg-muted);
+}
+
+body.bbai-dashboard .bbai-state--empty {
+    background: var(--bbai-admin-color-bg-muted);
+    border-color: var(--bbai-gray-200);
+}
+
+body.bbai-dashboard .bbai-state--error {
+    border-color: var(--bbai-admin-semantic-error-border);
+    background: var(--bbai-admin-semantic-error-bg);
+}
+
+body.bbai-dashboard .bbai-state--error .bbai-state__icon {
+    color: var(--bbai-admin-semantic-error-fg);
+}
+
+body.bbai-dashboard .bbai-state--error .bbai-state__title {
+    color: var(--bbai-admin-semantic-error-fg);
+}
+
+body.bbai-dashboard .bbai-state--partial {
+    border-color: var(--bbai-admin-semantic-warning-border);
+    background: var(--bbai-admin-semantic-warning-bg);
+    text-align: left;
+    align-items: flex-start;
+}
+
+body.bbai-dashboard .bbai-state--partial .bbai-state__title {
+    color: var(--bbai-admin-semantic-warning-fg);
+}
+
+body.bbai-dashboard .bbai-state--partial .bbai-state__body {
+    color: var(--bbai-admin-semantic-warning-fg);
+}
+
+body.bbai-dashboard .bbai-state--retry {
+    border-color: var(--bbai-admin-semantic-info-border);
+    background: var(--bbai-admin-semantic-info-bg);
+}
+
+body.bbai-dashboard .bbai-state--retry .bbai-state__title {
+    color: var(--bbai-admin-semantic-info-fg);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Card-wrapped empty (library) — outer card unchanged, inner uses bbai-state   */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-library-empty-state .bbai-state,
+body.bbai-dashboard .bbai-credit-activity-state.bbai-state {
+    border: none;
+    background: transparent;
+    padding: var(--bbai-admin-space-2) 0;
+}
+
+body.bbai-dashboard .bbai-credit-activity-state.bbai-state--empty {
+    align-items: flex-start;
+    text-align: left;
+    max-width: none;
+    padding: var(--bbai-admin-space-6);
+    border: var(--bbai-admin-border-default);
+    background: var(--bbai-admin-color-bg-muted);
+    border-radius: var(--bbai-admin-radius-md);
+}
+
+body.bbai-dashboard .bbai-credit-activity-state__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-admin-space-2);
+    margin-top: var(--bbai-admin-space-3);
+}
+
+/* Legacy class harmony */
+body.bbai-dashboard .bbai-credit-activity-state__title {
+    margin: 0 0 var(--bbai-admin-space-2);
+    font-size: var(--bbai-admin-type-h5);
+    font-weight: var(--bbai-admin-type-weight-semibold);
+    color: var(--bbai-admin-color-text);
+}
+
+body.bbai-dashboard .bbai-credit-activity-state__description {
+    margin: 0;
+    font-size: var(--bbai-admin-type-body);
+    color: var(--bbai-admin-color-text-secondary);
+    line-height: var(--bbai-admin-type-leading-relaxed);
+}
+
+/* -------------------------------------------------------------------------- */
+/* In-product exhausted trial wall                                           */
+/* -------------------------------------------------------------------------- */
+
+body.bbai-dashboard .bbai-trial-upgrade-wall {
+    display: grid;
+    /* Tighter than space-5: trust line + usage meta should read as one footer stack */
+    gap: var(--bbai-admin-space-3);
+    border: 1px solid #f5d0a9;
+    background:
+        radial-gradient(circle at top right, rgba(249, 115, 22, 0.12), transparent 38%),
+        linear-gradient(180deg, #fffaf4 0%, #ffffff 100%);
+}
+
+/* Extra top inset only; bottom matches normal cards so the block is not “heavy” at the bottom. */
+/* Bottom margin: this section sits outside .bbai-dashboard-command / .bbai-top-section-stack, so it does not get that stack’s gap — match section spacing to the row below. */
+#bbai-dashboard-main .bbai-trial-upgrade-wall.bbai-command-card {
+    margin-bottom: var(--section-spacing, var(--bbai-admin-space-6));
+    padding-top: calc(var(--bbai-command-card-padding, var(--bbai-admin-space-6)) + var(--bbai-admin-space-2));
+    padding-bottom: var(--bbai-command-card-padding, var(--bbai-admin-space-6));
+    padding-inline: var(--bbai-command-card-padding, var(--bbai-admin-space-6));
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bbai-admin-space-5);
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__copy {
+    display: grid;
+    gap: var(--bbai-admin-space-3);
+    max-width: min(760px, 100%);
+    min-width: 0;
+    flex: 1 1 280px;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__copy > .bbai-command-card__eyebrow {
+    margin-bottom: 0;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__copy > .bbai-command-card__title {
+    margin-top: calc(var(--bbai-admin-space-1) * -1);
+    margin-bottom: 0;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__body,
+body.bbai-dashboard .bbai-trial-upgrade-wall__value,
+body.bbai-dashboard .bbai-trial-upgrade-wall__trust {
+    margin: 0;
+    color: var(--bbai-admin-color-text-secondary, #526071);
+    line-height: 1.6;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__value {
+    color: var(--bbai-admin-color-text, #11253f);
+    font-weight: 600;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__trust {
+    margin-top: 0;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-admin-space-2);
+    align-items: center;
+    flex-shrink: 0;
+    /* flex-start: if buttons are taller than copy, do not leave a dead band under the trust line */
+    align-self: flex-start;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(251, 146, 60, 0.22);
+    color: #8b4b17;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__meta {
+    padding-top: var(--bbai-admin-space-3);
+    padding-bottom: var(--bbai-admin-space-2);
+    margin-top: 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    min-width: 0;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.4em;
+    row-gap: 0.35em;
+    margin: 0;
+    font-size: var(--bbai-admin-type-body, 14px);
+    line-height: 1.55;
+    color: var(--bbai-admin-color-text-secondary, #526071);
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__meta-dot {
+    color: var(--bbai-admin-color-text-muted, #94a3b8);
+    font-weight: 700;
+    user-select: none;
+    flex: 0 0 auto;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__usage {
+    color: var(--bbai-admin-color-text, #11253f);
+    font-weight: 600;
+}
+
+body.bbai-dashboard .bbai-trial-upgrade-wall__metric {
+    font-weight: 400;
+    color: inherit;
+}
+
+/*
+ * Side-by-side command cards (Library status + Plan / trial usage): identical header grid,
+ * label→title rhythm, and stretched card bodies so both “banners” match.
+ */
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card > .bbai-command-card__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(168px, max-content);
+    align-items: start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card > .bbai-command-card__header > div:first-child {
+    min-width: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__meta-group {
+    justify-self: end;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--plan .bbai-command-card__meta-group--plan-trailing {
+    min-width: 168px;
+    min-height: 28px;
+    box-sizing: border-box;
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__title {
+    font-size: var(--bbai-card-title-size, var(--bbai-admin-type-card-title, 20px));
+    font-weight: var(--bbai-card-title-weight, var(--bbai-admin-type-weight-semibold, 600));
+    line-height: var(--bbai-card-title-leading, 1.2);
+    letter-spacing: var(--bbai-card-title-tracking, -0.02em);
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__eyebrow {
+    margin-bottom: var(--bbai-card-label-margin-bottom, var(--bbai-space-2));
+}
+
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--status .bbai-command-status,
+#bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--plan .bbai-command-plan {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+@media (max-width: 480px) {
+    #bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card > .bbai-command-card__header {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card .bbai-command-card__meta-group {
+        justify-self: start;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    #bbai-dashboard-main .bbai-dashboard-command__grid > .bbai-command-card--plan .bbai-command-card__meta-group--plan-trailing {
+        min-width: 0;
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion                                                            */
+/* -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    body.bbai-dashboard .bbai-state {
+        transition: none;
+    }
+}
+
+@media (max-width: 782px) {
+    body.bbai-dashboard .bbai-trial-upgrade-wall__main {
+        flex-direction: column;
+    }
+
+    body.bbai-dashboard .bbai-trial-upgrade-wall__actions {
+        align-self: stretch;
+        width: 100%;
+    }
+
+    #bbai-dashboard-main .bbai-trial-upgrade-wall.bbai-command-card {
+        padding-top: calc(var(--bbai-command-card-padding, var(--bbai-admin-space-4)) + var(--bbai-admin-space-2));
+        padding-bottom: var(--bbai-command-card-padding, var(--bbai-admin-space-4));
+    }
+}

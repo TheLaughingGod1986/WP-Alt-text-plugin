@@ -1,0 +1,224 @@
+/**
+ * Quality Insights Styles
+ * Quality badges, hints, and improvement suggestions
+ */
+
+/* Quality Badge */
+.bbai-quality-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--bbai-radius-full);
+    border: 1px solid transparent;
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-right: var(--bbai-space-2);
+}
+
+.bbai-quality-badge--excellent {
+    background: var(--bbai-status-score-excellent-bg, #dcfce7);
+    color: var(--bbai-status-score-excellent-fg, #14532d);
+    border: 1px solid var(--bbai-status-score-excellent-border, rgba(22, 163, 74, 0.22));
+}
+
+.bbai-quality-badge--good {
+    background: var(--bbai-status-score-good-bg, #ecfdf5);
+    color: var(--bbai-status-score-good-fg, #166534);
+    border: 1px solid var(--bbai-status-score-good-border, rgba(16, 185, 129, 0.28));
+}
+
+.bbai-quality-badge--needs-review,
+.bbai-quality-badge--fair {
+    background: var(--bbai-status-score-needs-improvement-bg, #fef3c7);
+    color: var(--bbai-status-score-needs-improvement-fg, #92400e);
+    border: 1px solid var(--bbai-status-score-needs-improvement-border, rgba(245, 158, 11, 0.32));
+}
+
+.bbai-quality-badge--poor {
+    background: var(--bbai-status-score-poor-bg, #ffedd5);
+    color: var(--bbai-status-score-poor-fg, #9a3412);
+    border: 1px solid var(--bbai-status-score-poor-border, rgba(234, 88, 12, 0.35));
+}
+
+.bbai-quality-badge--critical {
+    background: var(--bbai-status-score-critical-bg, #ffe4e6);
+    color: var(--bbai-status-score-critical-fg, #9f1239);
+    border: 1px solid var(--bbai-status-score-critical-border, rgba(244, 63, 94, 0.35));
+}
+
+/* Quality Hints */
+.bbai-quality-hint {
+    display: inline-flex;
+    align-items: center;
+    color: var(--bbai-warning);
+    cursor: help;
+    margin-left: var(--bbai-space-1);
+}
+
+.bbai-quality-insights {
+    display: flex;
+    align-items: center;
+    margin-top: var(--bbai-space-2);
+    flex-wrap: wrap;
+    gap: var(--bbai-space-2);
+}
+
+/* Quality Suggestions */
+.bbai-quality-suggestions {
+    margin-top: var(--bbai-space-4);
+    padding: var(--bbai-space-4);
+    background: var(--bbai-gray-50);
+    border-radius: var(--bbai-radius-lg);
+    border-left: 4px solid var(--bbai-primary);
+}
+
+.bbai-quality-suggestions-title {
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-3);
+}
+
+.bbai-quality-suggestions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.bbai-quality-suggestion-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) 0;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-quality-suggestion-item svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--bbai-primary);
+}
+
+/* Dark Mode */
+[data-theme="dark"] .bbai-quality-suggestions,
+.bbai-dark-mode .bbai-quality-suggestions {
+    background: var(--bbai-gray-800);
+    border-left-color: var(--bbai-primary);
+}
+
+[data-theme="dark"] .bbai-quality-badge--excellent,
+.bbai-dark-mode .bbai-quality-badge--excellent {
+    background: rgba(4, 120, 87, 0.28);
+    color: #6ee7b7;
+}
+
+[data-theme="dark"] .bbai-quality-badge--good,
+.bbai-dark-mode .bbai-quality-badge--good {
+    background: rgba(27, 138, 90, 0.22);
+    color: #9de7c3;
+}
+
+[data-theme="dark"] .bbai-quality-badge--needs-review,
+[data-theme="dark"] .bbai-quality-badge--fair,
+.bbai-dark-mode .bbai-quality-badge--needs-review,
+.bbai-dark-mode .bbai-quality-badge--fair {
+    background: rgba(162, 109, 0, 0.26);
+    color: #ffd782;
+}
+
+[data-theme="dark"] .bbai-quality-badge--poor,
+.bbai-dark-mode .bbai-quality-badge--poor {
+    background: rgba(192, 43, 43, 0.25);
+    color: #ff9a9a;
+}
+
+[data-theme="dark"] .bbai-quality-badge--critical,
+.bbai-dark-mode .bbai-quality-badge--critical {
+    background: rgba(190, 18, 60, 0.28);
+    color: #fecdd3;
+}
+
+/* ── Score Breakdown (tooltip content & inline panel) ── */
+
+.bbai-score-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 200px;
+}
+
+.bbai-score-breakdown__header {
+    font-weight: var(--bbai-font-semibold, 600);
+    font-size: var(--bbai-text-sm, 13px);
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 2px;
+}
+
+.bbai-score-breakdown__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: var(--bbai-text-xs, 11px);
+    color: var(--bbai-text-muted, #6b7280);
+}
+
+.bbai-score-breakdown__bar {
+    flex: 0 0 60px;
+    height: 4px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-left: 8px;
+}
+
+.bbai-score-breakdown__fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.bbai-score-breakdown__fill--high { background: #16a34a; }
+.bbai-score-breakdown__fill--mid  { background: #d97706; }
+.bbai-score-breakdown__fill--low  { background: #dc2626; }
+
+.bbai-score-breakdown__issues {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: var(--bbai-text-xs, 11px);
+    color: var(--bbai-text-muted, #6b7280);
+}
+
+.bbai-score-breakdown__issue {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 1px 0;
+}
+
+.bbai-score-breakdown__issue::before {
+    content: "•";
+    color: var(--bbai-status-needs-review-accent, #d97706);
+    flex-shrink: 0;
+}
+
+/* Dark Mode — breakdown */
+[data-theme="dark"] .bbai-score-breakdown__header,
+.bbai-dark-mode .bbai-score-breakdown__header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .bbai-score-breakdown__bar,
+.bbai-dark-mode .bbai-score-breakdown__bar {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .bbai-score-breakdown__issues,
+.bbai-dark-mode .bbai-score-breakdown__issues {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}

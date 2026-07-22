@@ -440,7 +440,6 @@ function bbaiHasQuotaLockHint(value) {
         text.indexOf('unlock more generations') !== -1 ||
         text.indexOf('monthly quota') !== -1 ||
         text.indexOf('monthly limit') !== -1 ||
-        text.indexOf('daily generation') !== -1 ||
         text.indexOf('quota reached') !== -1;
 }
 

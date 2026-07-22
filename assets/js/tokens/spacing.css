@@ -1,0 +1,67 @@
+/**
+ * Spacing Design Tokens
+ *
+ * Consistent spacing scale based on 4px baseline grid.
+ * Provides predictable rhythm and alignment.
+ *
+ * @package BeepBeep\AltText
+ * @since   5.0.0
+ */
+
+:root {
+	/* Spacing Scale (4px baseline) */
+	--bbai-space-0: 0;
+	--bbai-space-1: 0.25rem;  /* 4px */
+	--bbai-space-2: 0.5rem;   /* 8px */
+	--bbai-space-3: 0.75rem;  /* 12px */
+	--bbai-space-4: 1rem;     /* 16px */
+	--bbai-space-5: 1.25rem;  /* 20px */
+	--bbai-space-6: 1.5rem;   /* 24px */
+	--bbai-space-8: 2rem;     /* 32px */
+	--bbai-space-10: 2.5rem;  /* 40px */
+	--bbai-space-12: 3rem;    /* 48px */
+	--bbai-space-16: 4rem;    /* 64px */
+	--bbai-space-20: 5rem;    /* 80px */
+	--bbai-space-24: 6rem;    /* 96px */
+	--bbai-space-32: 8rem;    /* 128px */
+
+	/* Component-Specific Spacing */
+	--bbai-space-section: var(--bbai-space-16);
+	--bbai-space-container: var(--bbai-space-6);
+	--bbai-space-card: var(--bbai-space-6);
+	--bbai-space-button: var(--bbai-space-3);
+	--bbai-space-input: var(--bbai-space-3);
+
+	/* -------------------------------------------------------------------------
+	   Rhythm semantics (4px grid) — cards, banners, headers, rows, controls
+	   ------------------------------------------------------------------------- */
+	--bbai-rhythm-card-padding: var(--bbai-space-6);
+	--bbai-rhythm-card-padding-compact: var(--bbai-space-4);
+	--bbai-rhythm-card-padding-inline: var(--bbai-space-6);
+	--bbai-rhythm-card-header-padding-y: var(--bbai-space-4);
+	--bbai-rhythm-card-body-padding-y: var(--bbai-space-4);
+	--bbai-rhythm-label-to-title: var(--bbai-space-2);
+	--bbai-rhythm-title-to-description: var(--bbai-space-2);
+	--bbai-rhythm-description-to-content: var(--bbai-space-4);
+	--bbai-rhythm-section-gap: var(--bbai-space-4);
+	--bbai-rhythm-banner-padding-block: var(--bbai-space-6);
+	--bbai-rhythm-banner-padding-inline: var(--bbai-space-6);
+	--bbai-rhythm-banner-after-headline: var(--bbai-space-3);
+	--bbai-rhythm-banner-support-to-progress: var(--bbai-space-4);
+	--bbai-rhythm-banner-cta-gap: var(--bbai-space-2);
+	--bbai-rhythm-banner-progress-pad-bottom: var(--bbai-space-4);
+	--bbai-rhythm-section-header-inline-pad: var(--bbai-space-6);
+	--bbai-rhythm-section-header-split-gap: var(--bbai-space-4);
+	--bbai-rhythm-section-header-pad-y: var(--bbai-space-2);
+	--bbai-rhythm-section-header-pad-b: var(--bbai-space-1);
+	--bbai-rhythm-row-padding-y: var(--bbai-space-3);
+	--bbai-rhythm-row-gap: var(--bbai-space-4);
+	--bbai-rhythm-action-stack-gap: var(--bbai-space-2);
+	--bbai-rhythm-form-field-gap: var(--bbai-space-4);
+	--bbai-rhythm-filter-pill-gap: var(--bbai-space-2);
+	--bbai-rhythm-chip-gap: var(--bbai-space-2);
+	--bbai-rhythm-strip-padding-block: var(--bbai-space-3);
+	--bbai-rhythm-strip-padding-inline: var(--bbai-space-4);
+	--bbai-rhythm-strip-stack-gap: var(--bbai-space-2);
+	--bbai-rhythm-strip-actions-margin-top: var(--bbai-space-3);
+}

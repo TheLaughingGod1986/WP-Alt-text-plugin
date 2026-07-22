@@ -75,27 +75,14 @@ rsync -av --delete \
   --exclude="scripts" \
   --exclude="docs" \
   --exclude="tests" \
-  --exclude="build" \
   --exclude="output" \
   --exclude="dist" \
   --exclude="package.json" \
   --exclude="package-lock.json" \
-  --exclude="composer.json" \
-  --exclude="composer.lock" \
-  --exclude="jest.config.js" \
-  --exclude="playwright.config.ts" \
-  --exclude="phpcs.xml" \
-  --exclude="tmp" \
   --exclude="test-results" \
   --exclude="playwright-report" \
-  --exclude="*.png" \
-  --exclude="login-helper.js" \
-  --exclude="wp-login.js" \
-  --exclude="fix-phpcs.py" \
-  --exclude="sync-to-wpenv.bash" \
   --exclude=".cursor" \
   --exclude=".claude" \
-  --exclude=".vscode" \
   --exclude=".wporg-svn" \
   "${ROOT_DIR}/" "${WORK_DIR}/trunk/" >/dev/null
 
@@ -129,3 +116,4 @@ echo "- ${SVN_URL}/tags/${VERSION}"
 echo "- ${SVN_URL}/trunk"
 echo ""
 echo "If the plugin page still shows the old version, wait for WP.org cache refresh."
+

@@ -1,6 +1,6 @@
 <?php
 /**
- * Single top-of-screen plan banner: FREE → STARTER → GROWTH → PRO (Agency).
+ * Single top-of-screen plan banner: FREE → GROWTH → PRO (Agency).
  *
  * One monetisation surface for Dashboard + ALT Library. Copy and CTAs are plan-driven only.
  *
@@ -14,7 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 const BBAI_PLAN_TOP_TIER_FREE   = 'free';
-const BBAI_PLAN_TOP_TIER_STARTER = 'starter';
 const BBAI_PLAN_TOP_TIER_GROWTH = 'growth';
 const BBAI_PLAN_TOP_TIER_PRO    = 'pro';
 
@@ -27,9 +26,6 @@ function bbai_plan_top_banner_normalize_tier( array $input ): string {
 	$slug = strtolower( trim( (string) ( $input['plan_slug'] ?? 'free' ) ) );
 	if ( ! empty( $input['is_agency'] ) || in_array( $slug, array( 'agency', 'enterprise' ), true ) ) {
 		return BBAI_PLAN_TOP_TIER_PRO;
-	}
-	if ( 'starter' === $slug ) {
-		return BBAI_PLAN_TOP_TIER_STARTER;
 	}
 	if ( in_array( $slug, array( 'growth', 'pro' ), true ) ) {
 		return BBAI_PLAN_TOP_TIER_GROWTH;
@@ -109,17 +105,17 @@ function bbai_plan_top_banner_resolve( array $input ): array {
 		'href'       => '#',
 		'attributes' => array(
 			'data-action'                 => 'show-upgrade-modal',
-			'data-bbai-pricing-variant'   => 'starter',
+			'data-bbai-pricing-variant'   => 'growth',
 			'data-bbai-analytics-upgrade' => 'plan_banner_view_plans',
 		),
 	);
-	$choose_plan_primary        = array(
-		'label'      => __( 'Choose a plan', 'beepbeep-ai-alt-text-generator' ),
+	$upgrade_growth_primary     = array(
+		'label'      => __( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' ),
 		'href'       => '#',
 		'attributes' => array(
 			'data-action'                 => 'show-upgrade-modal',
-			'data-bbai-pricing-variant'   => 'starter',
-			'data-bbai-analytics-upgrade' => 'plan_banner_choose_plan',
+			'data-bbai-pricing-variant'   => 'growth',
+			'data-bbai-analytics-upgrade' => 'plan_banner_upgrade_growth',
 		),
 	);
 	$usage_secondary            = array(
@@ -129,6 +125,23 @@ function bbai_plan_top_banner_resolve( array $input ): array {
 			'data-bbai-analytics-upgrade' => 'plan_banner_usage_billing',
 		),
 	);
+	$upgrade_pro_primary        = array(
+		'label'      => __( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' ),
+		'href'       => '#',
+		'attributes' => array(
+			'data-action'                 => 'show-upgrade-modal',
+			'data-bbai-pricing-variant'   => 'agency',
+			'data-bbai-analytics-upgrade' => 'plan_banner_upgrade_pro',
+		),
+	);
+	$manage_plan_secondary      = array(
+		'label'      => __( 'Manage plan', 'beepbeep-ai-alt-text-generator' ),
+		'href'       => $billing,
+		'attributes' => array(
+			'data-bbai-analytics-upgrade' => 'plan_banner_manage_plan',
+		),
+	);
+
 	if ( BBAI_PLAN_TOP_TIER_PRO === $tier ) {
 		return array(
 			'tier'             => $tier,
@@ -138,33 +151,20 @@ function bbai_plan_top_banner_resolve( array $input ): array {
 			'banner_variant'   => 'success',
 			'semantic_state'   => 'plan-pro',
 			'primary_action'   => null,
-			'secondary_action' => null,
+			'secondary_action' => $manage_plan_secondary,
 		);
 	}
 
 	if ( BBAI_PLAN_TOP_TIER_GROWTH === $tier ) {
 		return array(
 			'tier'             => $tier,
-			'headline'         => __( 'You’re on Growth', 'beepbeep-ai-alt-text-generator' ),
-			'subtext'          => __( 'Growth includes 1,000 monthly images, bulk processing, and Autopilot.', 'beepbeep-ai-alt-text-generator' ),
-			'tone'             => 'healthy',
-			'banner_variant'   => 'success',
+			'headline'         => __( 'Need more capacity?', 'beepbeep-ai-alt-text-generator' ),
+			'subtext'          => __( 'Upgrade to Pro for higher limits and advanced workflows.', 'beepbeep-ai-alt-text-generator' ),
+			'tone'             => 'attention',
+			'banner_variant'   => 'warning',
 			'semantic_state'   => 'plan-growth',
-			'primary_action'   => null,
-			'secondary_action' => null,
-		);
-	}
-
-	if ( BBAI_PLAN_TOP_TIER_STARTER === $tier ) {
-		return array(
-			'tier'             => $tier,
-			'headline'         => __( 'You’re on Starter', 'beepbeep-ai-alt-text-generator' ),
-			'subtext'          => __( 'Starter includes 100 monthly images. Growth adds bulk processing and Autopilot when you need automation.', 'beepbeep-ai-alt-text-generator' ),
-			'tone'             => 'healthy',
-			'banner_variant'   => 'success',
-			'semantic_state'   => 'plan-starter',
-			'primary_action'   => null,
-			'secondary_action' => null,
+			'primary_action'   => $upgrade_pro_primary,
+			'secondary_action' => $view_plans_secondary,
 		);
 	}
 
@@ -188,19 +188,19 @@ function bbai_plan_top_banner_resolve( array $input ): array {
 		);
 	}
 
-	/* Connected Free: distinct from guests — show the plan chooser, not a Growth-only CTA. */
+	/* Connected Free: distinct from guests — Growth upgrade first, attention shell. */
 	return array(
 		'tier'             => BBAI_PLAN_TOP_TIER_FREE,
 		'headline'         => __( 'Grow beyond the Free plan', 'beepbeep-ai-alt-text-generator' ),
 		'subtext'          => sprintf(
 			/* translators: %d: monthly generations included on the Free plan. */
-			__( 'Choose Starter for smaller sites or Growth for automation. Your Free plan still includes %d generations each month.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Upgrade to Growth for higher limits, priority processing, and bulk optimisation across your library. Your Free plan still includes %d generations each month.', 'beepbeep-ai-alt-text-generator' ),
 			$free_offer
 		),
 		'tone'             => 'attention',
 		'banner_variant'   => 'warning',
 		'semantic_state'   => 'plan-free-account',
-		'primary_action'   => $choose_plan_primary,
+		'primary_action'   => $upgrade_growth_primary,
 		'secondary_action' => $usage_secondary,
 	);
 }

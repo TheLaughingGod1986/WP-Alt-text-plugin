@@ -9,9 +9,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Get current plan from API client
 $bbai_current_plan = 'free';
-$bbai_usage_data   = isset( $bbai_usage_data ) && is_array( $bbai_usage_data ) ? $bbai_usage_data : array();
+$bbai_usage_data   = array();
 try {
-	if ( isset( $this ) && is_object( $this ) && isset( $this->api_client ) && is_object( $this->api_client ) && method_exists( $this->api_client, 'get_usage' ) ) {
+	if ( isset( $this->api_client ) && is_object( $this->api_client ) && method_exists( $this->api_client, 'get_usage' ) ) {
 		$bbai_usage_data = $this->api_client->get_usage();
 		if ( ! is_wp_error( $bbai_usage_data ) && is_array( $bbai_usage_data ) && isset( $bbai_usage_data['plan'] ) ) {
 			$bbai_current_plan = strtolower( $bbai_usage_data['plan'] );
@@ -27,17 +27,13 @@ if ( 'pro' === $bbai_current_plan ) {
 }
 
 // Get price IDs from backend API
-$bbai_starter_price_id = $checkout_prices['starter'] ?? '';
 $bbai_pro_price_id     = $checkout_prices['pro'] ?? '';
-$bbai_growth_price_id  = $checkout_prices['growth'] ?? $bbai_pro_price_id;
 $bbai_agency_price_id  = $checkout_prices['agency'] ?? '';
 $bbai_credits_price_id = $checkout_prices['credits'] ?? '';
 
 // Fallback to hardcoded Stripe links if API price IDs not available
 $bbai_stripe_links = array(
-	'starter' => '',
 	'pro'     => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
-	'growth'  => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
 	'agency'  => 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01',
 	'credits' => 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00',
 );
@@ -47,187 +43,10 @@ $bbai_currency = $bbai_currency ?? array(
 	'symbol'  => '£',
 	'code'    => 'GBP',
 	'free'    => 0,
-	'starter' => 4.99,
 	'growth'  => 12.99,
 	'pro'     => 12.99,
 	'agency'  => 49.99,
-	'credits' => 9.99,
-);
-
-$bbai_format_plan_price = static function ( $amount, $interval = 'month' ) use ( $bbai_currency ): string {
-	$amount = is_numeric( $amount ) ? (float) $amount : 0.0;
-	if ( $amount <= 0 ) {
-		return __( 'Free', 'beepbeep-ai-alt-text-generator' );
-	}
-	$suffix = 'one_time' === $interval
-		? __( ' one-time', 'beepbeep-ai-alt-text-generator' )
-		: __( '/month', 'beepbeep-ai-alt-text-generator' );
-	return sprintf(
-		/* translators: 1: currency symbol, 2: amount, 3: billing interval suffix. */
-		__( '%1$s%2$s%3$s', 'beepbeep-ai-alt-text-generator' ),
-		$bbai_currency['symbol'],
-		number_format( $amount, 2 ),
-		$suffix
-	);
-};
-
-$bbai_normalize_plan_for_limit = static function ( string $plan_slug, int $limit ): string {
-	$plan_slug = sanitize_key( $plan_slug );
-	if ( 'pro' === $plan_slug ) {
-		$plan_slug = 'growth';
-	}
-	if ( 'starter' === $plan_slug && $limit > 0 && $limit < 100 ) {
-		return 'free';
-	}
-	if ( in_array( $plan_slug, array( 'growth', 'agency', 'enterprise' ), true ) && $limit > 0 && $limit < 1000 ) {
-		return 'free';
-	}
-
-	return '' !== $plan_slug ? $plan_slug : 'free';
-};
-
-$bbai_normalize_billing_plan = static function ( array $plan ) use ( $checkout_prices, $bbai_currency ): array {
-	$id = isset( $plan['id'] ) && is_scalar( $plan['id'] ) ? sanitize_key( (string) $plan['id'] ) : '';
-	if ( '' === $id ) {
-		return array();
-	}
-	$price = null;
-	foreach ( array( 'price', 'amount', 'monthly_price', 'monthlyPrice' ) as $price_key ) {
-		if ( isset( $plan[ $price_key ] ) && is_numeric( $plan[ $price_key ] ) ) {
-			$price = (float) $plan[ $price_key ];
-			break;
-		}
-	}
-	if ( null === $price && isset( $plan['unit_amount'] ) && is_numeric( $plan['unit_amount'] ) ) {
-		$price = (float) $plan['unit_amount'] / 100;
-	}
-	$credits = 0;
-	foreach ( array( 'monthly_credits', 'monthlyCredits', 'credits', 'token_limit', 'tokens' ) as $credit_key ) {
-		if ( isset( $plan[ $credit_key ] ) && is_numeric( $plan[ $credit_key ] ) ) {
-			$credits = max( 0, (int) $plan[ $credit_key ] );
-			break;
-		}
-	}
-	$price_id = '';
-	foreach ( array( 'priceId', 'price_id', 'stripe_price_id' ) as $price_id_key ) {
-		if ( isset( $plan[ $price_id_key ] ) && is_scalar( $plan[ $price_id_key ] ) ) {
-			$price_id = sanitize_text_field( (string) $plan[ $price_id_key ] );
-			break;
-		}
-	}
-	if ( '' === $price_id && ! empty( $checkout_prices[ $id ] ) ) {
-		$price_id = sanitize_text_field( (string) $checkout_prices[ $id ] );
-	}
-	return array(
-		'id'            => $id,
-		'name'          => isset( $plan['name'] ) && is_scalar( $plan['name'] ) ? sanitize_text_field( (string) $plan['name'] ) : ucfirst( $id ),
-		'description'   => isset( $plan['description'] ) && is_scalar( $plan['description'] ) ? sanitize_text_field( (string) $plan['description'] ) : '',
-		'price'         => null === $price ? (float) ( $bbai_currency[ $id ] ?? 0 ) : $price,
-		'credits'       => $credits,
-		'interval'      => isset( $plan['interval'] ) && is_scalar( $plan['interval'] ) ? sanitize_key( (string) $plan['interval'] ) : 'month',
-		'price_id'      => $price_id,
-		'checkout_plan' => 'growth' === $id ? 'pro' : $id,
-	);
-};
-
-$bbai_remote_plans = array();
-try {
-	if ( isset( $this ) && is_object( $this ) && isset( $this->api_client ) && is_object( $this->api_client ) && method_exists( $this->api_client, 'get_plans' ) ) {
-		$bbai_remote_plans = $this->api_client->get_plans();
-	}
-} catch ( Exception $e ) {
-	$bbai_remote_plans = array();
-}
-if ( is_wp_error( $bbai_remote_plans ) || ! is_array( $bbai_remote_plans ) ) {
-	$bbai_remote_plans = array();
-}
-
-$bbai_billing_plans_by_id = array();
-foreach ( $bbai_remote_plans as $bbai_remote_plan ) {
-	if ( ! is_array( $bbai_remote_plan ) ) {
-		continue;
-	}
-	$bbai_normalized_plan = $bbai_normalize_billing_plan( $bbai_remote_plan );
-	if ( ! empty( $bbai_normalized_plan['id'] ) ) {
-		$bbai_billing_plans_by_id[ $bbai_normalized_plan['id'] ] = $bbai_normalized_plan;
-	}
-}
-
-$bbai_default_billing_plans = array(
-	'free'    => array(
-		'id'          => 'free',
-		'name'        => __( 'Free', 'beepbeep-ai-alt-text-generator' ),
-		'description' => __( 'For smaller sites getting started manually.', 'beepbeep-ai-alt-text-generator' ),
-		'price'       => 0,
-		'credits'     => 50,
-		'interval'    => 'month',
-	),
-	'starter' => array(
-		'id'            => 'starter',
-		'name'          => __( 'Starter', 'beepbeep-ai-alt-text-generator' ),
-		'description'   => __( 'Get 100 monthly images for smaller WordPress sites.', 'beepbeep-ai-alt-text-generator' ),
-		'price'         => 4.99,
-		'credits'       => 100,
-		'interval'      => 'month',
-		'price_id'      => $bbai_starter_price_id,
-		'checkout_plan' => 'starter',
-	),
-	'growth'  => array(
-		'id'            => 'growth',
-		'name'          => __( 'Growth', 'beepbeep-ai-alt-text-generator' ),
-		'description'   => __( 'Get 1,000 monthly images, bulk processing, and Autopilot.', 'beepbeep-ai-alt-text-generator' ),
-		'price'         => 12.99,
-		'credits'       => 1000,
-		'interval'      => 'month',
-		'price_id'      => $bbai_growth_price_id ?: $bbai_pro_price_id,
-		'checkout_plan' => 'pro',
-	),
-	'credits' => array(
-		'id'            => 'credits',
-		'name'          => __( 'Buy 100 extra credits', 'beepbeep-ai-alt-text-generator' ),
-		'description'   => __( 'Need a quick top-up without a subscription?', 'beepbeep-ai-alt-text-generator' ),
-		'price'         => 9.99,
-		'credits'       => 100,
-		'interval'      => 'one_time',
-		'price_id'      => $bbai_credits_price_id,
-		'checkout_plan' => 'credits',
-	),
-);
-foreach ( $bbai_default_billing_plans as $bbai_default_plan_id => $bbai_default_plan ) {
-	$bbai_billing_plans_by_id[ $bbai_default_plan_id ] = array_merge(
-		$bbai_default_plan,
-		$bbai_billing_plans_by_id[ $bbai_default_plan_id ] ?? array()
-	);
-	if ( empty( $bbai_billing_plans_by_id[ $bbai_default_plan_id ]['checkout_plan'] ) ) {
-		$bbai_billing_plans_by_id[ $bbai_default_plan_id ]['checkout_plan'] = 'growth' === $bbai_default_plan_id ? 'pro' : $bbai_default_plan_id;
-	}
-}
-$bbai_upgrade_plan_order = array( 'starter', 'growth', 'credits' );
-$bbai_plan_badges        = array(
-	'starter' => __( 'Best for small sites', 'beepbeep-ai-alt-text-generator' ),
-	'growth'  => __( 'Best value', 'beepbeep-ai-alt-text-generator' ),
-	'credits' => __( 'Alternative', 'beepbeep-ai-alt-text-generator' ),
-);
-$bbai_plan_features      = array(
-	'starter' => array(
-		__( '100 monthly images', 'beepbeep-ai-alt-text-generator' ),
-		__( 'Great for small business websites', 'beepbeep-ai-alt-text-generator' ),
-		__( 'Cancel anytime', 'beepbeep-ai-alt-text-generator' ),
-	),
-	'growth'  => array(
-		__( '1,000 monthly images', 'beepbeep-ai-alt-text-generator' ),
-		__( 'Bulk processing', 'beepbeep-ai-alt-text-generator' ),
-		__( 'Autopilot for new uploads', 'beepbeep-ai-alt-text-generator' ),
-		__( 'Cancel anytime', 'beepbeep-ai-alt-text-generator' ),
-	),
-	'credits' => array(
-		__( 'Need a quick top-up without a subscription?', 'beepbeep-ai-alt-text-generator' ),
-	),
-);
-$bbai_plan_ctas          = array(
-	'starter' => __( 'Upgrade to Starter', 'beepbeep-ai-alt-text-generator' ),
-	'growth'  => __( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' ),
-	'credits' => __( 'Buy more credits', 'beepbeep-ai-alt-text-generator' ),
+	'credits' => 19.99,
 );
 
 // Calculate annual prices (2 months free = 10 months of monthly price)
@@ -260,17 +79,10 @@ if ( isset( $bbai_usage_stats ) && is_array( $bbai_usage_stats ) ) {
 }
 
 $bbai_usage_used            = min( $bbai_usage_used, $bbai_usage_limit );
+$bbai_is_usage_triggered    = ( 'free' === $bbai_current_plan ) && $bbai_usage_remaining <= 0;
 $bbai_problem_images        = 0;
 $bbai_modal_optimized_count = 0;
 $bbai_modal_library_size    = 0;
-
-$bbai_entitlement_state = ! empty( $bbai_usage_data['entitlement_state'] ) && is_array( $bbai_usage_data['entitlement_state'] ) ? $bbai_usage_data['entitlement_state'] : array();
-if ( ! empty( $bbai_entitlement_state ) ) {
-	$bbai_entitlement_plan = strtolower( (string) ( $bbai_entitlement_state['plan_type'] ?? $bbai_entitlement_state['plan'] ?? '' ) );
-	if ( '' !== $bbai_entitlement_plan ) {
-		$bbai_current_plan = $bbai_entitlement_plan;
-	}
-}
 
 if ( isset( $bbai_state ) && is_array( $bbai_state ) ) {
 	$bbai_problem_images        = max(
@@ -288,13 +100,9 @@ if ( isset( $bbai_state ) && is_array( $bbai_state ) ) {
 	$bbai_modal_library_size    = max( 0, (int) ( $bbai_stats['total_images'] ?? $bbai_stats['total'] ?? 0 ) );
 }
 
-$bbai_current_plan       = $bbai_normalize_plan_for_limit( $bbai_current_plan, $bbai_usage_limit );
-$bbai_is_usage_triggered = ( 'free' === $bbai_current_plan ) && $bbai_usage_remaining <= 0;
-$bbai_is_free_plan    = ( 'free' === $bbai_current_plan );
-$bbai_is_starter_plan = ( 'starter' === $bbai_current_plan );
-$bbai_is_growth_plan  = in_array( $bbai_current_plan, array( 'growth', 'pro' ), true );
-$bbai_is_agency_plan  = ( 'agency' === $bbai_current_plan );
-$bbai_is_paid_plan    = in_array( $bbai_current_plan, array( 'starter', 'growth', 'pro', 'agency', 'enterprise' ), true );
+$bbai_is_free_plan   = ( 'free' === $bbai_current_plan );
+$bbai_is_growth_plan = ( 'growth' === $bbai_current_plan );
+$bbai_is_agency_plan = ( 'agency' === $bbai_current_plan );
 
 if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Auth_State::class, false ) ) {
 	require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
@@ -304,26 +112,8 @@ if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Services\Upgrade_Cta_Resolver:
 }
 $bbai_modal_auth_ctx       = ( isset( $this ) && is_object( $this ) && isset( $this->api_client ) )
 	? \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $this->api_client )
-	: array( 'has_connected_account' => ! empty( $bbai_entitlement_state['is_logged_in'] ) );
+	: array( 'has_connected_account' => false );
 $bbai_modal_has_saas       = ! empty( $bbai_modal_auth_ctx['has_connected_account'] );
-$bbai_active_subscription_status = strtolower( (string) (
-	$bbai_entitlement_state['subscription_status']
-	?? $bbai_usage_data['subscription_status']
-	?? $bbai_usage_data['stripe_subscription_status']
-	?? ''
-) );
-$bbai_has_stripe_subscription = false;
-foreach ( array( 'stripe_subscription_id', 'subscription_id' ) as $bbai_subscription_key ) {
-	if ( ! empty( $bbai_entitlement_state[ $bbai_subscription_key ] ) || ! empty( $bbai_usage_data[ $bbai_subscription_key ] ) ) {
-		$bbai_has_stripe_subscription = true;
-		break;
-	}
-}
-if ( ! $bbai_has_stripe_subscription && ! empty( $bbai_entitlement_state['has_active_subscription'] ) ) {
-	$bbai_has_stripe_subscription = true;
-}
-$bbai_has_active_stripe_subscription = $bbai_has_stripe_subscription && in_array( $bbai_active_subscription_status, array( '', 'active', 'trialing' ), true );
-$bbai_can_manage_subscription        = $bbai_is_paid_plan && $bbai_has_active_stripe_subscription;
 $bbai_upgrade_cta_resolved = \BeepBeepAI\AltTextGenerator\Services\Upgrade_Cta_Resolver::resolve(
 	array(
 		'has_connected_account' => $bbai_modal_has_saas,
@@ -335,52 +125,36 @@ $bbai_modal_signup_first   = ( \BeepBeepAI\AltTextGenerator\Services\Upgrade_Cta
 // Logged-out sites still report plan "free" from defaults; never treat that as an authenticated free plan.
 $bbai_on_authenticated_free = $bbai_modal_has_saas && $bbai_is_free_plan;
 
-$bbai_outcome_messages = array();
-if ( $bbai_modal_optimized_count > 0 ) {
-	$bbai_outcome_messages[] = sprintf(
-		/* translators: %s: generated image count. */
-		__( 'You’ve optimized %s images.', 'beepbeep-ai-alt-text-generator' ),
-		number_format_i18n( $bbai_modal_optimized_count )
-	);
-}
-if ( $bbai_modal_library_size > 0 ) {
-	$bbai_outcome_messages[] = sprintf(
-		/* translators: %s: scanned image count. */
-		__( 'We’ve found %s images on this site.', 'beepbeep-ai-alt-text-generator' ),
-		number_format_i18n( $bbai_modal_library_size )
-	);
-}
-if ( $bbai_problem_images > 0 ) {
-	$bbai_outcome_messages[] = sprintf(
-		/* translators: %s: missing ALT image count. */
-		__( '%s images still need alt text.', 'beepbeep-ai-alt-text-generator' ),
-		number_format_i18n( $bbai_problem_images )
-	);
-}
-$bbai_free_upgrade_subtitle = ! empty( $bbai_outcome_messages )
-	? implode( ' ', $bbai_outcome_messages )
-	: __( 'You’ve used your free images. Pick the plan that fits your site.', 'beepbeep-ai-alt-text-generator' );
-
 $bbai_modal_title = $bbai_on_authenticated_free
-	? __( 'Choose your upgrade', 'beepbeep-ai-alt-text-generator' )
+	? __( 'Continue improving your library', 'beepbeep-ai-alt-text-generator' )
 	: __( 'Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_modal_subtitle = $bbai_on_authenticated_free
-	? $bbai_free_upgrade_subtitle
+	? sprintf(
+		/* translators: 1: used credits, 2: credit limit */
+		__( 'You\'ve already improved %1$s of %2$s images this month. Keep your images optimised automatically as you continue.', 'beepbeep-ai-alt-text-generator' ),
+		number_format_i18n( $bbai_usage_used ),
+		number_format_i18n( $bbai_usage_limit )
+	)
 	: __( 'Compare plans, manage billing, or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_locked_modal_title = $bbai_on_authenticated_free
-	? __( 'Choose your upgrade', 'beepbeep-ai-alt-text-generator' )
+	? __( 'You’ve used this month’s free allowance', 'beepbeep-ai-alt-text-generator' )
 	: __( 'Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_locked_modal_subtitle = $bbai_on_authenticated_free
-	? $bbai_free_upgrade_subtitle
+	? sprintf(
+		/* translators: 1: used credits, 2: credit limit */
+		__( 'You\'ve already improved %1$s of %2$s images. Your existing results are still available to review.', 'beepbeep-ai-alt-text-generator' ),
+		number_format_i18n( $bbai_usage_used ),
+		number_format_i18n( $bbai_usage_limit )
+	)
 	: __( 'Compare plans, manage billing, or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_credit_pack_price        = number_format( (float) ( $bbai_currency['credits'] ?? 9.99 ), 2 );
 $bbai_credit_pack_button_label = __( 'Buy more credits', 'beepbeep-ai-alt-text-generator' );
 $bbai_credit_pack_title        = __( 'Buy 100 extra credits', 'beepbeep-ai-alt-text-generator' );
-$bbai_credit_pack_description  = __( 'Need a quick top-up without a subscription?', 'beepbeep-ai-alt-text-generator' );
+$bbai_credit_pack_description  = __( 'A one-time top-up for occasional usage.', 'beepbeep-ai-alt-text-generator' );
 $bbai_credit_pack_summary      = sprintf(
 	/* translators: 1: currency symbol, 2: credit pack price */
 	__( '%1$s%2$s one-time', 'beepbeep-ai-alt-text-generator' ),
@@ -389,7 +163,7 @@ $bbai_credit_pack_summary      = sprintf(
 );
 
 $bbai_primary_button_label = $bbai_on_authenticated_free
-	? __( 'Upgrade to Starter', 'beepbeep-ai-alt-text-generator' )
+	? __( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' )
 	: __( 'Open billing portal', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_primary_price = $bbai_on_authenticated_free
@@ -397,20 +171,25 @@ $bbai_primary_price = $bbai_on_authenticated_free
 		/* translators: 1: currency symbol, 2: monthly price */
 		__( '%1$s%2$s/month', 'beepbeep-ai-alt-text-generator' ),
 		$bbai_currency['symbol'],
-		number_format( (float) ( $bbai_currency['starter'] ?? 4.99 ), 2 )
+		number_format( $bbai_growth_monthly, 2 )
 	)
 	: __( 'Subscription settings', 'beepbeep-ai-alt-text-generator' );
 
-$bbai_decision_eyebrow = __( 'Best for small sites', 'beepbeep-ai-alt-text-generator' );
+$bbai_decision_eyebrow = __( 'Most popular', 'beepbeep-ai-alt-text-generator' );
 $bbai_decision_title   = $bbai_on_authenticated_free
-	? __( 'Starter', 'beepbeep-ai-alt-text-generator' )
+	? __( 'Keep your images optimised automatically', 'beepbeep-ai-alt-text-generator' )
 	: __( 'Manage billing', 'beepbeep-ai-alt-text-generator' );
 $bbai_decision_copy    = $bbai_on_authenticated_free
-	? __( 'Get 100 monthly images for smaller WordPress sites.', 'beepbeep-ai-alt-text-generator' )
+	? sprintf(
+		/* translators: 1: currency symbol, 2: monthly Growth price */
+		__( 'Unlock more monthly ALT text generation and keep automation running — %1$s%2$s/month', 'beepbeep-ai-alt-text-generator' ),
+		$bbai_currency['symbol'],
+		number_format( $bbai_growth_monthly, 2 )
+	)
 	: __( 'Open your billing portal to manage your plan, payment method, or subscription.', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_limit_label = $bbai_on_authenticated_free
-	? __( 'Continue generating alt text', 'beepbeep-ai-alt-text-generator' )
+	? __( 'Continue generating ALT text', 'beepbeep-ai-alt-text-generator' )
 	: __( 'Usage limit reached', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_default_decision_note   = $bbai_credit_pack_description;
@@ -442,7 +221,7 @@ $bbai_compare_plans_label = __( 'Compare plans', 'beepbeep-ai-alt-text-generator
 $bbai_compare_back_label  = __( 'Back to options', 'beepbeep-ai-alt-text-generator' );
 $bbai_compare_title       = __( 'Compare plans', 'beepbeep-ai-alt-text-generator' );
 if ( ! $bbai_modal_signup_first ) {
-	$bbai_compare_subtitle = __( 'Free, Starter, and Growth cover most sites. Agency is available if you need higher volume.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_compare_subtitle = __( 'Free and Growth cover most sites. Agency is available if you need higher volume.', 'beepbeep-ai-alt-text-generator' );
 }
 $bbai_agency_toggle_label      = __( 'Need higher volume? See Agency', 'beepbeep-ai-alt-text-generator' );
 $bbai_agency_toggle_hide_label = __( 'Hide Agency', 'beepbeep-ai-alt-text-generator' );
@@ -499,86 +278,63 @@ $bbai_show_agency_by_default   = $bbai_is_agency_plan;
 					</button>
 				</div>
 
-				<div class="bbai-upgrade-modal__compare-grid" data-bbai-billing-plans>
-					<?php foreach ( $bbai_upgrade_plan_order as $bbai_plan_id ) : ?>
-						<?php
-						$bbai_plan = $bbai_billing_plans_by_id[ $bbai_plan_id ] ?? array();
-						if ( empty( $bbai_plan ) ) {
-							continue;
-						}
-						$bbai_plan_is_current = $bbai_has_active_stripe_subscription && ( ( 'starter' === $bbai_plan_id && $bbai_is_starter_plan ) || ( 'growth' === $bbai_plan_id && $bbai_is_growth_plan ) );
-						$bbai_plan_checkout   = (string) ( $bbai_plan['checkout_plan'] ?? $bbai_plan_id );
-						$bbai_plan_price_id   = (string) ( $bbai_plan['price_id'] ?? '' );
-						$bbai_plan_credits    = max( 0, (int) ( $bbai_plan['credits'] ?? 0 ) );
-						$bbai_plan_price      = $bbai_format_plan_price( $bbai_plan['price'] ?? 0, $bbai_plan['interval'] ?? 'month' );
-						$bbai_plan_class      = 'bbai-pricing-card bbai-pricing-card--' . sanitize_key( $bbai_plan_id );
-						$bbai_plan_badge      = $bbai_plan_badges[ $bbai_plan_id ] ?? $bbai_plan['name'];
-						$bbai_plan_feature_list = $bbai_plan_features[ $bbai_plan_id ] ?? array();
-						$bbai_plan_cta_label  = $bbai_plan_ctas[ $bbai_plan_id ] ?? sprintf(
-							/* translators: %s: plan name. */
-							__( 'Upgrade to %s', 'beepbeep-ai-alt-text-generator' ),
-							$bbai_plan['name']
-						);
-						?>
-						<div class="<?php echo esc_attr( $bbai_plan_class ); ?>" data-bbai-plan-card="<?php echo esc_attr( $bbai_plan_id ); ?>">
-							<div class="bbai-pricing-card__badges">
-								<span class="bbai-pricing-card__badge bbai-pricing-card__badge--<?php echo esc_attr( $bbai_plan_id ); ?>"><?php echo esc_html( $bbai_plan_badge ); ?></span>
-								<?php if ( $bbai_plan_is_current ) : ?>
-									<span class="bbai-pricing-card__status"><?php esc_html_e( 'Current plan', 'beepbeep-ai-alt-text-generator' ); ?></span>
-								<?php endif; ?>
-							</div>
-							<div class="bbai-pricing-card__intro">
-								<h3 class="bbai-pricing-card__title"><?php echo esc_html( $bbai_plan['name'] ); ?></h3>
-								<p class="bbai-pricing-card__descriptor"><?php echo esc_html( $bbai_plan['description'] ); ?></p>
-							</div>
-							<ul class="bbai-pricing-card__features">
-								<?php foreach ( $bbai_plan_feature_list as $bbai_plan_feature ) : ?>
-									<li>
-										<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-											<path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-										</svg>
-										<?php echo esc_html( $bbai_plan_feature ); ?>
-									</li>
-								<?php endforeach; ?>
-							</ul>
-							<div class="bbai-pricing-card__footer">
-								<div class="bbai-pricing-card__price-stack">
-									<div class="bbai-pricing-card__price">
-										<span class="bbai-pricing-card__amount"><?php echo esc_html( $bbai_plan_price ); ?></span>
-									</div>
-								</div>
-								<?php if ( $bbai_modal_signup_first ) : ?>
-									<button type="button"
-											class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn"
-											data-bbai-upgrade-primary-action="1"
-											data-action="show-auth-modal"
-											data-auth-tab="register">
-										<?php echo esc_html( $bbai_upgrade_cta_resolved['primary_label'] ); ?>
-									</button>
-								<?php elseif ( $bbai_plan_is_current && $bbai_can_manage_subscription ) : ?>
-									<a href="<?php echo esc_url( $bbai_billing_url ); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn">
-										<?php esc_html_e( 'Manage Subscription', 'beepbeep-ai-alt-text-generator' ); ?>
-									</a>
-								<?php elseif ( $bbai_plan_is_current ) : ?>
-									<button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn" disabled>
-										<?php esc_html_e( 'Current plan', 'beepbeep-ai-alt-text-generator' ); ?>
-									</button>
-								<?php else : ?>
-									<button type="button"
-											class="bbai-btn <?php echo 'credits' === $bbai_plan_id ? 'bbai-btn-secondary' : 'bbai-btn-primary'; ?> bbai-btn-lg bbai-btn-block bbai-pricing-card__btn"
-											data-bbai-upgrade-primary-action="<?php echo 'starter' === $bbai_plan_id ? '1' : '0'; ?>"
-											data-bbai-upgrade-growth-cta="<?php echo 'growth' === $bbai_plan_id ? '1' : '0'; ?>"
-											data-action="checkout-plan"
-											data-plan="<?php echo esc_attr( $bbai_plan_checkout ); ?>"
-											data-price-id="<?php echo esc_attr( $bbai_plan_price_id ); ?>"
-											data-fallback-url="<?php echo esc_url( $bbai_stripe_links[ $bbai_plan_checkout ] ?? $bbai_stripe_links[ $bbai_plan_id ] ?? '' ); ?>">
-										<?php echo esc_html( $bbai_plan_cta_label ); ?>
-									</button>
-								<?php endif; ?>
-							</div>
-						</div>
-					<?php endforeach; ?>
+				<div class="bbai-upgrade-modal__action-card bbai-upgrade-modal__action-card--primary">
+					<div class="bbai-upgrade-modal__action-copy">
+						<p class="bbai-upgrade-modal__section-label bbai-upgrade-modal__decision-eyebrow" data-bbai-upgrade-eyebrow><?php echo esc_html( $bbai_decision_eyebrow ); ?></p>
+						<p class="bbai-upgrade-modal__decision-title" data-bbai-upgrade-decision-title><?php echo esc_html( $bbai_decision_title ); ?></p>
+						<p class="bbai-upgrade-modal__decision-desc" data-bbai-upgrade-decision-desc><?php echo esc_html( $bbai_decision_copy ); ?></p>
+					</div>
+					<div class="bbai-upgrade-modal__action-meta">
+						<p class="bbai-upgrade-modal__action-price"><?php echo esc_html( $bbai_primary_price ); ?></p>
+						<?php if ( $bbai_modal_signup_first ) : ?>
+							<button type="button"
+									class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action"
+									data-bbai-upgrade-primary-action="1"
+									data-action="show-auth-modal"
+									data-auth-tab="register">
+								<?php echo esc_html( $bbai_primary_button_label ); ?>
+							</button>
+							<p class="bbai-upgrade-modal__risk-note"><?php esc_html_e( 'Free to start. No card required for the free plan.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<?php elseif ( $bbai_on_authenticated_free ) : ?>
+							<button type="button"
+									class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action"
+									data-bbai-upgrade-primary-action="1"
+									data-action="checkout-plan"
+									data-plan="pro"
+									data-price-id="<?php echo esc_attr( $bbai_pro_price_id ); ?>"
+									data-fallback-url="<?php echo esc_url( $bbai_stripe_links['pro'] ); ?>">
+								<?php echo esc_html( $bbai_primary_button_label ); ?>
+							</button>
+							<p class="bbai-upgrade-modal__risk-note"><?php esc_html_e( 'Cancel anytime. No lock-in.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<?php else : ?>
+							<a href="<?php echo esc_url( $bbai_billing_url ); ?>" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-upgrade-modal__primary-action" data-bbai-upgrade-primary-action="1">
+								<?php echo esc_html( $bbai_primary_button_label ); ?>
+							</a>
+						<?php endif; ?>
+					</div>
 				</div>
+
+				<?php if ( ! empty( $bbai_upgrade_cta_resolved['show_credit_pack'] ) ) : ?>
+				<div class="bbai-upgrade-modal__action-card bbai-upgrade-modal__action-card--secondary">
+					<div class="bbai-upgrade-modal__action-copy">
+						<p class="bbai-upgrade-modal__section-label"><?php esc_html_e( 'Alternative', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-upgrade-modal__credit-title"><?php echo esc_html( $bbai_credit_pack_title ); ?></p>
+						<p class="bbai-upgrade-modal__decision-desc" data-bbai-upgrade-note><?php echo esc_html( $bbai_default_decision_note ); ?></p>
+					</div>
+					<div class="bbai-upgrade-modal__action-meta bbai-upgrade-modal__action-meta--secondary">
+						<p class="bbai-upgrade-modal__action-price bbai-upgrade-modal__action-price--secondary"><?php echo esc_html( $bbai_credit_pack_summary ); ?></p>
+						<button type="button"
+								class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-upgrade-modal__secondary-action"
+								data-bbai-upgrade-secondary-action="1"
+								data-action="checkout-plan"
+								data-plan="credits"
+								data-price-id="<?php echo esc_attr( $bbai_credits_price_id ); ?>"
+								data-fallback-url="<?php echo esc_url( $bbai_stripe_links['credits'] ); ?>">
+							<?php echo esc_html( $bbai_credit_pack_button_label ); ?>
+						</button>
+					</div>
+				</div>
+				<?php endif; ?>
 			</section>
 
 			<section id="bbai-upgrade-plan-comparison" class="bbai-upgrade-modal__view bbai-upgrade-modal__view--compare" data-bbai-upgrade-view-panel="compare" data-bbai-upgrade-plan-comparison hidden>
@@ -593,77 +349,6 @@ $bbai_show_agency_by_default   = $bbai_is_agency_plan;
 					</button>
 				</div>
 
-				<div class="bbai-upgrade-modal__compare-grid" data-bbai-billing-plans-compare>
-					<?php foreach ( $bbai_upgrade_plan_order as $bbai_plan_id ) : ?>
-						<?php
-						$bbai_plan = $bbai_billing_plans_by_id[ $bbai_plan_id ] ?? array();
-						if ( empty( $bbai_plan ) ) {
-							continue;
-						}
-						$bbai_plan_is_current = $bbai_has_active_stripe_subscription && ( ( 'starter' === $bbai_plan_id && $bbai_is_starter_plan ) || ( 'growth' === $bbai_plan_id && $bbai_is_growth_plan ) );
-						$bbai_plan_checkout   = (string) ( $bbai_plan['checkout_plan'] ?? $bbai_plan_id );
-						$bbai_plan_price_id   = (string) ( $bbai_plan['price_id'] ?? '' );
-						$bbai_plan_credits    = max( 0, (int) ( $bbai_plan['credits'] ?? 0 ) );
-						$bbai_plan_price      = $bbai_format_plan_price( $bbai_plan['price'] ?? 0, $bbai_plan['interval'] ?? 'month' );
-						$bbai_plan_badge      = $bbai_plan_badges[ $bbai_plan_id ] ?? $bbai_plan['name'];
-						$bbai_plan_feature_list = $bbai_plan_features[ $bbai_plan_id ] ?? array();
-						$bbai_plan_cta_label  = $bbai_plan_ctas[ $bbai_plan_id ] ?? sprintf(
-							/* translators: %s: plan name. */
-							__( 'Upgrade to %s', 'beepbeep-ai-alt-text-generator' ),
-							$bbai_plan['name']
-						);
-						?>
-						<div class="bbai-pricing-card bbai-pricing-card--<?php echo esc_attr( $bbai_plan_id ); ?>" data-bbai-plan-card="<?php echo esc_attr( $bbai_plan_id ); ?>">
-							<div class="bbai-pricing-card__badges">
-								<span class="bbai-pricing-card__badge bbai-pricing-card__badge--<?php echo esc_attr( $bbai_plan_id ); ?>"><?php echo esc_html( $bbai_plan_badge ); ?></span>
-								<?php if ( $bbai_plan_is_current ) : ?>
-									<span class="bbai-pricing-card__status"><?php esc_html_e( 'Current plan', 'beepbeep-ai-alt-text-generator' ); ?></span>
-								<?php endif; ?>
-							</div>
-							<div class="bbai-pricing-card__intro">
-								<h3 class="bbai-pricing-card__title"><?php echo esc_html( $bbai_plan['name'] ); ?></h3>
-								<p class="bbai-pricing-card__descriptor"><?php echo esc_html( $bbai_plan['description'] ); ?></p>
-							</div>
-							<ul class="bbai-pricing-card__features">
-								<?php foreach ( $bbai_plan_feature_list as $bbai_plan_feature ) : ?>
-									<li>
-										<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-											<path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-										</svg>
-										<?php echo esc_html( $bbai_plan_feature ); ?>
-									</li>
-								<?php endforeach; ?>
-							</ul>
-							<div class="bbai-pricing-card__footer">
-								<div class="bbai-pricing-card__price-stack">
-									<div class="bbai-pricing-card__price"><span class="bbai-pricing-card__amount"><?php echo esc_html( $bbai_plan_price ); ?></span></div>
-									<div class="bbai-pricing-card__limit">
-										<?php
-										echo esc_html(
-											'credits' === $bbai_plan_id
-												? sprintf( __( '%s one-time credits', 'beepbeep-ai-alt-text-generator' ), number_format_i18n( $bbai_plan_credits ) )
-												: sprintf( __( '%s credits/month', 'beepbeep-ai-alt-text-generator' ), number_format_i18n( $bbai_plan_credits ) )
-										);
-										?>
-									</div>
-								</div>
-								<?php if ( $bbai_modal_signup_first ) : ?>
-									<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn" data-action="show-auth-modal" data-auth-tab="register"><?php echo esc_html( $bbai_upgrade_cta_resolved['primary_label'] ); ?></button>
-								<?php elseif ( $bbai_plan_is_current && $bbai_can_manage_subscription ) : ?>
-									<a href="<?php echo esc_url( $bbai_billing_url ); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn"><?php esc_html_e( 'Manage Subscription', 'beepbeep-ai-alt-text-generator' ); ?></a>
-								<?php elseif ( $bbai_plan_is_current ) : ?>
-									<button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn" disabled><?php esc_html_e( 'Current plan', 'beepbeep-ai-alt-text-generator' ); ?></button>
-								<?php else : ?>
-									<button type="button" class="bbai-btn <?php echo 'credits' === $bbai_plan_id ? 'bbai-btn-secondary' : 'bbai-btn-primary'; ?> bbai-btn-lg bbai-btn-block bbai-pricing-card__btn" data-action="checkout-plan" data-plan="<?php echo esc_attr( $bbai_plan_checkout ); ?>" data-price-id="<?php echo esc_attr( $bbai_plan_price_id ); ?>" data-fallback-url="<?php echo esc_url( $bbai_stripe_links[ $bbai_plan_checkout ] ?? $bbai_stripe_links[ $bbai_plan_id ] ?? '' ); ?>">
-										<?php echo esc_html( $bbai_plan_cta_label ); ?>
-									</button>
-								<?php endif; ?>
-							</div>
-						</div>
-					<?php endforeach; ?>
-				</div>
-
-				<?php if ( false ) : ?>
 				<div class="bbai-upgrade-modal__compare-grid">
 					<div class="bbai-pricing-card bbai-pricing-card--free">
 						<div class="bbai-pricing-card__badges">
@@ -887,8 +572,6 @@ $bbai_show_agency_by_default   = $bbai_is_agency_plan;
 						</div>
 					</div>
 				</div>
-
-				<?php endif; ?>
 
 				<div class="bbai-upgrade-modal__footer-links bbai-upgrade-modal__footer-links--compare">
 					<button type="button" class="bbai-upgrade-modal__footer-link bbai-upgrade-modal__footer-link--muted" data-bbai-upgrade-close="1">

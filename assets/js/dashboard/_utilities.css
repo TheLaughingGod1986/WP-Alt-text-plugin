@@ -1,0 +1,178 @@
+/**
+ * Dashboard Utilities
+ * Helper classes and animations
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Gradient Text */
+.bbai-gradient-text {
+    background: var(--bbai-gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Animation Utilities */
+.bbai-pulse {
+    animation: bbai-pulse 2s ease-in-out infinite;
+}
+
+.bbai-spin {
+    animation: bbai-rotate 2s linear infinite;
+}
+
+.bbai-shake {
+    animation: bbai-shake 0.5s ease-in-out;
+}
+
+@keyframes bbai-shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Visibility */
+.hidden {
+    display: none !important;
+}
+
+.screen-reader-text {
+    clip: rect(1px, 1px, 1px, 1px);
+    word-wrap: normal !important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    position: absolute !important;
+}
+
+/* Progress Status */
+.bbai-dashboard__status {
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-spacing-lg);
+    box-shadow: var(--bbai-shadow-md);
+    margin-top: var(--bbai-spacing-xl);
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-dashboard__status.processing {
+    background: var(--bbai-gradient-3);
+    color: white;
+    font-weight: 700;
+    animation: bbai-pulse 1.5s ease-in-out infinite;
+}
+
+.bbai-dashboard__status.success {
+    background: var(--bbai-gradient-4);
+    color: white;
+    font-weight: 700;
+    animation: bbai-celebration 0.6s ease-out;
+}
+
+.bbai-dashboard__status.error {
+    background: var(--bbai-gradient-2);
+    color: white;
+    font-weight: 700;
+}
+
+/* Loading States */
+.bbai-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--bbai-spacing-xl);
+}
+
+.bbai-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--bbai-light-gray);
+    border-top-color: var(--bbai-purple);
+    border-radius: 50%;
+    animation: bbai-rotate 1s linear infinite;
+    margin-bottom: var(--bbai-spacing-md);
+}
+
+.bbai-loading-text {
+    color: var(--bbai-gray);
+    font-weight: 600;
+}
+
+/* Toast Notifications */
+.bbai-toast-container {
+    position: fixed;
+    top: 100px;
+    right: var(--bbai-spacing-xl);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-spacing-sm);
+    max-width: 400px;
+}
+
+.bbai-toast {
+    background: white;
+    padding: var(--bbai-spacing-md) var(--bbai-spacing-lg);
+    border-radius: var(--bbai-radius-lg);
+    box-shadow: var(--bbai-shadow-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-spacing-md);
+    animation: bbai-toast-in 0.3s ease-out;
+    border-left: 4px solid var(--bbai-purple);
+}
+
+.bbai-toast.success { border-left-color: var(--bbai-green); }
+.bbai-toast.error { border-left-color: var(--bbai-pink); }
+.bbai-toast.warning { border-left-color: var(--bbai-orange); }
+
+@keyframes bbai-toast-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.bbai-toast-icon {
+    font-size: 1.5rem;
+}
+
+.bbai-toast-content {
+    flex: 1;
+}
+
+.bbai-toast-title {
+    font-weight: 700;
+    color: var(--bbai-dark);
+    margin-bottom: 2px;
+}
+
+.bbai-toast-message {
+    font-size: 0.875rem;
+    color: var(--bbai-gray);
+}
+
+.bbai-toast-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--bbai-gray);
+    cursor: pointer;
+    padding: var(--bbai-spacing-xs);
+    line-height: 1;
+}
+
+.bbai-toast-close:hover {
+    color: var(--bbai-dark);
+}

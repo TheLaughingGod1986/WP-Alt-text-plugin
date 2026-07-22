@@ -1,0 +1,489 @@
+/**
+ * Dashboard Polish - High-End Professional Refinements
+ * Subtle animations, refined typography, and premium spacing
+ */
+
+/* ============================================
+   PREMIUM METRICS GRID - Enhanced Spacing & Animation
+   ============================================ */
+
+.bbai-premium-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+    animation: bbai-fade-in-up 0.6s var(--bbai-ease-out) backwards;
+}
+
+.bbai-premium-metrics-grid > *:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.bbai-premium-metrics-grid > *:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.bbai-premium-metrics-grid > *:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@media (max-width: 768px) {
+    .bbai-premium-metrics-grid {
+        grid-template-columns: 1fr;
+        gap: var(--bbai-space-5);
+    }
+}
+
+/* ============================================
+   METRIC CARD - Premium Polish
+   ============================================ */
+
+.bbai-metric-card {
+    background: var(--bbai-bg);
+    border: 1px solid var(--bbai-border);
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-7) var(--bbai-space-6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+}
+
+/* Metric Placeholder - Empty State */
+.bbai-metric-placeholder {
+    font-size: var(--bbai-text-3xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text-muted);
+    opacity: 0.5;
+    letter-spacing: 0.05em;
+}
+
+/* Usage Onboarding State - Compact */
+.bbai-usage-onboarding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--bbai-space-4) var(--bbai-space-3);
+    margin: var(--bbai-space-3) 0;
+}
+
+.bbai-usage-onboarding-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--bbai-space-2);
+    color: var(--bbai-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-usage-onboarding-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin: 0 0 var(--bbai-space-1) 0;
+    line-height: 1.3;
+}
+
+.bbai-usage-onboarding-description {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    margin: 0;
+    line-height: 1.5;
+    max-width: 240px;
+}
+
+.bbai-metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--bbai-primary-gradient);
+    opacity: 0;
+    transition: opacity var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-metric-card:hover {
+    border-color: var(--bbai-primary);
+    box-shadow: var(--bbai-shadow-lg);
+    transform: translateY(-4px);
+    background: var(--bbai-bg);
+}
+
+.bbai-metric-card:hover::before {
+    opacity: 1;
+}
+
+.bbai-metric-card:active {
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   METRIC ICON - Refined Styling
+   ============================================ */
+
+.bbai-metric-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--bbai-primary-soft) 0%, rgba(16, 185, 129, 0.1) 100%);
+    border-radius: var(--bbai-radius-xl);
+    color: var(--bbai-primary);
+    margin-bottom: var(--bbai-space-5);
+    position: relative;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-spring);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.bbai-metric-card:hover .bbai-metric-icon {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+    background: linear-gradient(135deg, var(--bbai-primary-soft) 0%, rgba(16, 185, 129, 0.15) 100%);
+}
+
+.bbai-metric-icon svg {
+    width: 24px;
+    height: 24px;
+    transition: transform var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-metric-card:hover .bbai-metric-icon svg {
+    transform: scale(1.1);
+}
+
+/* ============================================
+   METRIC VALUE - Premium Typography
+   ============================================ */
+
+.bbai-metric-value {
+    font-size: var(--bbai-text-4xl);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text);
+    line-height: var(--bbai-leading-none);
+    margin-bottom: var(--bbai-space-3);
+    letter-spacing: var(--bbai-tracking-tighter);
+    background: linear-gradient(135deg, var(--bbai-text) 0%, var(--bbai-text-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+    position: relative;
+}
+
+.bbai-metric-card:hover .bbai-metric-value {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, var(--bbai-primary) 0%, var(--bbai-primary-hover) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Fallback for browsers that don't support background-clip */
+@supports not (-webkit-background-clip: text) {
+    .bbai-metric-value {
+        background: none;
+        -webkit-text-fill-color: var(--bbai-text);
+        color: var(--bbai-text);
+    }
+    
+    .bbai-metric-card:hover .bbai-metric-value {
+        color: var(--bbai-primary);
+    }
+}
+
+/* ============================================
+   METRIC LABEL - Refined Typography
+   ============================================ */
+
+.bbai-metric-label {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-bold);
+    color: var(--bbai-text-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--bbai-tracking-wide);
+    margin-bottom: var(--bbai-space-2);
+    line-height: var(--bbai-leading-tight);
+    transition: color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-metric-card:hover .bbai-metric-label {
+    color: var(--bbai-text-secondary);
+}
+
+/* Help icon within label */
+.bbai-metric-label .bbai-help-icon {
+    margin-left: var(--bbai-space-2);
+    opacity: 0.6;
+    transition: opacity var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-metric-label .bbai-help-icon:hover {
+    opacity: 1;
+}
+
+.bbai-metric-sublabel {
+    font-size: var(--bbai-text-xs);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-muted);
+    margin-top: var(--bbai-space-1);
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ============================================
+   METRIC DESCRIPTION - Subtle Styling
+   ============================================ */
+
+.bbai-metric-description {
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+    line-height: var(--bbai-leading-relaxed);
+    margin-top: var(--bbai-space-2);
+    transition: color var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-metric-card:hover .bbai-metric-description {
+    color: var(--bbai-text-secondary);
+}
+
+/* ============================================
+   PREMIUM STATS GRID - Enhanced Layout
+   ============================================ */
+
+.bbai-premium-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--bbai-space-6);
+    margin-bottom: var(--bbai-space-8);
+    animation: bbai-fade-in 0.4s var(--bbai-ease-out) backwards;
+}
+
+.bbai-premium-stats-grid--single {
+    grid-template-columns: 1fr;
+}
+
+@media (max-width: 1024px) {
+    .bbai-premium-stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   USAGE CARD - Refined Spacing
+   ============================================ */
+
+.bbai-usage-card {
+    padding: var(--bbai-space-7) var(--bbai-space-6);
+}
+
+.bbai-usage-card-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-5);
+    line-height: var(--bbai-leading-snug);
+    letter-spacing: var(--bbai-tracking-tight);
+    text-transform: uppercase;
+}
+
+/* ============================================
+   UPSELL CARD - Enhanced Polish
+   ============================================ */
+
+.bbai-upsell-card {
+    position: relative;
+    overflow: hidden;
+    animation: bbai-fade-in-scale 0.5s var(--bbai-ease-out) backwards;
+    animation-delay: 0.2s;
+}
+
+.bbai-upsell-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: bbai-shimmer 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+.bbai-upsell-title {
+    font-size: var(--bbai-text-2xl);
+    font-weight: var(--bbai-font-bold);
+    line-height: var(--bbai-leading-tight);
+    letter-spacing: var(--bbai-tracking-tight);
+    margin-bottom: var(--bbai-space-5);
+    position: relative;
+    z-index: 1;
+}
+
+.bbai-upsell-features {
+    margin-bottom: var(--bbai-space-6);
+    position: relative;
+    z-index: 1;
+}
+
+.bbai-upsell-features li {
+    margin-bottom: var(--bbai-space-3);
+    transition: transform var(--bbai-transition-fast) var(--bbai-ease-out);
+}
+
+.bbai-upsell-features li:hover {
+    transform: translateX(4px);
+}
+
+/* ============================================
+   INFO NOTICE - Refined Styling
+   ============================================ */
+
+.bbai-info-notice {
+    padding: var(--bbai-space-5) var(--bbai-space-6);
+    border-radius: var(--bbai-radius-xl);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-4);
+    margin-top: var(--bbai-space-6);
+    animation: bbai-fade-in-up 0.5s var(--bbai-ease-out) backwards;
+    animation-delay: 0.4s;
+    transition: all var(--bbai-transition-base) var(--bbai-ease-out);
+}
+
+.bbai-info-notice:hover {
+    box-shadow: var(--bbai-shadow-sm);
+    transform: translateY(-2px);
+}
+
+.bbai-info-notice svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    animation: bbai-pulse 2s ease-in-out infinite;
+}
+
+.bbai-info-notice span {
+    line-height: var(--bbai-leading-relaxed);
+    font-size: var(--bbai-text-sm);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes bbai-fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bbai-fade-in-scale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes bbai-shimmer {
+    0%, 100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+    50% {
+        transform: translate(30%, 30%) rotate(180deg);
+    }
+}
+
+@keyframes bbai-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* ============================================
+   RESPONSIVE REFINEMENTS
+   ============================================ */
+
+@media (max-width: 640px) {
+    .bbai-metric-card {
+        padding: var(--bbai-space-6) var(--bbai-space-5);
+    }
+    
+    .bbai-metric-icon {
+        width: 48px;
+        height: 48px;
+        margin-bottom: var(--bbai-space-4);
+    }
+    
+    .bbai-metric-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .bbai-metric-value {
+        font-size: var(--bbai-text-3xl);
+    }
+    
+    .bbai-upsell-title {
+        font-size: var(--bbai-text-xl);
+    }
+}
+
+/* ============================================
+   DARK MODE ENHANCEMENTS
+   ============================================ */
+
+[data-theme="dark"] .bbai-metric-card,
+.bbai-dark-mode .bbai-metric-card {
+    background: var(--bbai-bg-secondary);
+    border-color: var(--bbai-border);
+}
+
+[data-theme="dark"] .bbai-metric-card:hover,
+.bbai-dark-mode .bbai-metric-card:hover {
+    border-color: var(--bbai-primary);
+    background: var(--bbai-bg);
+}
+
+[data-theme="dark"] .bbai-metric-icon,
+.bbai-dark-mode .bbai-metric-icon {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+[data-theme="dark"] .bbai-metric-value,
+.bbai-dark-mode .bbai-metric-value {
+    background: linear-gradient(135deg, var(--bbai-text) 0%, var(--bbai-text-secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+@supports not (-webkit-background-clip: text) {
+    [data-theme="dark"] .bbai-metric-value,
+    .bbai-dark-mode .bbai-metric-value {
+        background: none;
+        -webkit-text-fill-color: var(--bbai-text);
+        color: var(--bbai-text);
+    }
+}

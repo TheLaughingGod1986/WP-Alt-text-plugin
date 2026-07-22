@@ -1,0 +1,193 @@
+/**
+ * Error Handling Styles
+ * User-friendly error messages, retry buttons, help links
+ */
+
+/* Error Container */
+.bbai-error-container {
+    padding: var(--bbai-space-6);
+    background: #fef2f2;
+    border: 1px solid var(--bbai-error);
+    border-radius: var(--bbai-radius-lg);
+    margin-bottom: var(--bbai-space-6);
+}
+
+.bbai-error-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-3);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-error-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    color: var(--bbai-error);
+}
+
+.bbai-error-title {
+    font-size: var(--bbai-text-lg);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-error-message {
+    font-size: var(--bbai-text-base);
+    color: var(--bbai-text-muted);
+    line-height: 1.6;
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-error-solution {
+    padding: var(--bbai-space-4);
+    background: white;
+    border-radius: var(--bbai-radius);
+    border-left: 4px solid var(--bbai-primary);
+    margin-bottom: var(--bbai-space-4);
+}
+
+.bbai-error-solution-title {
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+    color: var(--bbai-text);
+    margin-bottom: var(--bbai-space-2);
+}
+
+.bbai-error-solution-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.bbai-error-solution-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) 0;
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-text-muted);
+}
+
+.bbai-error-solution-item::before {
+    content: '•';
+    color: var(--bbai-primary);
+    font-weight: var(--bbai-font-bold);
+    margin-right: var(--bbai-space-1);
+}
+
+.bbai-error-actions {
+    display: flex;
+    gap: var(--bbai-space-3);
+    flex-wrap: wrap;
+}
+
+.bbai-error-retry {
+    background: var(--bbai-error);
+    color: white;
+    border: none;
+    padding: var(--bbai-space-3) var(--bbai-space-6);
+    border-radius: var(--bbai-radius-lg);
+    font-weight: var(--bbai-font-semibold);
+    cursor: pointer;
+    transition: all var(--bbai-transition-fast);
+}
+
+.bbai-error-retry:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.bbai-error-help-link {
+    color: var(--bbai-primary);
+    text-decoration: none;
+    font-weight: var(--bbai-font-medium);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    transition: color var(--bbai-transition-fast);
+}
+
+.bbai-error-help-link:hover {
+    color: var(--bbai-primary-hover);
+    text-decoration: underline;
+}
+
+/* Inline Error */
+.bbai-inline-error {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    padding: var(--bbai-space-2) var(--bbai-space-3);
+    background: #fef2f2;
+    border-left: 3px solid var(--bbai-error);
+    border-radius: var(--bbai-radius);
+    font-size: var(--bbai-text-sm);
+    color: var(--bbai-error);
+    margin-top: var(--bbai-space-2);
+}
+
+.bbai-inline-error svg {
+    flex-shrink: 0;
+}
+
+/* Error Modal */
+.bbai-error-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--bbai-transition-base);
+}
+
+.bbai-error-modal.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.bbai-error-modal-content {
+    background: white;
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-space-8);
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    transform: scale(0.95);
+    transition: transform var(--bbai-transition-base);
+}
+
+.bbai-error-modal.show .bbai-error-modal-content {
+    transform: scale(1);
+}
+
+/* Error Toast (uses toast system) */
+.bbai-toast--error {
+    border-left-color: var(--bbai-error);
+}
+
+/* Dark Mode */
+[data-theme="dark"] .bbai-error-container,
+.bbai-dark-mode .bbai-error-container {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--bbai-error);
+}
+
+[data-theme="dark"] .bbai-error-solution,
+.bbai-dark-mode .bbai-error-solution {
+    background: var(--bbai-gray-800);
+}
+
+[data-theme="dark"] .bbai-inline-error,
+.bbai-dark-mode .bbai-inline-error {
+    background: rgba(239, 68, 68, 0.1);
+    border-left-color: var(--bbai-error);
+}
