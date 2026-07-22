@@ -1,9 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-// Skips when BBAI_E2E_BASE_URL is unset (default clone / CI without WP).
-const BASE = process.env.BBAI_E2E_BASE_URL || 'http://localhost:8888';
-const ADMIN_USER = process.env.BBAI_E2E_ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.BBAI_E2E_ADMIN_PASS || 'password';
+const BASE = 'http://localhost:8888';
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'password';
 
 async function login(page: any) {
   await page.goto(`${BASE}/wp-admin/`, { waitUntil: 'domcontentloaded' });
@@ -19,7 +18,6 @@ async function login(page: any) {
 }
 
 test('Phase 1 validation: Library vs Dashboard stability', async ({ page }) => {
-  test.skip(!process.env.BBAI_E2E_BASE_URL, 'Set BBAI_E2E_BASE_URL to your local WP base (no trailing slash)');
   test.setTimeout(90_000);
   const consoleLines: string[] = [];
   page.on('console', (msg: any) => consoleLines.push(msg.text()));

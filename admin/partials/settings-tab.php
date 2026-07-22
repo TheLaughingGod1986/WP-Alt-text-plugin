@@ -271,20 +271,6 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 			<!-- Settings Page -->
 			<div class="bbai-container bbai-settings-page">
 				<?php
-				// nAi redesign — surface the design-language summary above the
-				// legacy settings form. Form handling/data remain entirely on
-				// the existing form below; this is presentation-only.
-				$bbai_nai_settings_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-settings.php';
-				if (
-					apply_filters( 'bbai_use_nai_dashboard', true )
-					&& 'general' === (string) $bbai_settings_section
-					&& is_readable( $bbai_nai_settings_partial )
-				) {
-					require $bbai_nai_settings_partial;
-					return;
-				}
-				?>
-				<?php
 					// Pull fresh usage from backend to avoid stale cache in Settings
 				if ( isset( $this->api_client ) ) {
 					$bbai_live = $this->api_client->get_usage();
@@ -294,123 +280,35 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 					$bbai_usage_box = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display();
 					$bbai_o         = wp_parse_args( $opts, array() );
 
-						if ( ! class_exists( \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::class, false ) ) {
-							$bbai_plan_helpers_file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
-							if ( is_readable( $bbai_plan_helpers_file ) ) {
-								require_once $bbai_plan_helpers_file;
-							}
-						}
-
-						// Check for license plan first, but do not let stale paid labels beat live quota data.
+					// Check for license plan first
 					$bbai_license_data = $this->api_client->get_license_data();
-					$bbai_used_credits = intval( $bbai_usage_box['used'] ?? 0 );
-					$bbai_total_credits = intval( $bbai_usage_box['limit'] ?? 0 );
-					$bbai_plan = sanitize_key( (string) ( $bbai_usage_box['plan_slug'] ?? $bbai_usage_box['plan'] ?? 'free' ) );
-					$bbai_paid_plan_slugs = array( 'starter', 'growth', 'pro', 'agency', 'enterprise' );
-					$bbai_autopilot_plan_slugs = array( 'growth', 'pro', 'agency', 'enterprise' );
-					$bbai_min_limits = array(
-						'starter'    => 100,
-						'growth'     => 1000,
-						'pro'        => 1000,
-						'agency'     => 1000,
-						'enterprise' => 1000,
-					);
-					$bbai_normalize_plan = static function ( $plan_slug, $limit ) use ( $bbai_min_limits ) {
-						$plan_slug = sanitize_key( (string) $plan_slug );
-						if ( '' === $plan_slug ) {
-							return 'free';
-						}
-						if ( 'pro' === $plan_slug ) {
-							$plan_slug = 'growth';
-						}
-						if ( isset( $bbai_min_limits[ $plan_slug ] ) && $limit > 0 && $limit < $bbai_min_limits[ $plan_slug ] ) {
-							return 'free';
-						}
-						return $plan_slug;
-					};
-					$bbai_has_paid_signal = static function ( $source ) {
-						if ( ! is_array( $source ) ) {
-							return false;
-						}
-						foreach ( array( 'stripe_subscription_id', 'subscription_id', 'current_period_end', 'billing_interval' ) as $key ) {
-							if ( ! empty( $source[ $key ] ) ) {
-								return true;
-							}
-						}
-						$status = strtolower( (string) ( $source['status'] ?? $source['subscription_status'] ?? '' ) );
-						return in_array( $status, array( 'active', 'trialing', 'past_due' ), true );
-					};
-						$bbai_has_active_subscription = null;
-						$bbai_has_active_subscription = static function ( $source ) use ( &$bbai_has_active_subscription ) {
-						if ( ! is_array( $source ) ) {
-							return false;
-						}
-						$status = strtolower( (string) ( $source['status'] ?? $source['subscription_status'] ?? '' ) );
-						$has_id = ! empty( $source['stripe_subscription_id'] ) || ! empty( $source['subscription_id'] );
-						if ( $has_id && ( '' === $status || in_array( $status, array( 'active', 'trialing', 'past_due' ), true ) ) ) {
-							return true;
-						}
-						foreach ( array( 'billing', 'subscription', 'current_subscription', 'entitlement_state', 'organization' ) as $nested_key ) {
-							if ( isset( $source[ $nested_key ] ) && $bbai_has_active_subscription( $source[ $nested_key ] ) ) {
-								return true;
-							}
-						}
-						return false;
-					};
 
-				if ( class_exists( \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::class ) && method_exists( \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::class, 'get_plan_data' ) ) {
-					$bbai_plan_data = \BeepBeepAI\AltTextGenerator\Admin\Plan_Helpers::get_plan_data( $bbai_live ?? array() );
-					if ( ! empty( $bbai_plan_data['plan_slug'] ) ) {
-						$bbai_plan = sanitize_key( (string) $bbai_plan_data['plan_slug'] );
-					}
-				}
+				$bbai_plan = $bbai_usage_box['plan'] ?? 'free';
 
+				// If license is active, use license plan
 				if ( $bbai_has_license && $bbai_license_data && isset( $bbai_license_data['organization'] ) ) {
-					$bbai_license_plan = sanitize_key( (string) ( $bbai_license_data['organization']['plan'] ?? 'free' ) );
-					if ( 'pro' === $bbai_license_plan ) {
-						$bbai_license_plan = 'growth';
-					}
-					if (
-						in_array( $bbai_license_plan, $bbai_paid_plan_slugs, true )
-						&& (
-							$bbai_has_paid_signal( $bbai_license_data )
-							|| $bbai_has_paid_signal( $bbai_license_data['organization'] )
-							|| ( isset( $bbai_min_limits[ $bbai_license_plan ] ) && $bbai_total_credits >= $bbai_min_limits[ $bbai_license_plan ] )
-						)
-					) {
+					$bbai_license_plan = strtolower( $bbai_license_data['organization']['plan'] ?? 'free' );
+					if ( 'free' !== $bbai_license_plan ) {
 						$bbai_plan = $bbai_license_plan;
 					}
 				}
 
-				$bbai_plan = $bbai_normalize_plan( $bbai_plan, $bbai_total_credits );
-				$bbai_is_paid_plan = in_array( $bbai_plan, $bbai_paid_plan_slugs, true );
-				$bbai_is_pro = in_array( $bbai_plan, array( 'growth', 'pro' ), true );
-				$bbai_is_agency = in_array( $bbai_plan, array( 'agency', 'enterprise' ), true );
-				$bbai_is_growth_plan = ( $bbai_is_pro || $bbai_is_agency );
-				$bbai_can_use_upload_generation = in_array( $bbai_plan, $bbai_autopilot_plan_slugs, true );
-				if (
-					$bbai_can_use_upload_generation
-					&& method_exists( $this, 'current_account_can_use_upload_generation' )
-					&& ! $this->current_account_can_use_upload_generation()
-				) {
-					$bbai_can_use_upload_generation = false;
-				}
+				$bbai_is_pro                    = ( 'pro' === $bbai_plan || 'growth' === $bbai_plan );
+				$bbai_is_agency                 = 'agency' === $bbai_plan;
+				$bbai_is_growth_plan            = ( $bbai_is_pro || $bbai_is_agency );
+				$bbai_can_use_upload_generation = method_exists( $this, 'current_account_can_use_upload_generation' )
+					? $this->current_account_can_use_upload_generation()
+					: $bbai_is_growth_plan;
 				if ( ! $bbai_can_use_upload_generation ) {
 					$bbai_o['enable_on_upload'] = false;
 				}
 
-				$bbai_has_stripe_subscription = $bbai_has_active_subscription( $bbai_live ?? array() ) || $bbai_has_active_subscription( $bbai_usage_box ) || $bbai_has_active_subscription( $bbai_license_data ?? array() );
-				$bbai_autopilot_upgrade_variant = $bbai_is_paid_plan ? 'growth' : 'starter';
-				$bbai_plan_labels = array(
-					'free'       => esc_html__( 'Free', 'beepbeep-ai-alt-text-generator' ),
-					'starter'    => esc_html__( 'Starter', 'beepbeep-ai-alt-text-generator' ),
-					'growth'     => esc_html__( 'Growth', 'beepbeep-ai-alt-text-generator' ),
-					'pro'        => esc_html__( 'Growth', 'beepbeep-ai-alt-text-generator' ),
-					'agency'     => esc_html__( 'Agency', 'beepbeep-ai-alt-text-generator' ),
-					'enterprise' => esc_html__( 'Enterprise', 'beepbeep-ai-alt-text-generator' ),
-				);
-				$bbai_plan_label = $bbai_plan_labels[ $bbai_plan ] ?? esc_html__( 'Free', 'beepbeep-ai-alt-text-generator' );
-				$bbai_advanced_controls_coming_soon = true;
+				$bbai_plan_label = $bbai_is_growth_plan
+					? esc_html__( 'Growth', 'beepbeep-ai-alt-text-generator' )
+					: esc_html__( 'Free', 'beepbeep-ai-alt-text-generator' );
+
+				$bbai_used_credits  = intval( $bbai_usage_box['used'] ?? 0 );
+				$bbai_total_credits = intval( $bbai_usage_box['limit'] ?? 0 );
 
 				$bbai_reset_label     = esc_html__( 'Monthly', 'beepbeep-ai-alt-text-generator' );
 				$bbai_reset_raw       = $bbai_usage_box['reset_date'] ?? '';
@@ -533,8 +431,8 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 						</div>
 						<?php endif; ?>
 					</div>
-					<?php if ( ! $bbai_can_use_upload_generation ) : ?>
-					<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-pricing-variant="<?php echo esc_attr( $bbai_autopilot_upgrade_variant ); ?>" data-bbai-tooltip="<?php esc_attr_e( 'Upgrade for automation, bulk optimisation, and higher monthly limits', 'beepbeep-ai-alt-text-generator' ); ?>" data-bbai-tooltip-position="bottom">
+					<?php if ( ! $bbai_is_growth_plan ) : ?>
+					<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e( 'Automation, bulk optimisation, and higher monthly limits', 'beepbeep-ai-alt-text-generator' ); ?>" data-bbai-tooltip-position="bottom">
 						<?php esc_html_e( 'Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator' ); ?>
 					</button>
 					<?php endif; ?>
@@ -552,16 +450,9 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 						<h3 class="bbai-settings-card-title"><?php esc_html_e( 'Account Management', 'beepbeep-ai-alt-text-generator' ); ?></h3>
 					</div>
 					
-					<?php if ( ! $bbai_is_paid_plan ) : ?>
+					<?php if ( ! $bbai_is_pro && ! $bbai_is_agency ) : ?>
 					<div class="bbai-settings-account-info-banner">
-						<span><?php esc_html_e( 'Subscription tools appear after upgrading.', 'beepbeep-ai-alt-text-generator' ); ?></span>
-						<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="show-upgrade-modal" data-bbai-pricing-variant="starter">
-							<?php esc_html_e( 'Choose a plan', 'beepbeep-ai-alt-text-generator' ); ?>
-						</button>
-					</div>
-					<?php elseif ( ! $bbai_has_stripe_subscription ) : ?>
-					<div class="bbai-settings-account-info-banner">
-						<span><?php esc_html_e( 'This paid access is active, but no Stripe subscription is linked to this WordPress account.', 'beepbeep-ai-alt-text-generator' ); ?></span>
+						<span><?php esc_html_e( 'Subscription tools appear here after upgrading to Growth.', 'beepbeep-ai-alt-text-generator' ); ?></span>
 					</div>
 					<?php else : ?>
 						<?php
@@ -649,26 +540,16 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 										<?php esc_html_e( 'Auto-generate alt text on image upload', 'beepbeep-ai-alt-text-generator' ); ?>
 									</span>
 									<p class="bbai-settings-form-description">
-										<?php esc_html_e( 'Upload automation is available on Growth. Free and Starter users can still generate ALT text manually from the ALT Library.', 'beepbeep-ai-alt-text-generator' ); ?>
+										<?php esc_html_e( 'Upload automation is available on paid plans. Free users can still generate ALT text manually from the ALT Library.', 'beepbeep-ai-alt-text-generator' ); ?>
 									</p>
 								</div>
-								<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="show-upgrade-modal" data-bbai-pricing-variant="<?php echo esc_attr( $bbai_autopilot_upgrade_variant ); ?>">
-									<?php echo esc_html( $bbai_is_paid_plan ? __( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' ) : __( 'Choose a plan', 'beepbeep-ai-alt-text-generator' ) ); ?>
+								<button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-action="show-upgrade-modal">
+									<?php esc_html_e( 'Upgrade', 'beepbeep-ai-alt-text-generator' ); ?>
 								</button>
 							</div>
 						</div>
 						<?php endif; ?>
 
-						<div class="bbai-settings-advanced-writing" style="position:relative;">
-							<?php if ( $bbai_advanced_controls_coming_soon ) : ?>
-								<div class="bbai-settings-coming-soon" style="position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.68);border:1px solid rgba(148,163,184,0.28);border-radius:16px;text-align:center;">
-									<div style="max-width:360px;padding:16px 20px;border-radius:14px;background:#fff;box-shadow:0 16px 40px rgba(15,23,42,0.12);">
-										<strong style="display:block;margin-bottom:6px;"><?php esc_html_e( 'Coming soon', 'beepbeep-ai-alt-text-generator' ); ?></strong>
-										<span><?php esc_html_e( 'Advanced writing controls are being finalized. New generations keep using the default descriptive style for now.', 'beepbeep-ai-alt-text-generator' ); ?></span>
-									</div>
-								</div>
-							<?php endif; ?>
-							<div style="<?php echo $bbai_advanced_controls_coming_soon ? 'opacity:.45;pointer-events:none;' : ''; ?>">
 						<div class="bbai-settings-form-group">
 							<label for="bbai-tone" class="bbai-settings-form-label" data-bbai-tooltip="Choose a style profile for generated alt text. This applies to all new AI descriptions." data-bbai-tooltip-position="right">
 								<?php esc_html_e( 'AI Description Style', 'beepbeep-ai-alt-text-generator' ); ?>
@@ -707,8 +588,6 @@ if ( ! $bbai_is_authenticated && ! $bbai_has_license ) :
 								placeholder="<?php esc_attr_e( 'Enter any specific instructions for the AI...', 'beepbeep-ai-alt-text-generator' ); ?>"
 								class="bbai-settings-form-textarea bbai-textarea"
 							><?php echo esc_textarea( $bbai_o['custom_prompt'] ?? '' ); ?></textarea>
-						</div>
-							</div>
 						</div>
 
 						<div class="bbai-settings-form-actions bbai-settings-form-actions--right">

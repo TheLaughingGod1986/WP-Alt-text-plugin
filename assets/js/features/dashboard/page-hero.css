@@ -1,0 +1,59 @@
+/**
+ * Shared admin page hero — semantic hooks on top of product-banner / command-hero.
+ * Markup: admin/partials/components/status-banner.php (classes .bbai-page-hero, __icon, __content, __actions, modifiers).
+ */
+
+/* Optional eyebrow (Analytics / future pages) */
+.bbai-command-hero-host .bbai-page-hero__eyebrow.bbai-banner__eyebrow,
+#bbai-dashboard-main .bbai-page-hero__eyebrow.bbai-banner__eyebrow {
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.bbai-page-hero__eyebrow[hidden] {
+    display: none !important;
+}
+
+/* Neutral = first-run / empty library: calmer than success green, not warning amber */
+.bbai-command-hero-host .bbai-page-hero--neutral.bbai-banner--success {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 52%, #ffffff 100%);
+    border-color: #e2e8f0;
+}
+
+.bbai-command-hero-host .bbai-page-hero--neutral .bbai-page-hero__icon.bbai-banner__icon {
+    color: #475569;
+    border-color: rgba(148, 163, 184, 0.22);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.bbai-command-hero-host .bbai-page-hero--info.bbai-banner--info {
+    border-color: #dbeafe;
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.05), transparent 38%),
+        linear-gradient(140deg, #fdfeff 0%, #f4f8ff 55%, #ffffff 100%);
+}
+
+.bbai-command-hero-host .bbai-page-hero--info .bbai-page-hero__icon.bbai-banner__icon {
+    color: #1d4ed8;
+    border-color: rgba(59, 130, 246, 0.22);
+    background: rgba(239, 246, 255, 0.95);
+}
+
+/* Title wrap: eyebrow + h1 stack */
+.bbai-command-hero-host .bbai-page-hero__title-wrap .bbai-page-hero__eyebrow + .bbai-banner__headline {
+    margin-top: 0;
+}
+
+/* Usage & Billing: shared page hero spacing above workspace grid */
+.bbai-usage-page-hero-host {
+    margin-bottom: var(--card-gap, 16px);
+}
+
+#bbai-usage-overview {
+    scroll-margin-top: 1.5rem;
+}

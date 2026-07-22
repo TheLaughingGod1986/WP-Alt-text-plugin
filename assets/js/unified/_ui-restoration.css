@@ -1,0 +1,1093 @@
+/**
+ * UI Restoration - Complete styling system for BeepBeep AI admin pages
+ * Restores polished SaaS design across Dashboard, ALT Library, Analytics, Credit Usage
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
+ */
+
+/* ============================================
+   GLOBAL DESIGN SYSTEM
+   ============================================ */
+
+.bbai-card,
+.bbai-dashboard-card,
+.bbai-analytics-card,
+.bbai-library-card,
+.bbai-credit-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-page-section {
+    margin-bottom: 24px;
+}
+
+.bbai-section {
+    margin-bottom: 28px;
+}
+
+/* Typography scale */
+.bbai-page-title,
+.bbai-dashboard-title,
+.bbai-library-title,
+.bbai-analytics-title,
+.bbai-credit-title,
+h1.bbai-heading,
+.bbai-heading-1 {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #111827;
+}
+
+.bbai-section-title,
+.bbai-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #111827;
+}
+
+.bbai-description,
+.bbai-subtitle,
+.bbai-page-subtitle {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+}
+
+.bbai-sub-label {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #6b7280;
+}
+
+/* Grid spacing */
+.bbai-grid {
+    gap: 24px;
+}
+
+/* Buttons */
+.bbai-btn,
+.bbai-action-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+/* ============================================
+   QUICK ACTIONS - Shared across all pages
+   ============================================ */
+
+.bbai-quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    align-items: stretch;
+}
+
+.bbai-quick-action-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    position: relative;
+}
+
+.bbai-quick-action-card:hover {
+    transform: translateY(-2px);
+    border-color: #d1d5db;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+}
+
+.bbai-quick-action-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: #f3f8f5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.bbai-quick-action-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 12px;
+    line-height: 1.3;
+}
+
+.bbai-quick-action-description {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+    margin: 0;
+}
+
+.bbai-quick-action-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 1024px) {
+    .bbai-quick-actions-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   DASHBOARD - Usage hero banner
+   Shared usage banner across Dashboard, Library, Analytics, Credit Usage
+   ============================================ */
+
+.bbai-usage-hero,
+.bbai-monthly-usage-summary,
+.bbai-usage-banner:not(.bbai-saas-banner) {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+}
+
+.bbai-usage-hero,
+.bbai-monthly-usage-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.bbai-usage-hero-content {
+    flex: 1;
+    min-width: 200px;
+}
+
+.bbai-usage-hero-cta {
+    flex-shrink: 0;
+}
+
+/* bbai-usage-banner structure (quota-exhausted-banner.php) - exclude .bbai-saas-banner */
+.bbai-usage-banner:not(.bbai-saas-banner),
+.bbai-usage-hero {
+    background: #eef5ff;
+    border: 1px solid #dbe7ff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+
+.bbai-usage-banner-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.bbai-usage-banner-copy {
+    flex: 1;
+}
+
+.bbai-usage-banner-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.2);
+    color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__headline {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__subline {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__cta {
+    background: #22c55e !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__cta:hover {
+    background: #16a34a !important;
+    transform: translateY(-1px);
+}
+
+.bbai-usage-progress {
+    margin-top: 16px;
+}
+
+.bbai-usage-progress .bbai-usage-banner__usage-text {
+    font-size: 13px;
+    color: #374151;
+    margin: 0 0 8px;
+}
+
+.bbai-usage-progress .bbai-usage-banner__usage-text strong {
+    font-weight: 600;
+}
+
+.bbai-usage-progress-bar,
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__progress {
+    height: 8px;
+    background: #dbe7ff;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.bbai-usage-progress-fill,
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #5b8df7, #6aa6ff);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.bbai-usage-banner:not(.bbai-saas-banner) .bbai-usage-banner__footer {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 8px 0 0;
+}
+
+/* ============================================
+   DASHBOARD - Donut / Alt Text Status
+   ============================================ */
+
+.bbai-status-donut-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.bbai-donut-chart {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    margin: 0 auto;
+}
+
+.bbai-donut-chart.bbai-circular-progress-container {
+    width: 260px;
+    height: 260px;
+}
+
+.bbai-donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.bbai-donut-value {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1;
+    color: #111827;
+}
+
+.bbai-donut-percent {
+    font-size: 14px;
+    opacity: 0.6;
+    margin-left: 2px;
+    vertical-align: super;
+}
+
+.bbai-donut-label {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.bbai-alt-status-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.bbai-status-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+.bbai-status-stats div strong,
+.bbai-alt-status-stat strong {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.bbai-status-stats div span,
+.bbai-alt-status-stat span {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Primary dashboard CTA - Scan Media Library */
+.bbai-primary-dashboard-cta {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.bbai-primary-dashboard-cta .button,
+.bbai-primary-dashboard-cta a,
+.bbai-scan-media-cta {
+    min-width: 280px;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(180deg, #5b8df7, #3b82f6);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 8px 18px rgba(59, 130, 246, 0.25);
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.15s ease;
+}
+
+.bbai-primary-dashboard-cta .button:hover,
+.bbai-primary-dashboard-cta a:hover,
+.bbai-scan-media-cta:hover {
+    background: linear-gradient(180deg, #4b7de7, #2563eb);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(59, 130, 246, 0.3);
+}
+
+/* ============================================
+   DASHBOARD - Upgrade to Growth card
+   ============================================ */
+
+.bbai-upgrade-card,
+.bbai-upgrade-growth-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: linear-gradient(180deg, #5b8df7 0%, #7bc6f2 100%);
+    border-radius: 16px;
+    color: #ffffff;
+    padding: 24px;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.2);
+    border: none;
+}
+
+.bbai-upgrade-card-body {
+    flex: 1;
+}
+
+.bbai-upgrade-card-footer {
+    margin-top: auto;
+}
+
+.bbai-feature-check,
+.bbai-benefit-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bbai-upgrade-button,
+.bbai-cta-primary[data-action="show-upgrade-modal"] {
+    background: #ffffff;
+    color: #111827;
+    border-radius: 999px;
+    padding: 14px 22px;
+    font-weight: 600;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.bbai-upgrade-button:hover,
+.bbai-cta-primary[data-action="show-upgrade-modal"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.bbai-upgrade-card .bbai-card-title,
+.bbai-upgrade-growth-card .bbai-card-title {
+    color: #ffffff;
+}
+
+.bbai-upgrade-card .bbai-benefits-list,
+.bbai-upgrade-growth-card .bbai-benefits-list,
+.bbai-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+}
+
+.bbai-feature-list li {
+    margin-bottom: 10px;
+}
+
+.bbai-upgrade-card .bbai-benefit-item,
+.bbai-upgrade-growth-card .bbai-benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: #ffffff;
+}
+
+/* ============================================
+   DASHBOARD - Stats cards row
+   ============================================ */
+
+.bbai-stats-cards-row,
+.bbai-performance-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    align-items: stretch;
+}
+
+.bbai-stats-cards-row .bbai-dashboard-card,
+.bbai-performance-metrics .bbai-dashboard-card {
+    text-align: center;
+}
+
+@media (max-width: 1024px) {
+    .bbai-stats-cards-row,
+    .bbai-performance-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-stats-cards-row,
+    .bbai-performance-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   ALT LIBRARY - Coverage card
+   ============================================ */
+
+.bbai-alt-coverage-card-inline,
+.bbai-alt-coverage-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.bbai-alt-coverage-stats,
+.bbai-alt-coverage-card__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    margin-bottom: 14px;
+}
+
+.bbai-alt-stat strong,
+.bbai-alt-coverage-card__stat-value {
+    display: block;
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.1;
+}
+
+.bbai-alt-stat span,
+.bbai-alt-coverage-card__stat-label {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.bbai-alt-success {
+    font-size: 13px;
+    color: #16a34a;
+    margin-top: 8px;
+}
+
+/* ============================================
+   ALT LIBRARY - Review filter pills
+   ============================================ */
+
+.bbai-alt-review-filters__btn,
+#bbai-review-filter-tabs .bbai-alt-review-filters__btn,
+.bbai-filter-pill {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bbai-alt-review-filters__btn:hover,
+.bbai-filter-pill:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.bbai-alt-review-filters__btn--active,
+.bbai-filter-pill--active {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: #ffffff;
+}
+
+#bbai-review-filter-tabs {
+    margin-top: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   ALT LIBRARY - Table
+   ============================================ */
+
+.bbai-library-table-wrapper {
+    margin-top: 24px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.bbai-library-table thead th,
+.bbai-saas-table.bbai-library-table thead th {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #374151;
+    background: #f9fafb;
+    padding: 12px 16px;
+}
+
+.bbai-library-table tbody tr:hover,
+.bbai-saas-table.bbai-library-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.bbai-alt-text-preview {
+    font-size: 13px;
+    line-height: 1.45;
+    color: #374151;
+}
+
+.bbai-alt-text-missing {
+    font-size: 12px;
+    color: #ef4444;
+    font-style: italic;
+}
+
+.bbai-library-table .bbai-library-thumbnail,
+.bbai-library-table .bbai-library-thumbnail-placeholder {
+    border-radius: 8px;
+}
+
+.bbai-library-table .bbai-library-thumbnail {
+    display: block;
+    object-fit: cover;
+}
+
+/* ============================================
+   CREDIT USAGE - Limit banner
+   ============================================ */
+
+.bbai-limit-banner {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    color: #9a3412;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.bbai-limit-banner strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* ============================================
+   CREDIT USAGE - Hero card + meter
+   ============================================ */
+
+.bbai-credit-usage-meter-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-credit-meter-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 16px;
+}
+
+.bbai-credit-usage-text,
+.bbai-credit-reset,
+.bbai-credit-helper {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 4px;
+}
+
+.bbai-credit-stat-card {
+    text-align: center;
+}
+
+.bbai-credit-stat-title {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.bbai-credit-stat-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.bbai-credit-upgrade-card .bbai-credit-upgrade-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 8px;
+}
+
+.bbai-credit-upgrade-card .bbai-credit-upgrade-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0 0 16px;
+}
+
+.bbai-credit-upgrade-card .bbai-credit-upgrade-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+}
+
+.bbai-credit-upgrade-card .bbai-credit-upgrade-features li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #ffffff;
+}
+
+.bbai-credit-upgrade-card .bbai-credit-upgrade-features li::before {
+    content: "✓";
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* ============================================
+   CREDIT USAGE - Credit bar
+   ============================================ */
+
+.bbai-credit-bar {
+    height: 8px;
+    background: #eef2f7;
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 12px 0 10px;
+}
+
+.bbai-credit-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4f8cff, #6aa6ff);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+/* ============================================
+   ANALYTICS - Metric cards
+   ============================================ */
+
+.bbai-analytics-metric-cards,
+.bbai-premium-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.bbai-analytics-metric-card,
+.bbai-metric-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-analytics-metric-card .bbai-stat-value,
+.bbai-metric-card .bbai-metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.bbai-metric-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #f3f8f5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 1024px) {
+    .bbai-analytics-metric-cards,
+    .bbai-premium-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .bbai-analytics-metric-cards,
+    .bbai-premium-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   ANALYTICS - Bottom row equal height
+   ============================================ */
+
+.bbai-analytics-bottom-row {
+    display: flex;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.bbai-analytics-bottom-row .bbai-dashboard-card {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+    .bbai-analytics-bottom-row {
+        flex-direction: column;
+    }
+}
+
+/* ============================================
+   SETTINGS PAGE - SaaS polish
+   ============================================ */
+
+.bbai-settings-page .bbai-settings-plan-summary-card,
+.bbai-settings-page .bbai-settings-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bbai-settings-saved-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    color: #166534;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.bbai-settings-saved-icon {
+    color: #22c55e;
+    font-weight: 700;
+}
+
+.bbai-settings-form-actions--right {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.bbai-settings-form-actions--right .bbai-cta-save {
+    background: #22c55e;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+}
+
+.bbai-settings-form-actions--right .bbai-cta-save:hover {
+    background: #16a34a;
+}
+
+.bbai-settings-card-description {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+    margin: 0 0 20px;
+}
+
+.bbai-settings-sitewide-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+}
+
+.bbai-settings-sitewide-icon {
+    flex-shrink: 0;
+}
+
+.bbai-settings-sitewide-content {
+    flex: 1;
+}
+
+.bbai-settings-sitewide-title {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 2px;
+}
+
+.bbai-settings-sitewide-text {
+    font-size: 13px;
+    color: #3b82f6;
+}
+
+/* ============================================
+   GUIDE PAGE - Step cards + CTA
+   ============================================ */
+
+.bbai-guide-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.bbai-guide-step-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.15s ease;
+}
+
+.bbai-guide-step-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.bbai-guide-step-icon {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 12px;
+    background: #f3f8f5;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.bbai-guide-step-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.bbai-guide-step-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bbai-guide-step-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px;
+    line-height: 1.3;
+}
+
+.bbai-guide-step-desc {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+    margin: 0 0 12px;
+}
+
+.bbai-guide-step-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+}
+
+.bbai-guide-step-bullets li {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.5;
+    padding-left: 20px;
+    position: relative;
+    margin-bottom: 6px;
+}
+
+.bbai-guide-step-bullets li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #10b981;
+    font-weight: 700;
+}
+
+.bbai-guide-step-cta {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.bbai-guide-cta-card {
+    text-align: center;
+    padding: 32px 24px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+}
+
+.bbai-guide-cta-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+.bbai-guide-cta-desc {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 20px;
+}
+
+.bbai-guide-cta-btn {
+    background: #22c55e;
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+}
+
+.bbai-guide-cta-btn:hover {
+    background: #16a34a;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .bbai-guide-step-card {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .bbai-guide-step-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+    }
+}

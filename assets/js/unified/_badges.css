@@ -1,0 +1,390 @@
+/**
+ * Badges - Premium SaaS Design
+ * Status indicators, plan badges, SEO grades
+ *
+ * @package BeepBeep_AI
+ * @since 8.0.0
+ */
+
+/* ============================================
+   BASE BADGE
+   ============================================ */
+
+.bbai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: var(--bbai-badge-padding-y) var(--bbai-badge-padding-x);
+    font-size: var(--bbai-badge-font-size);
+    font-weight: var(--bbai-badge-font-weight);
+    border-radius: var(--bbai-badge-radius);
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.bbai-badge svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+/* Badge variants */
+.bbai-badge-success {
+    background: var(--bbai-success-bg);
+    color: var(--bbai-success-dark);
+}
+
+.bbai-badge-warning {
+    background: var(--bbai-warning-bg);
+    color: var(--bbai-warning-dark);
+}
+
+.bbai-badge-error {
+    background: var(--bbai-error-bg);
+    color: var(--bbai-error);
+}
+
+.bbai-badge-info {
+    background: var(--bbai-info-bg);
+    color: var(--bbai-info-dark);
+}
+
+.bbai-badge-gray {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-600);
+}
+
+.bbai-badge-primary {
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary);
+}
+
+/* ============================================
+   PLAN BADGES
+   ============================================ */
+
+.bbai-usage-plan-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px; /* Consistent badge font size */
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    text-transform: uppercase;
+}
+
+.bbai-usage-plan-badge--free {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: #ffffff !important;
+}
+
+.bbai-usage-plan-badge--pro,
+.bbai-usage-plan-badge--growth {
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary);
+}
+
+.bbai-usage-plan-badge--agency {
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+/* Unified Badge Variants - Use with bbai-badge component */
+.bbai-badge--free {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+    color: #ffffff;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.bbai-badge--growth {
+    background: rgba(255, 255, 255, 0.95);
+    color: #3B82F6;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bbai-badge--pro {
+    background: var(--bbai-primary-soft);
+    color: var(--bbai-primary);
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+}
+
+.bbai-badge--agency {
+    background: #ede9fe;
+    color: #7c3aed;
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+}
+
+.bbai-badge--getting-started {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-600);
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+}
+
+/* Legacy compatibility - map old classes to new system */
+.bbai-badge-free {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.bbai-badge-growth {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    color: #1e293b;
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.bbai-upsell-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-space-1);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    padding: 6px 14px; /* Consistent plan badge padding */
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #1e293b;
+}
+
+.bbai-ready-optimise__badge {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-600);
+    padding: 6px 14px; /* Consistent plan badge padding */
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ============================================
+   STATUS BADGES
+   ============================================ */
+
+.bbai-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px; /* Consistent status badge padding */
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+.bbai-status-badge--optimized,
+.bbai-status-badge--success {
+    background: var(--bbai-success-bg);
+    color: var(--bbai-success-dark);
+}
+
+.bbai-status-badge--missing,
+.bbai-status-badge--warning {
+    background: var(--bbai-warning-bg);
+    color: var(--bbai-warning-dark);
+}
+
+.bbai-status-badge--regenerated,
+.bbai-status-badge--info {
+    background: var(--bbai-info-bg);
+    color: var(--bbai-info-dark);
+}
+
+.bbai-status-badge--error {
+    background: var(--bbai-error-bg);
+    color: var(--bbai-error);
+}
+
+.bbai-status-badge--pending {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-600);
+}
+
+/* ============================================
+   SEO UNIFIED BADGE
+   ============================================ */
+
+.bbai-seo-unified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px; /* Consistent status badge padding */
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 9999px;
+    white-space: nowrap;
+    cursor: help;
+    transition: transform var(--bbai-transition-fast) var(--bbai-ease-out);
+    border: 1px solid transparent;
+}
+
+.bbai-seo-unified-badge:hover {
+    transform: scale(1.03);
+}
+
+.bbai-seo-unified-badge__grade {
+    font-weight: var(--bbai-font-bold);
+}
+
+.bbai-seo-unified-badge__chars {
+    font-weight: var(--bbai-font-medium);
+    opacity: 0.85;
+}
+
+/* SEO Grade variants */
+.bbai-seo-unified-badge--excellent {
+    background: var(--bbai-success-bg);
+    color: #047857;
+    border-color: #6ee7b7;
+}
+
+.bbai-seo-unified-badge--good {
+    background: var(--bbai-info-bg);
+    color: #1d4ed8;
+    border-color: #93c5fd;
+}
+
+.bbai-seo-unified-badge--fair {
+    background: var(--bbai-warning-bg);
+    color: #92400e;
+    border-color: #fcd34d;
+}
+
+.bbai-seo-unified-badge--poor {
+    background: #ffedd5;
+    color: #c2410c;
+    border-color: #fdba74;
+}
+
+.bbai-seo-unified-badge--needs-work {
+    background: var(--bbai-error-bg);
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.bbai-seo-unified-badge--empty {
+    background: var(--bbai-gray-100);
+    color: var(--bbai-gray-400);
+    border-color: var(--bbai-gray-200);
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.bbai-progress {
+    height: 8px;
+    background: var(--bbai-gray-200);
+    border-radius: var(--bbai-radius-full);
+    overflow: hidden;
+}
+
+.bbai-progress-bar {
+    height: 100%;
+    background: var(--bbai-primary);
+    border-radius: var(--bbai-radius-full);
+    transition: width 0.4s var(--bbai-ease-out);
+}
+
+.bbai-progress-success .bbai-progress-bar {
+    background: var(--bbai-success);
+}
+
+.bbai-progress-warning .bbai-progress-bar {
+    background: var(--bbai-warning);
+}
+
+.bbai-progress-error .bbai-progress-bar {
+    background: var(--bbai-error);
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+
+.bbai-tabs {
+    display: flex;
+    gap: var(--bbai-space-1);
+    border-bottom: 1px solid var(--bbai-border);
+    margin-bottom: var(--bbai-space-6);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.bbai-tab {
+    padding: var(--bbai-space-3) var(--bbai-space-4);
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-medium);
+    color: var(--bbai-text-muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--bbai-transition-fast) var(--bbai-ease-out);
+    margin-bottom: -1px;
+    white-space: nowrap;
+}
+
+.bbai-tab:hover {
+    color: var(--bbai-text);
+}
+
+.bbai-tab.active,
+.bbai-tab[aria-selected="true"] {
+    color: var(--bbai-primary);
+    border-bottom-color: var(--bbai-primary);
+    font-weight: var(--bbai-font-semibold);
+}
+
+.bbai-tab:focus-visible {
+    outline: 2px solid var(--bbai-primary);
+    outline-offset: -2px;
+}

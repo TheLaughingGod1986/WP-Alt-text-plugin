@@ -1,0 +1,145 @@
+/**
+ * Phase 8 — internal UI Kit preview layout only.
+ * Scoped: body.bbai-dashboard .bbai-ui-kit (does not redefine product components).
+ */
+
+body.bbai-dashboard .bbai-ui-kit {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+body.bbai-dashboard .bbai-ui-kit__banner {
+    margin-bottom: var(--bbai-admin-space-5);
+    padding: var(--bbai-admin-space-4);
+    border-radius: var(--bbai-surface-card-radius);
+    border: 1px dashed var(--bbai-admin-color-border);
+    background: var(--bbai-admin-color-bg-muted);
+    font-size: var(--bbai-admin-type-body-sm);
+    color: var(--bbai-admin-color-text-secondary);
+}
+
+body.bbai-dashboard .bbai-ui-kit__banner code {
+    font-size: 0.92em;
+}
+
+body.bbai-dashboard .bbai-ui-kit__section {
+    margin-bottom: var(--bbai-admin-space-10, 40px);
+    padding-bottom: var(--bbai-admin-space-8, 32px);
+    border-bottom: 1px solid var(--bbai-surface-divider-color);
+}
+
+body.bbai-dashboard .bbai-ui-kit__section:last-of-type {
+    border-bottom: none;
+}
+
+body.bbai-dashboard .bbai-ui-kit__h2 {
+    margin: 0 0 var(--bbai-admin-space-2);
+    font-size: var(--bbai-admin-type-h4);
+    font-weight: var(--bbai-admin-type-weight-bold);
+    color: var(--bbai-admin-color-text);
+}
+
+body.bbai-dashboard .bbai-ui-kit__sub {
+    margin: 0 0 var(--bbai-admin-space-5);
+    font-size: var(--bbai-admin-type-body-sm);
+    color: var(--bbai-admin-color-text-muted);
+    max-width: 72ch;
+}
+
+body.bbai-dashboard .bbai-ui-kit__group {
+    margin-bottom: var(--bbai-admin-space-6);
+}
+
+body.bbai-dashboard .bbai-ui-kit__group:last-child {
+    margin-bottom: 0;
+}
+
+body.bbai-dashboard .bbai-ui-kit__h3 {
+    margin: 0 0 var(--bbai-admin-space-3);
+    font-size: var(--bbai-admin-type-h6);
+    font-weight: var(--bbai-admin-type-weight-semibold);
+    color: var(--bbai-admin-color-text-secondary);
+}
+
+body.bbai-dashboard .bbai-ui-kit__class {
+    display: block;
+    margin: 0 0 var(--bbai-admin-space-2);
+    font-family: var(--bbai-admin-font-mono, ui-monospace, monospace);
+    font-size: var(--bbai-admin-type-caption);
+    color: var(--bbai-admin-color-primary);
+    word-break: break-all;
+}
+
+body.bbai-dashboard .bbai-ui-kit__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-admin-space-3) var(--bbai-admin-space-4);
+    align-items: flex-start;
+}
+
+body.bbai-dashboard .bbai-ui-kit__swatch {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: var(--bbai-radius-md, 10px);
+    border: 1px solid var(--bbai-admin-color-border);
+    flex-shrink: 0;
+}
+
+body.bbai-dashboard .bbai-ui-kit__token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--bbai-admin-space-4);
+}
+
+body.bbai-dashboard .bbai-ui-kit__token {
+    padding: var(--bbai-admin-space-3);
+    border-radius: var(--bbai-surface-card-radius);
+    border: 1px solid var(--bbai-admin-color-border);
+    background: var(--bbai-admin-color-bg);
+}
+
+body.bbai-dashboard .bbai-ui-kit__focus-demo {
+    padding: var(--bbai-admin-space-3);
+}
+
+body.bbai-dashboard .bbai-ui-kit__focus-demo .bbai-btn:focus {
+    outline: none;
+}
+
+body.bbai-dashboard .bbai-ui-kit__focus-demo .bbai-btn:focus-visible {
+    outline: var(--bbai-ds-focus-outline, 2px solid var(--bbai-primary));
+    outline-offset: var(--bbai-ds-focus-offset, 2px);
+}
+
+body.bbai-dashboard .bbai-ui-kit__table-wrap {
+    overflow-x: auto;
+}
+
+body.bbai-dashboard .bbai-ui-kit__pagination-demo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bbai-space-2);
+    margin-top: var(--bbai-admin-space-3);
+}
+
+body.bbai-dashboard .bbai-ui-kit__pagination-demo .page-numbers {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--bbai-border);
+    background: var(--bbai-bg-primary);
+    color: var(--bbai-text-secondary);
+    text-decoration: none;
+    font-size: var(--bbai-text-sm);
+    font-weight: var(--bbai-font-semibold);
+}
+
+body.bbai-dashboard .bbai-ui-kit__pagination-demo .page-numbers.current {
+    background: var(--bbai-text-primary);
+    border-color: var(--bbai-text-primary);
+    color: var(--bbai-text-inverse);
+}

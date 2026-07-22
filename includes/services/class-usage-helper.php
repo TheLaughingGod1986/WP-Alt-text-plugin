@@ -43,88 +43,6 @@ class Usage_Helper {
 	}
 
 	/**
-	 * Determine whether a plan slug is a paid entitlement.
-	 *
-	 * @param string $plan Plan slug.
-	 * @return bool
-	 */
-	private static function is_paid_plan_slug( string $plan ): bool {
-		return in_array( strtolower( trim( $plan ) ), array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
-	}
-
-	/**
-	 * Determine whether a plan includes upload automation/Autopilot.
-	 *
-	 * @param string $plan Plan slug.
-	 * @return bool
-	 */
-	private static function plan_can_use_autopilot( string $plan ): bool {
-		return in_array( strtolower( trim( $plan ) ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
-	}
-
-	/**
-	 * Minimum allowance required before trusting a paid plan claim.
-	 *
-	 * @param string $plan Plan slug.
-	 * @return int
-	 */
-	private static function minimum_monthly_limit_for_plan( string $plan ): int {
-		$plan = strtolower( trim( $plan ) );
-		if ( 'starter' === $plan ) {
-			return defined( Usage_Tracker::class . '::STARTER_MONTHLY_LIMIT' ) ? Usage_Tracker::STARTER_MONTHLY_LIMIT : 100;
-		}
-		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
-			return Usage_Tracker::MIN_PAID_MONTHLY_LIMIT;
-		}
-
-		return 0;
-	}
-
-	/**
-	 * Demote stale paid claims that carry free-sized quota.
-	 *
-	 * @param string $plan  Plan slug.
-	 * @param int    $limit Monthly generation limit.
-	 * @return string
-	 */
-	private static function normalize_plan_for_limit( string $plan, int $limit ): string {
-		$plan = strtolower( trim( $plan ) );
-		if ( '' === $plan || 'anonymous_trial' === $plan ) {
-			$plan = 'anonymous_trial' === $plan ? 'trial' : 'free';
-		}
-		$minimum = self::minimum_monthly_limit_for_plan( $plan );
-		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
-			return 'free';
-		}
-
-		return $plan;
-	}
-
-	/**
-	 * Determine whether a usage payload carries explicit paid entitlement proof.
-	 *
-	 * @param array<string, mixed> $live_usage Usage payload.
-	 * @return bool
-	 */
-	private static function has_paid_entitlement_signal( array $live_usage ): bool {
-		if ( isset( $live_usage['has_paid_entitlement'] ) ) {
-			return true === $live_usage['has_paid_entitlement'];
-		}
-
-		if ( isset( $live_usage['entitlement_state'] ) && is_array( $live_usage['entitlement_state'] ) && isset( $live_usage['entitlement_state']['has_paid_entitlement'] ) ) {
-			return true === $live_usage['entitlement_state']['has_paid_entitlement'];
-		}
-
-		foreach ( array( 'stripe_subscription_id', 'subscription_id' ) as $key ) {
-			if ( isset( $live_usage[ $key ] ) && is_scalar( $live_usage[ $key ] ) && '' !== trim( (string) $live_usage[ $key ] ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
 	 * Infer the anonymous-trial contract when a payload reports trial-sized quota
 	 * but omits or mislabels the auth/quota fields.
 	 *
@@ -152,7 +70,7 @@ class Usage_Helper {
 			return true;
 		}
 
-		if ( in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) || 'paid' === $quota_type ) {
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) || 'paid' === $quota_type ) {
 			return false;
 		}
 
@@ -536,49 +454,19 @@ class Usage_Helper {
 		$usage_stats['creditsTotal']      = $limit;
 		$usage_stats['creditsLimit']      = $limit;
 		$usage_stats['creditsRemaining']  = $remaining;
-		if ( isset( $live_usage['entitlement_state'] ) && is_array( $live_usage['entitlement_state'] ) ) {
-			$usage_stats['entitlement_state'] = $live_usage['entitlement_state'];
-		}
-		foreach ( array( 'daily_generation_limit', 'daily_generations_used', 'daily_generations_remaining', 'daily_reset_date' ) as $daily_key ) {
-			if ( array_key_exists( $daily_key, $live_usage ) ) {
-				$usage_stats[ $daily_key ] = $live_usage[ $daily_key ];
-			} elseif ( isset( $live_usage['entitlement_state'][ $daily_key ] ) ) {
-				$usage_stats[ $daily_key ] = $live_usage['entitlement_state'][ $daily_key ];
-			}
-		}
 
-			$auth_state = $read_string( $live_usage, array( 'auth_state' ), $read_string( $quota, array( 'auth_state' ), 'authenticated' ) );
-			$quota_type = $read_string( $live_usage, array( 'quota_type' ), $read_string( $quota, array( 'quota_type' ), '' ) );
-			$plan       = $read_string( $live_usage, array( 'plan_type', 'plan' ), $read_string( $quota, array( 'plan_type', 'plan' ), '' ) );
+		$percentage                        = $limit > 0 ? ( ( $used / $limit ) * 100 ) : 0;
+		$usage_stats['percentage']         = min( 100, max( 0, $percentage ) );
+		$usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label( $usage_stats['percentage'] );
+
+		$auth_state = $read_string( $live_usage, array( 'auth_state' ), $read_string( $quota, array( 'auth_state' ), 'authenticated' ) );
+		$quota_type = $read_string( $live_usage, array( 'quota_type' ), $read_string( $quota, array( 'quota_type' ), '' ) );
+		$plan       = $read_string( $live_usage, array( 'plan_type', 'plan' ), $read_string( $quota, array( 'plan_type', 'plan' ), '' ) );
 		if ( '' === $plan && ( 'anonymous' === $auth_state || 'trial' === $quota_type ) ) {
 			$plan = 'trial';
 		}
 		if ( '' === $plan ) {
 			$plan = (string) ( $usage_stats['plan_type'] ?? ( $usage_stats['plan'] ?? 'free' ) );
-		}
-
-			$raw_plan = strtolower( trim( $plan ) );
-			$plan     = self::normalize_plan_for_limit( $plan, $limit );
-			$plan_minimum = self::minimum_monthly_limit_for_plan( $plan );
-			if ( $plan_minimum > 0 && $limit < $plan_minimum && ! self::has_paid_entitlement_signal( $live_usage ) ) {
-				$plan      = 'free';
-				$limit     = 50;
-				$remaining = max( 0, $limit - $used );
-			}
-			$demoted_paid_claim = $plan !== $raw_plan && 'free' === $plan;
-			$percentage         = $limit > 0 ? ( ( $used / $limit ) * 100 ) : 0;
-
-			$usage_stats['limit']              = $limit;
-			$usage_stats['remaining']          = $remaining;
-			$usage_stats['credits_total']      = $limit;
-			$usage_stats['credits_remaining']  = $remaining;
-			$usage_stats['creditsTotal']       = $limit;
-			$usage_stats['creditsLimit']       = $limit;
-			$usage_stats['creditsRemaining']   = $remaining;
-			$usage_stats['percentage']         = min( 100, max( 0, $percentage ) );
-			$usage_stats['percentage_display'] = Usage_Tracker::format_percentage_label( $usage_stats['percentage'] );
-		if ( ( $demoted_paid_claim || 'paid' === strtolower( trim( $quota_type ) ) ) && $limit < self::minimum_monthly_limit_for_plan( $raw_plan ) ) {
-			$quota_type = 'monthly_account';
 		}
 
 		$inferred_trial = self::should_infer_anonymous_trial( $live_usage, $quota, $limit, $plan, $auth_state, $quota_type );
@@ -593,37 +481,18 @@ class Usage_Helper {
 		$usage_stats['source']     = $live_usage['source'] ?? 'remote_usage';
 		$usage_stats['plan']       = $plan;
 		$usage_stats['plan_type']  = $plan;
-		$usage_stats['plan_label'] = $demoted_paid_claim
-			? __( 'Free', 'beepbeep-ai-alt-text-generator' )
-			: ( isset( $live_usage['plan_label'] ) && is_string( $live_usage['plan_label'] ) && '' !== trim( $live_usage['plan_label'] )
+		$usage_stats['plan_label'] = isset( $live_usage['plan_label'] ) && is_string( $live_usage['plan_label'] ) && '' !== trim( $live_usage['plan_label'] )
 			? $live_usage['plan_label']
-			: ( 'trial' === $plan ? __( 'Free trial', 'beepbeep-ai-alt-text-generator' ) : ucfirst( $plan ) ) );
+			: ( 'trial' === $plan ? __( 'Free trial', 'beepbeep-ai-alt-text-generator' ) : ucfirst( $plan ) );
 		$usage_stats['is_free']    = in_array( $plan, array( 'free', 'trial' ), true );
-		$usage_stats['is_pro']     = in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
-		if ( isset( $usage_stats['entitlement_state'] ) && is_array( $usage_stats['entitlement_state'] ) ) {
-			$usage_stats['entitlement_state']['plan']      = $plan;
-			$usage_stats['entitlement_state']['plan_type'] = $plan;
-			if ( ! self::plan_can_use_autopilot( $plan ) ) {
-				$usage_stats['entitlement_state']['can_autopilot'] = false;
-			}
-			if ( ! self::is_paid_plan_slug( $plan ) ) {
-				$usage_stats['entitlement_state']['is_unlimited']  = false;
-			}
-		}
-		if ( isset( $usage_stats['usage'] ) && is_array( $usage_stats['usage'] ) ) {
-			$usage_stats['usage']['plan']      = $plan;
-			$usage_stats['usage']['plan_type'] = $plan;
-		}
+		$usage_stats['is_pro']     = in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
 		if ( '' === $quota_type ) {
 			$quota_type = 'trial' === $plan
 				? 'trial'
-				: ( in_array( $plan, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'paid' : 'monthly_account' );
+				: ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ? 'paid' : 'monthly_account' );
 		}
 		$usage_stats['auth_state']           = $auth_state;
 		$usage_stats['quota_type']           = $quota_type;
-		if ( isset( $usage_stats['usage'] ) && is_array( $usage_stats['usage'] ) ) {
-			$usage_stats['usage']['quota_type'] = $quota_type;
-		}
 		$usage_stats['quota_state']          = isset( $live_usage['quota_state'] ) && is_string( $live_usage['quota_state'] ) && '' !== trim( $live_usage['quota_state'] )
 			? $live_usage['quota_state']
 			: self::determine_quota_state( $remaining, $limit, 'trial' === $quota_type );

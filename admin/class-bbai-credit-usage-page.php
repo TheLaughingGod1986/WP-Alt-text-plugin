@@ -327,7 +327,7 @@ class Credit_Usage_Page {
 		$usage_percent     = min( 100, max( 0, $usage_percent ) );
 		$plan_slug         = sanitize_key( (string) ( $current_usage['plan'] ?? 'free' ) );
 		$plan_label        = sanitize_text_field( (string) ( $current_usage['plan_label'] ?? ucfirst( $plan_slug ? $plan_slug : 'free' ) ) );
-		$is_pro_plan       = in_array( $plan_slug, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true );
+		$is_pro_plan       = in_array( $plan_slug, array( 'pro', 'growth', 'agency', 'enterprise' ), true );
 		$is_low_credits    = $credits_remaining < 10 && $credits_remaining > 0;
 		$is_out_of_credits = 0 === $credits_remaining;
 

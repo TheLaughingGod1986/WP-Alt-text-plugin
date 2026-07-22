@@ -1,0 +1,391 @@
+/**
+ * Shared status filter group.
+ * Canonical source for dashboard + ALT Library status pills.
+ */
+
+.bbai-filter-group {
+    --bbai-fg-gap: 10px;
+    --bbai-fg-row-gap: 10px;
+    --bbai-fg-pill-height: 36px;
+    --bbai-fg-pill-padding-inline: 14px;
+    --bbai-fg-pill-radius: 9999px;
+    --bbai-fg-pill-border: #e5e7eb;
+    --bbai-fg-pill-bg: #ffffff;
+    --bbai-fg-pill-bg-hover: #f8fafc;
+    --bbai-fg-pill-text: #334155;
+    --bbai-fg-pill-border-hover: #d7dee8;
+    --bbai-fg-pill-shadow-hover: 0 4px 10px rgba(15, 23, 42, 0.06);
+    --bbai-fg-pill-shadow-press: 0 2px 6px rgba(15, 23, 42, 0.05);
+    --bbai-fg-pill-shadow-active: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 14px rgba(15, 23, 42, 0.05);
+    --bbai-fg-muted: #64748b;
+    --bbai-fg-focus-ring: rgba(16, 185, 129, 0.35);
+    --bbai-fg-count-height: 24px;
+    --bbai-fg-count-min-width: 28px;
+    --bbai-fg-count-padding-inline: 8px;
+    --bbai-fg-count-bg: #f8fafc;
+    --bbai-fg-count-border: #e2e8f0;
+    --bbai-fg-count-text: #475569;
+    --bbai-fg-status-bg: rgba(241, 245, 249, 0.86);
+    --bbai-fg-status-border: rgba(203, 213, 225, 0.95);
+    --bbai-fg-status-text: #1e293b;
+    --bbai-fg-status-badge-bg: rgba(255, 255, 255, 0.94);
+    --bbai-fg-status-badge-border: rgba(203, 213, 225, 0.74);
+    --bbai-fg-status-badge-text: var(--bbai-fg-status-text);
+    --bbai-fg-all-dot: var(--bbai-status-neutral-indicator, #94a3b8);
+    --bbai-fg-optimized-dot: var(--bbai-status-optimized-accent, #22c55e);
+    --bbai-fg-review-dot: var(--bbai-status-needs-review-accent, #f59e0b);
+    --bbai-fg-missing-dot: var(--bbai-status-missing-accent, #ef4444);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--bbai-fg-gap);
+    row-gap: var(--bbai-fg-row-gap);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    isolation: isolate;
+}
+
+.bbai-filter-group--compact {
+    --bbai-fg-gap: 10px;
+    --bbai-fg-row-gap: 8px;
+    --bbai-fg-pill-height: 34px;
+    --bbai-fg-pill-padding-inline: 13px;
+}
+
+.bbai-filter-group__item,
+.bbai-filter-pill {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    min-width: 0;
+    height: var(--bbai-fg-pill-height);
+    margin: 0;
+    padding: 0 var(--bbai-fg-pill-padding-inline);
+    border: 1px solid var(--bbai-fg-pill-border);
+    border-radius: var(--bbai-fg-pill-radius);
+    background: var(--bbai-fg-pill-bg);
+    color: var(--bbai-fg-pill-text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        transform 140ms ease,
+        box-shadow 140ms ease,
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease;
+}
+
+.bbai-filter-group--compact .bbai-filter-group__item {
+    height: var(--bbai-fg-pill-height);
+    padding: 0 var(--bbai-fg-pill-padding-inline);
+    font-size: 13px;
+}
+
+.bbai-filter-group__item:hover,
+.bbai-filter-pill:hover {
+    text-decoration: none;
+}
+
+.bbai-filter-group__item:focus,
+.bbai-filter-group__item:focus-visible,
+.bbai-filter-pill:focus,
+.bbai-filter-pill:focus-visible {
+    outline: none;
+}
+
+.bbai-filter-group__item:focus-visible,
+.bbai-filter-pill:focus-visible {
+    z-index: 2;
+    outline: 2px solid var(--bbai-fg-focus-ring);
+    outline-offset: 2px;
+}
+
+.bbai-filter-group__item:not(.bbai-filter-group__item--active):not(.is-active):not([aria-current='true']):not(.bbai-filter-group__item--locked):not(.bbai-filter-group__item--disabled):hover,
+.bbai-filter-pill:not(.bbai-filter-pill--active):hover {
+    z-index: 1;
+    transform: translateY(-1px);
+    border-color: var(--bbai-fg-pill-border-hover);
+    background: var(--bbai-fg-pill-bg-hover);
+    box-shadow: var(--bbai-fg-pill-shadow-hover);
+}
+
+.bbai-filter-group__item.is-pressed,
+.bbai-filter-group__item:active,
+.bbai-filter-pill:active {
+    z-index: 2;
+    transform: translateY(0);
+    box-shadow: var(--bbai-fg-pill-shadow-press);
+}
+
+.bbai-filter-group__item--locked,
+.bbai-filter-group__item--disabled {
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.bbai-filter-group__item--disabled {
+    opacity: 0.56;
+}
+
+.bbai-filter-group__status-dot {
+    flex: 0 0 9px;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--bbai-fg-pill-dot, var(--bbai-fg-all-dot));
+}
+
+.bbai-filter-group__label {
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.bbai-filter-group__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--bbai-fg-count-min-width);
+    height: var(--bbai-fg-count-height);
+    padding: 0 var(--bbai-fg-count-padding-inline);
+    border-radius: 999px;
+    border: 1px solid var(--bbai-fg-count-border);
+    background: var(--bbai-fg-count-bg);
+    color: var(--bbai-fg-count-text);
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    transition:
+        background-color 140ms ease,
+        border-color 140ms ease,
+        color 140ms ease;
+}
+
+.bbai-filter-group__item--status-all {
+    --bbai-fg-pill-dot: var(--bbai-fg-all-dot);
+    --bbai-fg-status-bg: rgba(241, 245, 249, 0.86);
+    --bbai-fg-status-border: rgba(203, 213, 225, 0.95);
+    --bbai-fg-status-text: #334155;
+    --bbai-fg-status-badge-bg: rgba(255, 255, 255, 0.94);
+    --bbai-fg-status-badge-border: rgba(203, 213, 225, 0.74);
+    --bbai-fg-status-badge-text: #334155;
+}
+
+.bbai-filter-group__item--status-missing {
+    --bbai-fg-pill-dot: var(--bbai-fg-missing-dot);
+    --bbai-fg-status-bg: rgba(254, 242, 242, 0.92);
+    --bbai-fg-status-border: rgba(248, 113, 113, 0.3);
+    --bbai-fg-status-text: #b42318;
+    --bbai-fg-status-badge-bg: rgba(255, 255, 255, 0.94);
+    --bbai-fg-status-badge-border: rgba(252, 165, 165, 0.7);
+    --bbai-fg-status-badge-text: #b42318;
+}
+
+.bbai-filter-group__item--status-weak {
+    --bbai-fg-pill-dot: var(--bbai-fg-review-dot);
+    --bbai-fg-status-bg: rgba(255, 251, 235, 0.96);
+    --bbai-fg-status-border: rgba(245, 158, 11, 0.3);
+    --bbai-fg-status-text: #92400e;
+    --bbai-fg-status-badge-bg: rgba(255, 255, 255, 0.94);
+    --bbai-fg-status-badge-border: rgba(252, 211, 77, 0.72);
+    --bbai-fg-status-badge-text: #92400e;
+}
+
+.bbai-filter-group__item--status-optimized {
+    --bbai-fg-pill-dot: var(--bbai-fg-optimized-dot);
+    --bbai-fg-status-bg: rgba(240, 253, 244, 0.96);
+    --bbai-fg-status-border: rgba(74, 222, 128, 0.28);
+    --bbai-fg-status-text: #166534;
+    --bbai-fg-status-badge-bg: rgba(255, 255, 255, 0.94);
+    --bbai-fg-status-badge-border: rgba(134, 239, 172, 0.72);
+    --bbai-fg-status-badge-text: #166534;
+}
+
+.bbai-filter-group__item--active,
+.bbai-filter-group__item.is-active,
+.bbai-filter-group__item[aria-current='true'],
+.bbai-filter-pill--active {
+    z-index: 1;
+    color: var(--bbai-fg-status-text);
+    font-weight: 700;
+    border-color: var(--bbai-fg-status-border);
+    background: var(--bbai-fg-status-bg);
+    box-shadow: var(--bbai-fg-pill-shadow-active);
+}
+
+.bbai-filter-group__item--active:hover,
+.bbai-filter-group__item.is-active:hover,
+.bbai-filter-group__item[aria-current='true']:hover,
+.bbai-filter-pill--active:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.bbai-filter-group__item--active .bbai-filter-group__status-dot,
+.bbai-filter-group__item.is-active .bbai-filter-group__status-dot,
+.bbai-filter-group__item[aria-current='true'] .bbai-filter-group__status-dot {
+    background: currentColor;
+}
+
+.bbai-filter-group__item--active .bbai-filter-group__count,
+.bbai-filter-group__item.is-active .bbai-filter-group__count,
+.bbai-filter-group__item[aria-current='true'] .bbai-filter-group__count {
+    background: var(--bbai-fg-status-badge-bg);
+    color: var(--bbai-fg-status-badge-text);
+    border-color: var(--bbai-fg-status-badge-border);
+}
+
+.bbai-filter-group__item--attention:not(.bbai-filter-group__item--active):not(.is-active):not([aria-current='true']) {
+    isolation: isolate;
+}
+
+.bbai-filter-group__item--attention:not(.bbai-filter-group__item--active):not(.is-active):not([aria-current='true'])::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+    animation: bbai-filter-group-breathe 2.8s ease-in-out infinite;
+}
+
+.bbai-filter-group__item--status-missing.bbai-filter-group__item--attention {
+    --bbai-filter-group-attention-glow: rgba(244, 63, 94, 0.12);
+}
+
+.bbai-filter-group__item--status-weak.bbai-filter-group__item--attention {
+    --bbai-filter-group-attention-glow: rgba(245, 158, 11, 0.12);
+}
+
+.bbai-filter-group__item--actionable.bbai-filter-group__item--status-missing:not(.bbai-filter-group__item--active):not(.is-active):not([aria-current='true']) {
+    border-color: rgba(248, 113, 113, 0.34);
+    box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.08);
+}
+
+#bbai-dashboard-main .bbai-dashboard-status-card {
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+#bbai-dashboard-main .bbai-dashboard-status-card .bbai-filter-group {
+    width: 100%;
+}
+
+#bbai-dashboard-main .bbai-dashboard-status-card .bbai-filter-group__item {
+    justify-content: flex-start;
+}
+
+#bbai-dashboard-main .bbai-dashboard-status-card--hero {
+    margin: 0;
+}
+
+#bbai-dashboard-main .bbai-dashboard-status-card__filters {
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+#bbai-dashboard-main .bbai-dashboard-status-card--hero .bbai-filter-group__item {
+    justify-content: center;
+}
+
+.bbai-library-workspace-card__filter-toolbar .bbai-filter-group,
+#bbai-review-filter-tabs.bbai-filter-group {
+    max-width: 100%;
+}
+
+@keyframes bbai-filter-group-breathe {
+    0%,
+    100% {
+        opacity: 0;
+        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+    }
+
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 0 4px var(--bbai-filter-group-attention-glow, rgba(15, 23, 42, 0.04));
+    }
+}
+
+@keyframes bbai-filter-group-missing-dot-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
+    }
+
+    50% {
+        transform: scale(1.22);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+}
+
+#bbai-dashboard-main [data-bbai-missing-row-pulse='1'] .bbai-filter-group__status-dot,
+#bbai-dashboard-main .bbai-filter-group__item--status-missing.bbai-filter-group__item--actionable .bbai-filter-group__status-dot {
+    animation: bbai-filter-group-missing-dot-pulse 1s ease-in-out 3;
+    transform-origin: center;
+}
+
+#bbai-dashboard-main .bbai-dashboard-missing-attention.bbai-filter-group__item--status-missing.bbai-filter-group__item--actionable {
+    animation: bbai-dashboard-missing-attention 3s ease-in-out 1;
+}
+
+@media (max-width: 768px) {
+    #bbai-dashboard-main .bbai-dashboard-status-card .bbai-filter-group__item {
+        flex: 1 1 calc(50% - 5px);
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .bbai-filter-group {
+        --bbai-fg-gap: 8px;
+        --bbai-fg-row-gap: 8px;
+    }
+
+    .bbai-filter-group__item {
+        padding: 0 13px;
+        font-size: 13px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bbai-filter-group__item,
+    .bbai-filter-pill,
+    .bbai-filter-group__count {
+        transition: none;
+    }
+
+    .bbai-filter-group__item.is-pressed,
+    .bbai-filter-pill:active {
+        transform: none;
+    }
+
+    .bbai-filter-group__item--attention::after,
+    #bbai-dashboard-main [data-bbai-missing-row-pulse='1'] .bbai-filter-group__status-dot,
+    #bbai-dashboard-main .bbai-filter-group__item--status-missing.bbai-filter-group__item--actionable .bbai-filter-group__status-dot,
+    #bbai-dashboard-main .bbai-dashboard-missing-attention.bbai-filter-group__item--status-missing.bbai-filter-group__item--actionable {
+        animation: none;
+    }
+}

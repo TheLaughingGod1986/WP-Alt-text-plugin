@@ -1,0 +1,1062 @@
+/**
+ * Dashboard CSS - Index
+ * Imports all dashboard component styles
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Variables & Legacy Aliases */
+/* Imported from: _variables.css */
+/**
+ * Dashboard CSS Variables
+ * Legacy aliases mapping to unified design system
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+:root {
+    /* Legacy gradient aliases */
+    --bbai-gradient-danger: var(--bbai-gradient-secondary, linear-gradient(135deg, #ef4444 0%, #dc2626 100%));
+    --bbai-gradient-info: var(--bbai-gradient-primary);
+    --bbai-gradient-achievement: var(--bbai-gradient-warning, linear-gradient(135deg, #f59e0b 0%, #d97706 100%));
+
+    /* Legacy color aliases */
+    --bbai-purple: var(--bbai-primary);
+    --bbai-pink: var(--bbai-error);
+    --bbai-blue: var(--bbai-info);
+    --bbai-green: var(--bbai-success);
+    --bbai-orange: var(--bbai-warning);
+    --bbai-gold: var(--bbai-warning);
+    --bbai-dark: var(--bbai-gray-800, #1f2937);
+    --bbai-light-gray: var(--bbai-gray-200, #e5e7eb);
+
+    /* Legacy spacing aliases */
+    --bbai-spacing-xs: var(--bbai-space-1);
+    --bbai-spacing-sm: var(--bbai-space-2);
+    --bbai-spacing-md: var(--bbai-space-4);
+    --bbai-spacing-lg: var(--bbai-space-6);
+    --bbai-spacing-xl: var(--bbai-space-8);
+    --bbai-spacing-2xl: var(--bbai-space-12);
+
+    /* Transition with bounce effect */
+    --bbai-transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+
+
+/* Components */
+/* Imported from: _gamification.css */
+/**
+ * Gamification Components
+ * Level system, XP bars, and achievement badges
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Gamification Header */
+.bbai-gamification-header {
+    background: var(--bbai-gradient-primary);
+    color: white;
+    padding: var(--bbai-spacing-xl);
+    border-radius: var(--bbai-radius-xl);
+    margin-bottom: var(--bbai-spacing-xl);
+    box-shadow: var(--bbai-shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-gamification-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: bbai-pulse 3s ease-in-out infinite;
+}
+
+@keyframes bbai-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Level Badge */
+.bbai-level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-spacing-sm);
+    background: rgba(255, 255, 255, 0.9);
+    padding: var(--bbai-spacing-sm) var(--bbai-spacing-md);
+    border-radius: var(--bbai-radius-full);
+    font-weight: 700;
+    font-size: 1.125rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    margin-bottom: var(--bbai-spacing-md);
+    position: relative;
+    z-index: 1;
+}
+
+.bbai-level-badge-icon {
+    font-size: 1.5rem;
+    animation: bbai-rotate 3s linear infinite;
+}
+
+@keyframes bbai-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* XP Progress Bar */
+.bbai-xp-container {
+    margin-top: var(--bbai-spacing-md);
+    position: relative;
+    z-index: 1;
+}
+
+.bbai-xp-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--bbai-spacing-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+    opacity: 0.95;
+}
+
+.bbai-xp-bar {
+    height: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--bbai-radius-full);
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.bbai-xp-progress {
+    height: 100%;
+    background: var(--bbai-gradient-achievement);
+    transition: width 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: var(--bbai-spacing-sm);
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--bbai-dark);
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-xp-progress::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: bbai-shimmer 2s infinite;
+}
+
+@keyframes bbai-shimmer {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+/* Achievements Grid */
+.bbai-achievements-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--bbai-spacing-md);
+    margin: var(--bbai-spacing-xl) 0;
+}
+
+.bbai-achievement {
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-spacing-md);
+    text-align: center;
+    box-shadow: var(--bbai-shadow-md);
+    transition: var(--bbai-transition-bounce);
+    cursor: pointer;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.bbai-achievement:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: var(--bbai-shadow-xl);
+}
+
+.bbai-achievement.unlocked {
+    border-color: var(--bbai-gold);
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+}
+
+.bbai-achievement.unlocked::after {
+    content: '✓';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: var(--bbai-gradient-gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.75rem;
+    box-shadow: var(--bbai-shadow-md);
+}
+
+.bbai-achievement.locked {
+    opacity: 0.5;
+    filter: grayscale(1);
+}
+
+.bbai-achievement-icon {
+    font-size: 3rem;
+    margin-bottom: var(--bbai-spacing-sm);
+    display: block;
+}
+
+.bbai-achievement.unlocked .bbai-achievement-icon {
+    animation: bbai-bounce 0.6s ease-out;
+}
+
+@keyframes bbai-bounce {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.2); }
+    50% { transform: scale(0.95); }
+    75% { transform: scale(1.05); }
+}
+
+.bbai-achievement-title {
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--bbai-dark);
+    margin-bottom: var(--bbai-spacing-xs);
+}
+
+.bbai-achievement-description {
+    font-size: 0.75rem;
+    color: var(--bbai-gray);
+    line-height: 1.4;
+}
+
+.bbai-achievement-progress {
+    margin-top: var(--bbai-spacing-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--bbai-purple);
+}
+
+/* Streak Counter */
+.bbai-streak-counter {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    padding: var(--bbai-spacing-sm) var(--bbai-spacing-md);
+    border-radius: var(--bbai-radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bbai-spacing-sm);
+    font-weight: 700;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+}
+
+.bbai-streak-flame {
+    animation: bbai-flame 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes bbai-flame {
+    from { transform: scale(1) rotate(-5deg); }
+    to { transform: scale(1.1) rotate(5deg); }
+}
+
+
+/* Imported from: _cards.css */
+/**
+ * Dashboard Cards
+ * Microcards, action cards, and stat displays
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Dashboard Layout */
+.bbai-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--bbai-spacing-md);
+}
+
+.bbai-dashboard__intro {
+    background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+    padding: var(--bbai-spacing-xl);
+    border-radius: var(--bbai-radius-xl);
+    margin-bottom: var(--bbai-spacing-xl);
+    border-left: 4px solid var(--bbai-purple);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-dashboard__intro h2 {
+    color: var(--bbai-dark);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 var(--bbai-spacing-sm) 0;
+}
+
+.bbai-dashboard__intro p {
+    color: var(--bbai-gray);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Microcards Grid */
+.bbai-dashboard__microcards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--bbai-spacing-lg);
+    margin-bottom: var(--bbai-spacing-xl);
+}
+
+.bbai-microcard {
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-spacing-lg);
+    box-shadow: var(--bbai-shadow-md);
+    transition: var(--bbai-transition-bounce);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.bbai-microcard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transition: var(--bbai-transition);
+}
+
+.bbai-microcard.gradient-purple::before { background: var(--bbai-gradient-1); }
+.bbai-microcard.gradient-pink::before { background: var(--bbai-gradient-2); }
+.bbai-microcard.gradient-blue::before { background: var(--bbai-gradient-3); }
+.bbai-microcard.gradient-green::before { background: var(--bbai-gradient-4); }
+
+.bbai-microcard:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--bbai-shadow-xl);
+    border-color: var(--bbai-light-gray);
+}
+
+.bbai-microcard:hover::before {
+    height: 100%;
+    opacity: 0.05;
+}
+
+.bbai-microcard__icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--bbai-spacing-md);
+    display: inline-block;
+    animation: bbai-float 3s ease-in-out infinite;
+}
+
+@keyframes bbai-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.bbai-microcard__value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--bbai-dark);
+    line-height: 1;
+    margin-bottom: var(--bbai-spacing-xs);
+}
+
+.bbai-microcard__label {
+    font-size: 0.875rem;
+    color: var(--bbai-gray);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Action Cards Grid */
+.bbai-action-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--bbai-spacing-lg);
+    margin-bottom: var(--bbai-spacing-xl);
+}
+
+.bbai-action-card {
+    background: white;
+    border-radius: var(--bbai-radius-xl);
+    padding: var(--bbai-spacing-xl);
+    box-shadow: var(--bbai-shadow-lg);
+    transition: var(--bbai-transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.bbai-action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: var(--bbai-transition);
+    pointer-events: none;
+}
+
+.bbai-action-card.card-purple::before { background: var(--bbai-gradient-1); }
+.bbai-action-card.card-green::before { background: var(--bbai-gradient-4); }
+.bbai-action-card.card-blue::before { background: var(--bbai-gradient-3); }
+
+.bbai-action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--bbai-shadow-xl);
+}
+
+.bbai-action-card:hover::before {
+    opacity: 0.08;
+}
+
+.bbai-action-card__icon {
+    font-size: 3rem;
+    margin-bottom: var(--bbai-spacing-md);
+    display: inline-block;
+}
+
+.bbai-action-card__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--bbai-dark);
+    margin-bottom: var(--bbai-spacing-sm);
+}
+
+.bbai-action-card__description {
+    font-size: 0.9375rem;
+    color: var(--bbai-gray);
+    line-height: 1.6;
+    margin-bottom: var(--bbai-spacing-lg);
+}
+
+.bbai-action-card__button {
+    width: 100%;
+}
+
+
+/* Imported from: _buttons.css */
+/**
+ * Dashboard Buttons
+ * Modern button styles with hover effects
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+.bbai-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bbai-spacing-sm);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--bbai-radius-lg);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    border: none;
+    cursor: pointer;
+    transition: var(--bbai-transition-bounce);
+    position: relative;
+    overflow: hidden;
+    text-decoration: none;
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+.bbai-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.bbai-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.bbai-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--bbai-shadow-lg);
+}
+
+.bbai-btn:active {
+    transform: translateY(0);
+}
+
+/* Button Variants */
+.bbai-btn-primary {
+    background: var(--bbai-gradient-1);
+    color: white;
+}
+
+.bbai-btn-success {
+    background: var(--bbai-gradient-4);
+    color: white;
+}
+
+.bbai-btn-info {
+    background: var(--bbai-gradient-3);
+    color: white;
+}
+
+.bbai-btn-warning {
+    background: var(--bbai-gradient-5);
+    color: white;
+}
+
+.bbai-btn-outline {
+    background: white;
+    color: var(--bbai-purple);
+    border: 2px solid var(--bbai-purple);
+}
+
+.bbai-btn-outline:hover {
+    background: var(--bbai-purple);
+    color: white;
+}
+
+.bbai-btn-icon {
+    font-size: 1.125rem;
+}
+
+.bbai-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+
+/* Imported from: _table.css */
+/**
+ * Library Table Styles
+ * Alt text library table and quality badges
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+.bbai-library-table {
+    width: 100%;
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    overflow: hidden;
+    box-shadow: var(--bbai-shadow-md);
+}
+
+.bbai-library-table thead {
+    background: var(--bbai-gradient-1);
+    color: white;
+}
+
+.bbai-library-table th {
+    padding: var(--bbai-spacing-md) var(--bbai-spacing-lg);
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bbai-library-table td {
+    padding: var(--bbai-spacing-md) var(--bbai-spacing-lg);
+    border-bottom: 1px solid var(--bbai-light-gray);
+}
+
+.bbai-library-table tbody tr {
+    transition: var(--bbai-transition);
+}
+
+.bbai-library-table tbody tr:hover {
+    background: linear-gradient(90deg, #f6f9fc 0%, #ffffff 100%);
+    transform: scale(1.01);
+    box-shadow: var(--bbai-shadow-sm);
+}
+
+/* Quality Badges */
+.bbai-quality-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--bbai-spacing-xs) var(--bbai-spacing-md);
+    border-radius: var(--bbai-radius-full);
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
+.bbai-quality-badge.excellent {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.bbai-quality-badge.good {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.bbai-quality-badge.fair {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+.bbai-quality-badge.poor {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+/* Alt Text Cell Content */
+.bbai-alt-text-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bbai-alt-text-preview {
+    line-height: 1.5;
+    color: var(--bbai-text-primary);
+    font-size: 13px;
+}
+
+.bbai-alt-text-missing {
+    color: var(--bbai-text-muted);
+    font-style: italic;
+    font-size: 13px;
+}
+
+/* Metrics Row */
+.bbai-alt-text-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.bbai-meta-separator {
+    color: #d1d5db;
+    font-size: 8px;
+    line-height: 1;
+}
+
+.bbai-library-cell--alt-text {
+    vertical-align: top;
+}
+
+/* Legacy Wrapper */
+.bbai-library-alt-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-space-1);
+}
+
+.bbai-library-alt-text {
+    line-height: 1.5;
+    color: var(--bbai-text-primary);
+}
+
+
+/* Imported from: _seo-badge.css */
+/**
+ * SEO Quality Badges
+ * Displays SEO grade with hover tooltips
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+.bbai-seo-metrics {
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-space-2);
+    margin-top: var(--bbai-space-2);
+}
+
+.bbai-seo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: var(--bbai-radius-sm);
+    cursor: help;
+    transition: all 0.15s ease;
+}
+
+.bbai-seo-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.bbai-seo-badge__icon {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+}
+
+/* Grade A - Excellent */
+.bbai-seo-badge--excellent {
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.bbai-seo-badge--excellent:hover {
+    background: rgba(16, 185, 129, 0.18);
+}
+
+/* Grade B - Good */
+.bbai-seo-badge--good {
+    color: #2563eb;
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.bbai-seo-badge--good:hover {
+    background: rgba(59, 130, 246, 0.18);
+}
+
+/* Grade C - Fair */
+.bbai-seo-badge--fair {
+    color: #d97706;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.bbai-seo-badge--fair:hover {
+    background: rgba(245, 158, 11, 0.18);
+}
+
+/* Grade D - Poor */
+.bbai-seo-badge--poor {
+    color: #ea580c;
+    background: rgba(249, 115, 22, 0.12);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.bbai-seo-badge--poor:hover {
+    background: rgba(249, 115, 22, 0.18);
+}
+
+/* Grade F - Needs Work */
+.bbai-seo-badge--needs-work {
+    color: #dc2626;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.bbai-seo-badge--needs-work:hover {
+    background: rgba(239, 68, 68, 0.18);
+}
+
+/* Character Counter */
+.bbai-char-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--bbai-text-muted);
+    white-space: nowrap;
+}
+
+.bbai-char-counter__icon {
+    display: inline-flex;
+    align-items: center;
+    width: 12px;
+    height: 12px;
+}
+
+.bbai-char-counter__number {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.bbai-char-counter__label {
+    opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .bbai-seo-metrics {
+        flex-wrap: wrap;
+        gap: var(--bbai-space-1);
+    }
+
+    .bbai-seo-badge {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+}
+
+
+/* Imported from: _utilities.css */
+/**
+ * Dashboard Utilities
+ * Helper classes and animations
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+/* Gradient Text */
+.bbai-gradient-text {
+    background: var(--bbai-gradient-1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Animation Utilities */
+.bbai-pulse {
+    animation: bbai-pulse 2s ease-in-out infinite;
+}
+
+.bbai-spin {
+    animation: bbai-rotate 2s linear infinite;
+}
+
+.bbai-shake {
+    animation: bbai-shake 0.5s ease-in-out;
+}
+
+@keyframes bbai-shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Visibility */
+.hidden {
+    display: none !important;
+}
+
+.screen-reader-text {
+    clip: rect(1px, 1px, 1px, 1px);
+    word-wrap: normal !important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    position: absolute !important;
+}
+
+/* Progress Status */
+.bbai-dashboard__status {
+    background: white;
+    border-radius: var(--bbai-radius-lg);
+    padding: var(--bbai-spacing-lg);
+    box-shadow: var(--bbai-shadow-md);
+    margin-top: var(--bbai-spacing-xl);
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bbai-dashboard__status.processing {
+    background: var(--bbai-gradient-3);
+    color: white;
+    font-weight: 700;
+    animation: bbai-pulse 1.5s ease-in-out infinite;
+}
+
+.bbai-dashboard__status.success {
+    background: var(--bbai-gradient-4);
+    color: white;
+    font-weight: 700;
+    animation: bbai-celebration 0.6s ease-out;
+}
+
+.bbai-dashboard__status.error {
+    background: var(--bbai-gradient-2);
+    color: white;
+    font-weight: 700;
+}
+
+/* Loading States */
+.bbai-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--bbai-spacing-xl);
+}
+
+.bbai-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--bbai-light-gray);
+    border-top-color: var(--bbai-purple);
+    border-radius: 50%;
+    animation: bbai-rotate 1s linear infinite;
+    margin-bottom: var(--bbai-spacing-md);
+}
+
+.bbai-loading-text {
+    color: var(--bbai-gray);
+    font-weight: 600;
+}
+
+/* Toast Notifications */
+.bbai-toast-container {
+    position: fixed;
+    top: 100px;
+    right: var(--bbai-spacing-xl);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: var(--bbai-spacing-sm);
+    max-width: 400px;
+}
+
+.bbai-toast {
+    background: white;
+    padding: var(--bbai-spacing-md) var(--bbai-spacing-lg);
+    border-radius: var(--bbai-radius-lg);
+    box-shadow: var(--bbai-shadow-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--bbai-spacing-md);
+    animation: bbai-toast-in 0.3s ease-out;
+    border-left: 4px solid var(--bbai-purple);
+}
+
+.bbai-toast.success { border-left-color: var(--bbai-green); }
+.bbai-toast.error { border-left-color: var(--bbai-pink); }
+.bbai-toast.warning { border-left-color: var(--bbai-orange); }
+
+@keyframes bbai-toast-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.bbai-toast-icon {
+    font-size: 1.5rem;
+}
+
+.bbai-toast-content {
+    flex: 1;
+}
+
+.bbai-toast-title {
+    font-weight: 700;
+    color: var(--bbai-dark);
+    margin-bottom: 2px;
+}
+
+.bbai-toast-message {
+    font-size: 0.875rem;
+    color: var(--bbai-gray);
+}
+
+.bbai-toast-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--bbai-gray);
+    cursor: pointer;
+    padding: var(--bbai-spacing-xs);
+    line-height: 1;
+}
+
+.bbai-toast-close:hover {
+    color: var(--bbai-dark);
+}
+
+
+
+/* Responsive */
+/* Imported from: _responsive.css */
+/**
+ * Dashboard Responsive Styles
+ * Mobile and tablet breakpoints
+ *
+ * @package BeepBeep_AI
+ * @since 5.0.0
+ */
+
+@media (max-width: 768px) {
+    .bbai-dashboard__microcards {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-action-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-achievements-container {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .bbai-toast-container {
+        right: var(--bbai-spacing-md);
+        left: var(--bbai-spacing-md);
+        max-width: none;
+    }
+
+    .bbai-gamification-header {
+        padding: var(--bbai-spacing-md);
+    }
+
+    .bbai-coverage-card__percentage {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .bbai-microcard {
+        padding: var(--bbai-spacing-md);
+    }
+
+    .bbai-microcard__value {
+        font-size: 1.5rem;
+    }
+
+    .bbai-action-card {
+        padding: var(--bbai-spacing-md);
+    }
+
+    .bbai-level-badge {
+        font-size: 1rem;
+        padding: var(--bbai-spacing-xs) var(--bbai-spacing-sm);
+    }
+}
+
+

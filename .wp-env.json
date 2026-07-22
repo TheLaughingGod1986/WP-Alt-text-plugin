@@ -2,7 +2,6 @@
     "core": null,
     "plugins": [],
     "mappings": {
-        "wp-content/plugins/beepbeep-ai-alt-text-generator": ".",
-        "wp-content/plugins/beepbeep-titles": "../beepbeep-titles"
+        "wp-content/plugins/beepbeep-ai-alt-text-generator": "."
     }
 }

@@ -1,0 +1,280 @@
+/* ==========================================================================
+   Queue Workflow – ALT Optimization Pipeline
+   ========================================================================== */
+
+.bbai-queue-workflow {
+    margin-bottom: 24px;
+    padding: 24px 28px 28px;
+    border: 1px solid #e3ebf6;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f9fbff 0%, #f2f6ff 58%, #ffffff 100%);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+/* ---------- Header ---------- */
+
+.bbai-queue-workflow__header {
+    margin-bottom: 22px;
+}
+
+.bbai-queue-workflow__title {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111827;
+}
+
+.bbai-queue-workflow__desc {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+/* ---------- Steps row ---------- */
+
+.bbai-queue-workflow__steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+}
+
+/* ---------- Arrow connector ---------- */
+
+.bbai-queue-workflow__arrow {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-top: 52px;
+    color: #cbd5e1;
+    transition: color 0.3s ease;
+}
+
+.bbai-queue-workflow__arrow--done {
+    color: #16a34a;
+}
+
+/* ---------- Single step card ---------- */
+
+.bbai-queue-workflow__step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 16px 22px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    position: relative;
+}
+
+.bbai-queue-workflow__step:hover {
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+/* Active step */
+.bbai-queue-workflow__step--active {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12), 0 6px 18px rgba(15, 23, 42, 0.06);
+    transform: translateY(-2px);
+}
+
+/* Completed step */
+.bbai-queue-workflow__step--done {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+/* Success state for Complete card */
+.bbai-queue-workflow__step--success {
+    border-color: #16a34a;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+/* ---------- Step badge (number / checkmark) ---------- */
+
+.bbai-queue-workflow__step-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #94a3b8;
+    background: #f1f5f9;
+    margin-bottom: 10px;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.bbai-queue-workflow__step--active .bbai-queue-workflow__step-badge {
+    background: #6366f1;
+    color: #fff;
+}
+
+.bbai-queue-workflow__step--done .bbai-queue-workflow__step-badge {
+    background: #16a34a;
+    color: #fff;
+}
+
+.bbai-queue-workflow__step--success .bbai-queue-workflow__step-badge {
+    background: #16a34a;
+    color: #fff;
+}
+
+.bbai-queue-workflow__step-check {
+    display: none;
+    line-height: 0;
+}
+
+.bbai-queue-workflow__step--done .bbai-queue-workflow__step-num {
+    display: none;
+}
+
+.bbai-queue-workflow__step--done .bbai-queue-workflow__step-check,
+.bbai-queue-workflow__step--success .bbai-queue-workflow__step-check {
+    display: flex;
+}
+
+.bbai-queue-workflow__step--success .bbai-queue-workflow__step-num {
+    display: none;
+}
+
+/* ---------- Icon ---------- */
+
+.bbai-queue-workflow__step-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    transition: color 0.25s ease;
+}
+
+.bbai-queue-workflow__step--active .bbai-queue-workflow__step-icon {
+    color: #6366f1;
+}
+
+.bbai-queue-workflow__step--done .bbai-queue-workflow__step-icon {
+    color: #16a34a;
+}
+
+.bbai-queue-workflow__step--success .bbai-queue-workflow__step-icon {
+    color: #16a34a;
+}
+
+/* ---------- Title ---------- */
+
+.bbai-queue-workflow__step-title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #334155;
+}
+
+.bbai-queue-workflow__step--active .bbai-queue-workflow__step-title {
+    color: #111827;
+}
+
+/* ---------- Metric ---------- */
+
+.bbai-queue-workflow__step-metric {
+    margin: 0 0 12px;
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Action button ---------- */
+
+.bbai-queue-workflow__step-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    color: #334155;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+}
+
+.bbai-queue-workflow__step-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #111827;
+}
+
+.bbai-queue-workflow__step-btn:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+
+/* Primary button on active step */
+.bbai-queue-workflow__step--active .bbai-queue-workflow__step-btn {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+.bbai-queue-workflow__step--active .bbai-queue-workflow__step-btn:hover {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}
+
+.bbai-queue-workflow__step-btn--static {
+    cursor: default;
+    pointer-events: none;
+}
+
+.bbai-queue-workflow__step-btn--static[data-bbai-wf-action-state="progress"] {
+    background: #f8fafc;
+    border-color: #dbe4ee;
+    color: #64748b;
+}
+
+.bbai-queue-workflow__step-btn--static[data-bbai-wf-action-state="complete"] {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+    .bbai-queue-workflow__steps {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .bbai-queue-workflow__step {
+        width: 100%;
+    }
+
+    .bbai-queue-workflow__arrow {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .bbai-queue-workflow {
+        padding: 18px 16px 22px;
+    }
+}

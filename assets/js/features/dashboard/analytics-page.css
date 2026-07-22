@@ -1,0 +1,378 @@
+/**
+ * Analytics admin — layout, chart internals, and rhythm aligned with Dashboard tokens.
+ * Surfaces: .bbai-dashboard-surface-card (+ modifiers) in command-hero-host.css
+ * CTAs: command-hero-host (hero + .bbai-dashboard-surface-card)
+ */
+
+body.beepbeep-ai_page_bbai-analytics #wpbody-content .wrap {
+    max-width: 100% !important;
+    padding: 0 !important;
+}
+
+body.beepbeep-ai_page_bbai-analytics #wpcontent {
+    padding-left: 0 !important;
+}
+
+.bbai-container.bbai-analytics-page {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Vertical rhythm: shared admin-ui-components.css (.bbai-ui-page-shell) + analytics grid pairing */
+.bbai-analytics-page > .bbai-ui-metrics-grid + .bbai-analytics-post-metrics {
+    margin-top: var(--card-gap, 16px);
+}
+
+/* Top banner: shared .bbai-banner system (product-banner.css) */
+
+/* Coverage over time: optical vertical balance (bottom was ~4px heavy vs top) */
+.bbai-analytics-page .bbai-analytics-trend-block.bbai-dashboard-surface-card {
+    /* Total −16px vs default bottom padding (cumulative optical trims) */
+    padding-bottom: calc(var(--bbai-command-card-padding, 22px) - 16px);
+}
+
+/* ── Metrics grid (surface + stat type) ──────────────────────────────────── */
+
+.bbai-analytics-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--card-gap, 16px);
+}
+
+.bbai-analytics-page .bbai-analytics-metric-card.bbai-dashboard-surface-card {
+    text-align: left;
+}
+
+/* Low credits: keep amber value only — border matches peers (no warning tile frame) */
+.bbai-analytics-page .bbai-analytics-metric-card--warn.bbai-dashboard-surface-card {
+    border-color: rgba(238, 241, 245, 0.72);
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.048);
+}
+
+.bbai-analytics-page .bbai-analytics-metric-card--warn.bbai-dashboard-surface-card:hover {
+    border-color: rgba(226, 232, 240, 0.78);
+}
+
+.bbai-analytics-page .bbai-analytics-metric-card .bbai-stat-value {
+    font-size: var(--bbai-text-3xl, 28px);
+    font-weight: var(--bbai-admin-type-weight-bold, 700);
+    letter-spacing: var(--bbai-tracking-tight, -0.03em);
+    color: var(--bbai-admin-color-text, #0f172a);
+    margin-bottom: 6px;
+    line-height: 1.05;
+}
+
+.bbai-analytics-page .bbai-analytics-metric-card .bbai-stat-label {
+    font-size: var(--bbai-admin-type-label, 12px);
+    font-weight: var(--bbai-admin-type-weight-semibold, 600);
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--bbai-admin-color-text-muted, #5b6472);
+}
+
+.bbai-analytics-page .bbai-analytics-metric-card--warn .bbai-stat-value {
+    color: #8a7348;
+}
+
+/* Post-metrics: stacked notice strips (bbai-ui-notice-stack in admin-ui-components.css) */
+
+/* ── Primary action (main column) — single dominant CTA when not healthy ─── */
+
+.bbai-analytics-primary-strip {
+    margin-bottom: var(--section-spacing, 24px);
+}
+
+.bbai-analytics-primary-strip__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--card-gap, 16px);
+}
+
+/* ── Workspace: natural document height (single page scrollbar; no nested column scroll) ─ */
+
+.bbai-analytics-page .bbai-analytics-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.95fr);
+    gap: var(--section-spacing, var(--bbai-space-6));
+    align-items: start;
+}
+
+.bbai-analytics-page .bbai-main-content,
+.bbai-analytics-page .bbai-sidebar {
+    min-width: 0;
+}
+
+.bbai-analytics-page .bbai-main-content {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.bbai-analytics-page .bbai-main-content > .bbai-analytics-trend-block {
+    flex: 0 1 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.bbai-analytics-page .bbai-sidebar-sticky {
+    position: sticky;
+    top: var(--section-spacing, 24px);
+    display: flex;
+    flex-direction: column;
+}
+
+.bbai-analytics-page .bbai-sidebar-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--card-gap, 16px);
+    justify-content: flex-start;
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--automation {
+    flex: 0 0 auto;
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--plan {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Chart card: summary pins to bottom when column is taller than content */
+.bbai-analytics-trend-block__head {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+}
+
+/* Typography: bbai-card-rhythm + bbai-section-header (no local eyebrow/title margins) */
+
+.bbai-analytics-trend-block__chart {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: 0 6px 4px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.bbai-analytics-trend-block__chart canvas {
+    display: block;
+    width: 100% !important;
+    height: 188px !important;
+}
+
+.bbai-analytics-trend-block__summary {
+    flex: 0 0 auto;
+    margin-top: var(--bbai-card-section-gap, 16px);
+    padding-top: var(--bbai-card-padding-y-body, 16px);
+    margin-bottom: 0;
+    border-top: 1px solid #eef2f7;
+    max-width: var(--bbai-card-description-max-width, 35rem);
+    font-size: var(--bbai-admin-type-body, var(--bbai-card-description-size, 14px));
+    line-height: var(--bbai-card-description-leading, 1.5);
+    font-weight: var(--bbai-admin-type-weight-semibold, 600);
+    color: var(--bbai-admin-color-text-secondary, #334155);
+}
+
+/* Side rail typography (matches dashboard card title/copy rhythm) */
+.bbai-analytics-sidecard__eyebrow {
+    margin: 0 0 var(--bbai-card-label-margin-bottom, 8px);
+    font-size: var(--bbai-admin-type-label, var(--bbai-card-label-size, 12px));
+    font-weight: var(--bbai-admin-type-weight-semibold, var(--bbai-card-label-weight, 600));
+    letter-spacing: var(--bbai-card-label-tracking, 0.08em);
+    text-transform: uppercase;
+    color: var(--bbai-admin-color-text-muted, var(--bbai-card-label-color, #7b8aa0));
+}
+
+.bbai-analytics-sidecard__title {
+    margin: 0 0 var(--bbai-card-title-margin-bottom, 8px);
+    font-size: var(--bbai-admin-type-card-title, var(--bbai-card-title-size, 20px));
+    font-weight: var(--bbai-admin-type-weight-semibold, var(--bbai-card-title-weight, 600));
+    line-height: var(--bbai-card-title-leading, 1.2);
+    color: var(--bbai-admin-color-text, var(--bbai-card-title-color, #0f172a));
+    letter-spacing: var(--bbai-tracking-tight, var(--bbai-card-title-tracking, -0.02em));
+}
+
+.bbai-analytics-sidecard__copy {
+    margin: 0 0 var(--bbai-card-description-margin-bottom, 16px);
+    max-width: var(--bbai-card-description-max-width, 35rem);
+    font-size: var(--bbai-admin-type-body, var(--bbai-card-description-size, 14px));
+    font-weight: var(--bbai-admin-type-weight-regular, var(--bbai-card-description-weight, 400));
+    line-height: var(--bbai-card-description-leading, 1.5);
+    color: var(--bbai-admin-color-text-secondary, var(--bbai-card-description-color, #475569));
+}
+
+.bbai-analytics-sidecard__copy:last-child {
+    margin-bottom: 0;
+}
+
+.bbai-analytics-sidecard__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: var(--bbai-cta-group-margin-top, 16px);
+    margin-bottom: 0;
+}
+
+/* Automation rail primary — same green system as banner; slightly less dominant via width + rail min-width token */
+.bbai-analytics-page .bbai-analytics-sidecard--automation .bbai-dashboard-hero__cta--primary {
+    align-self: flex-start;
+    width: auto;
+    max-width: 100%;
+    min-width: var(--bbai-cta-primary-min-width-rail, 200px);
+    min-height: var(--bbai-cta-primary-min-height, 40px);
+    padding: 0 var(--bbai-cta-primary-padding-x, 16px);
+    border-radius: var(--bbai-cta-primary-radius, 8px);
+    font-size: var(--bbai-cta-primary-font-size, 14px);
+    font-weight: var(--bbai-cta-primary-font-weight, 500);
+    border: 1px solid var(--bbai-admin-btn-primary-border);
+    background-color: var(--bbai-admin-btn-primary-bg, #10b981);
+    color: #ffffff;
+    box-shadow: var(--bbai-admin-btn-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
+    transform: translateY(0);
+    transition: var(
+        --bbai-cta-primary-transition,
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease
+    );
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--automation .bbai-dashboard-hero__cta--primary:hover {
+    background-color: var(--bbai-admin-btn-primary-bg, #10b981);
+    box-shadow: var(--bbai-admin-btn-primary-shadow-hover, 0 3px 10px rgba(15, 23, 42, 0.1));
+    transform: var(--bbai-admin-btn-primary-lift, translateY(-1px));
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--automation .bbai-dashboard-hero__cta--primary:active {
+    background-color: var(--bbai-cta-primary-bg, #10b981);
+    box-shadow: var(--bbai-cta-primary-shadow, 0 1px 2px rgba(15, 23, 42, 0.06));
+    transform: translateY(0) scale(0.98);
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--automation .bbai-dashboard-hero__cta--primary:focus-visible {
+    outline: none;
+    background-color: var(--bbai-cta-primary-bg, #10b981);
+    transform: translateY(0);
+    box-shadow:
+        0 0 0 2px #ffffff,
+        0 0 0 4px rgba(16, 185, 129, 0.35);
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--plan.bbai-dashboard-surface-card--subtle:not(.bbai-dashboard-surface-card--attention) {
+    background: rgba(252, 253, 254, 0.96);
+    border-color: rgba(226, 232, 240, 0.52);
+}
+
+.bbai-analytics-sidecard--plan .bbai-analytics-sidecard__title {
+    font-size: var(--bbai-admin-type-body, 14px);
+    font-weight: var(--bbai-admin-type-weight-semibold, 600);
+    color: var(--bbai-admin-color-text-secondary, #525c6a);
+}
+
+.bbai-analytics-sidecard--plan .bbai-analytics-sidecard__copy {
+    font-size: var(--bbai-admin-type-meta, 13px);
+    color: var(--bbai-admin-color-text-muted, #5c6473);
+    margin-bottom: var(--card-gap, 16px);
+}
+
+.bbai-analytics-sidecard--plan .bbai-analytics-sidecard__actions {
+    margin-top: auto;
+}
+
+.bbai-analytics-sidecard--plan.is-urgent .bbai-analytics-sidecard__title {
+    color: #6b4423;
+}
+
+.bbai-analytics-sidecard--plan.is-urgent .bbai-analytics-sidecard__copy {
+    color: #5c534d;
+}
+
+/* Subtle credits cue (contextual, not alarmist) */
+.bbai-analytics-page .bbai-analytics-sidecard--plan .bbai-analytics-sidecard__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--plan .bbai-analytics-sidecard__eyebrow::before {
+    content: '';
+    flex: 0 0 auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #d4c4a8 0%, #c9a66d 100%);
+    box-shadow: 0 0 0 1px rgba(180, 160, 120, 0.22);
+    opacity: 0.78;
+}
+
+/* Credits / plan card: calmer frame when attention state is on */
+.bbai-analytics-page .bbai-analytics-sidecard--plan.bbai-dashboard-surface-card--attention {
+    border-color: rgba(253, 224, 168, 0.23);
+    background: rgba(255, 252, 247, 0.55);
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.032);
+}
+
+.bbai-analytics-page .bbai-analytics-sidecard--plan.bbai-dashboard-surface-card--attention:hover {
+    border-color: rgba(252, 211, 77, 0.21);
+    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.038);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+    .bbai-analytics-page .bbai-analytics-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .bbai-analytics-page .bbai-sidebar-sticky {
+        position: static;
+        display: block;
+        height: auto;
+    }
+
+    .bbai-analytics-page .bbai-main-content {
+        height: auto;
+    }
+
+    .bbai-analytics-page .bbai-main-content > .bbai-analytics-trend-block {
+        flex: 0 0 auto;
+    }
+
+    .bbai-analytics-page .bbai-analytics-trend-block__summary {
+        margin-top: var(--card-gap, 16px);
+    }
+
+    .bbai-analytics-page .bbai-sidebar-stack {
+        flex: none;
+        min-height: 0;
+        justify-content: flex-start;
+    }
+
+    .bbai-analytics-page .bbai-analytics-sidecard--plan {
+        flex: 0 0 auto;
+    }
+
+    .bbai-analytics-page .bbai-analytics-sidecard--plan .bbai-analytics-sidecard__actions {
+        margin-top: var(--card-gap, 16px);
+    }
+
+    .bbai-analytics-page .bbai-analytics-sidecard--plan .bbai-analytics-sidecard__copy {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 720px) {
+    .bbai-analytics-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}

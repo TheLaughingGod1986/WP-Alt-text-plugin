@@ -220,13 +220,13 @@ trait Core_Media {
 		$limit = intval( $limit );
 		if ( $limit <= 0 ) {
 			$limit = 5;
-			}
+		}
 
-			$image_mime_like = $wpdb->esc_like( 'image/' ) . '%';
-			return array_map(
-				'intval',
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared media-library lookup; caller limits result size and no persistent cache key exists for this dashboard snapshot.
-				(array) $wpdb->get_col(
+		$image_mime_like = $wpdb->esc_like( 'image/' ) . '%';
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		return array_map(
+			'intval',
+			(array) $wpdb->get_col(
 				$wpdb->prepare(
 					'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d',
 					'_wp_attachment_image_alt',

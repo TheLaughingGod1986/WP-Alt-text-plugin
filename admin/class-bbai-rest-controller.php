@@ -951,7 +951,7 @@ class REST_Controller {
 
 				// Convert WP_Error to REST error response
 				$status = 500;
-				if ( in_array( $error_code, array( 'limit_reached', 'daily_limit_reached', 'bbai_trial_exhausted' ), true ) ) {
+				if ( 'limit_reached' === $error_code || 'bbai_trial_exhausted' === $error_code ) {
 					$status = 403;
 				} elseif ( 'auth_required' === $error_code || 'user_not_found' === $error_code ) {
 					$status = 401;
@@ -2231,7 +2231,7 @@ class REST_Controller {
 			: max( 0, $limit - $used );
 
 		$plan_slug = strtolower( (string) ( $usage_stats['plan_type'] ?? $usage_stats['plan'] ?? 'free' ) );
-		$is_pro    = in_array( $plan_slug, array( 'starter', 'pro', 'growth', 'agency', 'enterprise' ), true )
+		$is_pro    = in_array( $plan_slug, array( 'pro', 'growth', 'agency', 'enterprise' ), true )
 			|| ! empty( $usage_stats['is_pro'] );
 
 		$credits_block = array(
@@ -2511,18 +2511,8 @@ class REST_Controller {
 	 * @return array
 	 */
 	public function handle_plans( \WP_REST_Request $request ) {
-		$plans      = array();
-		$api_client = $this->core->get_api_client();
-		if ( $api_client && method_exists( $api_client, 'get_plans' ) ) {
-			$remote_plans = $api_client->get_plans();
-			if ( ! is_wp_error( $remote_plans ) && is_array( $remote_plans ) ) {
-				$plans = $remote_plans;
-			}
-		}
-
 		return array(
 			'prices' => $this->core->get_checkout_price_ids(),
-			'plans'  => $plans,
 		);
 	}
 
@@ -2860,7 +2850,7 @@ class REST_Controller {
 				}
 				$code   = $alt->get_error_code();
 				$status = 500;
-				if ( in_array( $code, array( 'limit_reached', 'daily_limit_reached', 'bbai_trial_exhausted' ), true ) ) {
+				if ( in_array( $code, array( 'limit_reached', 'bbai_trial_exhausted' ), true ) ) {
 					$status = 403;
 				} elseif ( in_array( $code, array( 'auth_required', 'user_not_found' ), true ) ) {
 					$status = 401;

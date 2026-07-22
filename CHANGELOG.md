@@ -4,11 +4,7 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
-### 4.6.14 — 2026-05-29
-
-- **Changed**: Refactored the nAi dashboard into smaller PHP components and focused JavaScript modules while preserving existing dashboard behaviour.
-- **Changed**: Split ALT Library generation state helpers into focused legacy-compatible modules for locks, notices, bulk orchestration, API request construction, and row/count/filter state.
-- **Fixed**: Added regression coverage and release compliance cleanup for dashboard and ALT Library generation flows.
+### Unreleased
 
 ### 4.6.8 — 2026-07-16
 
