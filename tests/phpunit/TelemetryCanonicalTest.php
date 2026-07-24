@@ -108,7 +108,9 @@ final class TelemetryCanonicalTest extends TestCase {
 			$this->assertNotSame( '', $properties[ $key ], "Empty canonical property: {$key}" );
 		}
 
-		$this->assertSame( 'signup', $properties['feature_name'] ?? '' );
+		// Auth events canonicalise to a single 'account' feature; 'signup' is an
+		// alias and is not in the allowed feature list.
+		$this->assertSame( 'account', $properties['feature_name'] ?? '' );
 	}
 
 	public function test_generation_completed_contains_canonical_payload(): void {
@@ -149,7 +151,8 @@ final class TelemetryCanonicalTest extends TestCase {
 		);
 		unset( $GLOBALS['bbai_test_options']['beepbeepai_jwt_token'] );
 
-		$this->assertSame( 'login', $properties['feature_name'] ?? '' );
+		// As above: 'login' is an alias of the canonical 'account' feature.
+		$this->assertSame( 'account', $properties['feature_name'] ?? '' );
 		$this->assertSame( 'connected', $properties['license_state'] ?? '' );
 	}
 
