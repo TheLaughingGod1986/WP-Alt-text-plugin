@@ -54,6 +54,25 @@ function get_site_identifier() {
 		}
 	}
 
+	// Adopt the OpptiAI Titles plugin's site id when it established one first.
+	//
+	// Credits are pooled per backend canonical site, resolved from this
+	// identifier, so both OpptiAI plugins on one site must agree on it. Titles
+	// already adopts our id (Api\Client::shared_site_id) when we register
+	// first, but it keeps its own id once set — so without this branch a site
+	// that activated Titles first ends up with two identifiers, two canonical
+	// sites and two separate free allowances.
+	//
+	// Adoption only runs when we have no identifier of our own, so an
+	// established site is never moved onto a different wallet (which would
+	// orphan its recorded usage). We only read the sibling option; we never
+	// write to another plugin's option names.
+	$sibling_site_id = get_option( 'beepti_site_id', '' );
+	if ( ! empty( $sibling_site_id ) && is_string( $sibling_site_id ) && strlen( $sibling_site_id ) >= 16 ) {
+		update_option( $option_key, $sibling_site_id, true );
+		return $sibling_site_id;
+	}
+
 	// Generate a new site ID
 	// Use site URL + salt for stability, but add randomness for uniqueness
 	$site_url        = get_site_url();
