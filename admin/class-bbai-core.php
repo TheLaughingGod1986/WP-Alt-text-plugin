@@ -4956,7 +4956,7 @@ class Core {
 		}
 
 		$quality_tooltip = 'missing' === $status
-			? __( 'Generate ALT text to improve accessibility and image SEO.', 'beepbeep-ai-alt-text-generator' )
+			? __( 'Optimise ALT text to improve accessibility and image SEO.', 'beepbeep-ai-alt-text-generator' )
 			: sprintf(
 				/* translators: %s: quality score. */
 				__( 'ALT quality score: %s/100', 'beepbeep-ai-alt-text-generator' ),

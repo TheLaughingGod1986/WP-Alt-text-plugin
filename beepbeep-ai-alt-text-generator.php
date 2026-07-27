@@ -221,6 +221,7 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/bootstrap-v5.php';
 // shared OptiAI Core scoring engine. Self-contained (own menu page, own
 // AJAX handlers) so it cannot regress the existing admin dashboard.
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/Scoring/Alt_Text_Scan_Service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/Scoring/Legacy_Audit_Migrator.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/Scoring/Health_Dashboard_Page.php';
 \BeepBeepAI\AltTextGenerator\Scoring\Health_Dashboard_Page::register();
 
@@ -234,6 +235,11 @@ add_action( 'init', static function () {
 		__( 'OptiAI Alt Text', 'beepbeep-ai-alt-text-generator' )
 	);
 	\OptiAI\Core\Module_Report::expose( 'alt_text', __( 'OptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ) );
+
+	// One-time, non-destructive carry-over from the earlier (shipped then
+	// reverted) audit table, if this site happens to have it. No-ops
+	// instantly on every site that does not.
+	\BeepBeepAI\AltTextGenerator\Scoring\Legacy_Audit_Migrator::maybe_run();
 } );
 
 if ( ! function_exists( 'beepbeepai_handle_usage_export_admin_post' ) ) {

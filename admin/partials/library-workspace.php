@@ -764,7 +764,7 @@ $bbai_library_workspace_filter_items = array(
 						aria-disabled="true"
 							<?php echo $bbai_locked_auth_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static escaped fragment. ?>
 						<?php endif; ?>
-					><?php esc_html_e( 'Generate all missing ALT text', 'beepbeep-ai-alt-text-generator' ); ?></button>
+					><?php esc_html_e( 'Optimise all missing ALT text', 'beepbeep-ai-alt-text-generator' ); ?></button>
 					<p class="bbai-library-missing-bulk-bar__helper" data-bbai-missing-bulk-helper aria-live="polite"></p>
 				</div>
 				<div class="bbai-library-missing-bulk-bar__no-credits" data-bbai-missing-bulk-no-credits hidden>

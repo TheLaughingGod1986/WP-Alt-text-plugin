@@ -75,7 +75,7 @@ switch ( $bbai_surf_state ) {
 		$bbai_it_loading       = __( 'Loading images…', 'beepbeep-ai-alt-text-generator' );
 		$bbai_it_alt_col       = __( 'ALT text', 'beepbeep-ai-alt-text-generator' );
 		$bbai_it_primary_cta   = array(
-			'label'  => __( 'Generate all missing', 'beepbeep-ai-alt-text-generator' ),
+			'label'  => __( 'Optimise all missing', 'beepbeep-ai-alt-text-generator' ),
 			'href'   => '#',
 			'action' => 'generate-missing',
 		);

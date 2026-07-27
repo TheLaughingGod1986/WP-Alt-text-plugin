@@ -161,7 +161,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	$bbai_n_rem                 = max( 0, (int) $bbai_gt_remaining );
 	$bbai_show_generate_primary = $bbai_n_rem > 0 && $bbai_state_missing_count > 0;
 	$bbai_primary_generate      = array(
-		'label'       => __( 'Generate free ALT text', 'beepbeep-ai-alt-text-generator' ),
+		'label'       => __( 'Optimise ALT text — free', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',
@@ -221,7 +221,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		$bbai_guest_title = __( 'Your images are missing ALT text', 'beepbeep-ai-alt-text-generator' );
 		$bbai_guest_body  = sprintf(
 			/* translators: %d: free trial generations. */
-			__( 'Generate your first %d ALT texts for free. No account needed.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'Optimise your first %d ALT texts for free. No account needed.', 'beepbeep-ai-alt-text-generator' ),
 			(int) $bbai_gt_limit
 		);
 	}
@@ -229,7 +229,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	// Only show "Generate" when there is actually missing ALT to fix.
 	$bbai_show_generate_primary = $bbai_gt_remaining > 0 && $bbai_state_missing_count > 0;
 	$bbai_primary_generate      = array(
-		'label'       => __( 'Generate free ALT text', 'beepbeep-ai-alt-text-generator' ),
+		'label'       => __( 'Optimise ALT text — free', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',

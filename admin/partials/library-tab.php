@@ -1014,7 +1014,7 @@ if ( $bbai_use_library_workspace && is_array( $bbai_table_filter_counts ) ) {
 															data-bbai-locked-source="library-row-regenerate"
 															aria-disabled="true"
 														<?php endif; ?>>
-													<?php echo esc_html( $bbai_has_alt ? __( 'Regenerate', 'beepbeep-ai-alt-text-generator' ) : __( 'Generate', 'beepbeep-ai-alt-text-generator' ) ); ?>
+													<?php echo esc_html( $bbai_has_alt ? __( 'Regenerate', 'beepbeep-ai-alt-text-generator' ) : __( 'Optimise', 'beepbeep-ai-alt-text-generator' ) ); ?>
 												</button>
 												<button type="button"
 														class="bbai-row-action-btn"

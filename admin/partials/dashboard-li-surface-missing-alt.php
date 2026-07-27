@@ -23,7 +23,7 @@ $bbai_it_subheading  = __( 'These images have no ALT text. Generate now or open 
 $bbai_it_loading     = __( 'Loading images…', 'beepbeep-ai-alt-text-generator' );
 $bbai_it_alt_col     = __( 'ALT text', 'beepbeep-ai-alt-text-generator' );
 $bbai_it_primary_cta = array(
-	'label'  => __( 'Generate all', 'beepbeep-ai-alt-text-generator' ),
+	'label'  => __( 'Optimise all', 'beepbeep-ai-alt-text-generator' ),
 	'href'   => '#',
 	'action' => 'generate-missing',
 );
