@@ -28,12 +28,15 @@ class Health_Dashboard_Page {
 	const PAGE_SLUG = 'bbai-health';
 	const NONCE_ACTION = 'bbai_health_nonce';
 
+	const ONBOARDING_OPTION = 'optiai_alt_text_onboarding_complete';
+
 	public static function register() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu' ), 20 );
 		add_action( 'wp_ajax_bbai_health_get', array( __CLASS__, 'ajax_get_health' ) );
 		add_action( 'wp_ajax_bbai_health_priorities', array( __CLASS__, 'ajax_get_priorities' ) );
 		add_action( 'wp_ajax_bbai_health_items', array( __CLASS__, 'ajax_get_items' ) );
 		add_action( 'wp_ajax_bbai_health_scan', array( __CLASS__, 'ajax_run_scan' ) );
+		add_action( 'wp_ajax_bbai_health_complete_onboarding', array( __CLASS__, 'ajax_complete_onboarding' ) );
 	}
 
 	public static function add_menu() {
@@ -136,21 +139,43 @@ class Health_Dashboard_Page {
 		wp_send_json_success( $result );
 	}
 
+	public static function ajax_complete_onboarding() {
+		self::verify_request();
+		update_option( self::ONBOARDING_OPTION, true );
+		wp_send_json_success( array( 'complete' => true ) );
+	}
+
 	// ------------------------------------------------------------------
 	// Page shell (plain PHP + vanilla JS, no build step)
 	// ------------------------------------------------------------------
 
 	public static function render_page() {
-		$nonce   = wp_create_nonce( self::NONCE_ACTION );
-		$ajaxUrl = admin_url( 'admin-ajax.php' );
+		$nonce            = wp_create_nonce( self::NONCE_ACTION );
+		$ajaxUrl          = admin_url( 'admin-ajax.php' );
+		$onboarding_done  = (bool) get_option( self::ONBOARDING_OPTION, false );
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Alt Text Health', 'beepbeep-ai-alt-text-generator' ); ?></h1>
-			<div id="bbai-health-root" data-nonce="<?php echo esc_attr( $nonce ); ?>" data-ajax-url="<?php echo esc_url( $ajaxUrl ); ?>">
+			<div
+				id="bbai-health-root"
+				data-nonce="<?php echo esc_attr( $nonce ); ?>"
+				data-ajax-url="<?php echo esc_url( $ajaxUrl ); ?>"
+				data-onboarding-done="<?php echo $onboarding_done ? '1' : '0'; ?>"
+			>
 				<p><?php esc_html_e( 'Loading…', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			</div>
 		</div>
 		<style>
+			.bbai-h-onboard-overlay { position: fixed; inset: 0; background: rgba(30,30,40,0.5); z-index: 100000; display: flex; align-items: center; justify-content: center; }
+			.bbai-h-onboard-modal { background: #fff; border-radius: 10px; width: 560px; max-width: 92vw; max-height: 88vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+			.bbai-h-onboard-steps { display: flex; gap: 6px; padding: 20px 24px 0; }
+			.bbai-h-onboard-steps span { flex: 1; height: 3px; border-radius: 999px; background: #e2e2e2; }
+			.bbai-h-onboard-steps span.done { background: #1e1e1e; }
+			.bbai-h-onboard-body { padding: 16px 24px 24px; }
+			.bbai-h-onboard-body h2 { font-size: 22px; margin: 0 0 8px; }
+			.bbai-h-onboard-body p { font-size: 14px; color: #50575e; line-height: 1.55; margin: 0 0 16px; }
+			.bbai-h-onboard-actions { display: flex; justify-content: space-between; margin-top: 20px; }
+			.bbai-h-onboard-feature { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 6px 0; }
 			#bbai-health-root { max-width: 960px; }
 			.bbai-h-card { background: #fff; border: 1px solid #dcdcde; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
 			.bbai-h-hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
@@ -180,6 +205,7 @@ class Health_Dashboard_Page {
 			var root = document.getElementById('bbai-health-root');
 			var nonce = root.dataset.nonce;
 			var ajaxUrl = root.dataset.ajaxUrl;
+			var onboardingDone = root.dataset.onboardingDone === '1';
 
 			function post(action, data) {
 				var body = new URLSearchParams(Object.assign({ action: action, nonce: nonce }, data || {}));
@@ -334,7 +360,97 @@ class Health_Dashboard_Page {
 				});
 			}
 
-			load();
+			/* ── 4-screen onboarding: Welcome -> scan scope -> free health check -> results ── */
+			function renderOnboarding() {
+				var overlay = document.createElement('div');
+				overlay.className = 'bbai-h-onboard-overlay';
+				var state = { step: 0, score: 0, issuesFound: 0, itemsScanned: 0 };
+
+				function stepsHtml() {
+					var out = '';
+					for (var i = 0; i < 4; i++) out += '<span class="' + (i <= state.step ? 'done' : '') + '"></span>';
+					return out;
+				}
+
+				function render() {
+					var body = '';
+					if (state.step === 0) {
+						body = '<h2>Improve your website continuously with OptiAI</h2>' +
+							'<p>OptiAI scans your media library, identifies alt text issues and helps you improve them with AI-powered recommendations. The health check is free — you only spend credits when you choose to fix something.</p>' +
+							'<div class="bbai-h-onboard-feature">✓ Free health score — scanning never uses credits</div>' +
+							'<div class="bbai-h-onboard-feature">✓ Priority Action Centre shows what to fix first</div>' +
+							'<div class="bbai-h-onboard-feature">✓ Continuous optimisation keeps new uploads covered</div>' +
+							'<div class="bbai-h-onboard-actions"><span></span><button class="button button-primary" id="bbai-ob-next-0">Let\'s go</button></div>';
+					} else if (state.step === 1) {
+						body = '<h2>Choose what to scan</h2>' +
+							'<p>OptiAI will scan every image in your Media Library, including featured images and WooCommerce product images where present. You can re-scan anytime from this dashboard.</p>' +
+							'<div class="bbai-h-onboard-actions"><button class="button" id="bbai-ob-back-1">Back</button><button class="button button-primary" id="bbai-ob-next-1">Continue</button></div>';
+					} else if (state.step === 2) {
+						body = '<h2>Run your free health check</h2>' +
+							'<p>We\'ll scan every image for missing, weak, duplicate and filename-style alt text. This is completely free — no credits are used.</p>' +
+							'<div style="padding:28px;background:#f6f7f7;border:1px solid #dcdcde;border-radius:8px;text-align:center;">' +
+							(state.scanning
+								? '<div>Scanning your media library…</div>'
+								: '<button class="button button-primary button-hero" id="bbai-ob-run-scan">Run My Free Health Check</button>') +
+							'</div>' +
+							'<div class="bbai-h-onboard-actions"><button class="button" id="bbai-ob-back-2"' + (state.scanning ? ' disabled' : '') + '>Back</button><span></span></div>';
+					} else {
+						body = '<h2>Your site score is ' + state.score + '</h2>' +
+							'<p>' + (state.issuesFound > 0
+								? 'We found <strong>' + state.issuesFound + '</strong> optimisation opportunit' + (state.issuesFound === 1 ? 'y' : 'ies') + ' across <strong>' + state.itemsScanned + '</strong> images.'
+								: 'Nothing needs attention right now — your images already look healthy.') + '</p>' +
+							'<div class="bbai-h-onboard-feature">✓ Free health checks whenever you want them</div>' +
+							'<div class="bbai-h-onboard-feature">✓ Fix issues one at a time or in bulk</div>' +
+							'<div class="bbai-h-onboard-actions"><span></span><button class="button button-primary" id="bbai-ob-finish">View Recommendations</button></div>';
+					}
+					overlay.innerHTML = '<div class="bbai-h-onboard-modal"><div class="bbai-h-onboard-steps">' + stepsHtml() + '</div><div class="bbai-h-onboard-body">' + body + '</div></div>';
+					wire();
+				}
+
+				function wire() {
+					var next0 = document.getElementById('bbai-ob-next-0');
+					if (next0) next0.addEventListener('click', function () { state.step = 1; render(); });
+					var back1 = document.getElementById('bbai-ob-back-1');
+					if (back1) back1.addEventListener('click', function () { state.step = 0; render(); });
+					var next1 = document.getElementById('bbai-ob-next-1');
+					if (next1) next1.addEventListener('click', function () { state.step = 2; render(); });
+					var back2 = document.getElementById('bbai-ob-back-2');
+					if (back2) back2.addEventListener('click', function () { state.step = 1; render(); });
+					var runScan = document.getElementById('bbai-ob-run-scan');
+					if (runScan) runScan.addEventListener('click', function () {
+						state.scanning = true;
+						render();
+						post('bbai_health_scan').then(function (res) {
+							state.score = res.average_score || 0;
+							state.issuesFound = res.issues_found || 0;
+							state.itemsScanned = res.items_scanned || 0;
+							state.scanning = false;
+							state.step = 3;
+							render();
+						}).catch(function () {
+							state.scanning = false;
+							state.step = 3;
+							render();
+						});
+					});
+					var finish = document.getElementById('bbai-ob-finish');
+					if (finish) finish.addEventListener('click', function () {
+						post('bbai_health_complete_onboarding').finally(function () {
+							document.body.removeChild(overlay);
+							load();
+						});
+					});
+				}
+
+				document.body.appendChild(overlay);
+				render();
+			}
+
+			if (onboardingDone) {
+				load();
+			} else {
+				renderOnboarding();
+			}
 		})();
 		</script>
 		<?php
