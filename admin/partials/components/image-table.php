@@ -150,7 +150,7 @@ endif;
 							<td class="bbai-li-image-table__col-action">
 								<?php if ( $bbai_is_miss ) : ?>
 									<button type="button" class="bbai-li-image-table__row-btn button button-primary" data-action="generate-single" data-attachment-id="<?php echo esc_attr( (string) $bbai_rid ); ?>">
-										<?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?>
+										<?php esc_html_e( 'Optimise', 'beepbeep-ai-alt-text-generator' ); ?>
 									</button>
 								<?php else : ?>
 									<button type="button" class="bbai-li-image-table__row-btn button button-secondary" data-action="review-single" data-attachment-id="<?php echo esc_attr( (string) $bbai_rid ); ?>">

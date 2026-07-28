@@ -90,8 +90,8 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
 						sprintf(
 							/* translators: %s: number of free images. */
 							_n(
-								'Generate alt text for %s image (free)',
-								'Generate alt text for %s images (free)',
+								'Optimise alt text for %s image (free)',
+								'Optimise alt text for %s images (free)',
 								$bbai_lo_trial_count,
 								'beepbeep-ai-alt-text-generator'
 							),

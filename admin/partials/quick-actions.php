@@ -163,7 +163,7 @@ if ( 'dashboard' === $bbai_quick_actions_context ) :
 	} elseif ( $bbai_generate_is_complete ) {
 		$bbai_generate_label  = bbai_copy_cta_open_alt_library();
 		$bbai_generate_helper = __( 'No images are currently missing ALT text.', 'beepbeep-ai-alt-text-generator' );
-		$bbai_generate_attrs  = 'href="' . esc_url( $bbai_library_url ) . '" aria-label="' . esc_attr__( 'Generate Missing ALT complete', 'beepbeep-ai-alt-text-generator' ) . '"';
+		$bbai_generate_attrs  = 'href="' . esc_url( $bbai_library_url ) . '" aria-label="' . esc_attr__( 'Optimise Missing ALT complete', 'beepbeep-ai-alt-text-generator' ) . '"';
 	}
 
 	$bbai_review_label    = bbai_copy_cta_improve_alt();

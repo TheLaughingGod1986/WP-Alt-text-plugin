@@ -248,7 +248,7 @@ if ( $bbai_li_missing_count > 0 ) {
 	if ( $bbai_hero_is_free_plan && 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) {
 		$bbai_hero_cta_hint = __( 'Manual generation on the free plan', 'beepbeep-ai-alt-text-generator' );
 	} else {
-		$bbai_hero_cta_hint = __( 'Generate ALT text to move to review.', 'beepbeep-ai-alt-text-generator' );
+		$bbai_hero_cta_hint = __( 'Optimise ALT text to move to review.', 'beepbeep-ai-alt-text-generator' );
 	}
 } elseif ( $bbai_li_review_count > 0 ) {
 	$bbai_hero_cta_hint = __( 'Complete your optimisation', 'beepbeep-ai-alt-text-generator' );
@@ -339,15 +339,15 @@ if ( 'QUEUED' === $bbai_li_state_id ) {
 		_n( '%s image is ready for ALT text', '%s images are ready for ALT text', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_li_queued_total )
 	);
-	$bbai_li_description = __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_description = __( 'Optimise ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' );
 
 	if ( is_array( $bbai_li_primary_cta ) && 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) {
 		$bbai_li_primary_cta['label'] = sprintf(
-			/* translators: %s: number of images ready to generate */
-			_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
+			/* translators: %s: number of images ready to optimise */
+			_n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
 			number_format_i18n( $bbai_li_queued_total )
 		);
-		$bbai_li_primary_cta['busy_label'] = __( 'Generating ALT text…', 'beepbeep-ai-alt-text-generator' );
+		$bbai_li_primary_cta['busy_label'] = __( 'Optimising ALT text…', 'beepbeep-ai-alt-text-generator' );
 	}
 
 	if ( is_array( $bbai_li_secondary_cta ) ) {
@@ -577,7 +577,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		$bbai_li_donut_cm_label = '';
 		if ( in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_seg_miss > 0 ) {
 			$bbai_li_donut_cm_href  = $bbai_li_primary_cta['href'] ?? '#';
-			$bbai_li_donut_cm_label = __( 'Generate ALT text →', 'beepbeep-ai-alt-text-generator' );
+			$bbai_li_donut_cm_label = __( 'Optimise ALT text →', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'MIXED_ATTENTION' === $bbai_li_state_id && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
 			$bbai_li_donut_cm_href  = $bbai_needs_review_library_url;
 			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
@@ -797,9 +797,9 @@ endif;
 				data-bbai-li-flow="1"
 				<?php echo $bbai_li_flow_hidden ? 'hidden' : ''; ?>
 				role="group"
-				aria-label="<?php esc_attr_e( 'Workflow: Generate, Review, Done', 'beepbeep-ai-alt-text-generator' ); ?>"
+				aria-label="<?php esc_attr_e( 'Workflow: Optimise, Review, Done', 'beepbeep-ai-alt-text-generator' ); ?>"
 			>
-				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( 'Optimise', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
 				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_rev_class ); ?>" data-bbai-flow-step="review"><?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
@@ -1289,18 +1289,18 @@ endif;
 		lastCheckedHour: '<?php echo esc_js( __( 'Last checked 1 hour ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedHours: '<?php echo esc_js( /* translators: %s: value */ __( 'Last checked %s hours ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastRun: '<?php echo esc_js( /* translators: %s: value */ __( 'Last batch completed %s', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedBadge: '<?php echo esc_js( __( 'Ready to generate', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedBadge: '<?php echo esc_js( __( 'Ready to optimise', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingBadge: '<?php echo esc_js( __( 'Processing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		actionNeededBadge: '<?php echo esc_js( __( 'Action needed', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		recommendedBadge: '<?php echo esc_js( __( 'Recommended', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewReadyBadge: '<?php echo esc_js( __( 'Review ready', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsNeededBadge: '<?php echo esc_js( __( 'Credits needed', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		allOptimisedBadge: '<?php echo esc_js( __( 'All optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedSupport: '<?php echo esc_js( __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedSupport: '<?php echo esc_js( __( 'Optimise ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedHeadlineSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedHeadlinePlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimarySingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimaryPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimarySingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimaryPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedSecondary: '<?php echo esc_js( __( 'Preview images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedReadySingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready to generate', '%s ready to generate', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedReadyPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready to generate', '%s ready to generate', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1317,9 +1317,9 @@ endif;
 		approveAll: '<?php echo esc_js( __( 'Approve all', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		openReviewQueue: '<?php echo esc_js( __( 'Open review queue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewIndividually: '<?php echo esc_js( __( 'Review individually →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateMissingAlt: '<?php echo esc_js( __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateAltForSingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateAltForPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateMissingAlt: '<?php echo esc_js( __( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateAltForSingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateAltForPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		addCredits: '<?php echo esc_js( __( 'Add credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		rescanLibrary: '<?php echo esc_js( __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingLabel: '<?php echo esc_js( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1358,8 +1358,8 @@ endif;
 		missingAltPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image needs ALT text', '%s images need ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingHeadlineSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is missing ALT text', '%s images are missing ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingHeadlinePlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is missing ALT text', '%s images are missing ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		mixedSupport: '<?php echo esc_js( __( 'Generate ALT text first, then review the suggested descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingSupport: '<?php echo esc_js( __( 'Generate the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		mixedSupport: '<?php echo esc_js( __( 'Optimise ALT text first, then review the suggested descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingSupport: '<?php echo esc_js( __( 'Optimise the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingSupportProgress: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s images already optimised — generate the remaining %2$s to complete your library.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		readyReviewSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready for review', '%s ready for review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		readyReviewPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready for review', '%s ready for review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1421,7 +1421,7 @@ endif;
 		firstSuccessTitle: '<?php echo esc_js( __( 'Nice — your images now have ALT text 🎉', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		firstSuccessCopy: '<?php echo esc_js( __( 'Search engines and screen readers can now understand them.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewAltText: '<?php echo esc_js( __( 'Review ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateMore: '<?php echo esc_js( __( 'Generate more', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateMore: '<?php echo esc_js( __( 'Optimise more', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveAll: '<?php echo esc_js( __( 'Approve all ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		editFew: '<?php echo esc_js( __( 'Edit a few manually', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		done: '<?php echo esc_js( __( 'Done', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -4229,7 +4229,7 @@ endif;
 				'<?php echo esc_js( /* translators: %s: value */ __( '%s images still need attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>'
 			);
 			processed = formatCount( complete ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
-			primaryLabel = TEXT.generateMissingAlt || '<?php echo esc_js( __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryLabel = TEXT.generateMissingAlt || '<?php echo esc_js( __( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			primaryHref = '#';
 			primaryAction = 'generate-missing';
 			primaryBbaiAction = 'generate_missing';

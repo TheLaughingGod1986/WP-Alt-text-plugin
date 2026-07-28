@@ -102,7 +102,7 @@ $bbai_library_ob            = add_query_arg( array( 'page' => 'bbai-library' ), 
 				<li class="bbai-onboarding-dashboard__step">
 					<span class="bbai-onboarding-dashboard__step-index" aria-hidden="true">2</span>
 					<div class="bbai-onboarding-dashboard__step-body">
-						<strong class="bbai-onboarding-dashboard__step-title"><?php esc_html_e( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+						<strong class="bbai-onboarding-dashboard__step-title"><?php esc_html_e( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ); ?></strong>
 						<span class="bbai-onboarding-dashboard__step-text"><?php esc_html_e( 'Create AI descriptions for images that are missing ALT text.', 'beepbeep-ai-alt-text-generator' ); ?></span>
 					</div>
 				</li>
@@ -184,12 +184,12 @@ $bbai_library_ob            = add_query_arg( array( 'page' => 'bbai-library' ), 
 						</a>
 					</div>
 				<?php elseif ( $bbai_missing_ob > 0 && $bbai_credits_ob > 0 ) : ?>
-					<h2 class="bbai-activation-ftue__title bbai-section-title"><?php esc_html_e( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ); ?></h2>
+					<h2 class="bbai-activation-ftue__title bbai-section-title"><?php esc_html_e( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 					<p class="bbai-activation-ftue__lead bbai-section-description">
 						<?php
 						printf(
 							/* translators: %s: number of images missing ALT */
-							esc_html__( '%s images are missing ALT text. Generate descriptions next—then you can review and approve them in the ALT Library.', 'beepbeep-ai-alt-text-generator' ),
+							esc_html__( '%s images are missing ALT text. Optimise descriptions next—then you can review and approve them in the ALT Library.', 'beepbeep-ai-alt-text-generator' ),
 							esc_html( number_format_i18n( $bbai_missing_ob ) )
 						);
 						?>
@@ -220,12 +220,12 @@ $bbai_library_ob            = add_query_arg( array( 'page' => 'bbai-library' ), 
 						</a>
 					</div>
 				<?php elseif ( $bbai_missing_ob > 0 && $bbai_credits_ob <= 0 ) : ?>
-					<h2 class="bbai-activation-ftue__title bbai-section-title"><?php esc_html_e( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ); ?></h2>
+					<h2 class="bbai-activation-ftue__title bbai-section-title"><?php esc_html_e( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 					<p class="bbai-activation-ftue__lead bbai-section-description">
 						<?php
 						printf(
 							/* translators: %s: number of images missing ALT */
-							esc_html__( '%s images are missing ALT text. Add credits or upgrade to generate AI descriptions.', 'beepbeep-ai-alt-text-generator' ),
+							esc_html__( '%s images are missing ALT text. Add credits or upgrade to optimise them with AI descriptions.', 'beepbeep-ai-alt-text-generator' ),
 							esc_html( number_format_i18n( $bbai_missing_ob ) )
 						);
 						?>
@@ -352,21 +352,21 @@ $bbai_library_ob            = add_query_arg( array( 'page' => 'bbai-library' ), 
 				<li class="bbai-onboarding-dashboard__step">
 					<span class="bbai-onboarding-dashboard__step-index" aria-hidden="true">2</span>
 					<div class="bbai-onboarding-dashboard__step-body">
-						<strong class="bbai-onboarding-dashboard__step-title"><?php esc_html_e( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ); ?></strong>
+						<strong class="bbai-onboarding-dashboard__step-title"><?php esc_html_e( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ); ?></strong>
 						<span class="bbai-onboarding-dashboard__step-text">
 							<?php
 							if ( $bbai_ob_processing ) {
-								esc_html_e( 'Generation is running—wait until library counts update, then review.', 'beepbeep-ai-alt-text-generator' );
+								esc_html_e( 'Optimisation is running—wait until library counts update, then review.', 'beepbeep-ai-alt-text-generator' );
 							} elseif ( $bbai_missing_ob > 0 && $bbai_credits_ob > 0 ) {
-								esc_html_e( 'Use the primary action above to generate ALT text in a small batch first.', 'beepbeep-ai-alt-text-generator' );
+								esc_html_e( 'Use the primary action above to optimise ALT text in a small batch first.', 'beepbeep-ai-alt-text-generator' );
 							} elseif ( $bbai_missing_ob > 0 && $bbai_credits_ob <= 0 ) {
-								esc_html_e( 'You still have images without ALT text—add credits or upgrade, then generate from the dashboard or library.', 'beepbeep-ai-alt-text-generator' );
+								esc_html_e( 'You still have images without ALT text—add credits or upgrade, then optimise from the dashboard or library.', 'beepbeep-ai-alt-text-generator' );
 							} elseif ( $bbai_missing_ob <= 0 && $bbai_weak_ob > 0 ) {
 								esc_html_e( 'Nothing is missing right now—move on to review or improve descriptions that need a second look.', 'beepbeep-ai-alt-text-generator' );
 							} elseif ( $bbai_has_visible_alt_ob ) {
 								esc_html_e( 'You have descriptions in the library—add more from the ALT Library or dashboard whenever you need to.', 'beepbeep-ai-alt-text-generator' );
 							} else {
-								esc_html_e( 'Generate ALT text whenever you have images without descriptions.', 'beepbeep-ai-alt-text-generator' );
+								esc_html_e( 'Optimise ALT text whenever you have images without descriptions.', 'beepbeep-ai-alt-text-generator' );
 							}
 							?>
 						</span>

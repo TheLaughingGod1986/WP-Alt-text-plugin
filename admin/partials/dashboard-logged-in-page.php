@@ -181,7 +181,7 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 					<?php
 					echo $bbai_li_mins > 0
 						? esc_html__( 'Manual ALT writing avoided.', 'beepbeep-ai-alt-text-generator' )
-						: esc_html__( 'Generate ALT in bulk to see time saved here.', 'beepbeep-ai-alt-text-generator' );
+						: esc_html__( 'Optimise ALT in bulk to see time saved here.', 'beepbeep-ai-alt-text-generator' );
 					?>
 					</p>
 					<p class="bbai-li-insight-card__meta"><?php esc_html_e( 'Estimated from 2 mins per image.', 'beepbeep-ai-alt-text-generator' ); ?></p>
@@ -219,7 +219,7 @@ if ( ! $bbai_li_banner_is_null && empty( $bbai_li_banner_cfg ) ) {
 					<?php
 					echo $bbai_li_opt > 0
 						? esc_html__( 'Search engines can understand more of your media.', 'beepbeep-ai-alt-text-generator' )
-						: esc_html__( 'Generate ALT text to start improving rankings.', 'beepbeep-ai-alt-text-generator' );
+						: esc_html__( 'Optimise ALT text to start improving rankings.', 'beepbeep-ai-alt-text-generator' );
 					?>
 					</p>
 					<p class="bbai-li-insight-card__meta" data-bbai-li-insight-seo-meta>
