@@ -62,6 +62,7 @@ class Module_Registry {
 			return array(
 				'state' => 'active',
 				'label' => __( 'Open', 'optiai-core' ),
+				'icon'  => 'external',
 				'url'   => $dashboard_url,
 			);
 		}
@@ -70,6 +71,7 @@ class Module_Registry {
 			return array(
 				'state' => 'installed',
 				'label' => __( 'Activate', 'optiai-core' ),
+				'icon'  => 'play',
 				'url'   => add_query_arg(
 					array(
 						'plugin_status' => 'inactive',
@@ -83,6 +85,7 @@ class Module_Registry {
 		return array(
 			'state' => 'missing',
 			'label' => __( 'Install', 'optiai-core' ),
+			'icon'  => 'upload',
 			'url'   => add_query_arg(
 				array(
 					'tab'    => 'plugin-information',
