@@ -116,4 +116,48 @@ class Module_Registry {
 	public static function all() {
 		return self::$modules;
 	}
+
+	/**
+	 * Pulls every registered module's health report via the shared
+	 * `optiai_module_report` filter (see Module_Report::expose()). This is
+	 * the cross-plugin aggregation a future OptiAI Hub would use — built
+	 * here, ahead of the Hub existing, so both Titles and Alt Text can show
+	 * a combined score today without depending on each other at runtime.
+	 *
+	 * Only modules that are both registered (installed + active on this
+	 * site) AND have actually run a scan report; a module with no scan
+	 * history yet is silently omitted rather than shown as a fake zero.
+	 *
+	 * @return array<int,array> Reports keyed positionally, each shaped per Module_Report::build().
+	 */
+	public static function all_reports() {
+		$reports = array();
+		foreach ( array_keys( self::$modules ) as $slug ) {
+			$report = apply_filters( 'optiai_module_report', array(), $slug );
+			if ( is_array( $report ) && isset( $report['score'] ) ) {
+				$reports[] = $report;
+			}
+		}
+		return $reports;
+	}
+
+	/**
+	 * Simple average score across every module that has reported — the
+	 * number a future "Overall Website Health" tile on an OptiAI Hub would
+	 * show. Returns null when fewer than 2 modules have reported (a single
+	 * module's own dashboard already shows its own score; this is only
+	 * useful once there is something to combine).
+	 *
+	 * @return int|null
+	 */
+	public static function aggregate_score() {
+		$reports = self::all_reports();
+		if ( count( $reports ) < 2 ) {
+			return null;
+		}
+		$scores = array_map( static function ( $r ) {
+			return (int) $r['score'];
+		}, $reports );
+		return (int) round( array_sum( $scores ) / count( $scores ) );
+	}
 }
