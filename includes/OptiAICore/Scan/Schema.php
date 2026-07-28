@@ -37,6 +37,13 @@ class Schema {
 	}
 
 	/**
+	 * @return string Unprefixed table name for the optimisation undo log.
+	 */
+	public static function history_table_slug() {
+		return 'optiai_history';
+	}
+
+	/**
 	 * @return string Fully-prefixed items table name.
 	 */
 	public static function items_table() {
@@ -50,6 +57,14 @@ class Schema {
 	public static function runs_table() {
 		global $wpdb;
 		return $wpdb->prefix . self::runs_table_slug();
+	}
+
+	/**
+	 * @return string Fully-prefixed history table name.
+	 */
+	public static function history_table() {
+		global $wpdb;
+		return $wpdb->prefix . self::history_table_slug();
 	}
 
 	/**
@@ -67,6 +82,7 @@ class Schema {
 		$charset_collate = $wpdb->get_charset_collate();
 		$items_table     = self::items_table();
 		$runs_table      = self::runs_table();
+		$history_table   = self::history_table();
 
 		$items_sql = "CREATE TABLE {$items_table} (
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -101,8 +117,24 @@ class Schema {
 			KEY module_started (module, started_at)
 		) {$charset_collate};";
 
+		$history_sql = "CREATE TABLE {$history_table} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			module VARCHAR(40) NOT NULL,
+			site_item_id VARCHAR(191) NOT NULL,
+			old_value LONGTEXT NULL,
+			new_value LONGTEXT NULL,
+			score_before SMALLINT NULL,
+			score_after SMALLINT NULL,
+			credits_used SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY module_item (module, site_item_id),
+			KEY module_created (module, created_at)
+		) {$charset_collate};";
+
 		dbDelta( $items_sql );
 		dbDelta( $runs_sql );
+		dbDelta( $history_sql );
 
 		update_option( 'optiai_core_schema_version', self::SCHEMA_VERSION );
 	}
