@@ -39,7 +39,7 @@ if (!empty($bbai_has_connected_account)) {
 }
 $bbai_free_plan_offer = max(0, (int) ($bbai_usage_stats['free_plan_offer'] ?? 25));
 $bbai_usage_used_seed = max(0, (int) ($bbai_usage_stats['credits_used'] ?? $bbai_usage_stats['creditsUsed'] ?? $bbai_usage_stats['used'] ?? 0));
-$bbai_usage_limit_seed = max(1, (int) ($bbai_usage_stats['credits_total'] ?? $bbai_usage_stats['creditsTotal'] ?? $bbai_usage_stats['limit'] ?? 50));
+$bbai_usage_limit_seed = max(1, (int) ($bbai_usage_stats['credits_total'] ?? $bbai_usage_stats['creditsTotal'] ?? $bbai_usage_stats['limit'] ?? 25));
 $bbai_usage_remaining_seed = max(0, (int) ($bbai_usage_stats['credits_remaining'] ?? $bbai_usage_stats['creditsRemaining'] ?? $bbai_usage_stats['remaining'] ?? max(0, $bbai_usage_limit_seed - $bbai_usage_used_seed)));
 $bbai_low_credit_threshold = max(
     0,

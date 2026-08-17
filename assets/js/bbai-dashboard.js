@@ -4279,7 +4279,7 @@ bbaiRunWithJQuery(function($) {
         }
 
         var used = parseCount(usage.used);
-        var limit = Math.max(1, parseCount(usage.limit || 50));
+        var limit = Math.max(1, parseCount(usage.limit || 25));
         var remaining = parseCount(usage.remaining);
 
         var domGuestTrial = root && root.getAttribute('data-bbai-is-guest-trial') === '1';
