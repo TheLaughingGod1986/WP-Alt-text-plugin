@@ -50,8 +50,8 @@ trait Core_Admin_UI {
 
         // Top-level menu uses the brand name; the first submenu is "Dashboard".
         add_menu_page(
-            __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
-            __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+            __('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'),
+            __('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'),
             $cap,
             self::MENU_SLUG_DASHBOARD,
             [$this, 'render_settings_page'],
