@@ -721,13 +721,13 @@ function showAuthModal(tab) {
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
-        // Switch to the correct form BEFORE show() to avoid flashing the wrong form and misplaced focus.
+        window.authModal.show();
+
         if (tab === 'register' && typeof window.authModal.showRegisterForm === 'function') {
             window.authModal.showRegisterForm();
-        } else if (tab !== 'register' && typeof window.authModal.showLoginForm === 'function') {
+        } else if (typeof window.authModal.showLoginForm === 'function') {
             window.authModal.showLoginForm();
         }
-        window.authModal.show();
         return;
     }
 
@@ -1029,20 +1029,73 @@ window.openStripeLink = openStripeLink;
  * @since 5.0.0
  */
 
-/**
- * Initiate checkout — opens the Stripe Payment Link directly.
- */
 function initiateCheckout($btn, priceId, plan) {
     var $ = window.jQuery || window.$;
+    var ajaxUrl = window.bbai_ajax && window.bbai_ajax.ajaxurl;
+    var nonce = window.bbai_ajax && window.bbai_ajax.nonce;
+    var upgradePriceIds = (window.BBAI_UPGRADE && window.BBAI_UPGRADE.priceIds) || {};
+    var dashboardPriceIds = (window.BBAI_DASH && window.BBAI_DASH.checkoutPrices) || {};
+    var resolvedPriceId = priceId || ($btn && typeof $btn.attr === 'function' ? $btn.attr('data-price-id') : '') || upgradePriceIds[plan] || dashboardPriceIds[plan] || '';
+    var resolveDirectCheckoutUrl = function() {
+        var baseUrl = window.bbai_ajax && window.bbai_ajax.direct_checkout_url;
+        var directNonce = window.bbai_ajax && window.bbai_ajax.direct_checkout_nonce;
+        if (!baseUrl || !directNonce || (!plan && !resolvedPriceId)) {
+            return '';
+        }
+        try {
+            var directUrl = new URL(baseUrl, window.location.href);
+            if (plan) {
+                directUrl.searchParams.set('plan', plan);
+            }
+            if (resolvedPriceId) {
+                directUrl.searchParams.set('price_id', resolvedPriceId);
+            }
+            directUrl.searchParams.set('_bbai_nonce', directNonce);
+            return directUrl.toString();
+        } catch (e) {
+            var separator = baseUrl.indexOf('?') === -1 ? '?' : '&';
+            var params = [];
+            if (plan) {
+                params.push('plan=' + encodeURIComponent(plan));
+            }
+            if (resolvedPriceId) {
+                params.push('price_id=' + encodeURIComponent(resolvedPriceId));
+            }
+            params.push('_bbai_nonce=' + encodeURIComponent(directNonce));
+            return baseUrl + separator + params.join('&');
+        }
+    };
+    var checkoutWindow = null;
+    var closeCheckoutWindow = function() {
+        if (checkoutWindow && !checkoutWindow.closed) {
+            checkoutWindow.close();
+        }
+    };
+    var sendCheckoutWindow = function(url) {
+        if (!url) {
+            return false;
+        }
+        if (checkoutWindow && !checkoutWindow.closed) {
+            checkoutWindow.location.href = url;
+            return true;
+        }
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return true;
+    };
+    var isStripePaymentLink = function(url) {
+        return typeof url === 'string' && /^https:\/\/buy\.stripe\.com\//i.test(url);
+    };
 
-    // Resolve Stripe Payment Link from button data or localized config
     var fallbackUrl = $btn && typeof $btn.attr === 'function' ? $btn.attr('data-fallback-url') : '';
     var stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
     var resolvedLink = fallbackUrl || stripeLinks[plan] || '';
+    var directCheckoutUrl = resolveDirectCheckoutUrl();
 
     if (!resolvedLink) {
         // Hardcoded fallback Payment Links
-        if (plan === 'pro' || plan === 'growth') {
+        if (plan === 'starter') {
+            resolvedLink = 'https://buy.stripe.com/eVqbJ25vg0wQ05Mfaj7ss03';
+        } else if (plan === 'pro' || plan === 'growth') {
             resolvedLink = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
         } else if (plan === 'agency') {
             resolvedLink = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
@@ -1051,13 +1104,69 @@ function initiateCheckout($btn, priceId, plan) {
         }
     }
 
-    if (resolvedLink) {
-        window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe payment link:', resolvedLink);
+    if (isStripePaymentLink(resolvedLink)) {
         window.open(resolvedLink, '_blank', 'noopener,noreferrer');
         return;
     }
 
-    // No link available
+    if (plan === 'credits' && directCheckoutUrl) {
+        window.open(directCheckoutUrl, '_blank', 'noopener,noreferrer');
+        return;
+    }
+
+    if (plan === 'starter' && directCheckoutUrl) {
+        window.open(directCheckoutUrl, '_blank', 'noopener,noreferrer');
+        return;
+    }
+
+    if (ajaxUrl && nonce && (resolvedPriceId || plan) && $ && typeof $.ajax === 'function') {
+        checkoutWindow = window.open('about:blank', '_blank');
+        if (checkoutWindow) {
+            checkoutWindow.opener = null;
+        }
+
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                action: 'beepbeepai_create_checkout',
+                nonce: nonce,
+                price_id: resolvedPriceId,
+                plan_id: plan || ''
+            }
+        }).done(function(response) {
+            var checkoutUrl = response && response.success && response.data ? response.data.url : '';
+            if (checkoutUrl) {
+                sendCheckoutWindow(checkoutUrl);
+                return;
+            }
+            if (resolvedLink || directCheckoutUrl) {
+                sendCheckoutWindow(resolvedLink || directCheckoutUrl);
+                return;
+            }
+            closeCheckoutWindow();
+            if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+                window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
+            }
+        }).fail(function() {
+            if (resolvedLink || directCheckoutUrl) {
+                sendCheckoutWindow(resolvedLink || directCheckoutUrl);
+                return;
+            }
+            closeCheckoutWindow();
+            if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
+                window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
+            }
+        });
+        return;
+    }
+
+    if (resolvedLink || directCheckoutUrl) {
+        window.open(resolvedLink || directCheckoutUrl, '_blank', 'noopener,noreferrer');
+        return;
+    }
+
     window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No Stripe payment link available for plan:', plan);
     if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
         window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
@@ -2071,4 +2180,3 @@ bbaiRunWithJQuery(function($) {
         if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Dashboard initialized');
     });
 });
-

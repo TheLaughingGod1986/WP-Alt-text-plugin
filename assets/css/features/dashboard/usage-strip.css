@@ -177,8 +177,8 @@
 }
 
 .bbai-before-after-card--before {
-    background: linear-gradient(180deg, #fffafa 0%, #ffffff 100%);
-    border-color: rgba(248, 113, 113, 0.18);
+    background: linear-gradient(180deg, #fffaf3 0%, #ffffff 100%);
+    border-color: rgba(201, 122, 0, 0.2);
 }
 
 .bbai-before-after-card--after {

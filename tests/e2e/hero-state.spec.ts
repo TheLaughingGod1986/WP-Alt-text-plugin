@@ -23,8 +23,8 @@ import { forceLoggedOut } from './utils/auth';
  *   - support: "No credit card required"
  *   - .bbai-dashboard-locked-preview-stack visible
  *   - overlay headline: "Unlock your full ALT library"
- *   - overlay body: "Create a free account to keep fixing…unlock 50 generations per month"
- *   - benefits: "Review and edit ALT text", "Bulk optimise your media library", "50 generations per month"
+ *   - overlay body: "Create a free account to keep fixing…unlock 25 generations per month"
+ *   - benefits: "Review and edit ALT text", "Bulk optimise your media library", "25 generations per month"
  *   - NO "Your free trial is almost used"
  *   - NO "See the difference"
  *   - NO "Golden retriever running through green field"
@@ -93,15 +93,15 @@ function getTrialLimit(): number {
       `docker ps --format '{{.Names}}' | grep -- '-cli-1' | head -1`,
       { encoding: 'utf-8', shell: '/bin/bash' }
     ).trim();
-    if (!containerId) return 5;
+    if (!containerId) return 10;
     const result = execSync(
-      `docker exec ${containerId} wp ${WP_PATH} eval 'echo (int) apply_filters("bbai_trial_limit", 5);'`,
+      `docker exec ${containerId} wp ${WP_PATH} eval 'echo (int) apply_filters("bbai_trial_limit", 10);'`,
       { encoding: 'utf-8' }
     ).trim();
     const parsed = parseInt(result, 10);
-    return Number.isNaN(parsed) ? 5 : parsed;
+    return Number.isNaN(parsed) ? 10 : parsed;
   } catch {
-    return 5;
+    return 10;
   }
 }
 
@@ -294,13 +294,13 @@ test.describe('Hero / onboarding state machine', () => {
         await expect(overlayTitle).toContainText('Unlock your full ALT library');
       });
 
-      test('overlay body mentions "50 generations per month"', async ({ page }) => {
+      test('overlay body mentions "25 generations per month"', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`${BASE}${DASHBOARD_PATH}`);
 
         const overlayBody = page.locator('.bbai-dashboard-locked-preview__overlay-copy');
         await expect(overlayBody).toBeVisible();
-        await expect(overlayBody).toContainText('50 generations per month');
+        await expect(overlayBody).toContainText('25 generations per month');
       });
 
       test('benefits list shows all three items', async ({ page }) => {
@@ -311,7 +311,7 @@ test.describe('Hero / onboarding state machine', () => {
         await expect(benefits).toBeVisible();
         await expect(benefits).toContainText('Review and edit ALT text');
         await expect(benefits).toContainText('Bulk optimise your media library');
-        await expect(benefits).toContainText('50 generations per month');
+        await expect(benefits).toContainText('25 generations per month');
       });
 
       test('does NOT show "Your free trial is almost used"', async ({ page }) => {

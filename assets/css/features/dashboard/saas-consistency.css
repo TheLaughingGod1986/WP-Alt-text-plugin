@@ -31,6 +31,15 @@ body.bbai-dashboard #wpcontent {
     padding-left: 0 !important;
 }
 
+/* Keep global WordPress and third-party notices out of the product canvas. */
+body.toplevel_page_bbai.bbai-dashboard #wpbody-content .notice:not(.bbai-preserve-notice),
+body.toplevel_page_bbai.bbai-dashboard #wpbody-content .updated:not(.bbai-preserve-notice),
+body.toplevel_page_bbai.bbai-dashboard #wpbody-content .error:not(.bbai-preserve-notice),
+body.toplevel_page_bbai.bbai-dashboard #wpbody-content .update-nag:not(.bbai-preserve-notice),
+body.toplevel_page_bbai.bbai-dashboard #wpbody-content .fs-notice:not(.bbai-preserve-notice) {
+    display: none !important;
+}
+
 /* Plugin canvas inset: matches header bar; not browser edge-to-edge */
 body.bbai-dashboard .wrap.bbai-wrap > .bbai-header {
     padding-left: var(--bbai-space-6);

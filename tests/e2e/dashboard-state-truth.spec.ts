@@ -220,7 +220,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'QUEUED',
       counts: { missing: 15, review: 2, complete: 14, failed: 0, total: 31 },
-      credits: { used: 10, total: 50, remaining: 40, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 10, total: 25, remaining: 15, plan: 'free', plan_slug: 'free', is_pro: false },
       job: {
         active: true,
         pausable: false,
@@ -349,7 +349,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'MISSING_ALT',
       counts: { missing: 5, review: 1, complete: 14, failed: 0, total: 20 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -365,20 +365,20 @@ test.describe('Dashboard truth-driven UI', () => {
     await expect(page.locator('[data-bbai-li-secondary-cta]')).toContainText('Review 1 image');
     await expect(page.locator('[data-bbai-banner="1"]')).toHaveCount(0);
     await expect(page.locator('[data-bbai-li-upgrade-float="1"]')).toHaveCount(0);
-    await expectDashboardCreditsInRoot(page, '50 / 50');
+    await expectDashboardCreditsInRoot(page, '25 / 25');
 
     setDashboardTruthFixture(fixture);
     await page.reload({ waitUntil: 'load' });
     await page.locator('[data-bbai-logged-in-dashboard]').waitFor({ state: 'attached', timeout: 15000 });
     await expectHeroState(page, 'MIXED_ATTENTION');
-    await expectDashboardCreditsInRoot(page, '50 / 50');
+    await expectDashboardCreditsInRoot(page, '25 / 25');
   });
 
   test('generate missing primary CTA exposes data-action for delegated handlers', async ({ page }) => {
     const fixture: TruthFixture = {
       state: 'MISSING_ALT',
       counts: { missing: 5, review: 1, complete: 14, failed: 0, total: 20 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -399,7 +399,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'NEEDS_REVIEW',
       counts: { missing: 0, review: 0, complete: 23, failed: 0, total: 23 },
-      credits: { used: 10, total: 50, remaining: 40, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 10, total: 25, remaining: 15, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -431,7 +431,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'ALL_CLEAR',
       counts: { missing: 28, review: 0, complete: 22, failed: 0, total: 50 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -453,7 +453,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'ALL_CLEAR',
       counts: { missing: 0, review: 50, complete: 0, failed: 0, total: 50 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -475,7 +475,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'ALL_CLEAR',
       counts: { missing: 0, review: 0, complete: 50, failed: 0, total: 50 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -500,7 +500,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'ALL_CLEAR',
       counts: { missing: 0, review: 0, complete: 50, failed: 0, total: 50 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -683,7 +683,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const queuedFixture: TruthFixture = {
       state: 'QUEUED',
       counts: { missing: 4, review: 1, complete: 15, failed: 0, total: 20 },
-      credits: { used: 11, total: 50, remaining: 39, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 11, total: 25, remaining: 14, plan: 'free', plan_slug: 'free', is_pro: false },
       job: {
         active: true,
         pausable: false,
@@ -698,7 +698,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const processingFixture: TruthFixture = {
       state: 'PROCESSING',
       counts: { missing: 3, review: 1, complete: 16, failed: 0, total: 20 },
-      credits: { used: 11, total: 50, remaining: 39, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 11, total: 25, remaining: 14, plan: 'free', plan_slug: 'free', is_pro: false },
       job: {
         active: true,
         pausable: true,
@@ -1353,7 +1353,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'MISSING_ALT',
       counts: { missing: 4, review: 0, complete: 10, failed: 0, total: 14 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -1399,7 +1399,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'MISSING_ALT',
       counts: { missing: 3, review: 0, complete: 17, failed: 0, total: 20 },
-      credits: { used: 20, total: 50, remaining: 30, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 20, total: 25, remaining: 5, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -1485,7 +1485,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'NEEDS_REVIEW', // backend sends wrong state — missing > 0 must win
       counts: { missing: 4, to_review: 19, complete: 38, failed: 0, total: 61 } as any,
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -1512,7 +1512,7 @@ test.describe('Dashboard truth-driven UI', () => {
     await expect(page.locator('[data-bbai-li-primary-cta]')).not.toContainText('Approve all');
     await expect(heroStatusMetric(page, 'missing')).toHaveText('4');
     await expect(heroStatusMetric(page, 'review')).toHaveText('19');
-    await expectDashboardCreditsInRoot(page, '50 / 50');
+    await expectDashboardCreditsInRoot(page, '25 / 25');
     await expect(flow).toBeVisible();
     await expect(hero.locator('[data-bbai-flow-step="generate"]')).toContainText('Generate');
     await expect(hero.locator('[data-bbai-flow-step="generate"]')).toHaveClass(/is-active/);
@@ -1558,7 +1558,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const fixture: TruthFixture = {
       state: 'NEEDS_REVIEW',
       counts: { missing: 0, review: 19, complete: 42, failed: 0, total: 61 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -1602,7 +1602,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const reviewFixture: TruthFixture = {
       state: 'NEEDS_REVIEW',
       counts: { missing: 0, review: 19, complete: 42, failed: 0, total: 61 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },
@@ -1610,7 +1610,7 @@ test.describe('Dashboard truth-driven UI', () => {
     const allClearFixture: TruthFixture = {
       state: 'ALL_CLEAR',
       counts: { missing: 0, review: 0, complete: 61, failed: 0, total: 61 },
-      credits: { used: 0, total: 50, remaining: 50, plan: 'free', plan_slug: 'free', is_pro: false },
+      credits: { used: 0, total: 25, remaining: 25, plan: 'free', plan_slug: 'free', is_pro: false },
       job: null,
       site: { site_hash: 'fixture-site', has_connected_account: true },
       resolution_sources: { state: 'fixture', counts: 'fixture', job: 'fixture', credits: 'fixture', site: 'fixture' },

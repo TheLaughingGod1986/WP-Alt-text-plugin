@@ -19,7 +19,7 @@ class Trial_Quota {
 	/**
 	 * Default number of free trial images.
 	 */
-	const TRIAL_LIMIT = 5;
+	const TRIAL_LIMIT = 10;
 
 	/**
 	 * Option name prefix for trial usage counter.
@@ -46,10 +46,10 @@ class Trial_Quota {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
 		}
 
-		return function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_free_plan_offer' )
-			? bbai_get_free_plan_offer()
-			: 50;
-	}
+			return function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_free_plan_offer' )
+				? bbai_get_free_plan_offer()
+				: 25;
+		}
 
 	/**
 	 * Public wrapper for the advertised free-account monthly allowance.
@@ -125,21 +125,21 @@ class Trial_Quota {
 		$free_plan_offer = self::get_free_plan_offer();
 		$quota_state     = self::get_quota_state();
 
-		return array(
-			'auth_state'           => 'anonymous',
-			'quota_type'           => 'trial',
-			'quota_state'          => $quota_state,
-			'credits_total'        => $limit,
-			'credits_used'         => $used,
-			'credits_remaining'    => $remaining,
+		return [
+			'auth_state'        => 'anonymous',
+			'quota_type'        => 'trial',
+			'quota_state'       => $quota_state,
+			'credits_total'     => $limit,
+			'credits_used'      => $used,
+			'credits_remaining' => $remaining,
 			'low_credit_threshold' => self::get_low_credit_threshold(),
-			'signup_required'      => $remaining <= 0,
-			'upgrade_required'     => false,
-			'free_plan_offer'      => $free_plan_offer,
-			'plan'                 => 'trial',
-			'plan_type'            => 'trial',
-			'plan_label'           => __( 'Free trial', 'beepbeep-ai-alt-text-generator' ),
-		);
+			'signup_required'   => $remaining <= 0,
+			'upgrade_required'  => false,
+			'free_plan_offer'   => $free_plan_offer,
+			'plan'              => 'trial',
+			'plan_type'         => 'trial',
+			'plan_label'        => __( 'Free trial', 'beepbeep-ai-alt-text-generator' ),
+		];
 	}
 
 	/**
@@ -165,7 +165,61 @@ class Trial_Quota {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
 		}
 
-		return self::OPTION_PREFIX . sanitize_key( bbai_get_trial_identity_key( self::get_site_hash() ) );
+		$key = self::OPTION_PREFIX . sanitize_key( bbai_get_trial_identity_key( self::get_site_hash() ) );
+
+		if ( false !== get_option( $key, false ) ) {
+			return $key;
+		}
+
+		$legacy_key = self::find_existing_usage_option_key();
+		return '' !== $legacy_key ? $legacy_key : $key;
+	}
+
+	/**
+	 * Recover anonymous trial usage after older uninstall routines removed the site identifier.
+	 *
+	 * Earlier releases left the bbai_trial_usage_* counter behind but deleted the
+	 * site ID used to address it. When that happens, reuse the highest existing
+	 * local trial counter instead of giving the same site a fresh anonymous trial.
+	 *
+	 * @return string Existing usage option key, or empty string.
+	 */
+	private static function find_existing_usage_option_key(): string {
+		global $wpdb;
+
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || empty( $wpdb->options ) ) {
+			return '';
+		}
+
+		$prefix_like = $wpdb->esc_like( self::OPTION_PREFIX ) . '%';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One small local option lookup to recover trial quota after reinstall.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s AND option_name NOT LIKE %s",
+				$prefix_like,
+				$wpdb->esc_like( self::OPTION_PREFIX ) . '%\_lock'
+			),
+			ARRAY_A
+		);
+
+		if ( ! is_array( $rows ) || empty( $rows ) ) {
+			return '';
+		}
+
+		$best_key  = '';
+		$best_used = 0;
+		foreach ( $rows as $row ) {
+			$key  = isset( $row['option_name'] ) ? sanitize_key( (string) $row['option_name'] ) : '';
+			$used = isset( $row['option_value'] ) ? absint( $row['option_value'] ) : 0;
+			if ( '' === $key || $used <= $best_used ) {
+				continue;
+			}
+			$best_key  = $key;
+			$best_used = $used;
+		}
+
+		return $best_used > 0 ? $best_key : '';
 	}
 
 	/**
@@ -217,7 +271,7 @@ class Trial_Quota {
 	 * @return void
 	 */
 	public static function begin_claimed_generation(): void {
-		++self::$claimed_generation_depth;
+		self::$claimed_generation_depth++;
 	}
 
 	/**
@@ -227,7 +281,7 @@ class Trial_Quota {
 	 */
 	public static function end_claimed_generation(): void {
 		if ( self::$claimed_generation_depth > 0 ) {
-			--self::$claimed_generation_depth;
+			self::$claimed_generation_depth--;
 		}
 	}
 
@@ -363,8 +417,8 @@ class Trial_Quota {
 				return false;
 			}
 
-			$stored_token   = get_option( 'beepbeepai_jwt_token', '' );
-			$legacy_token   = get_option( 'opptibbai_jwt_token', '' );
+			$stored_token  = get_option( 'beepbeepai_jwt_token', '' );
+			$legacy_token  = get_option( 'opptibbai_jwt_token', '' );
 			$stored_license = $api->get_license_key();
 			if ( ! empty( $stored_token ) || ! empty( $legacy_token ) || ! empty( $stored_license ) ) {
 				return false;
@@ -396,14 +450,14 @@ class Trial_Quota {
 			self::get_exhausted_message(),
 			array_merge(
 				$contract,
-				array(
-					'code'                  => 'bbai_trial_exhausted',
-					'remaining'             => 0,
-					'remaining_free_images' => 0,
-					'limit'                 => $limit,
-					'used'                  => self::get_used(),
-					'site_hash'             => self::get_site_hash(),
-				)
+				[
+				'code'      => 'bbai_trial_exhausted',
+				'remaining' => 0,
+				'remaining_free_images' => 0,
+				'limit'     => $limit,
+				'used'      => self::get_used(),
+				'site_hash' => self::get_site_hash(),
+				]
 			)
 		);
 	}
@@ -418,23 +472,23 @@ class Trial_Quota {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
 		}
 
-		$site_hash    = self::get_site_hash();
-		$anon_id      = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_anon_id' ) ? bbai_get_anon_id() : '';
-		$identity_key = bbai_get_trial_identity_key( $site_hash, $anon_id );
+		$site_hash     = self::get_site_hash();
+		$anon_id       = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_anon_id' ) ? bbai_get_anon_id() : '';
+		$identity_key  = bbai_get_trial_identity_key( $site_hash, $anon_id );
 
 		return array_merge(
 			self::build_contract(),
-			array(
-				'is_trial'              => self::is_trial_user(),
-				'limit'                 => self::get_limit(),
-				'used'                  => self::get_used(),
-				'remaining'             => self::get_remaining(),
-				'remaining_free_images' => self::get_remaining(),
-				'exhausted'             => self::is_exhausted(),
-				'site_hash'             => $site_hash,
-				'anon_id'               => $anon_id,
-				'identity_key'          => $identity_key,
-			)
+			[
+			'is_trial'      => self::is_trial_user(),
+			'limit'         => self::get_limit(),
+			'used'          => self::get_used(),
+			'remaining'     => self::get_remaining(),
+			'remaining_free_images' => self::get_remaining(),
+			'exhausted'     => self::is_exhausted(),
+			'site_hash'     => $site_hash,
+			'anon_id'       => $anon_id,
+			'identity_key'  => $identity_key,
+			]
 		);
 	}
 

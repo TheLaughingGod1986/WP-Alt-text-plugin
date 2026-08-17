@@ -347,3 +347,103 @@
 }
 
 /* Shared banner action stack sizing lives in product-banner.css for Dashboard / Library / Analytics parity. */
+
+/* Locked premium page previews */
+.bbai-paywall-preview {
+    position: relative;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.bbai-paywall-preview__content {
+    filter: blur(6px);
+    opacity: 0.54;
+    pointer-events: none;
+    user-select: none;
+}
+
+.bbai-paywall-preview::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(248, 250, 252, 0.2) 0%, rgba(248, 250, 252, 0.76) 72%),
+        rgba(248, 250, 252, 0.16);
+    pointer-events: none;
+}
+
+.bbai-paywall-preview__overlay {
+    position: absolute;
+    top: min(220px, 18vh);
+    left: 50%;
+    z-index: 2;
+    width: min(520px, calc(100% - 32px));
+    transform: translateX(-50%);
+    padding: 28px;
+    border: 1px solid rgba(203, 213, 225, 0.88);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+    text-align: center;
+}
+
+.bbai-paywall-preview__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #ecfdf5;
+    color: #047857;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.bbai-paywall-preview__overlay h2 {
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.bbai-paywall-preview__overlay p {
+    margin: 0 auto 22px;
+    max-width: 440px;
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.bbai-paywall-preview__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+@media (max-width: 782px) {
+    .bbai-paywall-preview__content {
+        filter: blur(4px);
+    }
+
+    .bbai-paywall-preview__overlay {
+        top: 96px;
+        padding: 22px;
+    }
+
+    .bbai-paywall-preview__overlay h2 {
+        font-size: 24px;
+    }
+
+    .bbai-paywall-preview__actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

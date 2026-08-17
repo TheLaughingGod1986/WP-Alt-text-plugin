@@ -7,6 +7,10 @@ class BbAIAuthModal {
     constructor() {
         this.apiUrl = this.getApiUrl();
         this.token = this.getStoredToken();
+        this.modalContext = 'default';
+        this.modalMetrics = {};
+        this.postSignupGuideModal = null;
+        this.isAuthRedirecting = false;
         // Cache DOM elements for better performance
         this.modalElement = null;
         this.formElements = {};
@@ -38,6 +42,8 @@ class BbAIAuthModal {
         this.bindEvents();
         this.checkAuthStatus();
         this.checkResetPasswordParams();
+        this.installPostSignupGuideTrigger();
+        this.maybeShowPostSignupGuide();
     }
 
     emitAnalyticsEvent(eventName, properties) {
@@ -58,6 +64,72 @@ class BbAIAuthModal {
         return fallback || 'modal';
     }
 
+    setModalContext(context, metrics) {
+        this.modalContext = String(context || 'default');
+        this.modalMetrics = metrics && typeof metrics === 'object'
+            ? metrics
+            : (window.bbaiTrialCompletionImpact && typeof window.bbaiTrialCompletionImpact === 'object'
+                ? window.bbaiTrialCompletionImpact
+                : {});
+        this.renderModalContext();
+    }
+
+    renderModalContext() {
+        if (!this.modalElement) {
+            return;
+        }
+
+        const title = this.modalElement.querySelector('.alttext-auth-modal__title');
+        const subtitle = this.modalElement.querySelector('.alttext-auth-modal__subtitle');
+        const impact = this.modalElement.querySelector('[data-bbai-trial-impact]');
+        const impactImages = this.modalElement.querySelector('[data-bbai-trial-impact-images]');
+        const impactCoverage = this.modalElement.querySelector('[data-bbai-trial-impact-coverage]');
+        const impactLift = this.modalElement.querySelector('[data-bbai-trial-impact-lift]');
+        const registerButton = this.modalElement.querySelector('#register-form .alttext-btn__text');
+        const footer = this.modalElement.querySelector('.alttext-auth-modal__upsell');
+        const exhausted = this.modalContext === 'register_exhausted';
+        const metrics = this.modalMetrics || {};
+        const imagesImproved = Math.max(0, parseInt(metrics.imagesImproved, 10) || 0);
+        const trialLimit = Math.max(1, parseInt(metrics.trialLimit, 10) || 10);
+        const coverageBefore = Math.max(0, Math.min(100, parseInt(metrics.coverageBefore, 10) || 0));
+        const coverageAfter = Math.max(0, Math.min(100, parseInt(metrics.coverageAfter, 10) || 0));
+        const coverageLift = Math.max(0, Math.min(100, parseInt(metrics.coverageLift, 10) || 0));
+
+        this.modalElement.setAttribute('data-bbai-modal-context', this.modalContext);
+
+        if (exhausted) {
+            if (title) title.textContent = 'Your ' + trialLimit + ' free ALT texts are complete 🎉';
+            if (subtitle) {
+                subtitle.textContent = coverageLift > 0
+                    ? 'You improved ALT text coverage from ' + coverageBefore + '% to ' + coverageAfter + '% (+' + coverageLift + ' points), helping accessibility and image SEO.'
+                    : 'You have already improved your website’s accessibility and image SEO. Keep the momentum going for free.';
+            }
+            if (impact) impact.hidden = false;
+            if (impactImages) impactImages.textContent = imagesImproved > 0 ? String(imagesImproved) : '5';
+            if (impactCoverage) impactCoverage.textContent = coverageAfter > 0 ? coverageAfter + '%' : 'Improved';
+            if (impactLift) {
+                impactLift.textContent = coverageLift > 0
+                    ? '+' + coverageLift + ' percentage points'
+                    : 'More accessible';
+            }
+            if (registerButton) registerButton.textContent = 'Create Free Account — Get 25 Monthly';
+            if (footer) footer.textContent = '25 free AI generations every month for life. No credit card needed.';
+            return;
+        }
+
+        if (impact) impact.hidden = true;
+        if (registerButton) registerButton.textContent = 'Create Account';
+        if (footer) footer.textContent = 'Growth users get 1,000 AI alt texts per month + bulk processing + priority queue.';
+
+        if (this.modalContext === 'login') {
+            if (title) title.textContent = 'Welcome back';
+            if (subtitle) subtitle.textContent = 'Sign in to sync your subscription, usage quota, and account preferences.';
+        } else {
+            if (title) title.textContent = 'Create your free BeepBeep AI account';
+            if (subtitle) subtitle.textContent = 'Get 25 free AI generations every month. No credit card needed.';
+        }
+    }
+
     getPostAuthRedirectUrl() {
         try {
             const currentUrl = new URL(window.location.href);
@@ -76,6 +148,110 @@ class BbAIAuthModal {
 
         const adminUrl = window.bbai_ajax?.admin_url || 'admin.php';
         return `${adminUrl}?page=bbai`;
+    }
+
+    getAdminPageUrl(page) {
+        const adminUrl = window.bbai_ajax?.admin_url || 'admin.php';
+        const base = String(adminUrl).indexOf('admin.php') !== -1 ? String(adminUrl) : `${adminUrl}admin.php`;
+        const separator = base.indexOf('?') === -1 ? '?' : '&';
+        return `${base}${separator}page=${encodeURIComponent(page || 'bbai')}`;
+    }
+
+    queuePostSignupOnboarding() {
+        try {
+            sessionStorage.setItem('bbai_show_post_signup_onboarding', '1');
+        } catch (error) {
+            // Ignore storage failures; registration itself should not be blocked.
+        }
+    }
+
+    redirectToDashboardAfterAuth(redirectUrl, form, message) {
+        this.isAuthRedirecting = true;
+        if (this.modalElement) {
+            this.modalElement.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        if (form) {
+            this.setLoading(form, true, 'Loading dashboard...');
+        }
+        this.showSuccess(message || 'Loading your dashboard...');
+
+        const targetUrl = redirectUrl || this.getPostAuthRedirectUrl();
+        window.setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 50);
+    }
+
+    shouldShowPostSignupGuide() {
+        const hasSignedInSurface = !!document.querySelector('[data-bbai-logged-in-dashboard], [data-bbai-has-connected-account="1"]');
+        const isAuthenticated = !!(window.bbai_ajax && window.bbai_ajax.is_authenticated === true);
+
+        try {
+            return sessionStorage.getItem('bbai_show_post_signup_onboarding') === '1' && (isAuthenticated || hasSignedInSurface);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    installPostSignupGuideTrigger() {
+        const install = () => {
+            if (document.querySelector('[data-bbai-show-post-signup-guide]')) {
+                return;
+            }
+
+            const hasSignedInSurface = !!document.querySelector('[data-bbai-logged-in-dashboard], [data-bbai-has-connected-account="1"]');
+            if (!hasSignedInSurface && !(window.bbai_ajax && window.bbai_ajax.is_authenticated === true)) {
+                return;
+            }
+
+            const headerRight = document.querySelector('.bbai-dashboard-header__right');
+            if (!headerRight) {
+                return;
+            }
+
+            const logout = headerRight.querySelector('[data-action="logout"]');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'bbai-dashboard-header__quickstart bbai-dashboard-header__logout';
+            button.setAttribute('data-bbai-show-post-signup-guide', '1');
+            button.textContent = 'Quick start';
+
+            if (logout && logout.parentNode === headerRight) {
+                headerRight.insertBefore(button, logout);
+            } else {
+                headerRight.appendChild(button);
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', install, { once: true });
+        } else {
+            install();
+        }
+    }
+
+    maybeShowPostSignupGuide() {
+        const showIfQueued = () => {
+            if (!this.shouldShowPostSignupGuide()) {
+                return;
+            }
+
+            try {
+                sessionStorage.removeItem('bbai_show_post_signup_onboarding');
+            } catch (error) {
+                // Ignore storage failures.
+            }
+
+            window.setTimeout(() => {
+                this.showPostSignupGuide({ source: 'post_signup' });
+            }, 250);
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', showIfQueued, { once: true });
+        } else {
+            showIfQueued();
+        }
     }
 
     checkResetPasswordParams() {
@@ -170,6 +346,19 @@ class BbAIAuthModal {
                         </div>
                         
                         <div class="alttext-auth-modal__body">
+                            <section class="alttext-auth-modal__impact" data-bbai-trial-impact hidden>
+                                <div class="alttext-auth-modal__impact-grid">
+                                    <div><strong data-bbai-trial-impact-images>10</strong><span>images improved</span></div>
+                                    <div><strong data-bbai-trial-impact-coverage>Improved</strong><span>ALT text coverage</span></div>
+                                    <div><strong data-bbai-trial-impact-lift>More accessible</strong><span>accessibility progress</span></div>
+                                </div>
+                                <p>Your new ALT text helps screen readers understand your images and gives search engines more useful image context.</p>
+                                <div class="alttext-auth-modal__offer">
+                                    <strong>Keep going free</strong>
+                                    <span>25 free generations every month for life · No credit card</span>
+                                </div>
+                            </section>
+
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
                                 <form id="login-form" autocomplete="off" aria-label="Sign in to your BeepBeep AI account">
@@ -321,20 +510,87 @@ class BbAIAuthModal {
                 const requestedTab = authTrigger.getAttribute('data-auth-tab') || authTrigger.dataset?.authTab || 
                                    (authTrigger.id === 'bbai-show-auth-login-btn' ? 'login' : 'register');
                 const source = self.resolveSource(authTrigger, 'dashboard');
+                const modalContext = authTrigger.getAttribute('data-bbai-modal-context') ||
+                    (requestedTab === 'register' ? 'register' : 'login');
+
+                self.setModalContext(modalContext);
 
                 if (requestedTab === 'register') {
-                    self.emitAnalyticsEvent('signup_cta_clicked', { source: source });
+                    self.emitAnalyticsEvent('signup_cta_clicked', {
+                        source: source,
+                        modal_context: modalContext,
+                        conversion_stage: modalContext === 'register_exhausted' ? 'guest_trial_complete' : 'signup_interest'
+                    });
+                    if (modalContext === 'register_exhausted') {
+                        const trialImpact = window.bbaiTrialCompletionImpact || {};
+                        self.emitAnalyticsEvent('trial_complete_cta_clicked', {
+                            cta: 'create_account',
+                            source: source,
+                            modal_context: modalContext,
+                            conversion_stage: 'guest_trial_complete',
+                            auth_state: 'anonymous',
+                            account_state: 'anonymous_trial',
+                            is_signed_in: false,
+                            images_improved: trialImpact.imagesImproved || 0,
+                            coverage_after: trialImpact.coverageAfter || 0,
+                            coverage_lift: trialImpact.coverageLift || 0,
+                            trial_used: trialImpact.trialUsed || 0,
+                            trial_limit: trialImpact.trialLimit || 0
+                        });
+                    }
                 } else {
                     self.emitAnalyticsEvent('login_cta_clicked', { source: source });
                     self.emitAnalyticsEvent('login_modal_opened', { source: source });
                 }
 
-                self.show();
-                if (requestedTab === 'register') {
-                    self.showRegisterForm();
-                } else {
-                    self.showLoginForm();
+                self.show({
+                    tab: requestedTab,
+                    context: modalContext
+                });
+                return;
+            }
+
+            if (e.target.closest('[data-bbai-show-post-signup-guide]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.showPostSignupGuide({ source: 'manual' });
+                return;
+            }
+
+            if (
+                e.target.closest('[data-bbai-post-signup-close]') ||
+                (
+                    e.target.classList &&
+                    e.target.classList.contains('alttext-auth-modal__overlay') &&
+                    e.target.closest('#bbai-post-signup-guide-modal')
+                )
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                self.hidePostSignupGuide();
+                return;
+            }
+
+            const postSignupGenerate = e.target.closest('[data-bbai-post-signup-generate]');
+            if (postSignupGenerate) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (postSignupGenerate.getAttribute('data-bbai-post-signup-upgrade') === '1') {
+                    self.hidePostSignupGuide();
+                    self.openUpgradeFromPostSignupGuide(postSignupGenerate);
+                    return;
                 }
+
+                self.hidePostSignupGuide();
+                self.startFirstGenerationFromGuide();
+                return;
+            }
+
+            if (e.target.closest('[data-bbai-post-signup-library]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = self.getAdminPageUrl('bbai-library');
                 return;
             }
 
@@ -478,14 +734,42 @@ class BbAIAuthModal {
         });
     }
 
-    show() {
+    getRequestedTab(options) {
+        if (typeof options === 'string') {
+            return options === 'register' ? 'register' : 'login';
+        }
+        if (!options || typeof options !== 'object') {
+            return '';
+        }
+
+        const tab = String(options.tab || options.authTab || '').toLowerCase();
+        const context = String(options.context || '').toLowerCase();
+        if (tab === 'register' || tab === 'signup' || context === 'register' || context === 'signup') {
+            return 'register';
+        }
+        if (tab === 'login' || tab === 'sign_in' || context === 'login' || context === 'sign_in') {
+            return 'login';
+        }
+        return '';
+    }
+
+    show(options) {
+        const requestedTab = this.getRequestedTab(options);
+
+        if (requestedTab === 'register') {
+            this.showRegisterForm();
+        } else if (requestedTab === 'login') {
+            this.showLoginForm();
+        }
+
         if (this.modalElement) {
             this.modalElement.style.display = 'block';
             document.body.style.overflow = 'hidden';
             this.enablePasswordFields();
             
             // Focus trap: focus on first input or close button
-            const firstInput = this.modalElement.querySelector('input[type="email"], input[type="password"], button');
+            const activeForm = this.modalElement.querySelector('.alttext-auth-form[style*="block"], .alttext-auth-form:not([style*="display: none"])');
+            const firstInput = (activeForm || this.modalElement).querySelector('input[type="email"], input[type="password"], button');
             if (firstInput) {
                 firstInput.focus();
             }
@@ -501,6 +785,8 @@ class BbAIAuthModal {
     }
 
     showLoginForm() {
+        this.modalContext = 'login';
+        this.renderModalContext();
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'block';
         if (this.formElements.register) this.formElements.register.style.display = 'none';
@@ -509,6 +795,10 @@ class BbAIAuthModal {
     }
 
     showRegisterForm() {
+        if (this.modalContext === 'login' || this.modalContext === 'default') {
+            this.modalContext = 'register';
+        }
+        this.renderModalContext();
         // Use cached form elements
         if (this.formElements.login) this.formElements.login.style.display = 'none';
         if (this.formElements.register) this.formElements.register.style.display = 'block';
@@ -549,7 +839,8 @@ class BbAIAuthModal {
         const password = formData.get('password');
         const source = this.resolveSource(this.modalElement, 'modal');
 
-        this.setLoading(form, true);
+        this.isAuthRedirecting = false;
+        this.setLoading(form, true, 'Signing in...');
         this.emitAnalyticsEvent('login_submitted', {
             source: source
         });
@@ -581,12 +872,24 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
+                if (window.BBAIEntitlements && typeof window.BBAIEntitlements.consume === 'function') {
+                    window.BBAIEntitlements.consume(data, 'login');
+                }
                 this.emitAnalyticsEvent('login_succeeded', {
-                    source: source
+                    source: source,
+                    user_state: 'signed_in',
+                    is_logged_in: true,
+                    is_signed_in: true,
+                    is_saas_authenticated: true,
+                    auth_state: 'authenticated',
+                    account_state: 'connected_account',
+                    plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
                 });
+                if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
+                    window.bbaiTelemetry.flush();
+                }
                 this.onAuthSuccess(userData);
-                this.hide();
-                this.showSuccess('Welcome back! You are now signed in to SEO AI Alt Text.');
 
                 // Reload page to refresh authentication state and show dashboard
                 // Clear any cached auth state first
@@ -599,9 +902,7 @@ class BbAIAuthModal {
                 }
 
                 const redirectUrl = this.getPostAuthRedirectUrl();
-                setTimeout(() => {
-                    window.location.href = redirectUrl;
-                }, 800);
+                this.redirectToDashboardAfterAuth(redirectUrl, form, 'Welcome back. Loading your dashboard...');
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Login failed';
@@ -644,7 +945,9 @@ class BbAIAuthModal {
             // Clear portal flag on network error
             localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {
-            this.setLoading(form, false);
+            if (!this.isAuthRedirecting) {
+                this.setLoading(form, false);
+            }
         }
     }
 
@@ -656,14 +959,26 @@ class BbAIAuthModal {
         const confirmPassword = formData.get('confirmPassword');
         const source = this.resolveSource(this.modalElement, 'modal');
 
+        this.isAuthRedirecting = false;
         if (password !== confirmPassword) {
             this.showError('Passwords do not match');
             return;
         }
 
-        this.setLoading(form, true);
+        this.setLoading(form, true, 'Creating account...');
         this.emitAnalyticsEvent('signup_started', {
-            source: source
+            source: source,
+            modal_context: this.modalContext,
+            conversion_stage: this.modalContext === 'register_exhausted' ? 'guest_trial_complete' : 'signup_form',
+            auth_state: 'anonymous',
+            account_state: 'anonymous_trial',
+            is_signed_in: false,
+            is_saas_authenticated: false,
+            images_improved: this.modalMetrics.imagesImproved || 0,
+            coverage_after: this.modalMetrics.coverageAfter || 0,
+            coverage_lift: this.modalMetrics.coverageLift || 0,
+            trial_used: this.modalMetrics.trialUsed || 0,
+            trial_limit: this.modalMetrics.trialLimit || 0
         });
 
         // Validate AJAX config exists
@@ -693,17 +1008,36 @@ class BbAIAuthModal {
             if (data.success) {
                 // WordPress AJAX success response
                 const userData = data.data?.user || {};
+                if (window.BBAIEntitlements && typeof window.BBAIEntitlements.consume === 'function') {
+                    window.BBAIEntitlements.consume(data, 'register');
+                }
                 this.emitAnalyticsEvent('signup_succeeded', {
-                    source: source
+                    source: source,
+                    modal_context: this.modalContext,
+                    conversion_stage: this.modalContext === 'register_exhausted' ? 'guest_trial_converted' : 'signup_complete',
+                    user_state: 'signed_in',
+                    is_logged_in: true,
+                    is_signed_in: true,
+                    is_saas_authenticated: true,
+                    auth_state: 'authenticated',
+                    account_state: 'connected_account',
+                    guest_trial_converted: this.modalContext === 'register_exhausted',
+                    images_improved: this.modalMetrics.imagesImproved || 0,
+                    coverage_after: this.modalMetrics.coverageAfter || 0,
+                    coverage_lift: this.modalMetrics.coverageLift || 0,
+                    trial_used: this.modalMetrics.trialUsed || 0,
+                    trial_limit: this.modalMetrics.trialLimit || 0,
+                    plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
                 });
+                if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
+                    window.bbaiTelemetry.flush();
+                }
                 this.onAuthSuccess(userData);
-                this.hide();
-                this.showSuccess('Account created successfully! Welcome to SEO AI Alt Text.');
+                this.queuePostSignupOnboarding();
 
                 const redirectUrl = this.getPostAuthRedirectUrl();
-                setTimeout(() => {
-                    window.location.href = redirectUrl;
-                }, 1500);
+                this.redirectToDashboardAfterAuth(redirectUrl, form, 'Account created. Loading your dashboard...');
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Registration failed';
@@ -749,7 +1083,9 @@ class BbAIAuthModal {
             // Clear portal flag on network error
             localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {
-            this.setLoading(form, false);
+            if (!this.isAuthRedirecting) {
+                this.setLoading(form, false);
+            }
         }
     }
 
@@ -1070,19 +1406,189 @@ class BbAIAuthModal {
         this.token = null;
     }
 
-    setLoading(form, loading) {
+    setLoading(form, loading, busyText) {
         const button = form.querySelector('button[type="submit"]');
         const text = button.querySelector('.alttext-btn__text');
         const spinner = button.querySelector('.alttext-btn__spinner');
 
         if (loading) {
-            text.style.display = 'none';
-            spinner.style.display = 'inline';
+            if (text && !text.getAttribute('data-bbai-original-text')) {
+                text.setAttribute('data-bbai-original-text', text.textContent || '');
+            }
+            if (text) {
+                text.textContent = busyText || 'Working...';
+                text.style.display = 'inline';
+            }
+            if (spinner) {
+                spinner.style.display = 'inline';
+            }
             button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
         } else {
-            text.style.display = 'inline';
-            spinner.style.display = 'none';
+            if (text) {
+                text.textContent = text.getAttribute('data-bbai-original-text') || text.textContent || '';
+                text.removeAttribute('data-bbai-original-text');
+                text.style.display = 'inline';
+            }
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
             button.disabled = false;
+            button.removeAttribute('aria-busy');
+        }
+    }
+
+    createPostSignupGuideModal() {
+        if (this.postSignupGuideModal) {
+            return this.postSignupGuideModal;
+        }
+
+        let modal = document.getElementById('bbai-post-signup-guide-modal');
+        if (modal) {
+            this.postSignupGuideModal = modal;
+            return modal;
+        }
+
+        const modalHTML = `
+            <div id="bbai-post-signup-guide-modal" class="alttext-auth-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="bbai-post-signup-guide-title" aria-describedby="bbai-post-signup-guide-desc">
+                <div class="alttext-auth-modal__overlay">
+                    <div class="alttext-auth-modal__content">
+                        <button class="alttext-auth-modal__close" type="button" aria-label="Close quick start" data-bbai-post-signup-close="1">&times;</button>
+                        <div class="alttext-auth-modal__header">
+                            <h2 class="alttext-auth-modal__title" id="bbai-post-signup-guide-title">Quick start</h2>
+                            <p class="alttext-auth-modal__subtitle" id="bbai-post-signup-guide-desc">Your free account includes 25 AI ALT text generations each month.</p>
+                        </div>
+                        <div class="alttext-auth-modal__body">
+                            <section class="alttext-auth-modal__impact">
+                                <p>Start by generating ALT text for images that are missing it, then review the results in your ALT Library.</p>
+                                <div class="alttext-auth-modal__offer">
+                                    <strong>Best first step</strong>
+                                    <span>Generate missing ALT text, then approve or edit the suggestions in the library.</span>
+                                </div>
+                            </section>
+                            <div class="alttext-auth-modal__intro-actions">
+                                <button type="button" class="alttext-btn alttext-btn--primary alttext-auth-modal__intro-cta" data-bbai-post-signup-generate="1">Generate missing ALT text</button>
+                                <button type="button" class="alttext-auth-modal__secondary-cta" data-bbai-post-signup-library="1">Open ALT Library</button>
+                                <button type="button" class="alttext-auth-modal__secondary-cta" data-bbai-post-signup-close="1">I’ll do this later</button>
+                            </div>
+                        </div>
+                        <div class="alttext-auth-modal__footer">
+                            <p class="alttext-auth-modal__upsell">Use the Quick start button on this page anytime to see this again.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        this.postSignupGuideModal = document.getElementById('bbai-post-signup-guide-modal');
+        return this.postSignupGuideModal;
+    }
+
+    showPostSignupGuide(options) {
+        const modal = this.createPostSignupGuideModal();
+        if (!modal) {
+            return;
+        }
+
+        this.syncPostSignupGuideGenerationState(modal);
+
+        modal.style.display = 'block';
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        this.emitAnalyticsEvent('post_signup_onboarding_viewed', {
+            source: options && options.source ? options.source : 'manual'
+        });
+
+        const primary = modal.querySelector('[data-bbai-post-signup-generate]');
+        const focusTarget = primary && !primary.disabled
+            ? primary
+            : modal.querySelector('[data-bbai-post-signup-library]');
+        if (focusTarget && typeof focusTarget.focus === 'function') {
+            focusTarget.focus();
+        }
+    }
+
+    syncPostSignupGuideGenerationState(modal) {
+        const primary = modal.querySelector('[data-bbai-post-signup-generate]');
+        const dashboardData = typeof window.bbaiGetDashboardData === 'function'
+            ? window.bbaiGetDashboardData()
+            : null;
+        const usageSnapshot = typeof window.bbaiGetUsageSnapshot === 'function'
+            ? window.bbaiGetUsageSnapshot(null)
+            : null;
+        const remainingValue = dashboardData && dashboardData.creditsRemaining != null
+            ? dashboardData.creditsRemaining
+            : (usageSnapshot && usageSnapshot.remaining != null ? usageSnapshot.remaining : null);
+        const remaining = Number.parseInt(remainingValue, 10);
+        const exhausted = Number.isFinite(remaining) && remaining <= 0;
+
+        if (!primary) {
+            return;
+        }
+
+        primary.disabled = false;
+        primary.classList.toggle('is-disabled', false);
+        primary.classList.toggle('alttext-auth-modal__intro-cta--upgrade', exhausted);
+        primary.setAttribute('aria-disabled', 'false');
+        primary.setAttribute('data-bbai-post-signup-upgrade', exhausted ? '1' : '0');
+        primary.textContent = exhausted
+            ? 'Upgrade to continue generating'
+            : 'Generate missing ALT text';
+
+        if (exhausted) {
+            primary.setAttribute('title', 'Open upgrade plans');
+        } else {
+            primary.removeAttribute('title');
+        }
+    }
+
+    hidePostSignupGuide() {
+        const modal = this.postSignupGuideModal || document.getElementById('bbai-post-signup-guide-modal');
+        if (!modal) {
+            return;
+        }
+
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    startFirstGenerationFromGuide() {
+        const trigger = document.querySelector('[data-action="generate-missing"]:not([aria-disabled="true"]), [data-bbai-action="generate_missing"]:not([aria-disabled="true"])');
+        if (trigger && typeof trigger.click === 'function') {
+            trigger.click();
+            return;
+        }
+
+        window.location.href = this.getAdminPageUrl('bbai');
+    }
+
+    openUpgradeFromPostSignupGuide(trigger) {
+        const context = {
+            source: 'post-signup-guide',
+            trigger: trigger,
+            triggerKey: 'generate_missing'
+        };
+
+        if (typeof window.bbaiOpenUpgradeModal === 'function') {
+            try {
+                if (window.bbaiOpenUpgradeModal('generate_missing', context) !== false) {
+                    return;
+                }
+            } catch (error) {
+                window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Quick start upgrade modal failed', error);
+            }
+        }
+
+        if (typeof window.alttextaiShowModal === 'function' && window.alttextaiShowModal() !== false) {
+            return;
+        }
+
+        const upgradeTrigger = document.querySelector('[data-action="show-upgrade-modal"]');
+        if (upgradeTrigger && upgradeTrigger !== trigger && typeof upgradeTrigger.click === 'function') {
+            upgradeTrigger.click();
         }
     }
 

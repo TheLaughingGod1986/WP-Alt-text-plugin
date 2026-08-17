@@ -108,6 +108,7 @@ class Admin_Hooks {
 			'beepbeepai_disconnect_account'         => 'ajax_disconnect_account',
 			'beepbeepai_get_user_info'              => 'ajax_get_user_info',
 			'beepbeepai_create_checkout'            => 'ajax_create_checkout',
+			'beepbeepai_capture_attribution'        => 'ajax_capture_attribution',
 			'beepbeepai_create_portal'              => 'ajax_create_portal',
 			'beepbeepai_forgot_password'            => 'ajax_forgot_password',
 			'beepbeepai_reset_password'             => 'ajax_reset_password',

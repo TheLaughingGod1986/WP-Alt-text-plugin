@@ -240,7 +240,7 @@ function bbaiNormalizeUsageObject(rawUsage) {
     if (isNaN(freePlanOffer)) {
         freePlanOffer = bbaiReadUsageNumber(quota, ['free_plan_offer']);
     }
-    freePlanOffer = isNaN(freePlanOffer) ? 50 : Math.max(0, parseInt(freePlanOffer, 10));
+    freePlanOffer = isNaN(freePlanOffer) ? 25 : Math.max(0, parseInt(freePlanOffer, 10));
     var signupRequired = usage.signup_required !== undefined
         ? !!usage.signup_required
         : (quota.signup_required !== undefined ? !!quota.signup_required : (quotaType === 'trial' && remaining <= 0));
@@ -360,7 +360,7 @@ function bbaiGetUsageObject() {
                     quota_type: root.getAttribute('data-bbai-quota-type') || '',
                     quota_state: root.getAttribute('data-bbai-quota-state') || '',
                     signup_required: root.getAttribute('data-bbai-signup-required') === '1',
-                    free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 50
+                    free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 25
                 });
             }
         }
@@ -440,6 +440,7 @@ function bbaiHasQuotaLockHint(value) {
         text.indexOf('unlock more generations') !== -1 ||
         text.indexOf('monthly quota') !== -1 ||
         text.indexOf('monthly limit') !== -1 ||
+        text.indexOf('daily generation') !== -1 ||
         text.indexOf('quota reached') !== -1;
 }
 
@@ -680,7 +681,7 @@ bbaiRunWithJQuery(function($) {
 
             if ($btn && $btn.length) {
                 initiateCheckout($btn, priceId, plan);
-            } else if (!openCheckoutUrl(resolveCheckoutFallbackUrl(null, plan))) {
+            } else if (!openCheckoutUrl(resolveCheckoutFallbackUrl(null, plan), plan)) {
                 window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No checkout URL available!');
                 alert(__('Unable to initiate checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'));
             }
@@ -2164,9 +2165,33 @@ bbaiRunWithJQuery(function($) {
         return resolvedLink;
     }
 
-    function openCheckoutUrl(url) {
+    function openCheckoutUrl(url, planName) {
         if (!url) {
             return false;
+        }
+
+        var checkoutProps = {
+            source: 'checkout',
+            location: 'upgrade_modal',
+            trigger: 'checkout_plan',
+            plan: planName || 'unknown',
+            target_plan: planName || 'unknown'
+        };
+
+        try {
+            if (typeof window.bbaiTrack === 'function') {
+                window.bbaiTrack('checkout_started', checkoutProps);
+            } else {
+                document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                    detail: Object.assign({ event: 'checkout_started' }, checkoutProps)
+                }));
+            }
+        } catch (checkoutTrackError) {
+            // Ignore telemetry failures; checkout must still proceed.
+        }
+
+        if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
+            window.bbaiTelemetry.flush();
         }
 
         window.open(url, '_blank', 'noopener,noreferrer');
@@ -2245,7 +2270,7 @@ bbaiRunWithJQuery(function($) {
 
         if (!ajaxUrl || !nonce || !resolvedPriceId || !window.jQuery || typeof $.ajax !== 'function') {
             if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Falling back to Stripe payment link:', fallbackUrl);
-            if (openCheckoutUrl(fallbackUrl)) {
+            if (openCheckoutUrl(fallbackUrl, planName)) {
                 return;
             }
         } else {
@@ -2275,7 +2300,7 @@ bbaiRunWithJQuery(function($) {
 
                 if (checkoutUrl && !invalidHostedSession) {
                     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe checkout session:', checkoutUrl);
-                    openCheckoutUrl(checkoutUrl);
+                    openCheckoutUrl(checkoutUrl, planName);
                     return;
                 }
 
@@ -2284,7 +2309,7 @@ bbaiRunWithJQuery(function($) {
                 }
 
                 if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Checkout session missing URL, falling back to payment link');
-                if (openCheckoutUrl(fallbackUrl)) {
+                if (openCheckoutUrl(fallbackUrl, planName)) {
                     return;
                 }
 
@@ -2301,7 +2326,7 @@ bbaiRunWithJQuery(function($) {
                     });
                 }
 
-                if (openCheckoutUrl(fallbackUrl)) {
+                if (openCheckoutUrl(fallbackUrl, planName)) {
                     return;
                 }
 
@@ -3752,7 +3777,7 @@ bbaiRunWithJQuery(function($) {
     }
 
     function getAnonymousTrialOffer(data) {
-        return Math.max(0, parseCount(data && data.freePlanOffer) || 50);
+        return Math.max(0, parseCount(data && data.freePlanOffer) || 25);
     }
 
     function getLowCreditThresholdForState(data) {
@@ -4115,8 +4140,8 @@ bbaiRunWithJQuery(function($) {
                 : root.getAttribute('data-bbai-signup-required') === '1',
             upgradeRequired: root.getAttribute('data-bbai-upgrade-required') === '1',
             freePlanOffer: (usage && usage.free_plan_offer !== undefined)
-                ? Math.max(0, parseCount(usage.free_plan_offer) || 50)
-                : Math.max(0, parseCount(root.getAttribute('data-bbai-free-plan-offer')) || 50),
+                ? Math.max(0, parseCount(usage.free_plan_offer) || 25)
+                : Math.max(0, parseCount(root.getAttribute('data-bbai-free-plan-offer')) || 25),
             lowCreditThreshold: (usage && usage.low_credit_threshold !== undefined)
                 ? Math.max(0, parseCount(usage.low_credit_threshold))
                 : Math.max(0, parseCount(root.getAttribute('data-bbai-low-credit-threshold'))),
@@ -4139,6 +4164,7 @@ bbaiRunWithJQuery(function($) {
             libraryUrl: root.getAttribute('data-bbai-library-url') || '',
             missingLibraryUrl: root.getAttribute('data-bbai-missing-library-url') || '',
             needsReviewLibraryUrl: root.getAttribute('data-bbai-needs-review-library-url') || '',
+            optimizedLibraryUrl: root.getAttribute('data-bbai-optimized-library-url') || '',
             settingsUrl: root.getAttribute('data-bbai-settings-url') || '',
             usageUrl: root.getAttribute('data-bbai-usage-url') || '',
             guideUrl: root.getAttribute('data-bbai-guide-url') || ''
@@ -4264,7 +4290,7 @@ bbaiRunWithJQuery(function($) {
             root.setAttribute('data-bbai-credits-remaining', String(remaining));
             root.setAttribute('data-bbai-quota-state', String(usage.quota_state || root.getAttribute('data-bbai-quota-state') || ''));
             root.setAttribute('data-bbai-signup-required', usage.signup_required ? '1' : '0');
-            root.setAttribute('data-bbai-free-plan-offer', String(Math.max(0, parseCount(usage.free_plan_offer) || 50)));
+            root.setAttribute('data-bbai-free-plan-offer', String(Math.max(0, parseCount(usage.free_plan_offer) || 25)));
             root.setAttribute('data-bbai-low-credit-threshold', String(Math.max(0, parseCount(usage.low_credit_threshold) || 0)));
             if (usage.plan_label) {
                 root.setAttribute('data-bbai-plan-label', String(usage.plan_label));
@@ -4300,10 +4326,14 @@ bbaiRunWithJQuery(function($) {
         if (isAnonymousTrial) {
             lockedCtaMode = trialExhausted ? 'create_account' : '';
         } else {
-            var exhaustedIn = !!(usage.upgrade_required || usage.quota_state === 'exhausted');
+            var quotaStateIn = String(usage.quota_state || '').toLowerCase();
+            var isDailyExhaustedIn = quotaStateIn === 'daily_exhausted' || !!usage.daily_limit_reached;
+            var exhaustedIn = !isDailyExhaustedIn && !!(usage.upgrade_required || quotaStateIn === 'exhausted');
             var growthLike = usagePlan === 'growth' || usagePlan === 'pro';
             var agencyLike = usagePlan === 'agency';
-            if (exhaustedIn) {
+            if (isDailyExhaustedIn) {
+                lockedCtaMode = 'daily_limit';
+            } else if (exhaustedIn) {
                 if (agencyLike) {
                     lockedCtaMode = 'manage_plan';
                 } else if (growthLike) {
@@ -4355,7 +4385,7 @@ bbaiRunWithJQuery(function($) {
         if (bbaiIsAnonymousTrialUsage(usage)) {
             return sprintf(
                 __('Create a free account to keep your progress and unlock %d monthly generations', 'beepbeep-ai-alt-text-generator'),
-                Math.max(0, parseCount(usage.free_plan_offer) || 50)
+                Math.max(0, parseCount(usage.free_plan_offer) || 25)
             );
         }
 
@@ -7020,6 +7050,120 @@ bbaiRunWithJQuery(function($) {
         }, REVIEW_DELAY_MS);
     }
 
+    function getDailyDonutBackground(data) {
+        var total = Math.max(0, parseCount(data && data.total));
+        var optimized = Math.max(0, parseCount(data && data.optimized));
+        var review = Math.max(0, parseCount(data && data.weak));
+        var missing = Math.max(0, parseCount(data && data.missing));
+        var optimizedEnd;
+        var reviewEnd;
+
+        total = Math.max(total, optimized + review + missing);
+        if (!total) {
+            return 'conic-gradient(#e2e8f0 0deg 360deg)';
+        }
+
+        optimizedEnd = Math.min(360, (optimized / total) * 360);
+        reviewEnd = Math.min(360, optimizedEnd + ((review / total) * 360));
+
+        return 'conic-gradient(#16a34a 0deg ' + optimizedEnd + 'deg, #dc2626 ' + optimizedEnd + 'deg ' + reviewEnd + 'deg, #d97706 ' + reviewEnd + 'deg 360deg)';
+    }
+
+    function renderDailyDonut(data) {
+        var donut = document.querySelector('[data-bbai-daily-donut="1"]');
+        var valueNode;
+        var labelNode;
+        var missing;
+        var review;
+        var optimized;
+        var total;
+        var focus;
+
+        if (!donut || !data) {
+            return;
+        }
+
+        missing = Math.max(0, parseCount(data.missing));
+        review = Math.max(0, parseCount(data.weak));
+        optimized = Math.max(0, parseCount(data.optimized));
+        total = Math.max(0, parseCount(data.total), missing + review + optimized);
+        focus = missing > 0 ? 'missing' : (review > 0 ? 'review' : 'complete');
+        valueNode = donut.querySelector('[data-bbai-daily-donut-value="1"]');
+        labelNode = donut.querySelector('[data-bbai-daily-donut-label="1"]');
+
+        donut.style.setProperty('--bbai-daily-donut-background', getDailyDonutBackground({
+            missing: missing,
+            weak: review,
+            optimized: optimized,
+            total: total
+        }));
+        donut.setAttribute('data-bbai-daily-donut-focus', focus);
+        donut.setAttribute('data-bbai-daily-generated', String(optimized));
+        donut.setAttribute('data-bbai-daily-review', String(review));
+        donut.setAttribute('data-bbai-daily-missing', String(missing));
+        donut.setAttribute('data-bbai-daily-total', String(total));
+
+        if (valueNode) {
+            valueNode.textContent = focus === 'complete' ? '\u2713' : String(focus === 'missing' ? missing : review);
+        }
+        if (labelNode) {
+            labelNode.textContent = focus === 'complete'
+                ? __('Optimised', 'beepbeep-ai-alt-text-generator')
+                : (focus === 'missing' ? __('Missing ALT', 'beepbeep-ai-alt-text-generator') : __('Needs review', 'beepbeep-ai-alt-text-generator'));
+        }
+    }
+
+    function renderDailyQueue(data) {
+        var missing = Math.max(0, parseCount(data && data.missing));
+        var review = Math.max(0, parseCount(data && data.weak));
+        var optimized = Math.max(0, parseCount(data && data.optimized));
+        var missingLink = document.querySelector('[data-bbai-dashboard-status-filter="missing"]');
+        var reviewLink = document.querySelector('[data-bbai-dashboard-status-filter="weak"]');
+        var optimizedLink = document.querySelector('[data-bbai-dashboard-status-filter="optimized"]');
+        var missingValue = document.querySelector('[data-bbai-daily-queue-missing="1"]');
+        var reviewValue = document.querySelector('[data-bbai-daily-queue-review="1"]');
+        var optimizedValue = document.querySelector('[data-bbai-daily-queue-optimised="1"]');
+        var missingLabel = document.querySelector('[data-bbai-daily-queue-missing-label="1"]');
+        var reviewLabel = document.querySelector('[data-bbai-daily-queue-review-label="1"]');
+        var optimizedLabel = document.querySelector('[data-bbai-daily-queue-optimised-label="1"]');
+
+        function setQueueLinkState(link, count, href, disableWhenEmpty) {
+            if (!link) {
+                return;
+            }
+
+            var disabled = disableWhenEmpty && count <= 0;
+            link.classList.toggle('bbai-daily-queue-link--disabled', disabled);
+            link.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+            if (href) {
+                link.setAttribute('href', href);
+            }
+        }
+
+        if (missingValue) {
+            missingValue.textContent = formatCount(missing);
+        }
+        if (reviewValue) {
+            reviewValue.textContent = formatCount(review);
+        }
+        if (optimizedValue) {
+            optimizedValue.textContent = formatCount(optimized);
+        }
+        if (missingLabel) {
+            missingLabel.textContent = __('Missing ALT', 'beepbeep-ai-alt-text-generator');
+        }
+        if (reviewLabel) {
+            reviewLabel.textContent = __('Needs review', 'beepbeep-ai-alt-text-generator');
+        }
+        if (optimizedLabel) {
+            optimizedLabel.textContent = __('Optimised', 'beepbeep-ai-alt-text-generator');
+        }
+
+        setQueueLinkState(missingLink, missing, missing > 0 ? data.missingLibraryUrl : data.libraryUrl, true);
+        setQueueLinkState(reviewLink, review, data.needsReviewLibraryUrl || data.libraryUrl, false);
+        setQueueLinkState(optimizedLink, optimized, data.optimizedLibraryUrl || data.libraryUrl, false);
+    }
+
     function renderDashboardState() {
         var data = getDashboardData();
         if (!data) {
@@ -7039,6 +7183,12 @@ bbaiRunWithJQuery(function($) {
         runStep('action-tracking', bindDashboardActionTracking);
         runStep('hero', function() {
             renderHero(data);
+        });
+        runStep('daily-donut', function() {
+            renderDailyDonut(data);
+        });
+        runStep('daily-queue', function() {
+            renderDailyQueue(data);
         });
         runStep('status-card', function() {
             renderStatusCard(data);

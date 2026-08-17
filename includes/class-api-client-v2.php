@@ -10,6 +10,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; }
 
 class API_Client_V2 {
+	const STARTER_MONTHLY_LIMIT  = 100;
+	const MIN_PAID_MONTHLY_LIMIT = 1000;
+
+	/**
+	 * Minimum monthly allowance expected for a paid plan claim.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return int
+	 */
+	private function minimum_monthly_limit_for_plan( string $plan ): int {
+		$plan = sanitize_key( $plan );
+		if ( 'starter' === $plan ) {
+			return self::STARTER_MONTHLY_LIMIT;
+		}
+		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
+			return self::MIN_PAID_MONTHLY_LIMIT;
+		}
+		return 0;
+	}
+
+	/**
+	 * Whether the plan is allowed to use upload automation.
+	 *
+	 * Starter is paid but does not include Autopilot.
+	 *
+	 * @param string $plan Plan slug.
+	 * @return bool
+	 */
+	private function plan_can_use_autopilot( string $plan ): bool {
+		return in_array( sanitize_key( $plan ), array( 'pro', 'growth', 'agency', 'enterprise' ), true );
+	}
+
 	/**
 	 * Singleton instance.
 	 *
@@ -348,7 +380,11 @@ class API_Client_V2 {
 				$remaining = 0;
 			}
 
-			$plan = strtolower( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'free' ) );
+			$plan    = sanitize_key( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'free' ) );
+			$minimum = $this->minimum_monthly_limit_for_plan( $plan );
+			if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
+				$plan = 'free';
+			}
 
 			$org['used']             = $used;
 			$org['limit']            = $limit;
@@ -2096,7 +2132,11 @@ class API_Client_V2 {
 			$reset_ts = strtotime( 'first day of next month' );
 		}
 
-		$plan = strtolower( $org['plan'] ?? $org['plan_type'] ?? 'agency' );
+		$plan = sanitize_key( (string) ( $org['plan'] ?? $org['plan_type'] ?? 'agency' ) );
+		$minimum = $this->minimum_monthly_limit_for_plan( $plan );
+		if ( $minimum > 0 && $limit > 0 && $limit < $minimum ) {
+			$plan = 'free';
+		}
 
 		return array(
 			'used'                => $used,
@@ -2654,14 +2694,20 @@ class API_Client_V2 {
 		// Handle quota/rate-limit responses.
 		// Backend may signal exhausted quota as HTTP 429 or HTTP 402 + QUOTA_EXCEEDED.
 		$quota_status_code = isset( $response['status_code'] ) ? intval( $response['status_code'] ) : 0;
-		$quota_error_data  = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
-		$quota_error_code  = isset( $quota_error_data['code'] ) ? strtoupper( (string) $quota_error_data['code'] ) : '';
-		$quota_error_text  = strtolower( trim( (string) ( $quota_error_data['error'] ?? $quota_error_data['message'] ?? '' ) ) );
-		$is_quota_response = (
-			429 === $quota_status_code ||
-			402 === $quota_status_code ||
-			'QUOTA_EXCEEDED' === $quota_error_code ||
-			strpos( $quota_error_text, 'quota exceeded' ) !== false ||
+			$quota_error_data  = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
+			$quota_error_code  = isset( $quota_error_data['code'] ) ? strtoupper( (string) $quota_error_data['code'] ) : '';
+			$quota_error_text  = strtolower( trim( (string) ( $quota_error_data['error'] ?? $quota_error_data['message'] ?? '' ) ) );
+			$is_daily_quota_response = (
+				'DAILY_QUOTA_EXCEEDED' === $quota_error_code ||
+				strpos( $quota_error_text, 'daily free generation limit' ) !== false ||
+				strpos( $quota_error_text, 'daily generation' ) !== false
+			);
+			$is_quota_response = (
+				429 === $quota_status_code ||
+				402 === $quota_status_code ||
+				'QUOTA_EXCEEDED' === $quota_error_code ||
+				$is_daily_quota_response ||
+				strpos( $quota_error_text, 'quota exceeded' ) !== false ||
 			strpos( $quota_error_text, 'quota exhausted' ) !== false ||
 			strpos( $quota_error_text, 'monthly quota' ) !== false ||
 			strpos( $quota_error_text, 'monthly limit' ) !== false ||
@@ -2683,7 +2729,7 @@ class API_Client_V2 {
 				? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_remaining()
 				: 0;
 			$guest_trial_budget         = ! $has_license && $local_trial_remaining > 0;
-			$skip_quota_mismatch_branch = $is_anonymous_trial || $guest_trial_budget;
+				$skip_quota_mismatch_branch = $is_anonymous_trial || $guest_trial_budget || $is_daily_quota_response;
 
 			// Anonymous trial: local Trial_Quota and unauthenticated get_usage() both read the same local
 			// counters, so the "mismatch" branch below would always fire while the API still returns 402/429.
@@ -2735,14 +2781,14 @@ class API_Client_V2 {
 			}
 
 			// Cached usage confirms no credits OR fresh check also shows exhausted
-			return new \WP_Error(
-				'limit_reached',
-				$quota_error_data['error'] ?? $quota_error_data['message'] ?? __( 'Monthly limit reached', 'beepbeep-ai-alt-text-generator' ),
-				array(
-					'usage'        => $quota_error_data['usage'] ?? null,
-					'status_code'  => $quota_status_code,
-					'code'         => 'quota_exhausted',
-					'backend_code' => $quota_error_data['code'] ?? null,
+				return new \WP_Error(
+					$is_daily_quota_response ? 'daily_limit_reached' : 'limit_reached',
+					$quota_error_data['error'] ?? $quota_error_data['message'] ?? ( $is_daily_quota_response ? __( 'Daily free generation limit reached. Upgrade to continue now or wait for the daily refresh.', 'beepbeep-ai-alt-text-generator' ) : __( 'Monthly limit reached', 'beepbeep-ai-alt-text-generator' ) ),
+					array(
+						'usage'        => $quota_error_data['usage'] ?? $quota_error_data,
+						'status_code'  => $quota_status_code,
+						'code'         => $is_daily_quota_response ? 'daily_quota_exceeded' : 'quota_exhausted',
+						'backend_code' => $quota_error_data['code'] ?? null,
 				)
 			);
 		}
@@ -2995,13 +3041,19 @@ class API_Client_V2 {
 			return $response;
 		}
 
-		if ( $response['success'] ) {
-			return $response['data']['billing'];
+		if ( ! empty( $response['success'] ) ) {
+			$data = ( isset( $response['data'] ) && is_array( $response['data'] ) ) ? $response['data'] : array();
+			if ( isset( $data['billing'] ) && is_array( $data['billing'] ) ) {
+				return $data['billing'];
+			}
+			// Free / alternate payloads may omit the nested billing key.
+			return $data;
 		}
 
+		$error_data = ( isset( $response['data'] ) && is_array( $response['data'] ) ) ? $response['data'] : array();
 		return new \WP_Error(
 			'billing_failed',
-			$response['data']['error'] ?? __( 'Failed to get billing info', 'beepbeep-ai-alt-text-generator' )
+			$error_data['error'] ?? __( 'Failed to get billing info', 'beepbeep-ai-alt-text-generator' )
 		);
 	}
 
@@ -3070,21 +3122,36 @@ class API_Client_V2 {
 	/**
 	 * Create checkout session
 	 */
-	public function create_checkout_session( $price_id, $success_url, $cancel_url ) {
+	public function create_checkout_session( $price_id, $success_url, $cancel_url, array $attribution = array() ) {
 		// For checkout, try without token if token is invalid/expired
 		// This allows guest checkout - users can create account during checkout
 		$token     = $this->get_token();
 		$had_token = ! empty( $token );
 
+		$payload = array(
+			'priceId'    => $price_id,
+			'successUrl' => $success_url,
+			'cancelUrl'  => $cancel_url,
+		);
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
+			$payload = array_merge( $payload, \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload(), $attribution );
+		} elseif ( ! empty( $attribution ) ) {
+			$payload = array_merge( $payload, $attribution );
+		}
+
+		if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
+			$payload['plugin_version'] = (string) BEEPBEEP_AI_VERSION;
+		}
+		if ( function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
+			$payload['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\get_site_identifier() );
+		}
+
 		// First attempt: with token if available
 		$response = $this->make_request(
 			'/billing/checkout',
 			'POST',
-			array(
-				'priceId'    => $price_id,
-				'successUrl' => $success_url,
-				'cancelUrl'  => $cancel_url,
-			)
+			$payload
 		);
 
 		// Check response body for "user not found" errors (backend returns 500 with this message)
@@ -3745,7 +3812,7 @@ class API_Client_V2 {
 	 * @param int                  $image_id   Attachment ID.
 	 * @param array<string, mixed> $context    From Core::build_generation_context_for_attachment().
 	 * @param bool                 $regenerate Whether to bypass cache / force regeneration.
-	 * @return array<string, mixed>|\WP_Error Item for the `items` array, or error.
+	 * @return array<string, mixed>|\WP_Error Item for the `images` array, or error.
 	 */
 	public function build_alt_text_job_item( int $image_id, array $context, bool $regenerate = false ) {
 		$image_url = wp_get_attachment_url( $image_id );
@@ -3831,8 +3898,10 @@ class API_Client_V2 {
 		}
 
 		$payload = array(
-			'type'  => 'alt_text',
-			'items' => array_values( $job_items ),
+			'images'  => array_values( $job_items ),
+			'context' => array(
+				'source' => 'wordpress_bulk_job',
+			),
 		);
 		$payload = apply_filters( 'bbai_create_alt_text_job_payload', $payload, $job_items );
 
