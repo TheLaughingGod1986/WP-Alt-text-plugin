@@ -82,7 +82,7 @@ function bbai_page_hero_library_command_hero(array $args): array
         $surface['section_data_attrs'],
         [
             'data-bbai-banner-used' => (string) max(0, (int) ($args['credits_used'] ?? 0)),
-            'data-bbai-banner-limit' => (string) max(1, (int) ($args['credits_limit'] ?? 50)),
+            'data-bbai-banner-limit' => (string) max(1, (int) ($args['credits_limit'] ?? 25)),
             'data-bbai-banner-remaining' => (string) max(0, (int) ($args['credits_remaining'] ?? 0)),
             'data-bbai-banner-auth-state' => (string) ($args['auth_state'] ?? ''),
             'data-bbai-banner-quota-type' => (string) ($args['quota_type'] ?? ''),
@@ -112,7 +112,7 @@ function bbai_page_hero_library_command_hero(array $args): array
         'weak_count'             => $cov_weak,
         'total_images'           => $total_images,
         'credits_used'           => $credits_used,
-        'credits_limit'          => max(1, (int) ($args['credits_limit'] ?? 50)),
+        'credits_limit'          => max(1, (int) ($args['credits_limit'] ?? 25)),
         'credits_remaining'      => max(0, (int) ($args['credits_remaining'] ?? 0)),
         'usage_percent'          => min(100, max(0, (int) ($args['usage_percent'] ?? 0))),
         'is_pro_plan'            => !empty($args['is_pro']),

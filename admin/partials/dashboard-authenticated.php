@@ -23,7 +23,7 @@ use BeepBeepAI\AltTextGenerator\Usage_Tracker;
                 
                 // Get raw values directly from the stats array - same calculation method as Settings tab
                 $bbai_dashboard_used = max(0, intval($bbai_usage_stats['used'] ?? 0));
-                $bbai_dashboard_limit = max(1, intval($bbai_usage_stats['limit'] ?? 50));
+                $bbai_dashboard_limit = max(1, intval($bbai_usage_stats['limit'] ?? 25));
                 $bbai_dashboard_remaining = max(0, intval($bbai_usage_stats['remaining'] ?? 0));
                 
                 // Calculate percentage - same way as Settings tab

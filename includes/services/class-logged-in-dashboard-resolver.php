@@ -472,7 +472,7 @@ class Logged_In_Dashboard_Resolver {
 		$credits  = $ctx['credits'];
 		$cr_used  = (int) ( $credits['used']  ?? 0 );
 		$cr_total = max( 1, (int) ( $credits['total'] ?? 1 ) );
-		$is_first_free_generation = ( ! $is_trial && ! $is_pro && 0 === $cr_used && $cr_total >= 50 && $missing > 0 );
+		$is_first_free_generation = ( ! $is_trial && ! $is_pro && 0 === $cr_used && $cr_total >= 25 && $missing > 0 );
 
 		// Impossible queue states (stale labels) must never yield review CTAs with zero review items.
 		if ( self::STATE_NEEDS_REVIEW === $state && $review <= 0 ) {

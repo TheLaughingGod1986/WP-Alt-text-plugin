@@ -17,7 +17,7 @@ if (empty($bbai_state) || !is_array($bbai_state)) {
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/banner-system.php';
 
 $bbai_credits_used      = max(0, (int) ($bbai_state['creditsUsed'] ?? 0));
-$bbai_credits_limit     = max(1, (int) ($bbai_state['creditsLimit'] ?? 50));
+$bbai_credits_limit     = max(1, (int) ($bbai_state['creditsLimit'] ?? 25));
 $bbai_credits_remaining = max(0, (int) ($bbai_state['creditsRemaining'] ?? 0));
 $bbai_missing_count     = max(0, (int) ($bbai_state['missingCount'] ?? 0));
 $bbai_weak_count        = max(0, (int) ($bbai_state['weakCount'] ?? 0));

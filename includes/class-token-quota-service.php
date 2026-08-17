@@ -50,7 +50,7 @@ class Token_Quota_Service {
 		// Build a short-lived mirror from the authoritative usage payload.
 		$quota = [
 			'plan_type' => $usage['plan_type'] ?? $usage['plan'] ?? 'free',
-			'limit' => isset($usage['limit']) ? max(0, intval($usage['limit'])) : 50,
+			'limit' => isset($usage['limit']) ? max(0, intval($usage['limit'])) : 25,
 			'used' => isset($usage['used']) ? max(0, intval($usage['used'])) : 0,
 			'remaining' => isset($usage['remaining']) ? max(0, intval($usage['remaining'])) : 0,
 			'resets_at' => 0,

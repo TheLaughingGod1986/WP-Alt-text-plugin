@@ -284,8 +284,8 @@ class Usage_Tracker {
         if ($free_credits_allocated) {
             return self::normalize_usage_payload([
                 'used'       => 0,
-                'limit'      => 50,
-                'remaining'  => 50,
+                'limit'      => 25,
+                'remaining'  => 25,
                 'plan'       => 'free',
                 'resetDate'  => wp_date('Y-m-01', $reset_ts),
                 'reset_timestamp' => $reset_ts,
@@ -327,8 +327,8 @@ class Usage_Tracker {
         $reset_ts = strtotime('first day of next month');
         $usage_data = [
             'used' => 0,
-            'limit' => 50,
-            'remaining' => 50,
+            'limit' => 25,
+            'remaining' => 25,
             'plan' => 'free',
             'resetDate' => wp_date('Y-m-01', $reset_ts),
             'resetTimestamp' => $reset_ts,
@@ -464,7 +464,7 @@ class Usage_Tracker {
 
         $used = max(0, (int) ($usage['used'] ?? 0));
         $history_used = self::get_local_successful_generations_this_month();
-        $limit = max(1, (int) ($usage['limit'] ?? 50));
+        $limit = max(1, (int) ($usage['limit'] ?? 25));
 
 		$new_used = min($limit, max($used + $count, $history_used));
 		$new_remaining = max(0, $limit - $new_used);
@@ -507,7 +507,7 @@ class Usage_Tracker {
 			? max(0, (int) ($cached['used'] ?? $cached['credits_used'] ?? $cached['creditsUsed'] ?? 0))
 			: 0;
 		$live_used = max(0, (int) ($live_usage['used'] ?? $live_usage['credits_used'] ?? $live_usage['creditsUsed'] ?? 0));
-		$live_limit = max(1, (int) ($live_usage['limit'] ?? $live_usage['credits_total'] ?? $live_usage['creditsTotal'] ?? $live_usage['creditsLimit'] ?? 50));
+		$live_limit = max(1, (int) ($live_usage['limit'] ?? $live_usage['credits_total'] ?? $live_usage['creditsTotal'] ?? $live_usage['creditsLimit'] ?? 25));
 		$cached_limit = max(1, (int) ($cached['limit'] ?? $cached['credits_total'] ?? $cached['creditsTotal'] ?? $live_limit));
 
 		if ($cached_used > $live_used && $cached_limit === $live_limit) {
@@ -613,7 +613,7 @@ class Usage_Tracker {
         ) {
             return null;
         }
-		$limit = max(1, (int) ($usage['limit'] ?? $usage['credits_total'] ?? $usage['creditsTotal'] ?? $usage['creditsLimit'] ?? 50));
+		$limit = max(1, (int) ($usage['limit'] ?? $usage['credits_total'] ?? $usage['creditsTotal'] ?? $usage['creditsLimit'] ?? 25));
 		$used = min($limit, $used);
 		$remaining = max(0, $limit - $used);
 		self::raise_generation_success_floor($used);

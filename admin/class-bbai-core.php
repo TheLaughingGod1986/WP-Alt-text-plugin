@@ -710,7 +710,7 @@ class Core {
 
         if ( ! $should_gate ) {
             $usage = Usage_Tracker::get_stats_display(false);
-            $connected_limit = max(1, (int) ($usage['creditsTotal'] ?? $usage['credits_total'] ?? $usage['limit'] ?? 50));
+            $connected_limit = max(1, (int) ($usage['creditsTotal'] ?? $usage['credits_total'] ?? $usage['limit'] ?? 25));
             $connected_used = max(0, min($connected_limit, (int) ($usage['creditsUsed'] ?? $usage['credits_used'] ?? $usage['used'] ?? 0)));
             $connected_remaining = max(0, (int) ($usage['creditsRemaining'] ?? $usage['credits_remaining'] ?? $usage['remaining'] ?? ($connected_limit - $connected_used)));
             $connected_plan = sanitize_key((string) ($usage['plan_type'] ?? $usage['plan'] ?? 'free'));
@@ -3240,7 +3240,7 @@ class Core {
                 $bbai_has_connected_account
             ) {
                 $bbai_banner_used = max( 0, (int) ( $bbai_usage_stats['used'] ?? 0 ) );
-                $bbai_banner_limit = max( 1, (int) ( $bbai_usage_stats['limit'] ?? 50 ) );
+                $bbai_banner_limit = max( 1, (int) ( $bbai_usage_stats['limit'] ?? 25 ) );
                 $bbai_banner_remaining = isset( $bbai_usage_stats['remaining'] )
                     ? max( 0, (int) $bbai_usage_stats['remaining'] )
                     : max( 0, $bbai_banner_limit - $bbai_banner_used );

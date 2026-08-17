@@ -695,7 +695,7 @@ trait Core_Admin_UI {
                 ( $bbai_is_authenticated || $bbai_has_license || $bbai_has_registered_user )
             ) {
                 $bbai_banner_used = max( 0, (int) ( $bbai_usage_stats['used'] ?? 0 ) );
-                $bbai_banner_limit = max( 1, (int) ( $bbai_usage_stats['limit'] ?? 50 ) );
+                $bbai_banner_limit = max( 1, (int) ( $bbai_usage_stats['limit'] ?? 25 ) );
                 $bbai_banner_remaining = isset( $bbai_usage_stats['remaining'] )
                     ? max( 0, (int) $bbai_usage_stats['remaining'] )
                     : max( 0, $bbai_banner_limit - $bbai_banner_used );

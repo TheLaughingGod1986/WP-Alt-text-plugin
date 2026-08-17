@@ -239,7 +239,7 @@ function bbai_banner_snapshot_from_dashboard_state(array $d): array
         'weak_count'        => max(0, (int) ($d['weakCount'] ?? 0)),
         'total_images'      => max(0, (int) ($d['totalImages'] ?? 0)),
         'credits_used'      => max(0, (int) ($d['creditsUsed'] ?? 0)),
-        'credits_limit'     => max(1, (int) ($d['creditsLimit'] ?? 50)),
+        'credits_limit'     => max(1, (int) ($d['creditsLimit'] ?? 25)),
         'credits_remaining' => max(0, (int) ($d['creditsRemaining'] ?? 0)),
         'usage_percent'     => min(100, max(0, (int) ($d['usagePercent'] ?? 0))),
         'is_pro_plan'       => !empty($d['isProPlan']),
@@ -284,7 +284,7 @@ function bbai_banner_snapshot_merge(array $overrides): array
         'weak_count'          => 0,
         'total_images'        => 0,
         'credits_used'        => 0,
-        'credits_limit'       => 50,
+        'credits_limit'       => 25,
         'credits_remaining'   => 0,
         'usage_percent'       => 0,
         'is_pro_plan'         => false,
@@ -408,7 +408,7 @@ function bbai_banner_normalize_banner_data(array $input): array
     $needs_review  = max(0, (int) ($input['needs_review_count'] ?? $input['weak_count'] ?? 0));
     $total         = max(0, (int) ($input['total_images'] ?? 0));
     $rem           = max(0, (int) ($input['credits_remaining'] ?? 0));
-    $limit         = max(1, (int) ($input['credits_limit'] ?? $input['credit_limit'] ?? 50));
+    $limit         = max(1, (int) ($input['credits_limit'] ?? $input['credit_limit'] ?? 25));
     $thresh_input  = isset($input['low_credit_threshold']) ? (int) $input['low_credit_threshold'] : null;
     $total_issues  = $missing + $needs_review;
     $auth_state    = trim((string) ($input['auth_state'] ?? ''));
@@ -852,7 +852,7 @@ function bbai_banner_get_banner_state_from_snapshot(array $s, string $page_conte
         'missing_count'      => max(0, (int) ($s['missing_count'] ?? 0)),
         'needs_review_count' => max(0, (int) ($s['needs_review_count'] ?? $s['weak_count'] ?? 0)),
         'total_images'       => max(0, (int) ($s['total_images'] ?? 0)),
-        'credits_limit'      => max(1, (int) ($s['credits_limit'] ?? 50)),
+        'credits_limit'      => max(1, (int) ($s['credits_limit'] ?? 25)),
         'auth_state'         => (string) ($s['auth_state'] ?? ''),
         'quota_type'         => (string) ($s['quota_type'] ?? ''),
         'quota_state'        => (string) ($s['quota_state'] ?? ''),
@@ -1071,7 +1071,7 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
     $free_plan_offer = max(0, (int) ($normalized['free_plan_offer'] ?? 25));
 
     $used    = max(0, (int) ($s['credits_used'] ?? 0));
-    $limit   = max(1, (int) ($s['credits_limit'] ?? 50));
+    $limit   = max(1, (int) ($s['credits_limit'] ?? 25));
     $pct     = min(100, max(0, (int) ($s['usage_percent'] ?? 0)));
 
     $library_url  = (string) ($s['library_url'] ?? admin_url('admin.php?page=bbai-library'));
