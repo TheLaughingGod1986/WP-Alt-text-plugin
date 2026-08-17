@@ -51,7 +51,7 @@ $bbai_images_processed = $bbai_images_optimized_count;
 $bbai_images_delta_percent = max(0, (float) ($bbai_usage_stats['imagesDeltaPercent'] ?? $bbai_usage_stats['images_delta_percent'] ?? 0));
 
 $bbai_usage_used = max(0, (int) ($bbai_usage_stats['used'] ?? 0));
-$bbai_usage_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 50));
+$bbai_usage_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 25));
 $bbai_usage_remaining = max(0, (int) ($bbai_usage_stats['remaining'] ?? 0));
 $bbai_credits_used_percent = (int) round(($bbai_usage_used / $bbai_usage_limit) * 100);
 

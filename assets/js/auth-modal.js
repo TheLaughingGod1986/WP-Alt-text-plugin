@@ -105,7 +105,7 @@ class BbAIAuthModal {
                     : 'You have already improved your website’s accessibility and image SEO. Keep the momentum going for free.';
             }
             if (impact) impact.hidden = false;
-            if (impactImages) impactImages.textContent = imagesImproved > 0 ? String(imagesImproved) : '5';
+            if (impactImages) impactImages.textContent = imagesImproved > 0 ? String(imagesImproved) : String(trialLimit);
             if (impactCoverage) impactCoverage.textContent = coverageAfter > 0 ? coverageAfter + '%' : 'Improved';
             if (impactLift) {
                 impactLift.textContent = coverageLift > 0

@@ -63,7 +63,7 @@ function bbai_monetisation_default_tier_positioning(): array {
     return [
         BBAI_MONET_TIER_FREE => [
             'label'             => __('Free', 'beepbeep-ai-alt-text-generator'),
-            'monthly_credits'   => 50,
+            'monthly_credits'   => 25,
             'automation'        => false,
             'sites'             => __('1 site', 'beepbeep-ai-alt-text-generator'),
         ],

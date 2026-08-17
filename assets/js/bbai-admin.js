@@ -18151,8 +18151,8 @@
 
         if (authMode === 'guest_logged_out' && trialExhausted) {
             return {
-                headline: __('You’ve used all 5 free generations', 'beepbeep-ai-alt-text-generator'),
-                supporting: __('You fixed your first 5 images. Create a free account to review your results and unlock 25 generations per month.', 'beepbeep-ai-alt-text-generator'),
+                headline: __('You’ve used all 10 free generations', 'beepbeep-ai-alt-text-generator'),
+                supporting: __('You fixed your first 10 images. Create a free account to review your results and unlock 25 generations per month.', 'beepbeep-ai-alt-text-generator'),
                 primary: { label: __('Create free account', 'beepbeep-ai-alt-text-generator'), action: 'signup' },
                 secondary: { label: __('Log in', 'beepbeep-ai-alt-text-generator'), action: 'login' }
             };
@@ -23043,7 +23043,7 @@
 
         // Extract usage values - handle both direct response and nested data
         var used = usagePayload.used !== undefined ? usagePayload.used : 0;
-        var limit = usagePayload.limit !== undefined ? usagePayload.limit : 50;
+        var limit = usagePayload.limit !== undefined ? usagePayload.limit : 25;
         var remaining = usagePayload.remaining !== undefined ? usagePayload.remaining : 0;
 
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Updating usage display:', { used: used, limit: limit, remaining: remaining });

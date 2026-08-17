@@ -2318,7 +2318,7 @@ class API_Client_V2 {
 		}
 
 		$used  = $usage['used'] ?? 0;
-		$limit = $usage['limit'] ?? 50;
+		$limit = $usage['limit'] ?? 25;
 
 		if ( 0 == $limit ) {
 			return 0;

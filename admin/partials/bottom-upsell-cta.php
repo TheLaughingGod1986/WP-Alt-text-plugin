@@ -54,7 +54,7 @@ $bbai_bottom_upsell_class = !empty($bbai_bottom_upsell_compact) ? ' bbai-bottom-
             : ($bbai_upsell_reset_ts > 0 ? max(0, (int) floor(($bbai_upsell_reset_ts - time()) / DAY_IN_SECONDS)) : 0);
         $bbai_growth_capacity = 1000;
         $bbai_current_used = max(0, intval($bbai_usage_stats['used'] ?? 0));
-        $bbai_current_limit = max(1, intval($bbai_usage_stats['limit'] ?? 50));
+        $bbai_current_limit = max(1, intval($bbai_usage_stats['limit'] ?? 25));
         $bbai_days_to_reset_label = $bbai_upsell_days_left <= 0
             ? __('Today', 'beepbeep-ai-alt-text-generator')
             : sprintf(

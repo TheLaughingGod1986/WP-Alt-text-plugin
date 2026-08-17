@@ -468,7 +468,7 @@
         }
 
         var used = response.used !== undefined ? response.used : 0;
-        var limit = response.limit !== undefined ? response.limit : 50;
+        var limit = response.limit !== undefined ? response.limit : 25;
         var remaining = response.remaining !== undefined ? response.remaining : 0;
 
         $('.bbai-usage-stat-item').each(function() {

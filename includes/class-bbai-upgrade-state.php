@@ -63,7 +63,7 @@ class BBAI_Upgrade_State {
 	public static function resolve( array $args ): array {
 
 		$used         = max( 0, (int) ( $args['used']         ?? 0 ) );
-		$limit        = max( 1, (int) ( $args['limit']        ?? 50 ) );
+		$limit        = max( 1, (int) ( $args['limit']        ?? 25 ) );
 		$remaining    = max( 0, (int) ( $args['remaining']    ?? ( $limit - $used ) ) );
 		$coverage_pct = max( 0, min( 100, (int) ( $args['coverage_pct']  ?? 0 ) ) );
 		$total_images = max( 0, (int) ( $args['total_images'] ?? 0 ) );
@@ -171,7 +171,7 @@ class BBAI_Upgrade_State {
 					'body'      => sprintf(
 						/* translators: %d: monthly credit limit */
 						__( "You've used all %d credits this month. New uploads won't receive ALT text until your allowance resets — or you upgrade.", 'beepbeep-ai-alt-text-generator' ),
-						(int) ( $data['limit'] ?? 50 )
+						(int) ( $data['limit'] ?? 25 )
 					),
 					'primary'   => $enable_auto,
 					'secondary' => $buy_credits,
@@ -188,7 +188,7 @@ class BBAI_Upgrade_State {
 						/* translators: 1: credits used, 2: credit limit */
 						__( "You've used %1\$d of %2\$d credits this month. Keep generating without interruption by enabling automatic optimisation.", 'beepbeep-ai-alt-text-generator' ),
 						(int) ( $data['used']  ?? 0 ),
-						(int) ( $data['limit'] ?? 50 )
+						(int) ( $data['limit'] ?? 25 )
 					),
 					'primary'   => $enable_auto,
 					'secondary' => $buy_credits,

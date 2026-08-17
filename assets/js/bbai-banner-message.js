@@ -275,7 +275,7 @@
         );
         var creditsLimit = Math.max(
             1,
-            parseInt(args.creditsLimit != null ? args.creditsLimit : args.credits_limit, 10) || 50
+            parseInt(args.creditsLimit != null ? args.creditsLimit : args.credits_limit, 10) || 25
         );
         var isPro = !!(args.isPro != null ? args.isPro : args.is_pro);
         var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();

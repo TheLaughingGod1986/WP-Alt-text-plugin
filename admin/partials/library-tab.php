@@ -382,7 +382,7 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
 
     <?php
     $bbai_usage_used = max(0, (int) ($bbai_usage_stats['used'] ?? 0));
-    $bbai_usage_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 50));
+    $bbai_usage_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 25));
     $bbai_usage_remaining = max(0, (int) ($bbai_usage_stats['remaining'] ?? 0));
     $bbai_usage_pct = min(100, max(0, (int) round($bbai_usage_limit ? ($bbai_usage_used / $bbai_usage_limit) * 100 : 0)));
     $bbai_settings_automation_url = admin_url('admin.php?page=bbai-settings#bbai-enable-on-upload');
