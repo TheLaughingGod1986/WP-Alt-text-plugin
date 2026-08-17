@@ -2568,7 +2568,7 @@ class REST_Controller {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 
 		$usage_tracker = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display(true);
-		$total_allowed = max( 1, intval( $usage_tracker['limit'] ?? 50 ) );
+		$total_allowed = max( 1, intval( $usage_tracker['limit'] ?? 25 ) );
 		$total_used    = max( 0, intval( $usage_tracker['used'] ?? 0 ) );
 		
 		$users = \BeepBeepAI\AltTextGenerator\Usage\get_monthly_usage_by_user();

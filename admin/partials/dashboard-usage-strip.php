@@ -20,7 +20,7 @@ if ( ! empty( $bbai_is_anonymous_trial ) ) {
 
 $bbai_strip_used      = isset( $bbai_state_credits_used ) ? max( 0, (int) $bbai_state_credits_used ) : 0;
 $bbai_strip_remaining = isset( $bbai_state_credits_remaining ) ? max( 0, (int) $bbai_state_credits_remaining ) : 0;
-$bbai_strip_limit     = isset( $bbai_state_credits_limit ) ? max( 1, (int) $bbai_state_credits_limit ) : 50;
+$bbai_strip_limit     = isset( $bbai_state_credits_limit ) ? max( 1, (int) $bbai_state_credits_limit ) : 25;
 $bbai_strip_pct       = min( 100, round( ( $bbai_strip_used / $bbai_strip_limit ) * 100 ) );
 $bbai_strip_plan      = isset( $bbai_plan_label ) ? (string) $bbai_plan_label : 'Free';
 $bbai_strip_is_pro    = ! empty( $bbai_state_is_pro_plan );

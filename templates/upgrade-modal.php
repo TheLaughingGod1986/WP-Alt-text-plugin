@@ -56,7 +56,7 @@ $bbai_agency_annual_savings = round(($bbai_agency_monthly * 12) - $bbai_agency_a
 // Billing portal URL for current plan management
 $bbai_billing_url = admin_url('admin.php?page=bbai-billing');
 
-$bbai_usage_limit = isset($bbai_usage_data['limit']) && is_numeric($bbai_usage_data['limit']) ? max(1, (int) $bbai_usage_data['limit']) : 50;
+$bbai_usage_limit = isset($bbai_usage_data['limit']) && is_numeric($bbai_usage_data['limit']) ? max(1, (int) $bbai_usage_data['limit']) : 25;
 $bbai_usage_used = isset($bbai_usage_data['used']) && is_numeric($bbai_usage_data['used']) ? max(0, (int) $bbai_usage_data['used']) : 0;
 $bbai_usage_remaining = isset($bbai_usage_data['remaining']) && is_numeric($bbai_usage_data['remaining']) ? max(0, (int) $bbai_usage_data['remaining']) : max(0, $bbai_usage_limit - $bbai_usage_used);
 

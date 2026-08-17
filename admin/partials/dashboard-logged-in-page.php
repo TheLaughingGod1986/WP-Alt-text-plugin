@@ -34,7 +34,7 @@ $bbai_daily_ring_label = 'complete' === $bbai_daily_focus
 $bbai_daily_card_mod   = 'complete' === $bbai_daily_focus ? 'bbai-daily-hero-card--complete' : ( 'review' === $bbai_daily_focus ? 'bbai-daily-hero-card--review' : 'bbai-daily-hero-card--incomplete' );
 $bbai_daily_strip_mod  = 'complete' === $bbai_daily_focus ? 'bbai-daily-optimised-strip--complete' : ( 'review' === $bbai_daily_focus ? 'bbai-daily-optimised-strip--review' : 'bbai-daily-optimised-strip--incomplete' );
 	$bbai_daily_used       = max( 0, (int) ( $bbai_dashboard_root_credits_used ?? 0 ) );
-	$bbai_daily_limit      = max( 1, (int) ( $bbai_dashboard_root_credits_total ?? 50 ) );
+	$bbai_daily_limit      = max( 1, (int) ( $bbai_dashboard_root_credits_total ?? 25 ) );
 	$bbai_daily_remaining  = max( 0, (int) ( $bbai_dashboard_root_credits_left ?? max( 0, $bbai_daily_limit - $bbai_daily_used ) ) );
 	$bbai_daily_usage_pct  = (int) min( 100, round( ( 100 * $bbai_daily_used ) / $bbai_daily_limit ) );
 	$bbai_daily_remaining_pct = (int) min( 100, round( ( 100 * $bbai_daily_remaining ) / $bbai_daily_limit ) );

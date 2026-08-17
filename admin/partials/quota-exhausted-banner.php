@@ -17,7 +17,7 @@ if (!isset($bbai_usage_stats) || !is_array($bbai_usage_stats)) {
 }
 
 $bbai_banner_used = max(0, (int) ($bbai_usage_stats['used'] ?? 0));
-$bbai_banner_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 50));
+$bbai_banner_limit = max(1, (int) ($bbai_usage_stats['limit'] ?? 25));
 
 $bbai_banner_headline = bbai_copy_quota_monthly_limit_title();
 $bbai_banner_supporting = bbai_copy_quota_monthly_used_line($bbai_banner_used);
