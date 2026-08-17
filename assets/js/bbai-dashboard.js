@@ -240,7 +240,7 @@ function bbaiNormalizeUsageObject(rawUsage) {
     if (isNaN(freePlanOffer)) {
         freePlanOffer = bbaiReadUsageNumber(quota, ['free_plan_offer']);
     }
-    freePlanOffer = isNaN(freePlanOffer) ? 50 : Math.max(0, parseInt(freePlanOffer, 10));
+    freePlanOffer = isNaN(freePlanOffer) ? 25 : Math.max(0, parseInt(freePlanOffer, 10));
     var signupRequired = usage.signup_required !== undefined
         ? !!usage.signup_required
         : (quota.signup_required !== undefined ? !!quota.signup_required : (quotaType === 'trial' && remaining <= 0));
@@ -360,7 +360,7 @@ function bbaiGetUsageObject() {
                     quota_type: root.getAttribute('data-bbai-quota-type') || '',
                     quota_state: root.getAttribute('data-bbai-quota-state') || '',
                     signup_required: root.getAttribute('data-bbai-signup-required') === '1',
-                    free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 50
+                    free_plan_offer: root.getAttribute('data-bbai-free-plan-offer') || 25
                 });
             }
         }
@@ -3777,7 +3777,7 @@ bbaiRunWithJQuery(function($) {
     }
 
     function getAnonymousTrialOffer(data) {
-        return Math.max(0, parseCount(data && data.freePlanOffer) || 50);
+        return Math.max(0, parseCount(data && data.freePlanOffer) || 25);
     }
 
     function getLowCreditThresholdForState(data) {
@@ -4140,8 +4140,8 @@ bbaiRunWithJQuery(function($) {
                 : root.getAttribute('data-bbai-signup-required') === '1',
             upgradeRequired: root.getAttribute('data-bbai-upgrade-required') === '1',
             freePlanOffer: (usage && usage.free_plan_offer !== undefined)
-                ? Math.max(0, parseCount(usage.free_plan_offer) || 50)
-                : Math.max(0, parseCount(root.getAttribute('data-bbai-free-plan-offer')) || 50),
+                ? Math.max(0, parseCount(usage.free_plan_offer) || 25)
+                : Math.max(0, parseCount(root.getAttribute('data-bbai-free-plan-offer')) || 25),
             lowCreditThreshold: (usage && usage.low_credit_threshold !== undefined)
                 ? Math.max(0, parseCount(usage.low_credit_threshold))
                 : Math.max(0, parseCount(root.getAttribute('data-bbai-low-credit-threshold'))),
@@ -4290,7 +4290,7 @@ bbaiRunWithJQuery(function($) {
             root.setAttribute('data-bbai-credits-remaining', String(remaining));
             root.setAttribute('data-bbai-quota-state', String(usage.quota_state || root.getAttribute('data-bbai-quota-state') || ''));
             root.setAttribute('data-bbai-signup-required', usage.signup_required ? '1' : '0');
-            root.setAttribute('data-bbai-free-plan-offer', String(Math.max(0, parseCount(usage.free_plan_offer) || 50)));
+            root.setAttribute('data-bbai-free-plan-offer', String(Math.max(0, parseCount(usage.free_plan_offer) || 25)));
             root.setAttribute('data-bbai-low-credit-threshold', String(Math.max(0, parseCount(usage.low_credit_threshold) || 0)));
             if (usage.plan_label) {
                 root.setAttribute('data-bbai-plan-label', String(usage.plan_label));
@@ -4385,7 +4385,7 @@ bbaiRunWithJQuery(function($) {
         if (bbaiIsAnonymousTrialUsage(usage)) {
             return sprintf(
                 __('Create a free account to keep your progress and unlock %d monthly generations', 'beepbeep-ai-alt-text-generator'),
-                Math.max(0, parseCount(usage.free_plan_offer) || 50)
+                Math.max(0, parseCount(usage.free_plan_offer) || 25)
             );
         }
 

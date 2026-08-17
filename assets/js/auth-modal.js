@@ -90,7 +90,7 @@ class BbAIAuthModal {
         const exhausted = this.modalContext === 'register_exhausted';
         const metrics = this.modalMetrics || {};
         const imagesImproved = Math.max(0, parseInt(metrics.imagesImproved, 10) || 0);
-        const trialLimit = Math.max(1, parseInt(metrics.trialLimit, 10) || 5);
+        const trialLimit = Math.max(1, parseInt(metrics.trialLimit, 10) || 10);
         const coverageBefore = Math.max(0, Math.min(100, parseInt(metrics.coverageBefore, 10) || 0));
         const coverageAfter = Math.max(0, Math.min(100, parseInt(metrics.coverageAfter, 10) || 0));
         const coverageLift = Math.max(0, Math.min(100, parseInt(metrics.coverageLift, 10) || 0));
@@ -112,8 +112,8 @@ class BbAIAuthModal {
                     ? '+' + coverageLift + ' percentage points'
                     : 'More accessible';
             }
-            if (registerButton) registerButton.textContent = 'Create Free Account — Get 15 Monthly';
-            if (footer) footer.textContent = '15 free AI generations every month for life. No credit card needed.';
+            if (registerButton) registerButton.textContent = 'Create Free Account — Get 25 Monthly';
+            if (footer) footer.textContent = '25 free AI generations every month for life. No credit card needed.';
             return;
         }
 
@@ -126,7 +126,7 @@ class BbAIAuthModal {
             if (subtitle) subtitle.textContent = 'Sign in to sync your subscription, usage quota, and account preferences.';
         } else {
             if (title) title.textContent = 'Create your free BeepBeep AI account';
-            if (subtitle) subtitle.textContent = 'Get 15 free AI generations every month. No credit card needed.';
+            if (subtitle) subtitle.textContent = 'Get 25 free AI generations every month. No credit card needed.';
         }
     }
 
@@ -348,14 +348,14 @@ class BbAIAuthModal {
                         <div class="alttext-auth-modal__body">
                             <section class="alttext-auth-modal__impact" data-bbai-trial-impact hidden>
                                 <div class="alttext-auth-modal__impact-grid">
-                                    <div><strong data-bbai-trial-impact-images>5</strong><span>images improved</span></div>
+                                    <div><strong data-bbai-trial-impact-images>10</strong><span>images improved</span></div>
                                     <div><strong data-bbai-trial-impact-coverage>Improved</strong><span>ALT text coverage</span></div>
                                     <div><strong data-bbai-trial-impact-lift>More accessible</strong><span>accessibility progress</span></div>
                                 </div>
                                 <p>Your new ALT text helps screen readers understand your images and gives search engines more useful image context.</p>
                                 <div class="alttext-auth-modal__offer">
                                     <strong>Keep going free</strong>
-                                    <span>15 free generations every month for life · No credit card</span>
+                                    <span>25 free generations every month for life · No credit card</span>
                                 </div>
                             </section>
 
@@ -1456,7 +1456,7 @@ class BbAIAuthModal {
                         <button class="alttext-auth-modal__close" type="button" aria-label="Close quick start" data-bbai-post-signup-close="1">&times;</button>
                         <div class="alttext-auth-modal__header">
                             <h2 class="alttext-auth-modal__title" id="bbai-post-signup-guide-title">Quick start</h2>
-                            <p class="alttext-auth-modal__subtitle" id="bbai-post-signup-guide-desc">Your free account includes 15 AI ALT text generations each month.</p>
+                            <p class="alttext-auth-modal__subtitle" id="bbai-post-signup-guide-desc">Your free account includes 25 AI ALT text generations each month.</p>
                         </div>
                         <div class="alttext-auth-modal__body">
                             <section class="alttext-auth-modal__impact">

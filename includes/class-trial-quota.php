@@ -19,7 +19,7 @@ class Trial_Quota {
 	/**
 	 * Default number of free trial images.
 	 */
-	const TRIAL_LIMIT = 5;
+	const TRIAL_LIMIT = 10;
 
 	/**
 	 * Option name prefix for trial usage counter.
@@ -48,7 +48,7 @@ class Trial_Quota {
 
 			return function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_free_plan_offer' )
 				? bbai_get_free_plan_offer()
-				: 15;
+				: 25;
 		}
 
 	/**

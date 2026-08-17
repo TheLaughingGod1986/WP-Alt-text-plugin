@@ -706,7 +706,7 @@ class Core {
         $status['trial_exhausted'] = !empty($status['exhausted']) || $remaining <= 0;
         $status['low_credit_threshold'] = $low_credit_threshold;
         $status['trial_near_limit'] = $remaining > 0 && $remaining <= $low_credit_threshold;
-        $status['free_plan_offer'] = max(0, (int) ($status['free_plan_offer'] ?? 50));
+        $status['free_plan_offer'] = max(0, (int) ($status['free_plan_offer'] ?? 25));
 
         if ( ! $should_gate ) {
             $usage = Usage_Tracker::get_stats_display(false);
@@ -772,14 +772,14 @@ class Core {
             'is_trial' => !empty($trial['should_gate']),
             'trial_exhausted' => !empty($trial['trial_exhausted']),
             'trial_near_limit' => !empty($trial['trial_near_limit']),
-            'credits_total' => max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 5)),
+            'credits_total' => max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 10)),
             'credits_used' => max(0, (int) ($trial['credits_used'] ?? $trial['used'] ?? 0)),
             'credits_remaining' => max(0, (int) ($trial['credits_remaining'] ?? $trial['remaining'] ?? 0)),
-            'limit' => max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 5)),
+            'limit' => max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 10)),
             'used' => max(0, (int) ($trial['credits_used'] ?? $trial['used'] ?? 0)),
             'remaining' => max(0, (int) ($trial['credits_remaining'] ?? $trial['remaining'] ?? 0)),
             'remaining_free_images' => max(0, (int) ($trial['credits_remaining'] ?? $trial['remaining'] ?? 0)),
-            'free_plan_offer' => max(0, (int) ($trial['free_plan_offer'] ?? 50)),
+            'free_plan_offer' => max(0, (int) ($trial['free_plan_offer'] ?? 25)),
             'low_credit_threshold' => max(0, (int) ($trial['low_credit_threshold'] ?? 2)),
         ], $overrides);
     }
@@ -813,8 +813,8 @@ class Core {
      */
     private function get_trial_exhausted_payload(): array {
         $trial = $this->get_trial_usage_payload();
-        $limit = max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 5));
-        $free_plan_offer = max(0, (int) ($trial['free_plan_offer'] ?? 50));
+        $limit = max(1, (int) ($trial['credits_total'] ?? $trial['limit'] ?? 10));
+        $free_plan_offer = max(0, (int) ($trial['free_plan_offer'] ?? 25));
 
         return array_merge($trial, [
             'message' => sprintf(

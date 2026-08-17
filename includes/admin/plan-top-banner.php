@@ -64,7 +64,7 @@ function bbai_plan_top_banner_resolve(array $input): array
 {
     $guest = !empty($input['is_guest_trial']) || !empty($input['is_anonymous_trial']);
     $has_connected = !empty($input['has_connected_account']);
-    $free_offer = max(1, (int) ($input['free_plan_offer'] ?? 50));
+    $free_offer = max(1, (int) ($input['free_plan_offer'] ?? 25));
     $usage_url = trim((string) ($input['usage_url'] ?? ''));
     if ('' === $usage_url) {
         $usage_url = admin_url('admin.php?page=bbai-credit-usage');

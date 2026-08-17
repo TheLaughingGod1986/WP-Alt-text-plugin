@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return int
  */
 function bbai_get_trial_limit(): int {
-	$limit = apply_filters( 'bbai_trial_limit', 5 );
+	$limit = apply_filters( 'bbai_trial_limit', 10 );
 	return max( 0, absint( $limit ) );
 }
 
@@ -29,7 +29,7 @@ function bbai_get_trial_limit(): int {
  * @return int
  */
 function bbai_get_free_plan_offer(): int {
-	$offer = apply_filters( 'bbai_free_plan_offer', 15 );
+	$offer = apply_filters( 'bbai_free_plan_offer', 25 );
 	return max( 0, absint( $offer ) );
 }
 

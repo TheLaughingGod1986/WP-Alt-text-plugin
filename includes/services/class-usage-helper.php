@@ -153,7 +153,7 @@ class Usage_Helper {
         $remaining = max(0, (int) ($trial_status['credits_remaining'] ?? $trial_status['remaining'] ?? max(0, $limit - $used)));
         $percentage = $limit > 0 ? min(100, max(0, ($used / $limit) * 100)) : 0;
         $quota_state = (string) ($trial_status['quota_state'] ?? self::determine_quota_state($remaining, $limit, true));
-        $free_plan_offer = max(0, (int) ($trial_status['free_plan_offer'] ?? 50));
+        $free_plan_offer = max(0, (int) ($trial_status['free_plan_offer'] ?? 25));
         $low_credit_threshold = max(0, (int) ($trial_status['low_credit_threshold'] ?? \BeepBeepAI\AltTextGenerator\Trial_Quota::get_low_credit_threshold()));
 
         return array_merge($trial_status, [
@@ -489,7 +489,7 @@ class Usage_Helper {
         $usage_stats['upgrade_required'] = isset($live_usage['upgrade_required'])
             ? (bool) $live_usage['upgrade_required']
             : ('trial' === $quota_type ? false : (!$usage_stats['is_pro'] && $remaining <= 0));
-        $usage_stats['free_plan_offer'] = max(0, (int) ($live_usage['free_plan_offer'] ?? $usage_stats['free_plan_offer'] ?? 50));
+        $usage_stats['free_plan_offer'] = max(0, (int) ($live_usage['free_plan_offer'] ?? $usage_stats['free_plan_offer'] ?? 25));
         $usage_stats['is_trial'] = isset($live_usage['is_trial'])
             ? (bool) $live_usage['is_trial']
             : ('trial' === $plan || 'trial' === $quota_type || 'anonymous' === $auth_state || $inferred_trial);

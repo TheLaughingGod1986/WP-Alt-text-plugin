@@ -316,7 +316,7 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
                         <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
                         <path d="M8 5V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
-                    <span><?php esc_html_e('Free includes 15 AI generations each month.', 'beepbeep-ai-alt-text-generator'); ?></span>
+                    <span><?php esc_html_e('Free includes 25 AI generations each month.', 'beepbeep-ai-alt-text-generator'); ?></span>
                 </li>
                 <li class="bbai-guide-feature">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">

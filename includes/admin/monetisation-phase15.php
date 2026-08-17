@@ -194,7 +194,7 @@ function bbai_monetisation_upgrade_trigger_thresholds(): array {
     return [
         'low_credit_percent'       => 80,
         'inactive_scan_days'       => 7,
-        'high_engagement_credits'  => 15,
+        'high_engagement_credits'  => 25,
         'arpu_nudge_credits'       => 8,
     ];
 }

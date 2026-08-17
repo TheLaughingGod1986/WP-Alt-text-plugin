@@ -4,6 +4,12 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.127 — 2026-08-17
+
+- **Changed**: Free monthly AI allowance increased from 15 to 25 generations.
+- **Changed**: Guest/anonymous trial increased from 5 to 10 generations.
+- **Changed**: FAQ, dashboard upsell, trial meter defaults, and Free plan pricing copy updated to Free 25 / guest 10. Paid plan entitlements unchanged.
+
 ### 4.6.126 — 2026-07-24
 
 - **Improved**: Removed the duplicate monthly progress bar and made limit notices text-only so the dashboard no longer shows stacked meters for the same state.

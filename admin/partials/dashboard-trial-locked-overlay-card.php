@@ -51,7 +51,7 @@ $bbai_primary_auth_tab = 'signup';
 				<?php esc_html_e( 'Create Free Account', 'beepbeep-ai-alt-text-generator' ); ?>
 			</button>
 			<?php if ( $bbai_trial_exhausted ) : ?>
-				<p class="bbai-dashboard-locked-preview__subtext bbai-modal-secondary"><?php esc_html_e( 'Get 15 free AI credits every month.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<p class="bbai-dashboard-locked-preview__subtext bbai-modal-secondary"><?php esc_html_e( 'Get 25 free AI credits every month.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 			<?php endif; ?>
 			<p class="bbai-dashboard-locked-preview__signin bbai-modal-login">
 				<a

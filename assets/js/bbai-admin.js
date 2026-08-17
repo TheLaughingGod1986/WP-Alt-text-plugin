@@ -1283,7 +1283,7 @@
             quotaType: quotaType || (isAnonymousTrial ? 'trial' : ''),
             quotaState: quotaState || ((stateContract && stateContract.trialExhausted) ? 'exhausted' : (creditsRemaining <= 0 ? 'exhausted' : (creditsRemaining <= lowCreditThreshold ? 'near_limit' : 'active'))),
             signupRequired: usage.signup_required !== undefined ? !!usage.signup_required : ((stateContract && stateContract.lockedCtaMode === 'create_account') || (isAnonymousTrial && creditsRemaining <= 0)),
-            freePlanOffer: isNaN(freePlanOffer) ? 50 : Math.max(0, freePlanOffer),
+            freePlanOffer: isNaN(freePlanOffer) ? 25 : Math.max(0, freePlanOffer),
             lowCreditThreshold: lowCreditThreshold,
             isAnonymousTrial: isAnonymousTrial,
             isLocked: isLocked,
@@ -3103,7 +3103,7 @@
 
     function showLimitFallbackDialog(message, usage, canManage) {
         var isAnonymousTrial = isAnonymousTrialUsage(usage);
-        var freePlanOffer = usage && usage.free_plan_offer !== undefined ? parseInt(usage.free_plan_offer, 10) : 50;
+        var freePlanOffer = usage && usage.free_plan_offer !== undefined ? parseInt(usage.free_plan_offer, 10) : 25;
         var noticeMessage = String(
             message || (
                 isAnonymousTrial
@@ -3114,7 +3114,7 @@
         var promptMessage = isAnonymousTrial
             ? noticeMessage + '\n\n' + sprintf(
                 __('Press OK to create a free account and unlock %d images per month.', 'beepbeep-ai-alt-text-generator'),
-                isNaN(freePlanOffer) ? 50 : Math.max(0, freePlanOffer)
+                isNaN(freePlanOffer) ? 25 : Math.max(0, freePlanOffer)
             )
             : noticeMessage + '\n\n' + __('Press OK to open upgrade plans now, or Cancel to wait for your monthly reset.', 'beepbeep-ai-alt-text-generator');
 
@@ -3541,7 +3541,7 @@
                     title: __('Free trial complete', 'beepbeep-ai-alt-text-generator'),
                     message: sprintf(
                         __('Create a free account to unlock %d images per month and continue where you left off.', 'beepbeep-ai-alt-text-generator'),
-                        isNaN(freePlanOffer) ? 50 : Math.max(0, freePlanOffer)
+                        isNaN(freePlanOffer) ? 25 : Math.max(0, freePlanOffer)
                     ),
                     buttons: [
                         {
@@ -3653,7 +3653,7 @@
                             monthlyRemainingNow
                         );
                     } else {
-                        usageNote.textContent = __('You’ve used all 15 free generations this month. Upgrade for more, or wait for the monthly reset.', 'beepbeep-ai-alt-text-generator');
+                        usageNote.textContent = __('You’ve used all 25 free generations this month. Upgrade for more, or wait for the monthly reset.', 'beepbeep-ai-alt-text-generator');
                     }
                 }
                 var creditCopy = document.querySelector('[data-bbai-daily-credit-copy="1"]');
@@ -6047,7 +6047,7 @@
             quotaType: quotaState.quotaType || '',
             quotaState: quotaState.quotaState || '',
             signupRequired: !!quotaState.signupRequired,
-            freePlanOffer: Math.max(0, parseInt(quotaState.freePlanOffer, 10) || 50),
+            freePlanOffer: Math.max(0, parseInt(quotaState.freePlanOffer, 10) || 25),
             lowCreditThreshold: thresh,
             isTrial: !!quotaState.isAnonymousTrial || String(quotaState.quotaType || '').toLowerCase() === 'trial',
             isAnonymousTrial: !!quotaState.isAnonymousTrial,
@@ -6097,7 +6097,7 @@
                 quotaType: quotaUi.quotaType || '',
                 quotaState: quotaUi.quotaState || '',
                 signupRequired: !!quotaUi.signupRequired,
-                freePlanOffer: quotaUi.freePlanOffer || 50,
+                freePlanOffer: quotaUi.freePlanOffer || 25,
                 isTrial: !!quotaUi.isTrial || libGuestTrial,
                 isGuestTrial: libGuestTrial,
                 pageContext: 'library',
@@ -6627,7 +6627,7 @@
             window.bbaiGuestDashboardAppliedRuns[runId] = true;
         }
 
-        var limit = Math.max(1, parseInt(root.getAttribute('data-bbai-trial-limit'), 10) || 5);
+        var limit = Math.max(1, parseInt(root.getAttribute('data-bbai-trial-limit'), 10) || 10);
         var used = Math.max(0, parseInt(root.getAttribute('data-bbai-trial-used'), 10) || 0);
         var remaining = parseInt(root.getAttribute('data-bbai-trial-remaining'), 10);
         if (isNaN(remaining)) {
@@ -6791,7 +6791,7 @@
             missingAfter: missingAfter,
             trialUsed: trialUsed,
             trialLimit: Math.max(0, parseInt(root && root.getAttribute('data-bbai-trial-limit'), 10) || 0),
-            monthlyFree: Math.max(0, parseInt(root && root.getAttribute('data-bbai-free-account-monthly-limit'), 10) || 15)
+            monthlyFree: Math.max(0, parseInt(root && root.getAttribute('data-bbai-free-account-monthly-limit'), 10) || 25)
         };
     }
 
@@ -8050,7 +8050,7 @@
                         var remainingCount = error.remaining;
                         var usageSnapshot = getUsageSnapshot(error.usage || null);
                         var isAnonymousTrialLimit = isAnonymousTrialUsage(usageSnapshot);
-                        var freePlanOffer = Math.max(0, parseInt(usageSnapshot && usageSnapshot.free_plan_offer, 10) || 50);
+                        var freePlanOffer = Math.max(0, parseInt(usageSnapshot && usageSnapshot.free_plan_offer, 10) || 25);
                         var errorMsg = error.message || sprintf(_n('You only have %d generation remaining.', 'You only have %d generations remaining.', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount);
                         var modalMessage = errorMsg + '\n\n' + sprintf(
                             isAnonymousTrialLimit
@@ -8409,7 +8409,7 @@
                         var remainingCount = error.remaining;
                         var usageSnapshot = getUsageSnapshot(error.usage || null);
                         var isAnonymousTrialLimit = isAnonymousTrialUsage(usageSnapshot);
-                        var freePlanOffer = Math.max(0, parseInt(usageSnapshot && usageSnapshot.free_plan_offer, 10) || 50);
+                        var freePlanOffer = Math.max(0, parseInt(usageSnapshot && usageSnapshot.free_plan_offer, 10) || 25);
                         var errorMsg = error.message || sprintf(_n('You only have %d generation remaining.', 'You only have %d generations remaining.', remainingCount, 'beepbeep-ai-alt-text-generator'), remainingCount);
                         var modalMessage = errorMsg + '\n\n' + sprintf(
                             isAnonymousTrialLimit
@@ -18152,7 +18152,7 @@
         if (authMode === 'guest_logged_out' && trialExhausted) {
             return {
                 headline: __('You’ve used all 5 free generations', 'beepbeep-ai-alt-text-generator'),
-                supporting: __('You fixed your first 5 images. Create a free account to review your results and unlock 50 generations per month.', 'beepbeep-ai-alt-text-generator'),
+                supporting: __('You fixed your first 5 images. Create a free account to review your results and unlock 25 generations per month.', 'beepbeep-ai-alt-text-generator'),
                 primary: { label: __('Create free account', 'beepbeep-ai-alt-text-generator'), action: 'signup' },
                 secondary: { label: __('Log in', 'beepbeep-ai-alt-text-generator'), action: 'login' }
             };

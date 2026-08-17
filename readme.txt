@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.126
+Stable tag: 4.6.127
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -65,7 +65,7 @@ Good alt text does two jobs at once: it tells Google Images and product search w
 
 = Free plan and paid options =
 
-Try 10 generations before you even create an account. The free plan then includes 15 AI alt text generations per month — enough to fix your highest-value images and see the workflow on your own site. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
+Try 10 generations before you even create an account. The free plan then includes 25 AI alt text generations per month — enough to fix your highest-value images and see the workflow on your own site. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
 
 = A quick favour =
 
@@ -92,7 +92,7 @@ https://www.youtube.com/watch?v=VLP302GcMBs
 
 = Is there a free AI alt text generator for WordPress? =
 
-Yes. OpptiAI Alt Text has a free plan: 10 generations to try before signing up, then 15 AI alt text generations per month. That's enough to fix your most important images and judge the quality on your own content before deciding on a paid plan.
+Yes. OpptiAI Alt Text has a free plan: 10 generations to try before signing up, then 25 AI alt text generations per month. That's enough to fix your most important images and judge the quality on your own content before deciding on a paid plan.
 
 = Do I need my own OpenAI API key? =
 
@@ -153,6 +153,11 @@ Purpose: If the site owner opts in, send anonymous plugin usage analytics such a
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.127 =
+* Increased the free monthly AI allowance from 15 to 25 generations.
+* Increased the guest/anonymous trial from 5 to 10 generations.
+* Updated FAQ, dashboard upsell, trial meter, and Free pricing copy to match Free 25 / guest 10.
 
 = 4.6.126 =
 * Improved: Remove duplicate usage progress bars and keep limit notices text-only so daily/monthly status is easier to scan.

@@ -56,7 +56,7 @@
         var credits = Math.max(0, parseInt(creditsRemaining, 10) || 0);
         var issues = Math.max(0, parseInt(issueCount, 10) || 0);
         var isAnonymousTrial = !!options.isAnonymousTrial;
-        var freePlanOffer = Math.max(0, parseInt(options.freePlanOffer, 10) || 50);
+        var freePlanOffer = Math.max(0, parseInt(options.freePlanOffer, 10) || 25);
         var creditsSegment = '';
 
         if (isAnonymousTrial) {
@@ -184,7 +184,7 @@
         var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();
         var quotaType = String(args.quotaType != null ? args.quotaType : args.quota_type || '').toLowerCase();
         var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial || !!args.isGuestTrial;
-        var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 50);
+        var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 25);
 
         var title = isAnonymousTrial
             ? (creditsRemaining === 0
@@ -280,7 +280,7 @@
         var isPro = !!(args.isPro != null ? args.isPro : args.is_pro);
         var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();
         var quotaType = String(args.quotaType != null ? args.quotaType : args.quota_type || '').toLowerCase();
-        var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 50);
+        var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 25);
         var isAnonymousTrial = authState === 'anonymous' || quotaType === 'trial' || !!args.isTrial || !!args.isGuestTrial;
         var pageContext = String(args.pageContext || args.page_context || '').toLowerCase();
         var lowCreditThreshold = Math.max(

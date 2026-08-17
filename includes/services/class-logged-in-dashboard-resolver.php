@@ -528,7 +528,7 @@ class Logged_In_Dashboard_Resolver {
 						number_format_i18n( $queued_total )
 					),
 					'support'       => $is_first_free_generation
-						? __( 'You have 50 free credits. Generate your first ALT text now.', 'beepbeep-ai-alt-text-generator' )
+						? __( 'You have 25 free credits. Generate your first ALT text now.', 'beepbeep-ai-alt-text-generator' )
 						: __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ),
 					'variant'       => 'queued',
 					'primary_cta'   => [

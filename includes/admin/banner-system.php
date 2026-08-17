@@ -254,7 +254,7 @@ function bbai_banner_snapshot_from_dashboard_state(array $d): array
         'signup_required'   => !empty($d['signupRequired']),
         'upgrade_required'  => !empty($d['upgradeRequired']),
         'is_trial'          => !empty($d['isTrial']),
-        'free_plan_offer'   => max(0, (int) ($d['freePlanOffer'] ?? 50)),
+        'free_plan_offer'   => max(0, (int) ($d['freePlanOffer'] ?? 25)),
         'low_credit_threshold' => max(0, (int) ($d['lowCreditThreshold'] ?? 0)),
         'plan_label'        => (string) ($d['planLabel'] ?? ''),
         'remaining_line'    => (string) ($d['remainingLine'] ?? ''),
@@ -299,7 +299,7 @@ function bbai_banner_snapshot_merge(array $overrides): array
         'signup_required'     => false,
         'upgrade_required'    => false,
         'is_trial'            => false,
-        'free_plan_offer'     => 50,
+        'free_plan_offer'     => 25,
         'low_credit_threshold' => 0,
         'plan_label'          => '',
         'remaining_line'      => '',
@@ -416,7 +416,7 @@ function bbai_banner_normalize_banner_data(array $input): array
     $quota_state   = trim((string) ($input['quota_state'] ?? ''));
     $signup_required = !empty($input['signup_required']);
     $upgrade_required = !empty($input['upgrade_required']);
-    $free_plan_offer = max(0, (int) ($input['free_plan_offer'] ?? 50));
+    $free_plan_offer = max(0, (int) ($input['free_plan_offer'] ?? 25));
     $is_anonymous_trial = bbai_banner_is_anonymous_trial_contract($input);
     $thresh = null !== $thresh_input && $thresh_input > 0
         ? $thresh_input
@@ -558,7 +558,7 @@ function bbai_banner_snapshot_first_success_eligible(array $snapshot, array $d):
         return false;
     }
     $used = max(0, (int) ($snapshot['credits_used'] ?? 0));
-    $max  = (int) apply_filters('bbai_banner_first_success_max_credits_used', 15);
+    $max  = (int) apply_filters('bbai_banner_first_success_max_credits_used', 25);
     if ($used > $max) {
         return false;
     }
@@ -634,7 +634,7 @@ function bbai_banner_get_content(string $state, array $data, string $page_contex
     $total        = $d['total_images'];
     $issues       = $d['total_issues'];
     $is_anonymous_trial = !empty($d['is_anonymous_trial']);
-    $free_plan_offer = max(0, (int) ($d['free_plan_offer'] ?? 50));
+    $free_plan_offer = max(0, (int) ($d['free_plan_offer'] ?? 25));
 
     switch ($state) {
         case BBAI_BANNER_STATE_OUT_OF_CREDITS:
@@ -858,7 +858,7 @@ function bbai_banner_get_banner_state_from_snapshot(array $s, string $page_conte
         'quota_state'        => (string) ($s['quota_state'] ?? ''),
         'signup_required'    => !empty($s['signup_required']),
         'upgrade_required'   => !empty($s['upgrade_required']),
-        'free_plan_offer'    => max(0, (int) ($s['free_plan_offer'] ?? 50)),
+        'free_plan_offer'    => max(0, (int) ($s['free_plan_offer'] ?? 25)),
         'low_credit_threshold' => max(0, (int) ($s['low_credit_threshold'] ?? 0)),
     ];
     $merged = array_merge($s, $payload);
@@ -1068,7 +1068,7 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
     $state = (string) $bs['state'];
     $normalized = bbai_banner_normalize_banner_data($s);
     $is_anonymous_trial = !empty($normalized['is_anonymous_trial']);
-    $free_plan_offer = max(0, (int) ($normalized['free_plan_offer'] ?? 50));
+    $free_plan_offer = max(0, (int) ($normalized['free_plan_offer'] ?? 25));
 
     $used    = max(0, (int) ($s['credits_used'] ?? 0));
     $limit   = max(1, (int) ($s['credits_limit'] ?? 50));

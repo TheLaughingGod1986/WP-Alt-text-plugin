@@ -43,7 +43,7 @@ $bbai_locked_preview_waiting_line   = $bbai_guest_preview_actionable > 0
 		number_format_i18n( $bbai_guest_preview_actionable )
 	)
 	: __( 'ALT Library preview (locked)', 'beepbeep-ai-alt-text-generator' );
-$bbai_locked_preview_monthly_free   = max( 0, (int) ( $bbai_free_plan_offer ?? 15 ) );
+$bbai_locked_preview_monthly_free   = max( 0, (int) ( $bbai_free_plan_offer ?? 25 ) );
 
 $bbai_trial_lib_card_row_path = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/library-dashboard-card-row.php';
 $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-locked-overlay-card.php';

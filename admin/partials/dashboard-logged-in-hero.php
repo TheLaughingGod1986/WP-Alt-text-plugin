@@ -1379,7 +1379,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		generateMissingAlt: '<?php echo esc_js( __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		generateAltForSingular: '<?php echo esc_js( __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		generateAltForPlural: '<?php echo esc_js( __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		postSignupFirstGeneration: '<?php echo esc_js( __( 'You have 50 free credits. Generate your first ALT text now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		postSignupFirstGeneration: '<?php echo esc_js( __( 'You have 25 free credits. Generate your first ALT text now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		addCredits: '<?php echo esc_js( __( 'Add credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		rescanLibrary: '<?php echo esc_js( __( 'Re-scan Library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		missingLabel: '<?php echo esc_js( __( 'Missing ALT', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -3675,7 +3675,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var counts = getTruthCounts( truth );
 		var job = getTruthJob( truth );
 		var dashboardMissingCap = getDashboardRootMissingCount();
-		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 50 && counts.missing > 0;
+		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 25 && counts.missing > 0;
 		var queuedTotal = job && ( job.queue_count > 0 || job.total > 0 )
 			? Math.max( job.queue_count || 0, Math.max( 0, ( job.total || 0 ) - ( job.done || 0 ) ), job.total || 0 )
 			: counts.missing;
@@ -3834,7 +3834,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var variant = reuseCurrentState && current.variant ? current.variant : ( 'ALL_CLEAR' === state ? 'success' : 'default' );
 		var primaryCta = reuseCurrentState ? current.primaryCta : null;
 		var secondaryCta = reuseCurrentState ? current.secondaryCta : null;
-		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 50 && counts.missing > 0;
+		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 25 && counts.missing > 0;
 
 		switch ( state ) {
 			case 'MIXED_ATTENTION':

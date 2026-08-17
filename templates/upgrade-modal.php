@@ -407,7 +407,7 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                                     <span class="bbai-pricing-card__currency"><?php echo esc_html($bbai_currency['symbol']); ?></span>
                                     <span class="bbai-pricing-card__amount">0</span>
                                 </div>
-                                <div class="bbai-pricing-card__limit"><?php esc_html_e('50 ALT texts/month', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                <div class="bbai-pricing-card__limit"><?php esc_html_e('25 ALT texts/month', 'beepbeep-ai-alt-text-generator'); ?></div>
                             </div>
                             <?php if ( $bbai_on_authenticated_free ) : ?>
                                 <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-lg bbai-btn-block bbai-pricing-card__btn bbai-pricing-card__btn--free" disabled>

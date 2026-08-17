@@ -366,8 +366,8 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 				<?php if ( ! $bbai_daily_is_pro_plan ) : ?>
 					<?php
 					$bbai_free_limit_note = $bbai_daily_remaining <= 0
-						? __( 'You’ve used all 15 free generations this month. Upgrade for more, or wait for the monthly reset.', 'beepbeep-ai-alt-text-generator' )
-						: __( 'Free plan: up to 5 generations today, within your 15 monthly credits.', 'beepbeep-ai-alt-text-generator' );
+						? __( 'You’ve used all 25 free generations this month. Upgrade for more, or wait for the monthly reset.', 'beepbeep-ai-alt-text-generator' )
+						: __( 'Free plan: up to 5 generations today, within your 25 monthly credits.', 'beepbeep-ai-alt-text-generator' );
 					?>
 					<p class="bbai-daily-limit-note" data-bbai-daily-limit-note="1" data-bbai-monthly-remaining="<?php echo esc_attr( (string) $bbai_daily_remaining ); ?>">
 						<?php echo esc_html( $bbai_free_limit_note ); ?>

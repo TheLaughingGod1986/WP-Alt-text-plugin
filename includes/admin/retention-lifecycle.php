@@ -388,7 +388,7 @@ function bbai_retention_build_strip_model(array $ctx): ?array {
             (string) ($ctx['library_url'] ?? $missing_lib),
             __('Open ALT Library', 'beepbeep-ai-alt-text-generator')
         );
-    } elseif (!$is_pro && $credits_used >= 15 && $total > 5) {
+    } elseif (!$is_pro && $credits_used >= 25 && $total > 5) {
         $trigger = 'upgrade_momentum';
         $headline = sprintf(
             /* translators: %d: images optimised this cycle (credits used as proxy) */

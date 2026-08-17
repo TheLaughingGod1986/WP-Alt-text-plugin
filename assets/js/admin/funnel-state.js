@@ -257,7 +257,7 @@
         var limit = Math.max(1, parseCount(root && root.getAttribute('data-bbai-credits-total')) || 1);
         var isGuest = isGuestTrialUser(root);
         var isPremium = isPremiumUser(root);
-        var freePlanOffer = parseCount(root && root.getAttribute('data-bbai-free-account-monthly-limit')) || 50;
+        var freePlanOffer = parseCount(root && root.getAttribute('data-bbai-free-account-monthly-limit')) || 25;
         var exhausted = !isPremium && remaining <= 0;
         var low = !isPremium && remaining > 0 && remaining <= CREDIT_LOW_THRESHOLD;
 

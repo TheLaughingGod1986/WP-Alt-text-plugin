@@ -34,7 +34,7 @@ $bbai_guest_actionable_count   = max(
 $bbai_gt_src = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
 	? $bbai_product_state_model['trial']
 	: [];
-$bbai_gt_limit     = max( 1, (int) ( $bbai_gt_src['limit'] ?? 5 ) );
+$bbai_gt_limit     = max( 1, (int) ( $bbai_gt_src['limit'] ?? 10 ) );
 $bbai_gt_used      = max( 0, min( $bbai_gt_limit, (int) ( $bbai_gt_src['used'] ?? 0 ) ) );
 $bbai_gt_remaining = max( 0, (int) ( $bbai_gt_src['remaining'] ?? max( 0, $bbai_gt_limit - $bbai_gt_used ) ) );
 $bbai_gt_exhausted = ! empty( $bbai_gt_src['exhausted'] ) || $bbai_gt_remaining <= 0;
@@ -64,7 +64,7 @@ $bbai_free_plan_monthly = max(
 	(int) (
 		( isset( $bbai_free_plan_offer ) && (int) $bbai_free_plan_offer > 0 )
 			? (int) $bbai_free_plan_offer
-			: (int) ( $bbai_gt_src['monthly_free_limit'] ?? 15 )
+			: (int) ( $bbai_gt_src['monthly_free_limit'] ?? 25 )
 	)
 );
 
@@ -132,7 +132,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		);
 
 	$bbai_primary_register = [
-		'label'       => __( 'Get 15 Free Generations Every Month', 'beepbeep-ai-alt-text-generator' ),
+		'label'       => __( 'Get 25 Free Generations Every Month', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'show-auth-modal',
 		'auth_tab'    => 'signup',
@@ -491,7 +491,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					</p>
 				<?php elseif ( 'exhausted' === $bbai_guest_hero_variant ) : ?>
 					<p class="bbai-guest-hero__cta-hint" data-bbai-guest-trial-promise>
-						<?php esc_html_e( '15 free generations every month for life · No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?>
+						<?php esc_html_e( '25 free generations every month for life · No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?>
 					</p>
 				<?php endif; ?>
 			</div>
@@ -508,7 +508,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					</span>
 				</p>
 				<ul class="bbai-guest-register-benefits" aria-label="<?php esc_attr_e( 'Free account benefits', 'beepbeep-ai-alt-text-generator' ); ?>">
-					<li><span aria-hidden="true">✓</span><?php esc_html_e( '15 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
+					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Full ALT Library access', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Bulk optimisation tools', 'beepbeep-ai-alt-text-generator' ); ?></li>
@@ -517,7 +517,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 		<?php else : ?>
 			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
 				<ul class="bbai-guest-register-benefits" aria-label="<?php esc_attr_e( 'Free account benefits', 'beepbeep-ai-alt-text-generator' ); ?>">
-					<li><span aria-hidden="true">✓</span><?php esc_html_e( '15 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
+					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Keep your current accessibility progress', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Full ALT Library and image SEO tools', 'beepbeep-ai-alt-text-generator' ); ?></li>

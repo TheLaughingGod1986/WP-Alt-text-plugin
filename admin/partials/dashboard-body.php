@@ -276,7 +276,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     }
     // Keep no-SaaS guests in the guest shell even if usage/auth flags disagree (avoids signed-in FTUE on stale payloads).
     $bbai_is_guest_trial = $bbai_is_anonymous_trial || $bbai_has_no_saas_account;
-    $bbai_free_plan_offer = max(0, (int) ($bbai_usage_stats['free_plan_offer'] ?? $bbai_guest_trial_status['free_plan_offer'] ?? 50));
+    $bbai_free_plan_offer = max(0, (int) ($bbai_usage_stats['free_plan_offer'] ?? $bbai_guest_trial_status['free_plan_offer'] ?? 25));
 
     $bbai_credits_used = max(0, (int) ($bbai_usage_stats['credits_used'] ?? $bbai_usage_stats['creditsUsed'] ?? $bbai_usage_stats['used'] ?? 0));
     $bbai_credits_total = max(1, (int) ($bbai_usage_stats['credits_total'] ?? $bbai_usage_stats['creditsTotal'] ?? $bbai_usage_stats['limit'] ?? 50));

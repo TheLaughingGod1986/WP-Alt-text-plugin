@@ -443,7 +443,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     <h1 class="bbai-dashboard-title bbai-page-title"><?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?></h1>
                     <p class="bbai-dashboard-subtitle bbai-page-subtitle"><?php esc_html_e('Configure BeepBeep AI and control how ALT text is generated for your media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <p class="bbai-dashboard-subtitle bbai-settings-disclosure bbai-sub-label">
-                        <?php esc_html_e('Alt text generation and review send image data and related context to external AI services over HTTPS. The free plan includes 15 generations per month; paid plans increase your monthly limits.', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Alt text generation and review send image data and related context to external AI services over HTTPS. The free plan includes 25 generations per month; paid plans increase your monthly limits.', 'beepbeep-ai-alt-text-generator'); ?>
                         <a href="<?php echo esc_url('https://oppti.dev/privacy'); ?>" target="_blank" rel="noopener"><?php esc_html_e('Privacy Policy', 'beepbeep-ai-alt-text-generator'); ?></a>
                     </p>
                 </div>
