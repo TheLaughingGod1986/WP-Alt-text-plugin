@@ -27,7 +27,9 @@ function resolveCheckoutFallbackUrl($btn, plan) {
     var resolvedLink = fallbackUrl || stripeLinks[plan] || '';
 
     if (!resolvedLink) {
-        if (plan === 'pro' || plan === 'growth') {
+        if (plan === 'starter') {
+            resolvedLink = 'https://buy.stripe.com/eVqbJ25vg0wQ05Mfaj7ss03';
+        } else if (plan === 'pro' || plan === 'growth') {
             resolvedLink = 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02';
         } else if (plan === 'agency') {
             resolvedLink = 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01';
@@ -50,6 +52,56 @@ function openCheckoutUrl(url) {
     }
 
     return true;
+}
+
+function isStripePaymentLink(url) {
+    return typeof url === 'string' && /^https:\/\/buy\.stripe\.com\//i.test(url);
+}
+
+function resolveDirectCheckoutUrl(plan, priceId) {
+    var baseUrl = window.bbai_ajax && window.bbai_ajax.direct_checkout_url;
+    var nonce = window.bbai_ajax && window.bbai_ajax.direct_checkout_nonce;
+    if (!baseUrl || !nonce || (!plan && !priceId)) {
+        return '';
+    }
+
+    try {
+        var url = new URL(baseUrl, window.location.href);
+        if (plan) {
+            url.searchParams.set('plan', plan);
+        }
+        if (priceId) {
+            url.searchParams.set('price_id', priceId);
+        }
+        url.searchParams.set('_bbai_nonce', nonce);
+        return url.toString();
+    } catch (e) {
+        var separator = baseUrl.indexOf('?') === -1 ? '?' : '&';
+        var params = [];
+        if (plan) {
+            params.push('plan=' + encodeURIComponent(plan));
+        }
+        if (priceId) {
+            params.push('price_id=' + encodeURIComponent(priceId));
+        }
+        params.push('_bbai_nonce=' + encodeURIComponent(nonce));
+        return baseUrl + separator + params.join('&');
+    }
+}
+
+function dispatchCheckoutAnalytics(eventName, payload) {
+    try {
+        document.dispatchEvent(new CustomEvent('bbai:analytics', {
+            detail: Object.assign({
+                event: eventName,
+                source: 'checkout',
+                endpoint: 'beepbeepai_create_checkout',
+                timestamp: Date.now()
+            }, payload || {})
+        }));
+    } catch (error) {
+        // Ignore analytics failures.
+    }
 }
 
 function setCheckoutButtonLoading($btn, isLoading) {
@@ -86,12 +138,54 @@ function initiateCheckout($btn, priceId, plan) {
     var nonce = window.bbai_ajax && window.bbai_ajax.nonce;
     var resolvedPriceId = resolveCheckoutPriceId($btn, priceId, plan);
     var fallbackUrl = resolveCheckoutFallbackUrl($btn, plan);
+    var directCheckoutUrl = resolveDirectCheckoutUrl(plan, resolvedPriceId);
+    var checkoutWindow = null;
+    var closeCheckoutWindow = function() {
+        if (checkoutWindow && !checkoutWindow.closed) {
+            checkoutWindow.close();
+        }
+    };
+    var sendCheckoutWindow = function(url) {
+        if (!url) {
+            return false;
+        }
+        if (checkoutWindow && !checkoutWindow.closed) {
+            checkoutWindow.location.href = url;
+            return true;
+        }
+        return openCheckoutUrl(url);
+    };
 
-    if (!ajaxUrl || !nonce || !resolvedPriceId || !$ || typeof $.ajax !== 'function') {
-        if (openCheckoutUrl(fallbackUrl)) {
+    if (isStripePaymentLink(fallbackUrl)) {
+        openCheckoutUrl(fallbackUrl);
+        return;
+    }
+
+    if (plan === 'credits' && directCheckoutUrl) {
+        openCheckoutUrl(directCheckoutUrl);
+        return;
+    }
+
+    if (plan === 'starter' && directCheckoutUrl) {
+        openCheckoutUrl(directCheckoutUrl);
+        return;
+    }
+
+    if (!ajaxUrl || !nonce || (!resolvedPriceId && !plan) || !$ || typeof $.ajax !== 'function') {
+        if (openCheckoutUrl(fallbackUrl || directCheckoutUrl)) {
             return;
         }
+        dispatchCheckoutAnalytics('checkout_failed', {
+            plan: plan || '',
+            error_code: !ajaxUrl ? 'ajax_unavailable' : (!nonce ? 'missing_nonce' : ((!resolvedPriceId && !plan) ? 'missing_payload' : 'jquery_unavailable')),
+            error_message: 'Checkout session request could not be started.'
+        });
     } else {
+        checkoutWindow = window.open('about:blank', '_blank');
+        if (checkoutWindow) {
+            checkoutWindow.opener = null;
+        }
+
         setCheckoutButtonLoading($btn, true);
 
         $.ajax({
@@ -118,7 +212,7 @@ function initiateCheckout($btn, priceId, plan) {
 
             if (checkoutUrl && !invalidHostedSession) {
                 window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Opening Stripe checkout session:', checkoutUrl);
-                openCheckoutUrl(checkoutUrl);
+                sendCheckoutWindow(checkoutUrl);
                 return;
             }
 
@@ -126,13 +220,20 @@ function initiateCheckout($btn, priceId, plan) {
                 window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Hosted checkout response missing session ID, falling back to payment link', checkoutData);
             }
 
-            if (openCheckoutUrl(fallbackUrl)) {
+            if (sendCheckoutWindow(fallbackUrl || directCheckoutUrl)) {
                 return;
             }
 
+            closeCheckoutWindow();
             if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
                 window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
             }
+            dispatchCheckoutAnalytics('checkout_failed', {
+                plan: plan || '',
+                response_status: response && response.success === false ? 'error' : 'invalid_response',
+                error_code: invalidHostedSession ? 'missing_checkout_session_id' : 'missing_checkout_url',
+                error_message: 'Checkout response did not include a usable URL.'
+            });
         }).fail(function(xhr) {
             var errorMessage = (xhr && xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message)
                 || 'Unable to initiate checkout. Please try again or contact support.';
@@ -144,19 +245,31 @@ function initiateCheckout($btn, priceId, plan) {
                 response: xhr && xhr.responseJSON ? xhr.responseJSON : null
             });
 
-            if (openCheckoutUrl(fallbackUrl)) {
+            if (sendCheckoutWindow(fallbackUrl || directCheckoutUrl)) {
                 return;
             }
 
+            closeCheckoutWindow();
             if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
                 window.bbaiModal.error(errorMessage);
             }
+            dispatchCheckoutAnalytics('checkout_failed', {
+                plan: plan || '',
+                response_status: xhr && xhr.status ? xhr.status : 'error',
+                error_code: 'checkout_session_failed',
+                error_message: errorMessage
+            });
         });
 
         return;
     }
 
     window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No Stripe checkout URL available for plan:', plan);
+    dispatchCheckoutAnalytics('checkout_failed', {
+        plan: plan || '',
+        error_code: 'missing_checkout_url',
+        error_message: 'No Stripe checkout URL available.'
+    });
     if (window.bbaiModal && typeof window.bbaiModal.error === 'function') {
         window.bbaiModal.error('Unable to initiate checkout. Please try again or contact support.');
     }

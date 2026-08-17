@@ -140,7 +140,7 @@
             // Open modal triggers
             $(document).on('click', '[data-action="open-contact-modal"], .bbai-contact-link', function(e) {
                 e.preventDefault();
-                self.open();
+                self.open(this);
             });
 
             // Close modal
@@ -172,7 +172,7 @@
         /**
          * Open modal
          */
-        open() {
+        open(trigger) {
             if (this.isOpen) {
                 return;
             }
@@ -193,6 +193,8 @@
             this.form[0].reset();
             this.hideError();
             this.hideSuccess();
+            this.prefillFromContactData();
+            this.prefillFromTrigger(trigger);
 
             // Show modal
             this.modal.fadeIn(200);
@@ -205,6 +207,29 @@
 
             // Prevent body scroll
             $('body').css('overflow', 'hidden');
+        }
+
+        prefillFromTrigger(trigger) {
+            const source = trigger && trigger.getAttribute ? trigger : null;
+            const subject = source ? (source.getAttribute('data-bbai-contact-subject') || '') : '';
+            const message = source ? (source.getAttribute('data-bbai-contact-message') || '') : '';
+
+            if (subject) {
+                $('#bbai-contact-subject').val(subject);
+            }
+            if (message) {
+                $('#bbai-contact-message').val(message);
+            }
+        }
+
+        prefillFromContactData() {
+            const data = typeof window.bbaiContactData !== 'undefined' ? window.bbaiContactData : {};
+            if (data.user_name) {
+                $('#bbai-contact-name').val(data.user_name);
+            }
+            if (data.user_email) {
+                $('#bbai-contact-email').val(data.user_email);
+            }
         }
 
         /**
@@ -277,39 +302,21 @@
                 data: requestData,
                 success: function(response) {
                     if (response && response.success) {
-                        // Hide form fields and show success message prominently
-                        self.form.find('.bbai-contact-form-group').hide();
-                        self.form.find('.bbai-contact-form-actions').hide();
-                        self.form.find('.bbai-contact-form-info').hide();
-                        
                         const successMessage = response.data && response.data.message 
                             ? response.data.message 
                             : __("Your message has been sent successfully. We'll get back to you soon!", 'beepbeep-ai-alt-text-generator');
 
-                        const successHeading = __('Success!', 'beepbeep-ai-alt-text-generator');
-                        
-                        self.showSuccess('<strong style="font-size: 16px; display: block; margin-bottom: 8px;">✓ ' + successHeading + '</strong>' + successMessage);
-                        
-                        // Scroll to top of modal to show success message
-                        const modalContent = self.modal.find('.bbai-contact-modal-content');
-                        const formContainer = self.modal.find('.bbai-contact-form');
-                        if (formContainer.length) {
-                            formContainer.scrollTop(0);
-                        }
-                        
-                        // Reset form and close modal after 3 seconds
-                        setTimeout(() => {
-                            self.form[0].reset();
-                            self.form.find('.bbai-contact-form-group').show();
-                            self.form.find('.bbai-contact-form-actions').show();
-                            self.form.find('.bbai-contact-form-info').show();
-                            self.hideSuccess();
-                            self.close();
-                        }, 3000);
+                        self.updateLastContactedSupport(response.data && response.data.last_contacted_support);
+                        self.showSubmittedState(successMessage);
                     } else {
                         const errorMessage = response && response.data && response.data.message 
                             ? response.data.message 
                             : __('Failed to send message. Please try again.', 'beepbeep-ai-alt-text-generator');
+                        if (self.isSavedMailDeliveryError(errorMessage)) {
+                            self.showSubmittedState(__('Your message has been saved. This WordPress site could not send email automatically, so please email benoats86@gmail.com if the issue is urgent.', 'beepbeep-ai-alt-text-generator'));
+                            submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
+                            return;
+                        }
                         self.showError(errorMessage);
                     }
                     submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
@@ -320,6 +327,47 @@
                     submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
                 }
             });
+        }
+
+        isSavedMailDeliveryError(message) {
+            const normalized = String(message || '').toLowerCase();
+            return normalized.includes('could not send the support email')
+                || normalized.includes('wordpress mail delivery')
+                || normalized.includes('bbai_support_mail_failed');
+        }
+
+        updateLastContactedSupport(lastContactedSupport) {
+            const label = lastContactedSupport && lastContactedSupport.label ? String(lastContactedSupport.label) : '';
+            if (!label) {
+                return;
+            }
+
+            $('[data-bbai-support-last-contact]').each(function() {
+                $(this).text(label).prop('hidden', false).removeAttr('hidden');
+            });
+        }
+
+        showSubmittedState(message) {
+            this.form.find('.bbai-contact-form-group').hide();
+            this.form.find('.bbai-contact-form-actions').hide();
+            this.form.find('.bbai-contact-form-info').hide();
+
+            const successHeading = __('Saved', 'beepbeep-ai-alt-text-generator');
+            this.showSuccess('<strong style="font-size: 16px; display: block; margin-bottom: 8px;">✓ ' + successHeading + '</strong>' + message);
+
+            const formContainer = this.modal.find('.bbai-contact-form');
+            if (formContainer.length) {
+                formContainer.scrollTop(0);
+            }
+
+            setTimeout(() => {
+                this.form[0].reset();
+                this.form.find('.bbai-contact-form-group').show();
+                this.form.find('.bbai-contact-form-actions').show();
+                this.form.find('.bbai-contact-form-info').show();
+                this.hideSuccess();
+                this.close();
+            }, 3000);
         }
 
         /**

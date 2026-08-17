@@ -601,6 +601,7 @@
         state.perPage = pagination.per_page || state.perPage;
 
         renderStats(stats);
+        renderSystemStatus(payload.system_status || {});
         renderServiceStatus(payload.service_status || {});
         renderRecentErrors(payload.recent_errors || []);
         renderRows(payload.logs || []);
@@ -614,6 +615,15 @@
         setStat('warnings', stats.warnings || 0);
         setStat('errors', stats.errors || 0);
         $panel.find('[data-debug-stat="last_api"]').text(stats.last_event || stats.last_api || '—');
+    }
+
+    function renderSystemStatus(systemStatus) {
+        const keys = ['plugin_version', 'wordpress_version', 'php_version', 'active_theme', 'site_url'];
+
+        keys.forEach(function(key) {
+            const value = systemStatus && systemStatus[key] ? systemStatus[key] : '—';
+            $panel.find('[data-debug-system="' + key + '"]').text(value);
+        });
     }
 
     function renderServiceStatus(serviceStatus) {

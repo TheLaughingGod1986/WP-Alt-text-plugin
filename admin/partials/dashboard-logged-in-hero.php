@@ -30,8 +30,8 @@ if ( empty( $bbai_li_state ) || ! is_array( $bbai_li_state ) ) {
 	return;
 }
 
-$bbai_li_hero     = $bbai_li_state['hero'] ?? array();
-$bbai_li_donut    = $bbai_li_state['donut'] ?? array();
+$bbai_li_hero     = $bbai_li_state['hero']  ?? [];
+$bbai_li_donut    = $bbai_li_state['donut'] ?? [];
 $bbai_li_state_id = $bbai_li_state['state'] ?? '';
 
 $bbai_hero_is_free_plan = true;
@@ -40,7 +40,7 @@ if ( isset( $bbai_state_is_pro_plan ) ) {
 } elseif ( isset( $bbai_is_premium ) ) {
 	$bbai_hero_is_free_plan = ! (bool) $bbai_is_premium;
 }
-$bbai_li_all_clear_free_upsell   = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero_is_free_plan );
+$bbai_li_all_clear_free_upsell = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero_is_free_plan );
 $bbai_li_all_clear_upgrade_panel = $bbai_li_all_clear_free_upsell;
 
 // ── Donut ────────────────────────────────────────────────────────────────────
@@ -51,32 +51,30 @@ $bbai_li_donut_aria     = (string) ( $bbai_li_donut['aria_label'] ?? '' );
 $bbai_li_donut_pct      = max( 0, min( 100, (int) ( $bbai_li_donut['pct'] ?? 0 ) ) );
 
 // Map resolver color → tone class (needed before computing center value class).
-$bbai_li_tone_map   = array(
+$bbai_li_tone_map = [
 	'blue'  => 'scanning',
 	'green' => 'healthy',
 	'amber' => 'problem',
 	'gray'  => 'neutral',
-);
+];
 $bbai_li_donut_tone = sanitize_html_class( $bbai_li_tone_map[ $bbai_li_donut_color ] ?? 'neutral' );
 
 // Build multi-segment conic-gradient: **missing (red) → review (amber) → optimised (green) → empty (gray)**.
-$bbai_li_seg      = is_array( $bbai_li_donut['segments'] ?? null ) ? $bbai_li_donut['segments'] : array();
+$bbai_li_seg      = is_array( $bbai_li_donut['segments'] ?? null ) ? $bbai_li_donut['segments'] : [];
 $bbai_li_seg_opt  = max( 0, (int) ( $bbai_li_seg['optimized'] ?? 0 ) );
-$bbai_li_seg_weak = max( 0, (int) ( $bbai_li_seg['weak'] ?? 0 ) );
-$bbai_li_seg_miss = max( 0, (int) ( $bbai_li_seg['missing'] ?? 0 ) );
-$bbai_li_seg_tot  = max( 1, (int) ( $bbai_li_seg['total'] ?? 1 ) );
+$bbai_li_seg_weak = max( 0, (int) ( $bbai_li_seg['weak']      ?? 0 ) );
+$bbai_li_seg_miss = max( 0, (int) ( $bbai_li_seg['missing']   ?? 0 ) );
+$bbai_li_seg_tot  = max( 1, (int) ( $bbai_li_seg['total']     ?? 1 ) );
+$bbai_li_covered_count = max( 0, min( $bbai_li_seg_tot, $bbai_li_seg_opt + $bbai_li_seg_weak ) );
+$bbai_li_coverage_pct   = (int) round( ( $bbai_li_covered_count / $bbai_li_seg_tot ) * 100 );
 
 // Donut centre text: use resolver `center_label` when present (queue/processing/etc.), else segment order.
-$bbai_li_donut_center = isset( $bbai_li_donut['center_label'] ) && (string) '' !== $bbai_li_donut['center_label']
+$bbai_li_donut_center = isset( $bbai_li_donut['center_label'] ) && (string) $bbai_li_donut['center_label'] !== ''
 	? (string) $bbai_li_donut['center_label']
-	: ( $bbai_li_seg_miss > 0
-		? (string) number_format_i18n( $bbai_li_seg_miss )
-		: ( $bbai_li_seg_weak > 0
-			? (string) number_format_i18n( $bbai_li_seg_weak )
-			: '✓' ) );
+	: sprintf( '%d%%', $bbai_li_coverage_pct );
 
 // Value colour: jobs/system states use tone; data states use segment-based emphasis.
-$bbai_li_donut_value_uses_tone = in_array( $bbai_li_state_id, array( 'QUEUED', 'PROCESSING', 'ERROR', 'NO_IMAGES' ), true );
+$bbai_li_donut_value_uses_tone = in_array( $bbai_li_state_id, [ 'QUEUED', 'PROCESSING', 'ERROR', 'NO_IMAGES' ], true );
 if ( $bbai_li_donut_value_uses_tone ) {
 	$bbai_li_donut_value_class = 'bbai-li-donut__value--' . $bbai_li_donut_tone;
 } elseif ( $bbai_li_seg_miss > 0 ) {
@@ -89,7 +87,7 @@ if ( $bbai_li_donut_value_uses_tone ) {
 
 // While a batch is queued or generating, trust copy lives in donut meta + activity strip;
 // avoid hiding meta behind the generic missing-image helper (still true for static MISSING_ALT).
-$bbai_li_donut_helper = ( $bbai_li_seg_miss > 0 && ! in_array( $bbai_li_state_id, array( 'QUEUED', 'PROCESSING' ), true ) )
+$bbai_li_donut_helper = ( $bbai_li_seg_miss > 0 && ! in_array( $bbai_li_state_id, [ 'QUEUED', 'PROCESSING' ], true ) )
 	? __( 'Fix these first to improve SEO and accessibility.', 'beepbeep-ai-alt-text-generator' )
 	: '';
 
@@ -138,11 +136,11 @@ if ( ! function_exists( 'bbai_dashboard_donut_ring_degrees' ) ) {
 		$a2 = round( min( 360, $dm + $dw ), 3 );
 		$a3 = round( min( 360, $dm + $dw + $do ), 3 );
 
-		return array( $a1, $a2, $a3 );
+		return [ $a1, $a2, $a3 ];
 	}
 }
 
-if ( $bbai_li_seg_opt + $bbai_li_seg_weak + 0 === $bbai_li_seg_miss ) {
+if ( $bbai_li_seg_opt + $bbai_li_seg_weak + $bbai_li_seg_miss === 0 ) {
 	$bbai_li_donut_bg = 'conic-gradient(#e2e8f0 0deg 360deg)';
 } elseif ( $bbai_li_seg_opt >= $bbai_li_seg_tot ) {
 	$bbai_li_donut_bg = 'conic-gradient(#22c55e 0deg 360deg)';
@@ -153,9 +151,8 @@ if ( $bbai_li_seg_opt + $bbai_li_seg_weak + 0 === $bbai_li_seg_miss ) {
 		$bbai_li_seg_opt,
 		$bbai_li_seg_tot
 	);
-	// In QUEUED, the “missing” segment is a ready action (not an error) — use a neutral blue accent.
-	$bbai_li_missing_seg_color = ( 'QUEUED' === $bbai_li_state_id ) ? '#3b82f6' : '#ef4444';
-	$bbai_li_donut_bg          = sprintf(
+	$bbai_li_missing_seg_color = '#c98218';
+	$bbai_li_donut_bg = sprintf(
 		'conic-gradient(%1$s 0deg %.3Fdeg, #f59e0b %.3Fdeg %.3Fdeg, #22c55e %.3Fdeg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
 		$bbai_li_missing_seg_color,
 		$bbai_li_donut_a1,
@@ -168,15 +165,13 @@ if ( $bbai_li_seg_opt + $bbai_li_seg_weak + 0 === $bbai_li_seg_miss ) {
 }
 
 if ( ! isset( $bbai_li_donut_a1, $bbai_li_donut_a2, $bbai_li_donut_a3 ) ) {
-	$bbai_li_donut_a1 = 0.0;
-	$bbai_li_donut_a2 = 0.0;
-	$bbai_li_donut_a3 = 0.0;
+	$bbai_li_donut_a1 = $bbai_li_donut_a2 = $bbai_li_donut_a3 = 0.0;
 }
 
 // ── Per-segment hover gradients for the chip → donut interaction ─────────────
 // Each chip highlights its own segment: full ring in that segment's colour,
 // the rest fades to the empty-track grey. Center label shows the segment count.
-$bbai_li_seg_hover = array();
+$bbai_li_seg_hover = [];
 if ( $bbai_li_seg_tot > 0 ) {
 	$bbai_li_seg_all_pct = 360; // "all" = full ring, use the real multi-segment bg
 	if ( ( $bbai_li_seg_miss + $bbai_li_seg_weak + $bbai_li_seg_opt ) > 0 && $bbai_li_seg_opt < $bbai_li_seg_tot ) {
@@ -190,36 +185,36 @@ if ( $bbai_li_seg_tot > 0 ) {
 	}
 
 	// "all" → restore the real gradient (stored as empty string = use default)
-	$bbai_li_seg_hover['all'] = array(
+	$bbai_li_seg_hover['all'] = [
 		'bg'    => $bbai_li_donut_bg,
 		'label' => (string) $bbai_li_seg_tot,
 		'sub'   => esc_js( __( 'total images', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => $bbai_li_donut_tone,
-	);
+	];
 	// "optimized" → full green arc proportional to optimized count
-	$bbai_li_seg_hover['optimized'] = array(
+	$bbai_li_seg_hover['optimized'] = [
 		'bg'    => $bbai_li_seg_opt_deg > 0
 			? sprintf( 'conic-gradient(#22c55e 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)', $bbai_li_seg_opt_deg, $bbai_li_seg_opt_deg )
 			: 'conic-gradient(#e2e8f0 0deg 360deg)',
 		'label' => (string) $bbai_li_seg_opt,
 		'sub'   => esc_js( __( 'optimized', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => 'healthy',
-	);
+	];
 	// "weak" → full amber arc
-	$bbai_li_seg_hover['weak'] = array(
+	$bbai_li_seg_hover['weak'] = [
 		'bg'    => $bbai_li_seg_weak_deg > 0
 			? sprintf( 'conic-gradient(#f59e0b 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)', $bbai_li_seg_weak_deg, $bbai_li_seg_weak_deg )
 			: 'conic-gradient(#e2e8f0 0deg 360deg)',
 		'label' => (string) $bbai_li_seg_weak,
 		'sub'   => esc_js( __( 'needs review', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => 'problem',
-	);
+	];
 	// "missing" → full red arc
-	$bbai_li_seg_hover['missing'] = array(
+	$bbai_li_seg_hover['missing'] = [
 		'bg'    => $bbai_li_seg_miss_deg > 0
 			? sprintf(
 				'conic-gradient(%1$s 0deg %.3Fdeg, #e2e8f0 %.3Fdeg 360deg)',
-				( 'QUEUED' === $bbai_li_state_id ) ? '#3b82f6' : '#ef4444',
+				'#c98218',
 				$bbai_li_seg_miss_deg,
 				$bbai_li_seg_miss_deg
 			)
@@ -227,7 +222,7 @@ if ( $bbai_li_seg_tot > 0 ) {
 		'label' => (string) $bbai_li_seg_miss,
 		'sub'   => esc_js( __( 'missing ALT', 'beepbeep-ai-alt-text-generator' ) ),
 		'tone'  => 'problem',
-	);
+	];
 }
 $bbai_li_seg_hover_json = wp_json_encode( $bbai_li_seg_hover );
 
@@ -238,7 +233,7 @@ $bbai_li_description = (string) ( $bbai_li_hero['support'] ?? '' );
 // Right-card action strip (same numbers as donut segments).
 $bbai_li_missing_count = $bbai_li_seg_miss;
 $bbai_li_review_count  = $bbai_li_seg_weak;
-$bbai_li_flow_hidden   = in_array( $bbai_li_state_id, array( 'QUEUED', 'QUOTA_EXHAUSTED', 'ERROR', 'NO_IMAGES' ), true );
+$bbai_li_flow_hidden   = in_array( $bbai_li_state_id, [ 'QUEUED', 'QUOTA_EXHAUSTED', 'ERROR', 'NO_IMAGES' ], true );
 $bbai_li_flow_gen_on   = ( $bbai_li_missing_count > 0 );
 $bbai_li_flow_rev_on   = ( $bbai_li_review_count > 0 );
 $bbai_li_flow_done_on  = ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count );
@@ -248,43 +243,66 @@ if ( $bbai_li_missing_count > 0 ) {
 	if ( $bbai_hero_is_free_plan && 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) {
 		$bbai_hero_cta_hint = __( 'Manual generation on the free plan', 'beepbeep-ai-alt-text-generator' );
 	} else {
-		$bbai_hero_cta_hint = __( 'Optimise ALT text to move to review.', 'beepbeep-ai-alt-text-generator' );
+		$bbai_hero_cta_hint = __( 'Generate ALT text to move to review.', 'beepbeep-ai-alt-text-generator' );
 	}
 } elseif ( $bbai_li_review_count > 0 ) {
 	$bbai_hero_cta_hint = __( 'Complete your optimisation', 'beepbeep-ai-alt-text-generator' );
 }
 
 // ── CTAs ─────────────────────────────────────────────────────────────────────
-$bbai_li_primary_cta   = is_array( $bbai_li_hero['primary_cta'] ?? null ) ? $bbai_li_hero['primary_cta'] : array();
+$bbai_li_primary_cta   = is_array( $bbai_li_hero['primary_cta'] ?? null ) ? $bbai_li_hero['primary_cta'] : [];
 $bbai_li_secondary_cta = is_array( $bbai_li_hero['secondary_cta'] ?? null ) ? $bbai_li_hero['secondary_cta'] : null;
 
-if ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count && in_array( $bbai_li_state_id, array( 'ALL_CLEAR', 'DONE' ), true ) ) {
-	$bbai_li_state_id      = 'ALL_CLEAR';
-	$bbai_li_title         = __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' );
-	$bbai_li_description   = __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' );
-	$bbai_li_primary_cta   = array(
-		'label'  => __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ),
+if ( 0 === $bbai_li_missing_count && 0 === $bbai_li_review_count && in_array( $bbai_li_state_id, [ 'ALL_CLEAR', 'DONE' ], true ) ) {
+	$bbai_li_state_id = 'ALL_CLEAR';
+	$bbai_li_title    = __( 'Your site is fully optimised', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_description = __( 'All scanned images now have ALT text.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_primary_cta = [
+		'label'  => __( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ),
 		'action' => 'navigate',
-		'href'   => admin_url( 'upload.php' ),
-	);
-	$bbai_li_secondary_cta = array(
-		'label'      => __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ),
+		'href'   => admin_url( 'admin.php?page=bbai-settings' ),
+	];
+	$bbai_li_secondary_cta = [
+		'label'      => __( 'Re-scan Library', 'beepbeep-ai-alt-text-generator' ),
 		'busy_label' => __( 'Scanning library…', 'beepbeep-ai-alt-text-generator' ),
 		'action'     => 'rescan-media-library',
 		'href'       => '#',
-	);
+	];
 	if ( is_array( $bbai_li_hero ) ) {
 		$bbai_li_hero['primary_cta']   = $bbai_li_primary_cta;
 		$bbai_li_hero['secondary_cta'] = $bbai_li_secondary_cta;
-		$bbai_li_hero['library_cta']   = array(
-			'label'  => __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ),
-			'action' => 'navigate',
-			'href'   => admin_url( 'admin.php?page=bbai-library' ),
-		);
-		$bbai_li_hero['badge']         = array(
-			'text' => __( 'All optimised', 'beepbeep-ai-alt-text-generator' ),
+		$bbai_li_hero['library_cta']   = null;
+		$bbai_li_hero['badge'] = [
+			'text' => __( '100% Coverage', 'beepbeep-ai-alt-text-generator' ),
 			'mod'  => 'green',
-		);
+		];
+	}
+}
+
+if ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_missing_count > 0 ) {
+	$bbai_li_title = sprintf(
+		/* translators: %s: number of images missing ALT text */
+		_n( 'Only %s image still needs ALT text', 'Only %s images still need ALT text', $bbai_li_missing_count, 'beepbeep-ai-alt-text-generator' ),
+		number_format_i18n( $bbai_li_missing_count )
+	);
+	$bbai_li_description = 'MIXED_ATTENTION' === $bbai_li_state_id
+		? __( 'Generate ALT text now and reach 100% coverage. Review the generated descriptions before they go live.', 'beepbeep-ai-alt-text-generator' )
+		: __( 'Generate ALT text now and reach 100% coverage.', 'beepbeep-ai-alt-text-generator' );
+	if ( is_array( $bbai_li_primary_cta ) && 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) {
+		$bbai_li_primary_cta['label'] = __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' );
+	}
+	if ( 'MIXED_ATTENTION' === $bbai_li_state_id && is_array( $bbai_li_secondary_cta ) ) {
+		$bbai_li_secondary_cta['label'] = __( 'Review ALT Text', 'beepbeep-ai-alt-text-generator' );
+	}
+} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id && $bbai_li_review_count > 0 ) {
+	$bbai_li_description = __( 'Review and publish ALT text suggestions.', 'beepbeep-ai-alt-text-generator' );
+	if ( is_array( $bbai_li_primary_cta ) ) {
+		$bbai_li_primary_cta['label'] = __( 'Review ALT Text', 'beepbeep-ai-alt-text-generator' );
+		$bbai_li_primary_cta['action'] = 'navigate';
+		$bbai_li_primary_cta['href'] = ! empty( $bbai_needs_review_library_url ) ? $bbai_needs_review_library_url : admin_url( 'admin.php?page=bbai-library&status=needs_review' );
+	}
+	if ( is_array( $bbai_li_secondary_cta ) ) {
+		$bbai_li_secondary_cta['label'] = __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' );
 	}
 }
 
@@ -295,19 +313,13 @@ $bbai_li_badge = is_array( $bbai_li_hero['badge'] ?? null ) ? $bbai_li_hero['bad
 // - <= 5 missing: no badge
 // - 6–20 missing: "Recommended"
 // - > 20 missing: "Action needed"
-if ( in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_missing_count > 0 ) {
+if ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_missing_count > 0 ) {
 	if ( $bbai_li_missing_count <= 5 ) {
 		$bbai_li_badge = null;
 	} elseif ( $bbai_li_missing_count > 20 ) {
-		$bbai_li_badge = array(
-			'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ),
-			'mod'  => 'amber',
-		);
+		$bbai_li_badge = [ 'text' => __( 'Action needed', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'amber' ];
 	} else {
-		$bbai_li_badge = array(
-			'text' => __( 'Recommended', 'beepbeep-ai-alt-text-generator' ),
-			'mod'  => 'blue',
-		);
+		$bbai_li_badge = [ 'text' => __( 'Recommended', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'blue' ];
 	}
 }
 
@@ -322,7 +334,7 @@ if ( 'QUEUED' === $bbai_li_state_id ) {
 	// Prefer the dashboard root counts (local coverage scan; matches ALT Library chips),
 	// because resolver "truth" counts can lag behind the Media Library.
 	$bbai_li_dashboard_missing_cap = isset( $bbai_dashboard_root_missing_count ) ? max( 0, (int) $bbai_dashboard_root_missing_count ) : 0;
-	$bbai_li_missing_cap           = $bbai_li_dashboard_missing_cap > 0 ? $bbai_li_dashboard_missing_cap : max( 0, (int) $bbai_li_missing_count );
+	$bbai_li_missing_cap = $bbai_li_dashboard_missing_cap > 0 ? $bbai_li_dashboard_missing_cap : max( 0, (int) $bbai_li_missing_count );
 	if ( $bbai_li_missing_cap > 0 ) {
 		$bbai_li_queued_total = min( $bbai_li_queued_total, $bbai_li_missing_cap );
 	}
@@ -330,24 +342,24 @@ if ( 'QUEUED' === $bbai_li_state_id ) {
 		$bbai_li_queued_total = 1;
 	}
 
-	$bbai_li_badge = array(
+	$bbai_li_badge = [
 		'text' => __( 'READY TO GENERATE', 'beepbeep-ai-alt-text-generator' ),
 		'mod'  => 'blue',
-	);
+	];
 	$bbai_li_title = sprintf(
 		/* translators: %s: number of images ready to generate */
 		_n( '%s image is ready for ALT text', '%s images are ready for ALT text', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_li_queued_total )
 	);
-	$bbai_li_description = __( 'Optimise ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_li_description = __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' );
 
 	if ( is_array( $bbai_li_primary_cta ) && 'generate-missing' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) {
 		$bbai_li_primary_cta['label'] = sprintf(
-			/* translators: %s: number of images ready to optimise */
-			_n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
+			/* translators: %s: number of images ready to generate */
+			_n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', $bbai_li_queued_total, 'beepbeep-ai-alt-text-generator' ),
 			number_format_i18n( $bbai_li_queued_total )
 		);
-		$bbai_li_primary_cta['busy_label'] = __( 'Optimising ALT text…', 'beepbeep-ai-alt-text-generator' );
+		$bbai_li_primary_cta['busy_label'] = __( 'Generating ALT text…', 'beepbeep-ai-alt-text-generator' );
 	}
 
 	if ( is_array( $bbai_li_secondary_cta ) ) {
@@ -385,21 +397,22 @@ if ( isset( $bbai_dashboard_root_credits_total, $bbai_dashboard_root_credits_use
 $bbai_hero_c_used = min( $bbai_hero_c_used, $bbai_hero_c_lim );
 $bbai_hero_c_rem  = min( max( 0, $bbai_hero_c_rem ), $bbai_hero_c_lim );
 $bbai_hero_c_rem  = min( $bbai_hero_c_rem, max( 0, $bbai_hero_c_lim - $bbai_hero_c_used ) );
-$bbai_hero_c_pct  = (int) min( 100, max( 0, round( ( $bbai_hero_c_used / $bbai_hero_c_lim ) * 100 ) ) );
+$bbai_hero_c_pct = (int) min( 100, max( 0, round( ( $bbai_hero_c_used / $bbai_hero_c_lim ) * 100 ) ) );
+$bbai_hero_c_remaining_pct = (int) min( 100, max( 0, round( ( $bbai_hero_c_rem / $bbai_hero_c_lim ) * 100 ) ) );
 
 $bbai_hero_credit_state = 'healthy';
-if ( $bbai_hero_c_rem <= 0 ) {
+if ( $bbai_hero_c_rem <= 0 || $bbai_hero_c_pct >= 90 ) {
 	$bbai_hero_credit_state = 'empty';
-} elseif ( $bbai_hero_c_rem <= 10 ) {
+} elseif ( $bbai_hero_c_pct >= 70 || $bbai_hero_c_remaining_pct <= 30 ) {
 	$bbai_hero_credit_state = 'low';
 }
 
 $bbai_hero_credit_usage_line = ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_hero_is_free_plan )
 	? __( 'Resets monthly', 'beepbeep-ai-alt-text-generator' )
-	: __( 'Used when generating or improving ALT text', 'beepbeep-ai-alt-text-generator' );
+	: __( 'Usage this month', 'beepbeep-ai-alt-text-generator' );
 
 $bbai_hero_credit_state_hint = '';
-$bbai_hero_credit_low_suffix = '';
+$bbai_hero_credit_low_suffix  = '';
 if ( $bbai_hero_c_rem > 0 ) {
 	if ( $bbai_hero_c_rem <= 10 ) {
 		$bbai_hero_credit_low_suffix = __( 'Running low — upgrade or top up before you run out.', 'beepbeep-ai-alt-text-generator' );
@@ -407,17 +420,17 @@ if ( $bbai_hero_c_rem > 0 ) {
 	switch ( $bbai_li_state_id ) {
 		case 'MISSING_ALT':
 		case 'MIXED_ATTENTION':
-			$bbai_hero_credit_state_hint = __( 'Manual generation uses credits.', 'beepbeep-ai-alt-text-generator' );
+			$bbai_hero_credit_state_hint = __( 'Continue improving your ALT coverage.', 'beepbeep-ai-alt-text-generator' );
 			break;
 		case 'NEEDS_REVIEW':
 			$bbai_hero_credit_state_hint = __( 'Reviewing does not use credits.', 'beepbeep-ai-alt-text-generator' );
 			break;
 		case 'ALL_CLEAR':
-			$bbai_hero_credit_state_hint = __( 'Credits are ready for your next uploads.', 'beepbeep-ai-alt-text-generator' );
+			$bbai_hero_credit_state_hint = __( 'Continue improving your ALT coverage.', 'beepbeep-ai-alt-text-generator' );
 			break;
 		case 'PROCESSING':
 		case 'QUEUED':
-			$bbai_hero_credit_state_hint = __( 'Manual generation uses credits.', 'beepbeep-ai-alt-text-generator' );
+			$bbai_hero_credit_state_hint = __( 'Continue improving your ALT coverage.', 'beepbeep-ai-alt-text-generator' );
 			break;
 		default:
 			$bbai_hero_credit_state_hint = '';
@@ -426,7 +439,7 @@ if ( $bbai_hero_c_rem > 0 ) {
 
 $bbai_hero_credit_context_line = trim( trim( (string) $bbai_hero_credit_state_hint ) . ( $bbai_hero_credit_state_hint && $bbai_hero_credit_low_suffix ? ' ' : '' ) . (string) $bbai_hero_credit_low_suffix );
 
-$bbai_hero_credit_helper        = '';
+$bbai_hero_credit_helper          = '';
 $bbai_hero_credit_helper_hidden = true;
 
 if ( 0 === $bbai_hero_c_rem ) {
@@ -436,7 +449,7 @@ if ( 0 === $bbai_hero_c_rem ) {
 
 $bbai_hero_credit_label = sprintf(
 	/* translators: 1: credits used this period, 2: monthly or plan credit limit */
-	__( '%1$s / %2$s used this month', 'beepbeep-ai-alt-text-generator' ),
+	__( '%1$s / %2$s credits used', 'beepbeep-ai-alt-text-generator' ),
 	number_format_i18n( $bbai_hero_c_used ),
 	number_format_i18n( $bbai_hero_c_lim )
 );
@@ -470,11 +483,11 @@ if ( $bbai_li_missing_count > 0 && $bbai_hero_c_rem >= $bbai_li_missing_count ) 
 	);
 }
 
-$bbai_hero_credit_helper = sprintf(
-	/* translators: %s: Growth plan monthly image allowance */
-	__( 'Upgrade to automate ALT text (up to %s images/month)', 'beepbeep-ai-alt-text-generator' ),
-	number_format_i18n( $bbai_hero_growth_credit_limit )
-);
+	$bbai_hero_credit_helper = sprintf(
+		/* translators: %s: Growth plan monthly image allowance */
+		__( 'Upgrade to optimise larger media libraries, up to %s images/month.', 'beepbeep-ai-alt-text-generator' ),
+		number_format_i18n( $bbai_hero_growth_credit_limit )
+	);
 $bbai_hero_credit_helper_hidden = false;
 
 $bbai_hero_credit_bar_aria = sprintf(
@@ -486,7 +499,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 ?>
 
 <div
-	class="bbai-li-hero-grid<?php echo 'ALL_CLEAR' === $bbai_li_state_id ? ' bbai-all-clear-state' : ''; ?><?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-hero--needs-review' : ''; ?><?php echo in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_missing_count > 0 ? ' bbai-li-hero--missing' : ''; ?>"
+	class="bbai-li-hero-grid<?php echo 'ALL_CLEAR' === $bbai_li_state_id ? ' bbai-all-clear-state' : ''; ?><?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-hero--needs-review' : ''; ?><?php echo in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_missing_count > 0 ? ' bbai-li-hero--missing' : ''; ?>"
 	data-bbai-li-hero="1"
 	data-bbai-li-state="<?php echo esc_attr( $bbai_li_state_id ); ?>"
 	data-bbai-li-variant="<?php echo esc_attr( (string) ( $bbai_li_hero['variant'] ?? 'default' ) ); ?>"
@@ -499,9 +512,9 @@ $bbai_hero_credit_bar_aria = sprintf(
 
 		<?php
 		// Donut card is clickable for actionable states and follows that state's next step.
-		$bbai_li_has_primary_cta    = ! empty( $bbai_li_primary_cta['label'] );
-		$bbai_li_donut_clickable    = (
-			in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true )
+		$bbai_li_has_primary_cta = ! empty( $bbai_li_primary_cta['label'] );
+		$bbai_li_donut_clickable = (
+			in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true )
 			&& $bbai_li_has_primary_cta
 		) || 'NEEDS_REVIEW' === $bbai_li_state_id
 			|| ( 'PROCESSING' === $bbai_li_state_id && $bbai_li_has_primary_cta );
@@ -540,46 +553,30 @@ $bbai_hero_credit_bar_aria = sprintf(
 			</div>
 
 			<?php
-			// Build a clearer sub-label based on state and counts.
-			$bbai_li_donut_sub_display = '';
-			if ( in_array( $bbai_li_state_id, array( 'QUEUED', 'ERROR', 'NO_IMAGES' ), true ) && $bbai_li_donut_sub ) {
-				$bbai_li_donut_sub_display = $bbai_li_donut_sub;
-			} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
-				$bbai_li_donut_sub_display = __( 'generating now', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( 'NEEDS_REVIEW' === $bbai_li_state_id ) {
-				$bbai_li_donut_sub_display = __( 'IMAGES READY FOR REVIEW', 'beepbeep-ai-alt-text-generator' );
-			} elseif ( $bbai_li_seg_miss > 0 ) {
-				// Completes the sentence with the large centre numeral: "4" + "images need ALT text".
-				$bbai_li_donut_sub_display = _n(
-					'image needs ALT text',
-					'images need ALT text',
-					$bbai_li_seg_miss,
-					'beepbeep-ai-alt-text-generator'
-				);
-			} elseif ( $bbai_li_seg_weak > 0 ) {
-				// Centre shows the count; sub is the tail of the sentence.
-				$bbai_li_donut_sub_display = _n(
-					'image ready for review',
-					'images ready for review',
-					$bbai_li_seg_weak,
-					'beepbeep-ai-alt-text-generator'
-				);
-			} elseif ( $bbai_li_donut_sub ) {
-				$bbai_li_donut_sub_display = $bbai_li_donut_sub;
-			}
-			if ( $bbai_li_donut_sub_display ) :
-				?>
+		// Build a clearer sub-label based on state and counts.
+		$bbai_li_donut_sub_display = '';
+		if ( in_array( $bbai_li_state_id, [ 'QUEUED', 'ERROR', 'NO_IMAGES' ], true ) && $bbai_li_donut_sub ) {
+			$bbai_li_donut_sub_display = $bbai_li_donut_sub;
+		} elseif ( 'PROCESSING' === $bbai_li_state_id ) {
+			$bbai_li_donut_sub_display = __( 'generating now', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION', 'NEEDS_REVIEW', 'QUOTA_EXHAUSTED', 'ALL_CLEAR' ], true ) ) {
+			$bbai_li_donut_sub_display = __( 'Complete', 'beepbeep-ai-alt-text-generator' );
+		} elseif ( $bbai_li_donut_sub ) {
+			$bbai_li_donut_sub_display = $bbai_li_donut_sub;
+		}
+		if ( $bbai_li_donut_sub_display ) :
+		?>
 		<p class="bbai-donut-label bbai-li-donut__sub-label<?php echo 'NEEDS_REVIEW' === $bbai_li_state_id ? ' bbai-li-donut__sub-label--review-ready' : ''; ?>" data-bbai-li-donut-sub="1"><?php echo esc_html( $bbai_li_donut_sub_display ); ?></p>
 		<?php endif; ?>
 
 		<?php
-		$bbai_li_donut_cm_href  = '';
+		$bbai_li_donut_cm_href   = '';
 		$bbai_li_donut_cm_label = '';
-		if ( in_array( $bbai_li_state_id, array( 'MISSING_ALT', 'MIXED_ATTENTION' ), true ) && $bbai_li_seg_miss > 0 ) {
-			$bbai_li_donut_cm_href  = $bbai_li_primary_cta['href'] ?? '#';
-			$bbai_li_donut_cm_label = __( 'Optimise ALT text →', 'beepbeep-ai-alt-text-generator' );
+		if ( in_array( $bbai_li_state_id, [ 'MISSING_ALT', 'MIXED_ATTENTION' ], true ) && $bbai_li_seg_miss > 0 ) {
+			$bbai_li_donut_cm_href   = $bbai_li_primary_cta['href'] ?? '#';
+			$bbai_li_donut_cm_label = __( 'Generate ALT text →', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( 'MIXED_ATTENTION' === $bbai_li_state_id && $bbai_li_seg_weak > 0 && ! empty( $bbai_needs_review_library_url ) ) {
-			$bbai_li_donut_cm_href  = $bbai_needs_review_library_url;
+			$bbai_li_donut_cm_href   = $bbai_needs_review_library_url;
 			$bbai_li_donut_cm_label = __( 'Review images →', 'beepbeep-ai-alt-text-generator' );
 		}
 		?>
@@ -620,7 +617,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			}
 		}
 		if ( $bbai_li_donut_meta ) :
-			?>
+		?>
 		<p class="bbai-li-donut__meta" data-bbai-li-donut-meta="1"><?php echo esc_html( $bbai_li_donut_meta ); ?></p>
 		<?php endif; ?>
 		</div>
@@ -639,19 +636,13 @@ $bbai_hero_credit_bar_aria = sprintf(
 			id="bbai-li-hero-title"
 			class="bbai-li-headline"
 			data-bbai-li-hero-headline="1"
-			<?php
-			if ( $bbai_li_donut_animated ) :
-				?>
-				aria-live="polite" aria-atomic="true"<?php endif; ?>
+			<?php if ( $bbai_li_donut_animated ) : ?>aria-live="polite" aria-atomic="true"<?php endif; ?>
 		><?php echo esc_html( $bbai_li_title ); ?></h1>
 
 		<p
 			class="bbai-li-support"
 			data-bbai-li-hero-support="1"
-			<?php
-			if ( $bbai_li_donut_animated ) :
-				?>
-				aria-live="polite" aria-atomic="true"<?php endif; ?>
+			<?php if ( $bbai_li_donut_animated ) : ?>aria-live="polite" aria-atomic="true"<?php endif; ?>
 		><?php echo esc_html( $bbai_li_description ); ?></p>
 
 		</div>
@@ -659,12 +650,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 		<div class="bbai-li-card-section bbai-li-card-section--actions">
 		<div class="bbai-action-block">
 			<div class="bbai-li-cta-row bbai-li-cta-group bbai-cta-group">
-			<?php
-			if ( ! empty( $bbai_li_primary_cta['label'] ) ) :
+			<?php if ( ! empty( $bbai_li_primary_cta['label'] ) ) :
 					$bbai_li_busy_label = (string) ( $bbai_li_primary_cta['busy_label'] ?? '' );
-				if ( '' === $bbai_li_busy_label ) {
-					$bbai_li_busy_label = __( 'Working…', 'beepbeep-ai-alt-text-generator' );
-				}
+					if ( '' === $bbai_li_busy_label ) {
+						$bbai_li_busy_label = __( 'Working…', 'beepbeep-ai-alt-text-generator' );
+					}
 				?>
 				<div class="bbai-li-cta-primary-col">
 					<a
@@ -678,23 +668,50 @@ $bbai_hero_credit_bar_aria = sprintf(
 						<?php endif; ?>
 						data-bbai-li-primary-cta="1"
 						data-busy-label="<?php echo esc_attr( $bbai_li_busy_label ); ?>"
-					>
-					<?php
-					if ( 'approve-all' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) :
-						?>
-						<span class="bbai-btn-content"><?php echo esc_html( $bbai_li_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php echo esc_html( $bbai_li_busy_label ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span>
-						<?php
-else :
-						echo esc_html( $bbai_li_primary_cta['label'] );
-endif;
-?>
-</a>
+					><?php if ( 'approve-all' === (string) ( $bbai_li_primary_cta['action'] ?? '' ) ) : ?><span class="bbai-btn-content"><?php echo esc_html( $bbai_li_primary_cta['label'] ); ?></span><span class="bbai-btn-loading-label" aria-hidden="true"><?php echo esc_html( $bbai_li_busy_label ); ?></span><span class="bbai-btn-spinner" aria-hidden="true"></span><?php else : echo esc_html( $bbai_li_primary_cta['label'] ); endif; ?></a>
 					<?php if ( $bbai_hero_cta_hint ) : ?>
 					<p class="bbai-hero-cta-hint" data-bbai-hero-cta-hint="1"><?php echo esc_html( $bbai_hero_cta_hint ); ?></p>
 					<?php endif; ?>
 					<p class="bbai-hero-cta-hint bbai-hero-cta-hint--passive" data-bbai-gen-running-note="1" hidden>
 						<?php esc_html_e( 'Generation is running in the background.', 'beepbeep-ai-alt-text-generator' ); ?>
 					</p>
+					<div
+						class="bbai-hero-generation-progress bbai-live-region--visible"
+						data-bbai-hero-generation-progress="1"
+						role="region"
+						aria-label="<?php esc_attr_e( 'Background ALT text generation', 'beepbeep-ai-alt-text-generator' ); ?>"
+						aria-live="polite"
+						hidden
+					>
+						<div class="bbai-hero-generation-progress__summary">
+							<span data-bbai-hero-generation-progress-label="1">
+								<?php esc_html_e( 'Generating ALT text…', 'beepbeep-ai-alt-text-generator' ); ?>
+							</span>
+							<span data-bbai-hero-generation-progress-count="1">0 / 0</span>
+						</div>
+						<div
+							class="bbai-hero-generation-progress__track"
+							data-bbai-hero-generation-progress-track="1"
+							role="progressbar"
+							aria-valuemin="0"
+							aria-valuemax="100"
+							aria-valuenow="0"
+							aria-label="<?php esc_attr_e( 'ALT text generation progress', 'beepbeep-ai-alt-text-generator' ); ?>"
+						>
+							<span
+								class="bbai-hero-generation-progress__fill"
+								data-bbai-hero-generation-progress-fill="1"
+								style="width: 0%;"
+							></span>
+						</div>
+						<button
+							type="button"
+							class="bbai-hero-generation-progress__view"
+							data-bbai-hero-progress-view="1"
+						>
+							<?php esc_html_e( 'View detailed progress', 'beepbeep-ai-alt-text-generator' ); ?>
+						</button>
+					</div>
 					<a
 						class="bbai-hero-review-inline-link"
 						href="<?php echo esc_url( 'NEEDS_REVIEW' === $bbai_li_state_id && ! empty( $bbai_li_secondary_cta['href'] ) ? $bbai_li_secondary_cta['href'] : '#' ); ?>"
@@ -723,21 +740,10 @@ endif;
 						aria-live="polite"
 						hidden
 					></span>
-					<?php
-					$bbai_li_library_cta = is_array( $bbai_li_hero['library_cta'] ?? null ) ? $bbai_li_hero['library_cta'] : null;
-					?>
-					<a
-						class="bbai-all-clear-library-link bbai-hero-review-inline-link"
-						href="<?php echo esc_url( ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_li_library_cta && ! empty( $bbai_li_library_cta['href'] ) ) ? $bbai_li_library_cta['href'] : '#' ); ?>"
-						data-action="<?php echo esc_attr( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_li_library_cta ? ( $bbai_li_library_cta['action'] ?? 'navigate' ) : 'navigate' ); ?>"
-						data-bbai-li-all-clear-library="1"
-						<?php echo ( 'ALL_CLEAR' === $bbai_li_state_id && $bbai_li_library_cta && ! empty( $bbai_li_library_cta['href'] ) ) ? '' : 'hidden'; ?>
-					><?php echo esc_html( ( $bbai_li_library_cta && ! empty( $bbai_li_library_cta['label'] ) ) ? $bbai_li_library_cta['label'] : __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
 				</div>
 			<?php endif; ?>
 
-			<?php
-			if ( $bbai_li_review_count > 0 && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) && 'NEEDS_REVIEW' !== $bbai_li_state_id && 'ALL_CLEAR' !== $bbai_li_state_id ) :
+			<?php if ( $bbai_li_review_count > 0 && is_array( $bbai_li_secondary_cta ) && ! empty( $bbai_li_secondary_cta['label'] ) && 'NEEDS_REVIEW' !== $bbai_li_state_id && 'ALL_CLEAR' !== $bbai_li_state_id ) :
 				$bbai_li_secondary_busy = (string) ( $bbai_li_secondary_cta['busy_label'] ?? '' );
 				?>
 				<a
@@ -762,8 +768,7 @@ endif;
 					<strong class="bbai-count" data-bbai-status-metric="missing"><?php echo esc_html( (string) number_format_i18n( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ? $bbai_li_queued_total : $bbai_li_missing_count ) ); ?></strong>
 					<?php
 					$bbai_li_ready_label_count = ( 'QUEUED' === $bbai_li_state_id && isset( $bbai_li_queued_total ) ) ? $bbai_li_queued_total : $bbai_li_missing_count;
-					echo esc_html(
-						'QUEUED' === $bbai_li_state_id
+					echo esc_html( 'QUEUED' === $bbai_li_state_id
 						? ' ' . _n( 'ready to generate', 'ready to generate', $bbai_li_ready_label_count, 'beepbeep-ai-alt-text-generator' )
 						: ' ' . _n( 'image needs ALT text', 'images need ALT text', $bbai_li_missing_count, 'beepbeep-ai-alt-text-generator' )
 					);
@@ -788,18 +793,18 @@ endif;
 			$bbai_li_active_step = ( $bbai_li_missing_count > 0 )
 				? 'generate'
 				: ( $bbai_li_review_count > 0 ? 'review' : 'done' );
-			$bbai_li_gen_class   = ( 'generate' === $bbai_li_active_step ) ? 'is-active' : 'is-done';
-			$bbai_li_rev_class   = ( 'review' === $bbai_li_active_step ) ? 'is-active' : ( 'done' === $bbai_li_active_step ? 'is-done' : 'is-inactive' );
-			$bbai_li_done_class  = ( 'done' === $bbai_li_active_step ) ? 'is-active' : 'is-inactive';
+			$bbai_li_gen_class  = ( 'generate' === $bbai_li_active_step ) ? 'is-active' : 'is-done';
+			$bbai_li_rev_class  = ( 'review' === $bbai_li_active_step ) ? 'is-active' : ( 'done' === $bbai_li_active_step ? 'is-done' : 'is-inactive' );
+			$bbai_li_done_class = ( 'done' === $bbai_li_active_step ) ? 'is-active' : 'is-inactive';
 			?>
 			<div
 				class="bbai-progress-flow"
 				data-bbai-li-flow="1"
 				<?php echo $bbai_li_flow_hidden ? 'hidden' : ''; ?>
 				role="group"
-				aria-label="<?php esc_attr_e( 'Workflow: Optimise, Review, Done', 'beepbeep-ai-alt-text-generator' ); ?>"
+				aria-label="<?php esc_attr_e( 'Workflow: Generate, Review, Done', 'beepbeep-ai-alt-text-generator' ); ?>"
 			>
-				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( 'Optimise', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_gen_class ); ?>" data-bbai-flow-step="generate"><?php esc_html_e( 'Generate', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
 				<span class="bbai-progress-step <?php echo esc_attr( $bbai_li_rev_class ); ?>" data-bbai-flow-step="review"><?php esc_html_e( 'Review', 'beepbeep-ai-alt-text-generator' ); ?></span>
 				<span class="bbai-progress-flow__arrow" aria-hidden="true"><?php echo esc_html( is_rtl() ? '←' : '→' ); ?></span>
@@ -830,11 +835,11 @@ endif;
 			<?php if ( $bbai_li_all_clear_upgrade_panel ) : ?>
 			<hr class="bbai-all-clear-section-divider" aria-hidden="true" />
 			<div class="bbai-all-clear-upgrade" data-bbai-all-clear-upgrade="1">
-				<p class="bbai-li-free-plan-upsell__note" data-bbai-li-free-upsell="1"><?php esc_html_e( 'New uploads won’t be optimised automatically.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+					<p class="bbai-li-free-plan-upsell__note" data-bbai-li-free-upsell="1"><?php esc_html_e( 'New uploads need Autopilot to stay covered.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 				<div class="bbai-all-clear-upgrade__panel">
 					<span class="bbai-all-clear-upgrade__icon" aria-hidden="true">⚡</span>
 					<div class="bbai-all-clear-upgrade__copy">
-						<p class="bbai-all-clear-upgrade__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-all-clear-upgrade__title"><?php esc_html_e( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></p>
 						<p class="bbai-all-clear-upgrade__desc"><?php esc_html_e( 'Automatically generate ALT text for new media uploads.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					</div>
 					<button
@@ -878,7 +883,7 @@ endif;
 					<div class="bbai-credit-fill" data-bbai-hero-credit-fill="1" style="--bbai-credit-percent: <?php echo esc_attr( (string) $bbai_hero_c_pct ); ?>%;"></div>
 				</div>
 				<p
-					class="bbai-credit-context<?php echo $bbai_hero_c_rem < 10 ? ' bbai-credit-context--warning' : ''; ?>"
+					class="bbai-credit-context<?php echo 'healthy' !== $bbai_hero_credit_state ? ' bbai-credit-context--warning' : ''; ?>"
 					data-bbai-hero-credit-context="1"
 				><?php echo esc_html( $bbai_hero_credit_context_line ); ?></p>
 				<p
@@ -900,8 +905,8 @@ endif;
 				<?php if ( $bbai_hero_is_free_plan && 'ALL_CLEAR' !== $bbai_li_state_id ) : ?>
 				<div class="bbai-credit-upgrade-panel" data-bbai-credit-upgrade-panel="1">
 					<div class="bbai-credit-upgrade-panel__copy">
-						<p class="bbai-credit-upgrade-panel__title"><?php esc_html_e( 'Automate future uploads', 'beepbeep-ai-alt-text-generator' ); ?></p>
-						<p class="bbai-credit-upgrade-panel__sub"><?php esc_html_e( 'Upgrade to generate ALT text automatically when new images are added.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+						<p class="bbai-credit-upgrade-panel__title"><?php esc_html_e( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></p>
+							<p class="bbai-credit-upgrade-panel__sub"><?php esc_html_e( 'Use Autopilot when new images are added.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 					</div>
 					<span
 						class="bbai-credit-upgrade-panel__cta"
@@ -935,6 +940,44 @@ endif;
 	}
 
 	window.isUserAuthenticated = window.isUserAuthenticated || isUserAuthenticated;
+
+	function resolveHeroCreditState( used, total, remaining ) {
+		var safeTotal = Math.max( 1, parseInt( total, 10 ) || 1 );
+		var safeUsed = Math.max( 0, parseInt( used, 10 ) || 0 );
+		var safeRemaining = Math.max( 0, parseInt( remaining, 10 ) || 0 );
+		var usedPct = Math.min( 100, Math.max( 0, Math.round( ( safeUsed / safeTotal ) * 100 ) ) );
+		var remainingPct = Math.min( 100, Math.max( 0, Math.round( ( safeRemaining / safeTotal ) * 100 ) ) );
+
+		if ( safeRemaining <= 0 || usedPct >= 90 ) {
+			return 'empty';
+		}
+
+		if ( usedPct >= 70 || remainingPct <= 30 ) {
+			return 'low';
+		}
+
+		return 'healthy';
+	}
+
+	function applyHeroCreditStateFromAttributes() {
+		var wrap = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' ) || document.querySelector( '[data-bbai-hero-credit-usage="1"]' );
+		if ( ! wrap ) {
+			return;
+		}
+
+		var used = parseInt( wrap.getAttribute( 'data-bbai-hero-credits-used' ) || '0', 10 ) || 0;
+		var total = parseInt( wrap.getAttribute( 'data-bbai-hero-credits-limit' ) || '1', 10 ) || 1;
+		var remaining = parseInt( wrap.getAttribute( 'data-bbai-hero-credits-remaining' ) || String( Math.max( 0, total - used ) ), 10 ) || 0;
+		var creditState = resolveHeroCreditState( used, total, remaining );
+		var ctx = wrap.querySelector( '[data-bbai-hero-credit-context="1"]' );
+
+		if ( wrap.getAttribute( 'data-credit-state' ) !== creditState ) {
+			wrap.setAttribute( 'data-credit-state', creditState );
+		}
+		if ( ctx ) {
+			ctx.classList.toggle( 'bbai-credit-context--warning', creditState !== 'healthy' );
+		}
+	}
 
 	function renderGuestDashboardFallback() {
 		var root = document.querySelector( '[data-bbai-dashboard-root="1"]' );
@@ -1116,6 +1159,19 @@ endif;
 		return ( 'poll' === r || 'focus' === r || 'bootstrap' === r || 'visibility' === r || 'visibility_resume' === r );
 	}
 
+	function bbaiShouldForceDashboardTruthRefresh( reason ) {
+		var r = String( reason || '' );
+		return (
+			'generation_completed' === r ||
+			'generate_missing' === r ||
+			'inline_generation' === r ||
+			'manual_rescan' === r ||
+			'user_action' === r ||
+			'approve_all' === r ||
+			'approve_all_success' === r
+		);
+	}
+
 	function bbaiDebugTiming( eventName, detail ) {
 		if ( ! window.BBAI_LOG || typeof window.BBAI_LOG.info !== 'function' || ! window.console || typeof window.console.debug !== 'function' ) {
 			return;
@@ -1156,7 +1212,7 @@ endif;
 			return Promise.resolve( dashboardPolling.currentTruth );
 		}
 
-		if ( 'generation_completed' === r || 'manual_rescan' === r || 'user_action' === r ) {
+		if ( bbaiShouldForceDashboardTruthRefresh( r ) ) {
 			req.lastCompletedAt = 0;
 		}
 
@@ -1170,10 +1226,10 @@ endif;
 		req.controller = controller;
 
 		var stateSnapshot = String( dashboardPolling.latestState || hero.getAttribute( 'data-bbai-li-state' ) || '' ).toUpperCase();
-		var timeoutMs = ( 'QUEUED' === stateSnapshot || 'PROCESSING' === stateSnapshot ) ? 15000 : 8000;
+		var timeoutMs = ( 'QUEUED' === stateSnapshot || 'PROCESSING' === stateSnapshot ) ? 25000 : 15000;
 		var timeoutId = controller
 			? window.setTimeout( function () {
-				try { controller.abort(); } catch ( e ) {}
+				bbaiDebugTiming( 'dashboard_state_fetch_slow', { reason: r, sequence: sequence, durationMs: timeoutMs, endpoint: 'state-truth' } );
 			}, timeoutMs )
 			: null;
 
@@ -1241,26 +1297,29 @@ endif;
 		bootstrapSyncUrl: '<?php echo esc_js( rest_url( 'bbai/v1/dashboard/bootstrap-sync' ) ); ?>',
 		dashboardUrl: '<?php echo esc_js( rest_url( 'bbai/v1/dashboard' ) ); ?>',
 		restNonce: '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>' || ( window.wpApiSettings && window.wpApiSettings.nonce ) || '',
-		missingCount: 
-		<?php
+		missingCount: <?php
 			// Pull missing count from hero summary items (same approach as activity strip).
 			$bbai_hero_missing_count = 0;
-			$bbai_hero_summary_items = is_array( $bbai_li_state['hero']['summary'] ?? null ) ? $bbai_li_state['hero']['summary'] : array();
-		foreach ( $bbai_hero_summary_items as $bbai_hero_stat ) {
-			$bbai_hero_lbl = strtolower( (string) ( $bbai_hero_stat['label'] ?? '' ) );
-			if ( strpos( $bbai_hero_lbl, 'missing' ) !== false ) {
-				$bbai_hero_missing_count = (int) str_replace( ',', '', (string) ( $bbai_hero_stat['value'] ?? '0' ) );
-				break;
+			$bbai_hero_summary_items = is_array( $bbai_li_state['hero']['summary'] ?? null ) ? $bbai_li_state['hero']['summary'] : [];
+			foreach ( $bbai_hero_summary_items as $bbai_hero_stat ) {
+				$bbai_hero_lbl = strtolower( (string) ( $bbai_hero_stat['label'] ?? '' ) );
+				if ( strpos( $bbai_hero_lbl, 'missing' ) !== false ) {
+					$bbai_hero_missing_count = (int) str_replace( ',', '', (string) ( $bbai_hero_stat['value'] ?? '0' ) );
+					break;
+				}
 			}
-		}
 			echo absint( $bbai_hero_missing_count );
-		?>
-			,
+			?>,
+		creditsRemaining: <?php echo absint( $bbai_hero_c_rem ); ?>,
+		enforceCreditLimit: <?php echo $bbai_hero_is_free_plan ? 'true' : 'false'; ?>,
 		wpDebug: '<?php echo ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? '1' : '0'; ?>',
 	};
 
 	// Expose for debugging and console checks (read-only; no secrets).
 	window.BBAI_HERO_CFG = BBAI_HERO_CFG;
+	applyHeroCreditStateFromAttributes();
+	window.setTimeout( applyHeroCreditStateFromAttributes, 0 );
+	window.setTimeout( applyHeroCreditStateFromAttributes, 750 );
 
 	var BOOTSTRAP_SYNC_LOCK_TTL_MS = 5 * 60 * 1000;
 	var BOOTSTRAP_SYNC_FAILURE_COOLDOWN_MS = 15 * 60 * 1000;
@@ -1283,152 +1342,156 @@ endif;
 		checkingQueue: '<?php echo esc_js( __( 'Checking queue…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedJustNow: '<?php echo esc_js( __( 'Last checked just now', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedSecond: '<?php echo esc_js( __( 'Last checked 1 second ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		lastCheckedSeconds: '<?php echo esc_js( /* translators: %s: value */ __( 'Last checked %s seconds ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		lastCheckedSeconds: '<?php echo esc_js( __( 'Last checked %s seconds ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedMinute: '<?php echo esc_js( __( 'Last checked 1 minute ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		lastCheckedMinutes: '<?php echo esc_js( /* translators: %s: value */ __( 'Last checked %s minutes ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		lastCheckedMinutes: '<?php echo esc_js( __( 'Last checked %s minutes ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		lastCheckedHour: '<?php echo esc_js( __( 'Last checked 1 hour ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		lastCheckedHours: '<?php echo esc_js( /* translators: %s: value */ __( 'Last checked %s hours ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		lastRun: '<?php echo esc_js( /* translators: %s: value */ __( 'Last batch completed %s', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedBadge: '<?php echo esc_js( __( 'Ready to optimise', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		lastCheckedHours: '<?php echo esc_js( __( 'Last checked %s hours ago', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		lastRun: '<?php echo esc_js( __( 'Last batch completed %s', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedBadge: '<?php echo esc_js( __( 'Ready to generate', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingBadge: '<?php echo esc_js( __( 'Processing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		actionNeededBadge: '<?php echo esc_js( __( 'Action needed', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		recommendedBadge: '<?php echo esc_js( __( 'Recommended', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewReadyBadge: '<?php echo esc_js( __( 'Review ready', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsNeededBadge: '<?php echo esc_js( __( 'Credits needed', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		allOptimisedBadge: '<?php echo esc_js( __( 'All optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedSupport: '<?php echo esc_js( __( 'Optimise ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedHeadlineSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedHeadlinePlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimarySingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedPrimaryPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedSupport: '<?php echo esc_js( __( 'Generate ALT text now to make these images accessible and SEO-ready.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedHeadlineSingular: '<?php echo esc_js( _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedHeadlinePlural: '<?php echo esc_js( _n( '%s image is ready for ALT text', '%s images are ready for ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimarySingular: '<?php echo esc_js( _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedPrimaryPlural: '<?php echo esc_js( _n( 'Generate ALT text for %s image', 'Generate ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedSecondary: '<?php echo esc_js( __( 'Preview images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedReadySingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready to generate', '%s ready to generate', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		queuedReadyPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready to generate', '%s ready to generate', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processingHeadline: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( 'Generating — %1$s of %2$s images done', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processingSupportDone: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s optimised so far · ~%2$s to finish', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processingSupportEta: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s remaining · ~%2$s to finish', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processingRemainingSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image remaining.', '%s images remaining.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processingRemainingPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image remaining.', '%s images remaining.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processingAria: '<?php echo esc_js( /* translators: %d: number */ __( 'Processing: %d%% complete', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedReadySingular: '<?php echo esc_js( _n( '%s ready to generate', '%s ready to generate', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		queuedReadyPlural: '<?php echo esc_js( _n( '%s ready to generate', '%s ready to generate', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processingHeadline: '<?php echo esc_js( __( 'Generating — %1$s of %2$s images done', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processingSupportDone: '<?php echo esc_js( __( '%1$s optimised so far · ~%2$s to finish', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processingSupportEta: '<?php echo esc_js( __( '%1$s remaining · ~%2$s to finish', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processingRemainingSingular: '<?php echo esc_js( _n( '%s image remaining.', '%s images remaining.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processingRemainingPlural: '<?php echo esc_js( _n( '%s image remaining.', '%s images remaining.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processingAria: '<?php echo esc_js( __( 'Processing: %d%% complete', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		pause: '<?php echo esc_js( __( 'Pause', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		pausing: '<?php echo esc_js( __( 'Pausing…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		openAltLibrary: '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		uploadMoreImages: '<?php echo esc_js( __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		uploadMoreImages: '<?php echo esc_js( __( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveAll: '<?php echo esc_js( __( 'Approve all', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		openReviewQueue: '<?php echo esc_js( __( 'Open review queue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewIndividually: '<?php echo esc_js( __( 'Review individually →', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateMissingAlt: '<?php echo esc_js( __( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateAltForSingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateAltForPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'Optimise ALT text for %s image', 'Optimise ALT text for %s images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		openReviewQueue: '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewIndividually: '<?php echo esc_js( __( 'Review ALT Text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateMissingAlt: '<?php echo esc_js( __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateAltForSingular: '<?php echo esc_js( __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateAltForPlural: '<?php echo esc_js( __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		postSignupFirstGeneration: '<?php echo esc_js( __( 'You have 50 free credits. Generate your first ALT text now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		addCredits: '<?php echo esc_js( __( 'Add credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		rescanLibrary: '<?php echo esc_js( __( 'Re-scan', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingLabel: '<?php echo esc_js( __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewLabel: '<?php echo esc_js( __( 'To review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		rescanLibrary: '<?php echo esc_js( __( 'Re-scan Library', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingLabel: '<?php echo esc_js( __( 'Missing ALT', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewLabel: '<?php echo esc_js( __( 'Ready for review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsLabel: '<?php echo esc_js( __( 'Credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		optimizedLabel: '<?php echo esc_js( __( 'Optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		imagesScannedLabel: '<?php echo esc_js( __( 'Images scanned', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		completeLabel: '<?php echo esc_js( __( 'Complete', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsLeftLabel: '<?php echo esc_js( __( 'Credits left', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsRemainingLabel: '<?php echo esc_js( __( 'Credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditUsedThisMonth: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s / %2$s used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditFreeSingular: '<?php echo esc_js( /* translators: %s: value */ __( '%s monthly credit remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditFreePlural: '<?php echo esc_js( /* translators: %s: value */ __( '%s monthly credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditUsedThisMonth: '<?php echo esc_js( __( '%1$s / %2$s credits used', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditFreeSingular: '<?php echo esc_js( __( '%s monthly credit remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditFreePlural: '<?php echo esc_js( __( '%s monthly credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditPaidNoneLeft: '<?php echo esc_js( __( 'No credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditPaidOneMonth: '<?php echo esc_js( __( '1 credit remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditPaidPluralMonth: '<?php echo esc_js( /* translators: %s: value */ __( '%s credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditUsageLine: '<?php echo esc_js( __( 'Used when generating or improving ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditPaidPluralMonth: '<?php echo esc_js( __( '%s credits remaining', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditUsageLine: '<?php echo esc_js( __( 'Usage this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditHelperExhausted: '<?php echo esc_js( __( 'Add credits to continue generating ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditNoneRemainingThisMonth: '<?php echo esc_js( __( 'No credits remaining this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditRemainingThisMonth: '<?php echo esc_js( /* translators: %s: value */ __( '%s remaining this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditOnlyLeftThisMonth: '<?php echo esc_js( /* translators: %s: value */ __( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditRemainingThisMonth: '<?php echo esc_js( __( '%s remaining this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditOnlyLeftThisMonth: '<?php echo esc_js( __( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditEnoughForBatch: '<?php echo esc_js( __( '✔ Enough credits to finish this batch', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditCanGenerateMore: '<?php echo esc_js( /* translators: %s: value */ __( 'You can generate %s more images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		heroCreditUpgradeGrowth: '<?php echo esc_js( /* translators: %s: value */ __( 'Upgrade to automate ALT text (up to %s images/month)', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditCanGenerateMore: '<?php echo esc_js( __( 'You can generate %s more images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+			heroCreditUpgradeGrowth: '<?php echo esc_js( __( 'Upgrade to optimise larger media libraries, up to %s images/month.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditLowRunningSuffix: '<?php echo esc_js( __( 'Running low — upgrade or top up before you run out.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditCtxManual: '<?php echo esc_js( __( 'Manual generation uses credits.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditCtxManual: '<?php echo esc_js( __( 'Continue improving your ALT coverage.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditCtxReview: '<?php echo esc_js( __( 'Reviewing does not use credits.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditCtxAllClear: '<?php echo esc_js( __( 'Credits are ready for your next uploads.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditAriaMonthly: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s of %2$s credits used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditAriaPaid: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s of %2$s plan credits used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditCtxAllClear: '<?php echo esc_js( __( 'Continue improving your ALT coverage.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditAriaMonthly: '<?php echo esc_js( __( '%1$s of %2$s credits used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditAriaPaid: '<?php echo esc_js( __( '%1$s of %2$s plan credits used this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditsResetMonthly: '<?php echo esc_js( __( 'Resets monthly', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		processingStrip: '<?php echo esc_js( __( 'Generation active', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processedCountSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s processed', '%s processed', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		processedCountPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s processed', '%s processed', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		remainingCountSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s remaining', '%s remaining', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		remainingCountPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s remaining', '%s remaining', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingAltSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image needs ALT text', '%s images need ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingAltPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image needs ALT text', '%s images need ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingHeadlineSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is missing ALT text', '%s images are missing ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingHeadlinePlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is missing ALT text', '%s images are missing ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		mixedSupport: '<?php echo esc_js( __( 'Optimise ALT text first, then review the suggested descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingSupport: '<?php echo esc_js( __( 'Optimise the missing ALT text now to keep your library accessible, searchable, and up to date.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		missingSupportProgress: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s images already optimised — generate the remaining %2$s to complete your library.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		readyReviewSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready for review', '%s ready for review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		readyReviewPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s ready for review', '%s ready for review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewHeadlineSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is ready for review', '%s images are ready for review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewHeadlinePlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image is ready for review', '%s images are ready for review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewSupport: '<?php echo esc_js( __( 'ALT text is ready for a quick review before it goes live.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewSupportSingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'You have %s image waiting for approval — approve all or open the queue to check each one.', 'You have %s images waiting for approval — approve all or open the queue to check each one.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		reviewSupportPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'You have %s image waiting for approval — approve all or open the queue to check each one.', 'You have %s images waiting for approval — approve all or open the queue to check each one.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allImagesOptimised: '<?php echo esc_js( __( 'All images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processedCountSingular: '<?php echo esc_js( _n( '%s processed', '%s processed', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		processedCountPlural: '<?php echo esc_js( _n( '%s processed', '%s processed', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		remainingCountSingular: '<?php echo esc_js( _n( '%s remaining', '%s remaining', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		remainingCountPlural: '<?php echo esc_js( _n( '%s remaining', '%s remaining', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingAltSingular: '<?php echo esc_js( _n( '%s image needs ALT text', '%s images need ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingAltPlural: '<?php echo esc_js( _n( '%s image needs ALT text', '%s images need ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingHeadlineSingular: '<?php echo esc_js( _n( 'Only %s image still needs ALT text', 'Only %s images still need ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingHeadlinePlural: '<?php echo esc_js( _n( 'Only %s image still needs ALT text', 'Only %s images still need ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		mixedSupport: '<?php echo esc_js( __( 'Generate ALT text now and reach 100% coverage. Review the generated descriptions before they go live.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingSupport: '<?php echo esc_js( __( 'Generate ALT text now and reach 100% coverage.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		missingSupportProgress: '<?php echo esc_js( __( '%1$s images already optimised — generate the remaining %2$s to complete your library.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		readyReviewSingular: '<?php echo esc_js( _n( '%s ready for review', '%s ready for review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		readyReviewPlural: '<?php echo esc_js( _n( '%s ready for review', '%s ready for review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewHeadlineSingular: '<?php echo esc_js( _n( '%s image is ready for review', '%s images are ready for review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewHeadlinePlural: '<?php echo esc_js( _n( '%s image is ready for review', '%s images are ready for review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewSupport: '<?php echo esc_js( __( 'Review and publish ALT text suggestions.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewSupportSingular: '<?php echo esc_js( _n( 'You have %s image waiting for approval — approve all or open the queue to check each one.', 'You have %s images waiting for approval — approve all or open the queue to check each one.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		reviewSupportPlural: '<?php echo esc_js( _n( 'You have %s image waiting for approval — approve all or open the queue to check each one.', 'You have %s images waiting for approval — approve all or open the queue to check each one.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		allImagesOptimised: '<?php echo esc_js( __( '100% Coverage', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		libraryUpToDate: '<?php echo esc_js( __( 'Library is up to date', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allClearHeadline: '<?php echo esc_js( __( 'Your media library is fully optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		allClearSupport: '<?php echo esc_js( __( 'Everything is accessible, SEO-ready, and performing at its best.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		allClearHeadline: '<?php echo esc_js( __( 'Your site is fully optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		allClearSupport: '<?php echo esc_js( __( 'All scanned images now have ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		readyForNewUploads: '<?php echo esc_js( __( 'Everything is optimised and SEO-ready', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditLeftSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s credit left', '%s credits left', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditLeftPlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s credit left', '%s credits left', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditLeftSingular: '<?php echo esc_js( _n( '%s credit left', '%s credits left', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditLeftPlural: '<?php echo esc_js( _n( '%s credit left', '%s credits left', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		outOfCredits: '<?php echo esc_js( __( 'Out of credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		addMoreToContinue: '<?php echo esc_js( __( 'Add more to continue generating', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		quotaHeadlineSingular: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image still needs ALT text', '%s images still need ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		quotaHeadlinePlural: '<?php echo esc_js( /* translators: %s: value */ _n( '%s image still needs ALT text', '%s images still need ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		quotaSupportSingular: '<?php echo esc_js( /* translators: %s: value */ _n( 'Add credits to keep going — %s image still needs ALT text.', 'Add credits to keep going — %s images still need ALT text.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		quotaSupportPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'Add credits to keep going — %s image still needs ALT text.', 'Add credits to keep going — %s images still need ALT text.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		quotaSupportProgress: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( 'You\'ve already optimised %1$s images — add credits to finish the remaining %2$s.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		quotaHeadlineSingular: '<?php echo esc_js( _n( '%s image still needs ALT text', '%s images still need ALT text', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		quotaHeadlinePlural: '<?php echo esc_js( _n( '%s image still needs ALT text', '%s images still need ALT text', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		quotaSupportSingular: '<?php echo esc_js( _n( 'Add credits to keep going — %s image still needs ALT text.', 'Add credits to keep going — %s images still need ALT text.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		quotaSupportPlural: '<?php echo esc_js( _n( 'Add credits to keep going — %s image still needs ALT text.', 'Add credits to keep going — %s images still need ALT text.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		quotaSupportProgress: '<?php echo esc_js( __( 'You\'ve already optimised %1$s images — add credits to finish the remaining %2$s.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		generationPaused: '<?php echo esc_js( __( 'Generation paused', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		checkSettingsToContinue: '<?php echo esc_js( __( 'Check settings to continue', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		libraryReadyToOptimise: '<?php echo esc_js( __( 'Library ready to optimise', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactQueued: '<?php echo esc_js( __( 'Ready when you are — start generating to move images into review.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactProcessing: '<?php echo esc_js( __( 'BeepBeep is working through your library now.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		impactAllClearSingle: '<?php echo esc_js( /* translators: %s: value */ _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		impactAllClearPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		impactAllClearSingle: '<?php echo esc_js( _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		impactAllClearPlural: '<?php echo esc_js( _n( 'You\'ve improved accessibility on %s image.', 'You\'ve improved accessibility on %s images.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		impactAllClearFallback: '<?php echo esc_js( __( 'Your library is fully optimised for accessibility and search.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		impactSoFarSingle: '<?php echo esc_js( /* translators: %s: value */ _n( 'You\'ve improved accessibility on %s image so far.', 'You\'ve improved accessibility on %s images so far.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		impactSoFarPlural: '<?php echo esc_js( /* translators: %s: value */ _n( 'You\'ve improved accessibility on %s image so far.', 'You\'ve improved accessibility on %s images so far.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		impactSoFarSingle: '<?php echo esc_js( _n( 'You\'ve improved accessibility on %s image so far.', 'You\'ve improved accessibility on %s images so far.', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		impactSoFarPlural: '<?php echo esc_js( _n( 'You\'ve improved accessibility on %s image so far.', 'You\'ve improved accessibility on %s images so far.', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedImageSingular: '<?php echo esc_js( _n( 'queued image', 'queued images', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		queuedImagePlural: '<?php echo esc_js( _n( 'queued image', 'queued images', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		imageLeftSingular: '<?php echo esc_js( _n( 'image left', 'images left', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		imageLeftPlural: '<?php echo esc_js( _n( 'image left', 'images left', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		startFailed: '<?php echo esc_js( __( 'Generation could not start. Please refresh and try again.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		startDidNotStart: '<?php echo esc_js( __( 'Generation did not start. Please try again.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		sessionExpired: '<?php echo esc_js( __( 'Your session expired. Please refresh and try again.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		noMissingFoundRescan: '<?php echo esc_js( __( 'No missing images were found. Please re-scan your library.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		preparingBulkRun: '<?php echo esc_js( __( 'Preparing bulk run...', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		etaSeconds: '<?php echo esc_js( /* translators: %d: number */ __( '%ds', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		etaMinutes: '<?php echo esc_js( /* translators: %d: number */ __( '%dm', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		etaSeconds: '<?php echo esc_js( __( '%ds', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		etaMinutes: '<?php echo esc_js( __( '%dm', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		batchReadyForReview: '<?php echo esc_js( __( 'Batch complete. Ready for review.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewComplete: '<?php echo esc_js( __( 'Review complete. Library is all clear.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveUpdating: '<?php echo esc_js( __( 'Updating review queue…', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		insightMinsEst: '<?php echo esc_js( /* translators: %s: value */ __( '%s min (est.)', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		insightImagesOptimisedSingular: '<?php echo esc_js( /* translators: %s: value */ __( '%s image optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		insightImagesOptimisedPlural: '<?php echo esc_js( /* translators: %s: value */ __( '%s images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightMinsEst: '<?php echo esc_js( __( '%s min (est.)', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightImagesOptimisedSingular: '<?php echo esc_js( __( '%s image optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightImagesOptimisedPlural: '<?php echo esc_js( __( '%s images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		insightAccessibleSuffix: '<?php echo esc_js( __( 'of images accessible', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		insightMinsSaved: '<?php echo esc_js( /* translators: %s: value */ __( '~%s mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightMinsSaved: '<?php echo esc_js( __( '~%s mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		insightMinsSavedZero: '<?php echo esc_js( __( '~0 mins saved', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		insightCoverageMeta: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s of %2$s images covered', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightCoverageMeta: '<?php echo esc_js( __( '%1$s of %2$s images covered', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		insightCoverageMetaZero: '<?php echo esc_js( __( 'Run a scan to measure coverage.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		insightSeoMetaSingular: '<?php echo esc_js( /* translators: %s: value */ __( '%s search-ready image', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		insightSeoMetaPlural: '<?php echo esc_js( /* translators: %s: value */ __( '%s search-ready images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightSeoMetaSingular: '<?php echo esc_js( __( '%s search-ready image', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		insightSeoMetaPlural: '<?php echo esc_js( __( '%s search-ready images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 	};
 
 	var PROMPT_TEXT = {
 		firstSuccessTitle: '<?php echo esc_js( __( 'Nice — your images now have ALT text 🎉', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		firstSuccessCopy: '<?php echo esc_js( __( 'Search engines and screen readers can now understand them.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		reviewAltText: '<?php echo esc_js( __( 'Review ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		generateMore: '<?php echo esc_js( __( 'Optimise more', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		generateMore: '<?php echo esc_js( __( 'Generate more', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		approveAll: '<?php echo esc_js( __( 'Approve all ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		editFew: '<?php echo esc_js( __( 'Edit a few manually', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		done: '<?php echo esc_js( __( 'Done', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		upgradeTitle: '<?php echo esc_js( /* translators: %s: value */ __( 'You’ve optimised %s images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		upgradeTitle: '<?php echo esc_js( __( 'You’ve optimised %s images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		upgradeCopy: '<?php echo esc_js( __( 'Upgrade to automate this for future uploads.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		enableAutomation: '<?php echo esc_js( __( 'Enable automatic ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-		creditUsed: '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( 'You’ve used %1$s of %2$s credits this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		creditUsed: '<?php echo esc_js( __( 'You’ve used %1$s of %2$s credits this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditLowTitle: '<?php echo esc_js( __( 'You’re running low on credits', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		creditLowCopy: '<?php echo esc_js( __( 'Upgrade to continue generating ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		upgradePlan: '<?php echo esc_js( __( 'Upgrade plan', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1449,6 +1512,7 @@ endif;
 	};
 
 	var lastStateTruthFailureLogAt = 0;
+	var heroMissingAttachmentIdsCache = null;
 
 	function logDashboardUi( eventName, context ) {
 		if ( window.BBAI_LOG && typeof window.BBAI_LOG.log === 'function' ) {
@@ -1477,6 +1541,141 @@ endif;
 		logDashboardUi( 'state_truth_failed', {
 			context: context || '',
 			message: error && error.message ? error.message : String( error || '' ),
+		} );
+	}
+
+	function getGenerationQuotaDebugContext( trigger ) {
+		var root = getDashboardRoot();
+		var truth = dashboardPolling.currentTruth || null;
+		var credits = truth ? getTruthCredits( truth ) : null;
+		var button = trigger || ( hero ? hero.querySelector( '[data-bbai-li-primary-cta]' ) : null );
+		var authState = root && root.getAttribute ? String( root.getAttribute( 'data-bbai-auth-state' ) || '' ) : '';
+		var quotaType = root && root.getAttribute ? String( root.getAttribute( 'data-bbai-quota-type' ) || '' ) : '';
+		var quotaSource = root && root.getAttribute ? String( root.getAttribute( 'data-bbai-quota-source' ) || '' ) : '';
+
+		if ( truth && truth.credits && typeof truth.credits === 'object' ) {
+			authState = authState || String( truth.credits.auth_state || truth.credits.authState || '' );
+			quotaType = quotaType || String( truth.credits.quota_type || truth.credits.quotaType || '' );
+			quotaSource = quotaSource || String( truth.credits.quota_source_displayed_to_user || truth.credits.quotaSourceDisplayedToUser || '' );
+		}
+
+		return {
+			auth_state: authState || 'unknown',
+			quota_type: quotaType || 'unknown',
+			quota_source_displayed_to_user: quotaSource || ( authState === 'anonymous' || quotaType === 'trial' ? 'anonymous_trial' : 'authenticated_account' ),
+			generation_button_enabled: !! ( button && ! button.disabled && button.getAttribute( 'aria-disabled' ) !== 'true' ),
+			credits_used: credits ? credits.used : parseDashboardIntAttr( root, 'data-bbai-credits-used', 0 ),
+			credits_total: credits ? credits.total : parseDashboardIntAttr( root, 'data-bbai-credits-total', 0 ),
+			credits_remaining: credits ? credits.remaining : parseDashboardIntAttr( root, 'data-bbai-credits-remaining', 0 ),
+		};
+	}
+
+	function normalizeGenerationAnalyticsSource( source ) {
+		source = String( source || 'dashboard' );
+		if ( source === 'library' || source === 'alt-library' || source === 'alt_library' ) {
+			return 'alt_library';
+		}
+		if ( source === 'footer' || source === 'footer-banner' ) {
+			return 'footer_banner';
+		}
+		if ( source === 'dashboard' || source === 'modal' || source === 'footer_banner' ) {
+			return source;
+		}
+		return 'dashboard';
+	}
+
+	function parseDashboardIntAttr( node, attr, fallback ) {
+		var raw = node && node.getAttribute ? node.getAttribute( attr ) : '';
+		var parsed = parseInt( raw, 10 );
+		return isNaN( parsed ) ? ( fallback || 0 ) : Math.max( 0, parsed );
+	}
+
+	function buildGenerationAnalyticsPayload( source, extra ) {
+		var root = getDashboardRoot();
+		var truth = dashboardPolling.currentTruth || null;
+		var counts = truth ? getTruthCounts( truth ) : null;
+		var credits = truth ? getTruthCredits( truth ) : null;
+		var site = truth && truth.site && typeof truth.site === 'object' ? truth.site : {};
+		var payload = Object.assign( {}, getGenerationQuotaDebugContext(), {
+			source: normalizeGenerationAnalyticsSource( source || 'dashboard' ),
+			requested_count: counts ? Math.max( 0, counts.missing || 0 ) : parseDashboardIntAttr( root, 'data-bbai-missing-count', BBAI_HERO_CFG.missingCount || 0 ),
+			missing_count: counts ? Math.max( 0, counts.missing || 0 ) : parseDashboardIntAttr( root, 'data-bbai-missing-count', BBAI_HERO_CFG.missingCount || 0 ),
+			review_count: counts ? Math.max( 0, counts.review || 0 ) : parseDashboardIntAttr( root, 'data-bbai-weak-count', 0 ),
+			credits_remaining: credits ? Math.max( 0, credits.remaining || 0 ) : parseDashboardIntAttr( root, 'data-bbai-credits-remaining', 0 ),
+			plan: credits && credits.plan ? String( credits.plan ) : ( root ? String( root.getAttribute( 'data-bbai-plan-label' ) || '' ) : '' ),
+			is_logged_in: !! ( root && root.getAttribute( 'data-bbai-has-connected-account' ) === '1' ),
+			site_hash_present: !! ( site.site_hash || site.siteHash || site.hash ),
+			ajax_action: '',
+			error_code: '',
+			error_message: '',
+		} );
+		if ( extra && typeof extra === 'object' ) {
+			Object.keys( extra ).forEach( function ( key ) {
+				if ( extra[ key ] !== undefined ) {
+					payload[ key ] = extra[ key ];
+				}
+			} );
+		}
+		return payload;
+	}
+
+	function emitGenerationAnalytics( eventName, source, extra ) {
+		var payload = buildGenerationAnalyticsPayload( source || 'dashboard', extra || {} );
+		try {
+			document.dispatchEvent( new CustomEvent( 'bbai:analytics', {
+				detail: Object.assign( {
+					event: eventName,
+					timestamp: Date.now(),
+				}, payload ),
+			} ) );
+		} catch ( error ) {
+			// Ignore analytics dispatch failures; generation flow must continue.
+		}
+	}
+
+	function getGenerationJobIdFromPayload( data ) {
+		if ( ! data || typeof data !== 'object' ) {
+			return '';
+		}
+		if ( data.job_id || data.jobId ) {
+			return String( data.job_id || data.jobId );
+		}
+		if ( data.job && typeof data.job === 'object' && ( data.job.id || data.job.job_id || data.job.jobId ) ) {
+			return String( data.job.id || data.job.job_id || data.job.jobId );
+		}
+		if ( data.job_state && typeof data.job_state === 'object' && ( data.job_state.id || data.job_state.job_id || data.job_state.jobId ) ) {
+			return String( data.job_state.id || data.job_state.job_id || data.job_state.jobId );
+		}
+		return '';
+	}
+
+	function logGenerationStartFailureForDev( detail ) {
+		if ( BBAI_HERO_CFG.wpDebug !== '1' ) {
+			return;
+		}
+		if ( window.console && typeof window.console.error === 'function' ) {
+			window.console.error( '[dashboard-generation] generation_start_failed', detail || {} );
+		}
+	}
+
+	function recoverGenerationStartFailure( trigger, message, detail ) {
+		var failureDetail = detail || {};
+		clearHeroGenerationWatchdog();
+		clearHeroMissingAttachmentIdsCache();
+		releaseInlineGenerationLock();
+		clearOptimisticAction();
+		dashboardPolling.optimisticAction = '';
+		if ( trigger ) {
+			setBusy( trigger, false );
+		}
+		showStatusLine( message || TEXT.startFailed, 'error' );
+		logGenerationStartFailureForDev( failureDetail );
+		emitGenerationAnalytics( 'generation_start_failed', failureDetail.source || 'dashboard', {
+			requested_count: failureDetail.requested_count,
+			ajax_action: failureDetail.ajax_action || '',
+			error_code: failureDetail.error_code || 'generation_start_failed',
+			error_message: failureDetail.error_message || message || TEXT.startFailed,
+			job_id: failureDetail.job_id || '',
 		} );
 	}
 
@@ -2265,6 +2464,24 @@ endif;
 			isPro = true;
 		}
 
+		fallbackRoot = getDashboardRoot();
+		if ( fallbackRoot ) {
+			fallbackUsed = parseInt( fallbackRoot.getAttribute( 'data-bbai-credits-used' ) || '', 10 );
+			fallbackTotal = parseInt( fallbackRoot.getAttribute( 'data-bbai-credits-total' ) || '', 10 );
+			fallbackRemaining = parseInt( fallbackRoot.getAttribute( 'data-bbai-credits-remaining' ) || '', 10 );
+			if (
+				! isNaN( fallbackUsed ) &&
+				! isNaN( fallbackTotal ) &&
+				fallbackTotal === total &&
+				fallbackUsed > used
+			) {
+				used = Math.min( total, Math.max( 0, fallbackUsed ) );
+				remaining = ! isNaN( fallbackRemaining )
+					? Math.max( 0, Math.min( total, fallbackRemaining ) )
+					: Math.max( 0, total - used );
+			}
+		}
+
 		return {
 			used: used,
 			total: total,
@@ -2327,17 +2544,36 @@ endif;
 			return Promise.reject( missingConfigError );
 		}
 
+		if ( bbaiShouldForceDashboardTruthRefresh( context ) ) {
+			try {
+				var parsedUrl = new URL( stateTruthUrl, window.location.href );
+				parsedUrl.searchParams.set( 'force', '1' );
+				parsedUrl.searchParams.set( 'context', String( context || '' ) );
+				stateTruthUrl = parsedUrl.toString();
+			} catch ( e ) {
+				stateTruthUrl += ( -1 === stateTruthUrl.indexOf( '?' ) ? '?' : '&' ) + 'force=1&context=' + encodeURIComponent( String( context || '' ) );
+			}
+		}
+
 		var controller = reqOpts.controller || ( typeof AbortController !== 'undefined' ? new AbortController() : null );
 		var startedAt = Date.now();
 		var timeoutMs = reqOpts.timeoutMs || ( function () {
 			var s = String( hero.getAttribute( 'data-bbai-li-state' ) || '' ).toUpperCase();
-			return ( 'QUEUED' === s || 'PROCESSING' === s ) ? 15000 : 8000;
+			return ( 'QUEUED' === s || 'PROCESSING' === s ) ? 25000 : 15000;
 		}() );
 		var timeoutId = ( reqOpts.timeoutId === 0 || reqOpts.timeoutId )
 			? reqOpts.timeoutId
 			: ( controller
 			? window.setTimeout( function () {
-				try { controller.abort(); } catch ( e ) {}
+				if ( window.BBAI_LOG && typeof window.BBAI_LOG.info === 'function' && window.console && typeof window.console.debug === 'function' ) {
+					window.console.debug( '[bbai-dashboard-state]', {
+						event: 'dashboard_state_fetch_slow',
+						reason: context || '',
+						sequence: ( window.bbaiDashboardStateRequest && window.bbaiDashboardStateRequest.sequence ) || 0,
+						durationMs: timeoutMs,
+						endpoint: 'state-truth',
+					} );
+				}
 			}, timeoutMs )
 			: null );
 
@@ -2866,14 +3102,13 @@ endif;
 	}
 
 	function getPollIntervalForState( state ) {
-		// Consolidated dashboard polling: 15s when visible, 3s while generation is active.
-		// (Generation-active is represented by QUEUED/PROCESSING states in truth.)
+		// Poll only while generation is active; stable dashboard states refresh on explicit actions.
 		switch ( String( state || '' ).toUpperCase() ) {
 			case 'QUEUED':
 			case 'PROCESSING':
 				return 3000;
 			default:
-				return 15000;
+				return 0;
 		}
 	}
 
@@ -3109,8 +3344,8 @@ endif;
 			var minutes = Math.max( 1, Math.floor( seconds / 60 ) );
 			return replaceTokens(
 				1 === minutes
-					? '<?php echo esc_js( /* translators: %d: number */ _n( '%d minute ago', '%d minutes ago', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>'
-					: '<?php echo esc_js( /* translators: %d: number */ _n( '%d minute ago', '%d minutes ago', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+					? '<?php echo esc_js( _n( '%d minute ago', '%d minutes ago', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>'
+					: '<?php echo esc_js( _n( '%d minute ago', '%d minutes ago', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 				{ '%d': String( minutes ) }
 			);
 		}
@@ -3118,16 +3353,16 @@ endif;
 			var hours = Math.max( 1, Math.floor( seconds / 3600 ) );
 			return replaceTokens(
 				1 === hours
-					? '<?php echo esc_js( /* translators: %d: number */ _n( '%d hour ago', '%d hours ago', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>'
-					: '<?php echo esc_js( /* translators: %d: number */ _n( '%d hour ago', '%d hours ago', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+					? '<?php echo esc_js( _n( '%d hour ago', '%d hours ago', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>'
+					: '<?php echo esc_js( _n( '%d hour ago', '%d hours ago', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 				{ '%d': String( hours ) }
 			);
 		}
 		var days = Math.max( 1, Math.floor( seconds / 86400 ) );
 		return replaceTokens(
 			1 === days
-				? '<?php echo esc_js( /* translators: %d: number */ _n( '%d day ago', '%d days ago', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>'
-				: '<?php echo esc_js( /* translators: %d: number */ _n( '%d day ago', '%d days ago', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				? '<?php echo esc_js( _n( '%d day ago', '%d days ago', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>'
+				: '<?php echo esc_js( _n( '%d day ago', '%d days ago', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>',
 			{ '%d': String( days ) }
 		);
 	}
@@ -3333,8 +3568,19 @@ endif;
 
 	function buildSummaryFromTruth( state, truth ) {
 		var counts = getTruthCounts( truth );
+		var scanned = Math.max( 0, counts.missing + counts.review + counts.complete );
 
 		return [
+			{
+				label: TEXT.imagesScannedLabel,
+				value: formatCount( scanned ),
+				mod: 'muted',
+			},
+			{
+				label: TEXT.optimizedLabel,
+				value: formatCount( counts.complete ),
+				mod: 'ok',
+			},
 			{
 				label: TEXT.missingLabel,
 				value: formatCount( counts.missing ),
@@ -3343,9 +3589,8 @@ endif;
 			{
 				label: TEXT.reviewLabel,
 				value: formatCount( counts.review ),
-				mod: 'NEEDS_REVIEW' === state ? 'primary' : ( counts.review > 0 ? 'warn' : 'ok' ),
+				mod: counts.review > 0 ? 'warn' : 'ok',
 			},
-			buildCreditsSummaryItem( state, truth ),
 		];
 	}
 
@@ -3380,8 +3625,8 @@ endif;
 				center_sub_label: 1 === queuedTotal ? TEXT.queuedImageSingular : TEXT.queuedImagePlural,
 				aria_label: formatSingularPlural(
 					queuedTotal,
-					'<?php echo esc_js( /* translators: %s: value */ _n( '%s image queued; waiting to start', '%s images queued; waiting to start', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-					'<?php echo esc_js( /* translators: %s: value */ _n( '%s image queued; waiting to start', '%s images queued; waiting to start', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>'
+					'<?php echo esc_js( _n( '%s image queued; waiting to start', '%s images queued; waiting to start', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
+					'<?php echo esc_js( _n( '%s image queued; waiting to start', '%s images queued; waiting to start', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>'
 				),
 				segments: segments,
 				job_done: 0,
@@ -3430,6 +3675,7 @@ endif;
 		var counts = getTruthCounts( truth );
 		var job = getTruthJob( truth );
 		var dashboardMissingCap = getDashboardRootMissingCount();
+		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 50 && counts.missing > 0;
 		var queuedTotal = job && ( job.queue_count > 0 || job.total > 0 )
 			? Math.max( job.queue_count || 0, Math.max( 0, ( job.total || 0 ) - ( job.done || 0 ) ), job.total || 0 )
 			: counts.missing;
@@ -3441,7 +3687,7 @@ endif;
 			hero: {
 				badge: { text: TEXT.queuedBadge, mod: 'gray' },
 				headline: formatSingularPlural( queuedTotal, TEXT.queuedHeadlineSingular, TEXT.queuedHeadlinePlural ),
-				support: TEXT.queuedSupport,
+				support: isFirstFreeGeneration ? TEXT.postSignupFirstGeneration : TEXT.queuedSupport,
 				variant: 'queued',
 				primary_cta: {
 					label: replaceTokens(
@@ -3528,26 +3774,14 @@ endif;
 	}
 
 	function buildStableSummaryFromTruth( state, truth ) {
-		var counts = getTruthCounts( truth );
-
-		if ( 'ALL_CLEAR' === state ) {
-			return [
-				{
-					label: TEXT.optimizedLabel,
-					value: formatCount( counts.complete ),
-					mod: 'ok',
-				},
-				buildCreditsSummaryItem( state, truth ),
-			];
-		}
-
 		return buildSummaryFromTruth( state, truth );
 	}
 
 	function buildStableDonutFromTruth( state, truth ) {
 		var counts = getTruthCounts( truth );
 		var total = Math.max( 1, counts.total || counts.missing + counts.review + counts.complete + counts.failed );
-		var pct = Math.max( 0, Math.min( 100, Math.round( ( counts.complete / total ) * 100 ) ) );
+		var covered = Math.max( 0, Math.min( total, counts.complete + counts.review ) );
+		var pct = Math.max( 0, Math.min( 100, Math.round( ( covered / total ) * 100 ) ) );
 		var segments = {
 			optimized: counts.complete,
 			weak: counts.review,
@@ -3558,41 +3792,17 @@ endif;
 		switch ( state ) {
 			case 'MIXED_ATTENTION':
 			case 'MISSING_ALT':
-				return {
-					pct: pct,
-					color: 'amber',
-					animated: false,
-					center_label: formatCount( counts.missing ),
-					center_sub_label: 'missing ALT',
-					aria_label: replaceTokens( '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( '%1$s of %2$s images have ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>', {
-						'%1$s': formatCount( counts.complete ),
-						'%2$s': formatCount( total ),
-					} ),
-					segments: segments,
-				};
 			case 'NEEDS_REVIEW':
-				return {
-					pct: pct,
-					color: 'blue',
-					animated: false,
-					center_label: formatCount( counts.review ),
-					center_sub_label: 'to review',
-					aria_label: formatSingularPlural(
-						counts.review,
-						'<?php echo esc_js( /* translators: %s: value */ _n( '%s image needs review', '%s images need review', 1, 'beepbeep-ai-alt-text-generator' ) ); ?>',
-						'<?php echo esc_js( /* translators: %s: value */ _n( '%s image needs review', '%s images need review', 2, 'beepbeep-ai-alt-text-generator' ) ); ?>'
-					),
-					segments: segments,
-				};
 			case 'QUOTA_EXHAUSTED':
 				return {
 					pct: pct,
-					color: 'amber',
+					color: 'NEEDS_REVIEW' === state ? 'blue' : 'amber',
 					animated: false,
-					center_label: formatCount( counts.missing ),
-					center_sub_label: 'credits needed',
-					aria_label: replaceTokens( '<?php echo esc_js( /* translators: %d: number */ __( '%d%% of images have ALT text — credits exhausted', 'beepbeep-ai-alt-text-generator' ) ); ?>', {
-						'%d': String( pct ),
+					center_label: pct + '%',
+					center_sub_label: TEXT.completeLabel,
+					aria_label: replaceTokens( '<?php echo esc_js( __( '%1$s of %2$s images have ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>', {
+						'%1$s': formatCount( covered ),
+						'%2$s': formatCount( total ),
 					} ),
 					segments: segments,
 				};
@@ -3601,8 +3811,8 @@ endif;
 					pct: 100,
 					color: 'green',
 					animated: false,
-					center_label: '✓',
-					center_sub_label: '',
+					center_label: '100%',
+					center_sub_label: TEXT.completeLabel,
 					aria_label: '<?php echo esc_js( __( 'All images have ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 					segments: segments,
 				};
@@ -3624,21 +3834,12 @@ endif;
 		var variant = reuseCurrentState && current.variant ? current.variant : ( 'ALL_CLEAR' === state ? 'success' : 'default' );
 		var primaryCta = reuseCurrentState ? current.primaryCta : null;
 		var secondaryCta = reuseCurrentState ? current.secondaryCta : null;
+		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 50 && counts.missing > 0;
 
 		switch ( state ) {
 			case 'MIXED_ATTENTION':
 				headline =
-					formatSingularPlural(
-						counts.missing,
-						TEXT.missingAltSingular,
-						TEXT.missingAltPlural
-					) +
-					', ' +
-					formatSingularPlural(
-						counts.review,
-						TEXT.readyReviewSingular,
-						TEXT.readyReviewPlural
-					);
+					formatSingularPlural( counts.missing, TEXT.missingHeadlineSingular, TEXT.missingHeadlinePlural );
 
 				support = TEXT.mixedSupport;
 
@@ -3651,37 +3852,23 @@ endif;
 				}
 
 				primaryCta = {
-					label: replaceTokens(
-						1 === counts.missing ? TEXT.generateAltForSingular : TEXT.generateAltForPlural,
-						{ '%s': formatCount( counts.missing ) }
-					),
+					label: TEXT.generateMissingAlt,
 					busy_label: ACTION_STATUS[ 'generate-missing' ] || TEXT.working,
 					action: 'generate-missing',
 					href: '#',
 				};
 
 				secondaryCta = {
-					label: 'Review ' + formatCount( counts.review ) + ( counts.review === 1 ? ' image' : ' images' ),
+					label: TEXT.reviewIndividually,
 					action: 'navigate',
 					href: getReviewLibraryHref(),
 				};
 
-				console.log( '[bbai-render] fallback_state=MIXED_ATTENTION', {
-					missing: counts.missing,
-					review: counts.review,
-				} );
 
 				break;
 			case 'MISSING_ALT':
 				headline = formatSingularPlural( counts.missing, TEXT.missingHeadlineSingular, TEXT.missingHeadlinePlural );
-				support = reuseCurrentState && current.support
-					? current.support
-					: ( credits.isPro && counts.complete > 0
-						? replaceTokens( TEXT.missingSupportProgress, {
-							'%1$s': formatCount( counts.complete ),
-							'%2$s': formatCount( counts.missing ),
-						} )
-						: TEXT.missingSupport );
+				support = TEXT.missingSupport;
 				if ( counts.missing > 20 ) {
 					badge = badge || { text: TEXT.actionNeededBadge, mod: 'amber' };
 				} else if ( counts.missing > 5 ) {
@@ -3690,10 +3877,7 @@ endif;
 					badge = null;
 				}
 				primaryCta = primaryCta || {
-					label: replaceTokens(
-						1 === counts.missing ? TEXT.generateAltForSingular : TEXT.generateAltForPlural,
-						{ '%s': formatCount( counts.missing ) }
-					),
+					label: TEXT.generateMissingAlt,
 					busy_label: ACTION_STATUS[ 'generate-missing' ] || TEXT.working,
 					action: 'generate-missing',
 					href: '#',
@@ -3706,17 +3890,12 @@ endif;
 				break;
 			case 'NEEDS_REVIEW':
 				headline = formatSingularPlural( counts.review, TEXT.reviewHeadlineSingular, TEXT.reviewHeadlinePlural );
-				support = reuseCurrentState && current.support
-					? current.support
-					: ( credits.isPro
-						? formatSingularPlural( counts.review, TEXT.reviewSupportSingular, TEXT.reviewSupportPlural )
-						: TEXT.reviewSupport );
+				support = TEXT.reviewSupport;
 				badge = badge || { text: TEXT.reviewReadyBadge, mod: 'blue' };
 				primaryCta = primaryCta || {
-					label: TEXT.approveAll,
-					busy_label: ACTION_STATUS[ 'approve-all' ] || TEXT.working,
-					action: 'approve-all',
-					href: '#',
+					label: TEXT.reviewIndividually,
+					action: 'navigate',
+					href: getReviewLibraryHref(),
 				};
 				secondaryCta = secondaryCta || {
 					label: TEXT.reviewIndividually,
@@ -3758,7 +3937,7 @@ endif;
 				primaryCta = primaryCta || {
 					label: TEXT.uploadMoreImages,
 					action: 'navigate',
-					href: '<?php echo esc_js( admin_url( 'upload.php' ) ); ?>',
+					href: '<?php echo esc_js( admin_url( 'admin.php?page=bbai-settings' ) ); ?>',
 				};
 				secondaryCta = secondaryCta || {
 					label: TEXT.rescanLibrary,
@@ -3783,11 +3962,7 @@ endif;
 				variant: variant,
 				primary_cta: primaryCta,
 				secondary_cta: secondaryCta,
-				library_cta: 'ALL_CLEAR' === state ? {
-					label: TEXT.openAltLibrary,
-					action: 'navigate',
-					href: getLibraryHref(),
-				} : null,
+				library_cta: null,
 				summary: summary,
 			},
 			donut: buildStableDonutFromTruth( state, truth ),
@@ -3894,7 +4069,7 @@ endif;
 	 * Without this, SSR/Poller update the root data attributes but the visible label/bar stayed stale until reload.
 	 */
 	function syncHeroCreditBlockFromTruth( truth ) {
-		var wrap = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' );
+		var wrap = hero.querySelector( '[data-bbai-hero-credit-usage="1"]' ) || document.querySelector( '[data-bbai-hero-credit-usage="1"]' );
 		if ( ! wrap ) {
 			return;
 		}
@@ -3903,15 +4078,17 @@ endif;
 		var total = Math.max( 1, credits.total );
 		var remaining = Math.max( 0, credits.remaining );
 		var pct = Math.min( 100, Math.max( 0, Math.round( ( used / total ) * 100 ) ) );
+		var creditState = resolveHeroCreditState( used, total, remaining );
 
 		// Idempotent rendering: skip all DOM writes when credits are unchanged.
 		// Prevents flicker from re-applying text/classes/animations on every poll.
-		window.bbaiLastRenderedCredits = window.bbaiLastRenderedCredits || { used: null, limit: null, remaining: null, pct: null };
+		window.bbaiLastRenderedCredits = window.bbaiLastRenderedCredits || { used: null, limit: null, remaining: null, pct: null, creditState: null };
 		var prev = window.bbaiLastRenderedCredits;
 		var unchanged = prev
 			&& prev.used === used
 			&& prev.limit === total
-			&& prev.remaining === remaining;
+			&& prev.remaining === remaining
+			&& prev.creditState === creditState;
 		var creditsDebug = !!( window.BBAI_DEBUG || ( window.BBAI && window.BBAI.debug ) );
 		if ( unchanged ) {
 			if ( creditsDebug ) {
@@ -3920,14 +4097,13 @@ endif;
 			return;
 		}
 
-		window.bbaiLastRenderedCredits = { used: used, limit: total, remaining: remaining, pct: pct };
+		window.bbaiLastRenderedCredits = { used: used, limit: total, remaining: remaining, pct: pct, creditState: creditState };
 		if ( creditsDebug ) {
 			logCredits( 'updated', { previous: prev, next: window.bbaiLastRenderedCredits } );
 		}
 
 		var state = getStateTruthState( truth );
 		var isFreePlan = ! credits.isPro;
-		var creditState = remaining <= 0 ? 'empty' : ( remaining <= 10 ? 'low' : 'healthy' );
 		var counts = normalizeCounts( truth && truth.counts ? truth.counts : {} );
 
 		if ( wrap.getAttribute( 'data-bbai-hero-credits-used' ) !== String( used ) ) {
@@ -3939,7 +4115,7 @@ endif;
 		if ( wrap.getAttribute( 'data-bbai-hero-credits-limit' ) !== String( total ) ) {
 			wrap.setAttribute( 'data-bbai-hero-credits-limit', String( total ) );
 		}
-		// These are inside the credit block, but do not change the “10 / 50 used this month” line.
+		// These are inside the credit block; keep monthly usage secondary to coverage progress.
 		// Keep them in sync without re-writing when unchanged.
 		if ( wrap.getAttribute( 'data-bbai-hero-missing-count' ) !== String( counts.missing ) ) {
 			wrap.setAttribute( 'data-bbai-hero-missing-count', String( counts.missing ) );
@@ -3995,7 +4171,7 @@ endif;
 		var ctx = wrap.querySelector( '[data-bbai-hero-credit-context="1"]' );
 		var ctxLine = buildHeroCreditContextLine( remaining, state );
 		if ( ctx ) {
-			ctx.classList.toggle( 'bbai-credit-context--warning', remaining < 10 );
+			ctx.classList.toggle( 'bbai-credit-context--warning', creditState !== 'healthy' );
 			if ( ctxLine ) {
 				ctx.removeAttribute( 'hidden' );
 				ctx.textContent = ctxLine;
@@ -4208,32 +4384,32 @@ endif;
 		if ( attention <= 0 ) {
 			pct = 100;
 			headline = '<?php echo esc_js( __( 'You’re 100% optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
-			supporting = '<?php echo esc_js( __( 'All images are done.', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			supporting = '<?php echo esc_js( __( 'All images are done. nAi will keep watching new uploads.', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			processed = formatCount( total ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
-			primaryLabel = TEXT.uploadMoreImages || '<?php echo esc_js( __( 'Add new images →', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryLabel = TEXT.uploadMoreImages || '<?php echo esc_js( __( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			primaryHref = '<?php echo esc_js( admin_url( 'upload.php' ) ); ?>';
 			primaryAction = 'navigate';
 			primaryBbaiAction = '';
-			secondaryLabel = TEXT.openAltLibrary || '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			secondaryLabel = '<?php echo esc_js( __( 'View library status', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			secondaryHref = getLibraryHref();
 			secondaryAction = 'navigate';
 			secondaryBbaiAction = '';
 			strip.setAttribute( 'data-bbai-retention-trigger', 'all_clear' );
 		} else if ( missing > 0 ) {
-			headline = '<?php echo esc_js( /* translators: %1$s: value, %2$s: value */ __( 'You’re %1$s% optimised — finish the last %2$s%', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+			headline = '<?php echo esc_js( __( 'You’re %1$s% optimised — finish the last %2$s%', 'beepbeep-ai-alt-text-generator' ) ); ?>'
 				.replace( '%1$s', String( pct ) )
 				.replace( '%2$s', String( Math.max( 1, 100 - pct ) ) );
 			supporting = formatSingularPlural(
 				attention,
-				'<?php echo esc_js( /* translators: %s: value */ __( '%s image still needs attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-				'<?php echo esc_js( /* translators: %s: value */ __( '%s images still need attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+				'<?php echo esc_js( __( '%s image still needs attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				'<?php echo esc_js( __( '%s images still need attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>'
 			);
 			processed = formatCount( complete ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
-			primaryLabel = TEXT.generateMissingAlt || '<?php echo esc_js( __( 'Optimise ALT text', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			primaryLabel = TEXT.generateMissingAlt || '<?php echo esc_js( __( 'Generate ALT Text Now', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			primaryHref = '#';
 			primaryAction = 'generate-missing';
 			primaryBbaiAction = 'generate_missing';
-			secondaryLabel = TEXT.openAltLibrary || '<?php echo esc_js( __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ); ?>';
+			secondaryLabel = '<?php echo esc_js( __( 'Review queue', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			secondaryHref = getLibraryHref();
 			secondaryAction = 'navigate';
 			secondaryBbaiAction = '';
@@ -4241,13 +4417,13 @@ endif;
 		} else {
 			headline = formatSingularPlural(
 				review,
-				'<?php echo esc_js( /* translators: %s: value */ __( '%s image needs review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-				'<?php echo esc_js( /* translators: %s: value */ __( '%s images need review', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+				'<?php echo esc_js( __( '%s image needs review', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				'<?php echo esc_js( __( '%s images need review', 'beepbeep-ai-alt-text-generator' ) ); ?>'
 			);
 			supporting = formatSingularPlural(
 				review,
-				'<?php echo esc_js( /* translators: %s: value */ __( '%s image still needs attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
-				'<?php echo esc_js( /* translators: %s: value */ __( '%s images still need attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>'
+				'<?php echo esc_js( __( '%s image still needs attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+				'<?php echo esc_js( __( '%s images still need attention.', 'beepbeep-ai-alt-text-generator' ) ); ?>'
 			);
 			processed = formatCount( complete ) + ' / ' + formatCount( total ) + ' <?php echo esc_js( __( 'images optimised', 'beepbeep-ai-alt-text-generator' ) ); ?>';
 			primaryLabel = '<?php echo esc_js( __( 'Review now', 'beepbeep-ai-alt-text-generator' ) ); ?>';
@@ -5037,11 +5213,15 @@ endif;
 
 		var domUsed = root ? parseInt( root.getAttribute( 'data-bbai-credits-used' ) || '', 10 ) : NaN;
 		var domTotal = root ? parseInt( root.getAttribute( 'data-bbai-credits-total' ) || '', 10 ) : NaN;
+		var domRemaining = root ? parseInt( root.getAttribute( 'data-bbai-credits-remaining' ) || '', 10 ) : NaN;
 		if ( root ) {
 			if ( ! isNaN( domUsed ) && domUsed !== incomingCredits.used ) {
 				return false;
 			}
 			if ( ! isNaN( domTotal ) && domTotal !== incomingCredits.total ) {
+				return false;
+			}
+			if ( ! isNaN( domRemaining ) && domRemaining !== incomingCredits.remaining ) {
 				return false;
 			}
 		}
@@ -5052,6 +5232,10 @@ endif;
 		}
 		var heroLim = heroCredit ? parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-limit' ) || '', 10 ) : NaN;
 		if ( ! isNaN( heroLim ) && heroLim !== incomingCredits.total ) {
+			return false;
+		}
+		var heroRemaining = heroCredit ? parseInt( heroCredit.getAttribute( 'data-bbai-hero-credits-remaining' ) || '', 10 ) : NaN;
+		if ( ! isNaN( heroRemaining ) && heroRemaining !== incomingCredits.remaining ) {
 			return false;
 		}
 
@@ -5120,6 +5304,7 @@ endif;
 			return Promise.resolve( truth );
 		}
 		if ( shouldSkipTruthUiUpdate( truth, context, forceResolved ) ) {
+			syncCreditsOnlyFromTruth( truth );
 			syncDashboardRootFromTruth( truth );
 			syncRetentionStripFromTruth( truth );
 			markTruthSeenWithoutUiUpdate( truth );
@@ -5330,8 +5515,11 @@ endif;
 			stopPolling( 'hidden' );
 			return;
 		}
-		if ( ! shouldPollState( currentState ) && ! dashboardPolling.requiresResolvedSync && 'startup' !== pollContext ) {
+		if ( ! shouldPollState( currentState ) && ! dashboardPolling.requiresResolvedSync && ( 'startup' !== pollContext || ! hasStartupDashboardDomMismatch() ) ) {
 			stopPolling( 'stable' );
+			if ( 'startup' === pollContext ) {
+				markDashboardStartupTruthResolved();
+			}
 			return;
 		}
 
@@ -5512,14 +5700,25 @@ endif;
 	}
 
 	function fetchMissingAttachmentIds( limit ) {
+		var normalizedLimit = Math.max( 1, Math.min( 500, parseInt( limit, 10 ) || 500 ) );
+		if (
+			heroMissingAttachmentIdsCache &&
+			heroMissingAttachmentIdsCache.limit === normalizedLimit &&
+			heroMissingAttachmentIdsCache.promise &&
+			Date.now() - heroMissingAttachmentIdsCache.startedAt < 30000
+		) {
+			return heroMissingAttachmentIdsCache.promise;
+		}
+
 		var body = new URLSearchParams();
+		var request;
 		body.append( 'action', 'beepbeepai_get_attachment_ids' );
 		body.append( 'nonce', BBAI_HERO_CFG.ajaxNonce );
 		body.append( 'scope', 'missing' );
-		body.append( 'limit', String( limit ) );
+		body.append( 'limit', String( normalizedLimit ) );
 		body.append( 'offset', '0' );
 
-		return fetch( BBAI_HERO_CFG.ajaxUrl, {
+		request = fetch( BBAI_HERO_CFG.ajaxUrl, {
 			method:      'POST',
 			credentials: 'same-origin',
 			headers:     { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -5546,27 +5745,58 @@ endif;
 				throw new Error( 'list invalid' );
 			}
 			return json.data.ids;
+		} )
+		.catch( function ( error ) {
+			clearHeroMissingAttachmentIdsCache();
+			throw error;
 		} );
+
+		heroMissingAttachmentIdsCache = {
+			limit: normalizedLimit,
+			promise: request,
+			startedAt: Date.now(),
+		};
+		return request;
 	}
 
-	/**
-	 * POST to the WP-queue bulk endpoint — works for both trial and licensed users.
-	 * attachment_ids must be sent as a PHP array (attachment_ids[]) not JSON.
-	 */
-	function postBulkQueue( ids ) {
-		var body = new URLSearchParams();
-		body.append( 'action',  'beepbeepai_bulk_queue' );
-		body.append( 'nonce',   BBAI_HERO_CFG.ajaxNonce );
-		body.append( 'source',  'dashboard' );
-		body.append( 'skip_schedule', '1' );
-		ids.forEach( function ( id ) { body.append( 'attachment_ids[]', id ); } );
+	function clearHeroMissingAttachmentIdsCache() {
+		heroMissingAttachmentIdsCache = null;
+	}
 
-		return fetch( BBAI_HERO_CFG.ajaxUrl, {
-			method:      'POST',
-			credentials: 'same-origin',
-			headers:     { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body:        body.toString(),
-		} ).then( function ( res ) { return res.json(); } );
+	function getGenerationRequestLimit() {
+		var missing = Math.max( 0, Math.min( 500, parseInt( BBAI_HERO_CFG.missingCount, 10 ) || 0 ) );
+		var creditUsage;
+		var remaining;
+
+		if ( ! BBAI_HERO_CFG.enforceCreditLimit ) {
+			return missing;
+		}
+
+		creditUsage = hero.querySelector( '[data-bbai-hero-credit-usage]' );
+		remaining = creditUsage ? parseInt( creditUsage.getAttribute( 'data-bbai-hero-credits-remaining' ) || '', 10 ) : NaN;
+		if ( isNaN( remaining ) ) {
+			remaining = parseInt( BBAI_HERO_CFG.creditsRemaining, 10 );
+		}
+
+		return Math.min( missing, Math.max( 0, isNaN( remaining ) ? missing : remaining ) );
+	}
+
+	function preloadMissingAttachmentIds() {
+		var primaryCta = getPrimaryCta();
+		var limit;
+		if ( ! primaryCta || ( primaryCta.getAttribute( 'data-bbai-li-action' ) || primaryCta.getAttribute( 'data-action' ) || '' ) !== 'generate-missing' ) {
+			return;
+		}
+		if ( ! BBAI_HERO_CFG.ajaxUrl || ! BBAI_HERO_CFG.ajaxNonce || ! ( BBAI_HERO_CFG.missingCount > 0 ) ) {
+			return;
+		}
+		limit = getGenerationRequestLimit();
+		if ( limit <= 0 ) {
+			return;
+		}
+		fetchMissingAttachmentIds( limit ).catch( function () {
+			// Click-time lookup remains authoritative if warmup fails.
+		} );
 	}
 
 	function dispatchGenerateMissing( e, trigger ) {
@@ -5576,34 +5806,62 @@ endif;
 			e.stopImmediatePropagation();
 		}
 
+		logDashboardUi( 'generation_button_clicked', Object.assign( {
+			source: 'dashboard',
+			ajax_action: 'beepbeepai_get_attachment_ids',
+		}, getGenerationQuotaDebugContext( trigger ) ) );
+
+		emitGenerationAnalytics( 'generation_cta_clicked', 'dashboard', {
+			ajax_action: 'beepbeepai_get_attachment_ids',
+		} );
+
 		if ( ! acquireInlineGenerationLock( e, 'dashboard_generate' ) ) {
 			return;
 		}
 
 		if ( ! BBAI_HERO_CFG.ajaxUrl || ! BBAI_HERO_CFG.ajaxNonce ) {
+			releaseInlineGenerationLock();
 			if ( runEstablishedGenerateFlow( e ) ) {
 				return;
 			}
-			releaseInlineGenerationLock();
-			showStatusLine( TEXT.startFailed );
+			recoverGenerationStartFailure( trigger, TEXT.startFailed, {
+				source: 'dashboard',
+				ajax_action: 'beepbeepai_get_attachment_ids',
+				error_code: 'missing_ajax_config',
+				error_message: TEXT.startFailed,
+			} );
 			return;
 		}
 
-		logDashboardUi( 'optimistic_starting', { action: 'generate-missing' } );
 		markOptimisticAction( 'generate-missing' );
 		setBusy( trigger, true );
 		showStatusLine( ACTION_STATUS[ 'generate-missing' ] );
 		flashSummaryUpdating();
 
-		var limit = Math.max( 1, Math.min( 500, BBAI_HERO_CFG.missingCount || 500 ) );
+		var limit = getGenerationRequestLimit();
 		var idsQueued = null;
+		if ( limit <= 0 ) {
+			recoverGenerationStartFailure( trigger, TEXT.outOfCredits || TEXT.startFailed, {
+				source: 'dashboard',
+				requested_count: 0,
+				ajax_action: 'beepbeepai_inline_generate',
+				error_code: 'no_credits_remaining',
+				error_message: TEXT.outOfCredits || TEXT.startFailed,
+			} );
+			return;
+		}
 
 		// Step 1: fetch missing attachment IDs through the registered WP Ajax action.
 		fetchMissingAttachmentIds( limit )
 		.then( function ( ids ) {
 			if ( ids.length === 0 ) {
-				releaseInlineGenerationLock();
-				clearOptimisticAction();
+				recoverGenerationStartFailure( trigger, TEXT.noMissingFoundRescan, {
+					source: 'dashboard',
+					requested_count: 0,
+					ajax_action: 'beepbeepai_get_attachment_ids',
+					error_code: 'no_missing_attachment_ids',
+					error_message: TEXT.noMissingFoundRescan,
+				} );
 				showStatusLine( TEXT.noMissingFoundRescan );
 				var showMismatch = ( BBAI_HERO_CFG.missingCount || 0 ) > 0;
 				if ( showMismatch && BBAI_HERO_CFG.wpDebug === '1' ) {
@@ -5618,47 +5876,49 @@ endif;
 			}
 
 			idsQueued = ids;
-			return postBulkQueue( ids );
+			clearHeroMissingAttachmentIdsCache();
+			logDashboardUi( 'generation_request_started', Object.assign( {
+				source: 'dashboard',
+				requested_count: idsQueued.length,
+				ajax_action: 'beepbeepai_inline_generate',
+			}, getGenerationQuotaDebugContext( trigger ) ) );
+			emitGenerationAnalytics( 'generation_request_started', 'dashboard', {
+				requested_count: idsQueued.length,
+				ajax_action: 'beepbeepai_inline_generate',
+			} );
+			return ids;
 		} )
-		.then( function ( queueJson ) {
-			if ( ! queueJson ) { return; } // handled above (no images)
-			if ( ! queueJson.success ) {
-				releaseInlineGenerationLock();
-				clearOptimisticAction();
-				var failRaw = queueJson.data && queueJson.data.message ? String( queueJson.data.message ) : '';
-				if ( bbaiHeroLooksLikeSessionOrNonceMessage( failRaw ) ) {
-					showStatusLine( TEXT.sessionExpired );
-				} else {
-					showStatusLine( failRaw || TEXT.startFailed );
-				}
-				return;
-			}
+		.then( function ( readyIds ) {
+			if ( ! readyIds ) { return; } // handled above (no images)
+			var jobId = '';
 
-			var responseData = queueJson.data || {};
-
-			logDashboardUi( 'bulk_queue_success', {
+			logDashboardUi( 'generation_start_dispatched', {
 				context: 'generate_missing',
 				ids_count: idsQueued.length,
-				queued: responseData.queued,
 			} );
 
 			clearHeroGenerationWatchdog();
-
+			logDashboardUi( 'accepted_starting', { action: 'generate-missing', ids_count: idsQueued.length, job_id: jobId } );
+			showStatusLine( ACTION_STATUS[ 'generate-missing' ] );
 			var flowOk = false;
 			if ( typeof window.startGenerationFlow === 'function' ) {
 				flowOk = window.startGenerationFlow( idsQueued, {
 					source: 'generate-missing',
 					entry: 'dashboard_hero',
-					responseData: responseData,
 					progressLabel: TEXT.preparingBulkRun,
-					queued: responseData.queued != null ? responseData.queued : idsQueued.length,
+					queued: idsQueued.length,
 				} );
 			}
 
 			if ( ! flowOk ) {
-				releaseInlineGenerationLock();
-				clearOptimisticAction();
-				showStatusLine( TEXT.startFailed );
+				recoverGenerationStartFailure( trigger, TEXT.startFailed, {
+					source: 'dashboard',
+					requested_count: idsQueued.length,
+					job_id: jobId,
+					ajax_action: 'beepbeepai_inline_generate',
+					error_code: 'start_generation_flow_unavailable',
+					error_message: TEXT.startFailed,
+				} );
 				return;
 			}
 
@@ -5668,21 +5928,32 @@ endif;
 				heroGenerationWatchdog = null;
 				var modal = document.getElementById( 'bbai-bulk-progress-modal' );
 				var modalActive = modal && modal.classList.contains( 'active' );
-				var jobRunning = window.bbaiJobState && typeof window.bbaiJobState.getState === 'function' && window.bbaiJobState.getState().running;
-				if ( ! modalActive && ! jobRunning ) {
+				var jobState = window.bbaiJobState && typeof window.bbaiJobState.getState === 'function' ? window.bbaiJobState.getState() : null;
+				var jobRunning = jobState && jobState.running;
+				var hasJobId = !! ( jobId || ( jobState && ( jobState.jobId || jobState.job_id ) ) );
+				var hasProgress = !! ( jobState && parseInt( jobState.progress, 10 ) > 0 );
+				if ( ! modalActive && ! jobRunning && ! hasJobId && ! hasProgress ) {
 					logDashboardUi( 'generation_start_watchdog_failed', {
 						entry: 'dashboard_hero',
 						ids_count: idsQueued.length,
 					} );
-					showStatusLine( TEXT.startFailed );
-					var cta = getPrimaryCta();
-					releaseInlineGenerationLock();
-					if ( cta ) {
-						setBusy( cta, false );
-					}
-					dashboardPolling.optimisticAction = '';
+					recoverGenerationStartFailure( getPrimaryCta(), TEXT.startDidNotStart, {
+						source: 'dashboard',
+						requested_count: idsQueued.length,
+						job_id: jobId,
+						ajax_action: 'beepbeepai_inline_generate',
+						error_code: 'start_watchdog_timeout',
+						error_message: TEXT.startDidNotStart,
+					} );
+					emitGenerationAnalytics( 'generation_stuck_recovered', 'dashboard', {
+						requested_count: idsQueued.length,
+						job_id: jobId,
+						ajax_action: 'beepbeepai_inline_generate',
+						error_code: 'start_watchdog_timeout',
+						error_message: TEXT.startDidNotStart,
+					} );
 				}
-			}, 4000 );
+			}, 20000 );
 
 			confirmLatestStateTruth( 'generate_missing', 900 )
 				.then( function ( truth ) {
@@ -5704,14 +5975,24 @@ endif;
 				} );
 		} )
 		.catch( function ( err ) {
-			releaseInlineGenerationLock();
-			clearOptimisticAction();
 			var ajaxMsg = err && err.bbaiAjaxMessage ? String( err.bbaiAjaxMessage ) : '';
 			if ( ajaxMsg && bbaiHeroLooksLikeSessionOrNonceMessage( ajaxMsg ) ) {
-				showStatusLine( TEXT.sessionExpired );
+				recoverGenerationStartFailure( trigger, TEXT.sessionExpired, {
+					source: 'dashboard',
+					requested_count: idsQueued ? idsQueued.length : limit,
+					ajax_action: idsQueued ? 'beepbeepai_inline_generate' : 'beepbeepai_get_attachment_ids',
+					error_code: err && err.message ? String( err.message ) : 'ajax_failed',
+					error_message: ajaxMsg || TEXT.sessionExpired,
+				} );
 				return;
 			}
-			showStatusLine( TEXT.startFailed );
+			recoverGenerationStartFailure( trigger, TEXT.startFailed, {
+				source: 'dashboard',
+				requested_count: idsQueued ? idsQueued.length : limit,
+				ajax_action: idsQueued ? 'beepbeepai_inline_generate' : 'beepbeepai_get_attachment_ids',
+				error_code: err && err.message ? String( err.message ) : 'ajax_failed',
+				error_message: ajaxMsg || ( err && err.message ? String( err.message ) : TEXT.startFailed ),
+			} );
 		} );
 	}
 
@@ -5797,6 +6078,31 @@ endif;
 		}, 25000 );
 	} );
 
+	document.addEventListener( 'click', function ( e ) {
+		var trigger = e.target && e.target.closest
+			? e.target.closest( '[data-action="generate-missing"], [data-bbai-action="generate_missing"], [data-bbai-li-action="generate-missing"]' )
+			: null;
+		var root;
+
+		if ( ! trigger || hero.contains( trigger ) ) {
+			return;
+		}
+		if ( trigger.getAttribute( 'aria-disabled' ) === 'true' || trigger.hasAttribute( 'disabled' ) ) {
+			return;
+		}
+		if ( trigger.getAttribute( 'data-bbai-locked-cta' ) === '1' ) {
+			return;
+		}
+		root = getDashboardRoot();
+		if ( ! root || ! root.contains( trigger ) ) {
+			return;
+		}
+		if ( trigger.closest( '[data-bbai-library-workspace-root="1"], .bbai-library-container' ) ) {
+			return;
+		}
+		dispatchGenerateMissing( e, trigger );
+	}, true );
+
 	document.addEventListener( 'bbai:logged-in-dashboard-state-applied', function ( event ) {
 		var detail = event && event.detail ? event.detail : {};
 		triggerDashboardTransitionFeedback( detail.previousState || '', detail.nextState || '' );
@@ -5804,6 +6110,7 @@ endif;
 
 	document.addEventListener( 'bbai:generation:finished', function () {
 		var primaryCta = getPrimaryCta();
+		clearHeroMissingAttachmentIdsCache();
 		releaseInlineGenerationLock();
 		dashboardPolling.optimisticAction = '';
 		if ( primaryCta && primaryCta.getAttribute( 'aria-busy' ) === 'true' ) {
@@ -5811,6 +6118,8 @@ endif;
 		}
 		if ( safetyTimer ) { clearTimeout( safetyTimer ); safetyTimer = null; }
 	} );
+
+	window.setTimeout( preloadMissingAttachmentIds, 700 );
 
 	document.addEventListener( 'bbai:dashboard-approve-all-pending', function () {
 		if ( 'NEEDS_REVIEW' !== ( hero.getAttribute( 'data-bbai-li-state' ) || '' ) ) {
@@ -6174,7 +6483,7 @@ endif;
 				tone: 'info',
 				title: PROMPT_TEXT.emptyTitle,
 				actions: [
-					{ label: PROMPT_TEXT.openMedia, href: '<?php echo esc_js( admin_url( 'upload.php' ) ); ?>', action: 'open-media-library', primary: true },
+					{ label: PROMPT_TEXT.openMedia, href: '<?php echo esc_js( admin_url( 'admin.php?page=bbai-settings' ) ); ?>', action: 'open-media-library', primary: true },
 					{ label: PROMPT_TEXT.learnSeo, href: '<?php echo esc_js( admin_url( 'admin.php?page=bbai-guide' ) ); ?>', action: 'learn-seo' },
 				],
 			} ) );
@@ -6360,6 +6669,12 @@ endif;
 	document.addEventListener( 'bbai:generation:finished', function ( event ) {
 		var detail = event && event.detail ? event.detail : {};
 		if ( detail.successes > 0 ) {
+			logDashboardUi( 'generation_request_completed', Object.assign( {
+				source: detail.source || 'dashboard',
+				success_count: detail.successes || 0,
+				failure_count: detail.failures || 0,
+				processed_count: detail.processed || detail.successes || 0,
+			}, getGenerationQuotaDebugContext() ) );
 			bbaiPromptTrack( 'generation_completed', detail );
 			window.setTimeout( function () {
 				renderActivationPrompts( 'generation_finished', {

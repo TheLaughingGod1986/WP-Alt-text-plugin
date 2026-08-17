@@ -13,28 +13,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$bbai_current_user = wp_get_current_user();
-$bbai_display_name = ( $bbai_current_user instanceof WP_User && '' !== $bbai_current_user->display_name )
+$bbai_current_user    = wp_get_current_user();
+$bbai_display_name    = ( $bbai_current_user instanceof WP_User && '' !== $bbai_current_user->display_name )
 	? $bbai_current_user->display_name
 	: __( 'there', 'beepbeep-ai-alt-text-generator' );
 ?>
-<?php /* Scoped fallback styles: ensures flex layout and pill render even when external CSS is delayed or blocked. */ ?>
-<style id="bbai-dashboard-header-critical">
-.bbai-dashboard-header{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:20px!important;padding-bottom:20px!important;width:100%}
-.bbai-dashboard-header__left{display:flex!important;flex-direction:column!important;gap:3px!important;min-width:0!important}
-.bbai-dashboard-header__right{flex-shrink:0!important}
-.bbai-dashboard-header__heading{font-size:26px!important;font-weight:700!important;color:#0f172a!important;margin:0!important;padding:0!important;border:none!important;background:none!important;box-shadow:none!important;white-space:nowrap!important;line-height:1.2!important}
-.bbai-dashboard-header__subtitle{font-size:14px!important;font-weight:400!important;color:#64748b!important;margin:0!important;padding:0!important}
-.bbai-dashboard-header__status-pill{display:inline-flex!important;align-items:center!important;gap:8px!important;height:38px!important;padding:0 16px!important;border-radius:20px!important;border:1.5px solid #16a34a!important;background:#f0fdf4!important;white-space:nowrap!important}
-.bbai-dashboard-header__status-dot{display:block!important;width:8px!important;height:8px!important;border-radius:50%!important;background:#22c55e!important;flex-shrink:0!important}
-.bbai-dashboard-header__status-text{font-size:13px!important;font-weight:600!important;color:#15803d!important;line-height:1!important}
-@media(max-width:782px){.bbai-dashboard-header{flex-direction:column!important;align-items:flex-start!important;gap:12px!important}.bbai-dashboard-header__heading{font-size:22px!important;white-space:normal!important}}
-</style>
 
-<header class="bbai-dashboard-header" aria-label="<?php echo esc_attr__( 'Dashboard overview', 'beepbeep-ai-alt-text-generator' ); ?>">
+<header class="bbai-dashboard-header" aria-label="<?php echo esc_attr__( 'Dashboard overview', 'beepbeep-ai-alt-text-generator' ); ?>" style="display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:20px;padding-bottom:20px;width:100%;">
 
-	<div class="bbai-dashboard-header__left">
-		<h1 class="bbai-dashboard-header__heading">
+	<div class="bbai-dashboard-header__left" style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+		<h1 class="bbai-dashboard-header__heading" style="margin:0;padding:0;font-size:26px;font-weight:700;color:#0f172a;border:none;background:none;box-shadow:none;white-space:nowrap;line-height:1.2;">
 			<?php
 			printf(
 				/* translators: %s: WordPress display name of the current user. */
@@ -43,18 +31,21 @@ $bbai_display_name = ( $bbai_current_user instanceof WP_User && '' !== $bbai_cur
 			);
 			?>
 		</h1>
-		<p class="bbai-dashboard-header__subtitle">
+		<p class="bbai-dashboard-header__subtitle" style="margin:0;padding:0;font-size:14px;color:#64748b;">
 			<?php esc_html_e( "Here's how your image library is performing.", 'beepbeep-ai-alt-text-generator' ); ?>
 		</p>
 	</div>
 
-	<div class="bbai-dashboard-header__right">
-		<div class="bbai-dashboard-header__status-pill" role="status" aria-live="polite">
-			<span class="bbai-dashboard-header__status-dot" aria-hidden="true"></span>
-			<span class="bbai-dashboard-header__status-text">
+	<div class="bbai-dashboard-header__right" style="flex-shrink:0;">
+		<div class="bbai-dashboard-header__status-pill" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:20px;border:1.5px solid #16a34a;background:#f0fdf4;white-space:nowrap;">
+			<span class="bbai-dashboard-header__status-dot" aria-hidden="true" style="display:block;width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;"></span>
+			<span class="bbai-dashboard-header__status-text" style="font-size:13px;font-weight:600;color:#15803d;line-height:1;">
 				<?php esc_html_e( 'All systems operational', 'beepbeep-ai-alt-text-generator' ); ?>
 			</span>
 		</div>
+		<button type="button" class="bbai-dashboard-header__logout" data-action="logout" data-bbai-action="logout">
+			<?php esc_html_e( 'Log out', 'beepbeep-ai-alt-text-generator' ); ?>
+		</button>
 	</div>
 
 </header>

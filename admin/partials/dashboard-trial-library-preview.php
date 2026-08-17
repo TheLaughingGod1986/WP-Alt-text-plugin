@@ -13,43 +13,43 @@ if ( ! empty( $bbai_has_connected_account ) ) {
 	return;
 }
 
-$bbai_trial_src       = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
+$bbai_trial_src = isset( $bbai_product_state_model['trial'] ) && is_array( $bbai_product_state_model['trial'] )
 	? $bbai_product_state_model['trial']
-	: array();
+	: [];
 $bbai_trial_remaining = max( 0, (int) ( $bbai_trial_src['remaining'] ?? 0 ) );
 $bbai_trial_exhausted = ! empty( $bbai_trial_src['exhausted'] ) || $bbai_trial_remaining <= 0;
 
-$bbai_state_m                  = (int) ( $bbai_state_missing_count ?? 0 );
-$bbai_state_w                  = (int) ( $bbai_state_weak_count ?? 0 );
+$bbai_state_m = (int) ( $bbai_state_missing_count ?? 0 );
+$bbai_state_w = (int) ( $bbai_state_weak_count ?? 0 );
 $bbai_guest_preview_actionable = max( $bbai_state_m, $bbai_state_w, $bbai_state_m + $bbai_state_w );
 
-$bbai_trial_preview_rows              = ( isset( $this ) && is_object( $this ) && method_exists( $this, 'get_trial_dashboard_preview_rows' ) )
+$bbai_trial_preview_rows = ( isset( $this ) && is_object( $this ) && method_exists( $this, 'get_trial_dashboard_preview_rows' ) )
 	? $this->get_trial_dashboard_preview_rows( 3 )
-	: array();
-$bbai_trial_preview_rows              = is_array( $bbai_trial_preview_rows ) ? $bbai_trial_preview_rows : array();
-$bbai_trial_preview_total             = max( 0, (int) ( $bbai_state_total_images ?? count( $bbai_trial_preview_rows ) ) );
-$bbai_trial_preview_extra             = max( 0, $bbai_trial_preview_total - count( $bbai_trial_preview_rows ) );
-$bbai_trial_preview_generation_locked = true;
+	: [];
+$bbai_trial_preview_rows  = is_array( $bbai_trial_preview_rows ) ? $bbai_trial_preview_rows : [];
+$bbai_trial_preview_total  = max( 0, (int) ( $bbai_state_total_images ?? count( $bbai_trial_preview_rows ) ) );
+$bbai_trial_preview_extra  = max( 0, $bbai_trial_preview_total - count( $bbai_trial_preview_rows ) );
+$bbai_trial_preview_generation_locked = $bbai_trial_exhausted;
 
 // Locked preview copy: trial-complete variant is conversion-first and non-repetitive.
-$bbai_locked_preview_overlay_copy = $bbai_trial_exhausted
-	? __( 'Create a free account to review, edit, and optimise all your images in one place.', 'beepbeep-ai-alt-text-generator' )
-	: __( 'Create a free account to review and fix all remaining images.', 'beepbeep-ai-alt-text-generator' );
-$bbai_locked_preview_context_line = '';
-$bbai_locked_preview_waiting_line = $bbai_guest_preview_actionable > 0
+$bbai_locked_preview_overlay_copy   = $bbai_trial_exhausted
+	? __( 'Review, edit and publish ALT text across your entire website.', 'beepbeep-ai-alt-text-generator' )
+	: __( 'Review, edit and publish ALT text across your entire website.', 'beepbeep-ai-alt-text-generator' );
+$bbai_locked_preview_context_line   = '';
+$bbai_locked_preview_waiting_line   = $bbai_guest_preview_actionable > 0
 	? sprintf(
 		/* translators: %s: number of images requiring attention. */
 		_n( '%s image needs ALT text', '%s images need ALT text', $bbai_guest_preview_actionable, 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_guest_preview_actionable )
 	)
 	: __( 'ALT Library preview (locked)', 'beepbeep-ai-alt-text-generator' );
-$bbai_locked_preview_monthly_free = max( 0, (int) ( $bbai_free_plan_offer ?? 50 ) );
+$bbai_locked_preview_monthly_free   = max( 0, (int) ( $bbai_free_plan_offer ?? 15 ) );
 
 $bbai_trial_lib_card_row_path = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/components/library-dashboard-card-row.php';
 $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-locked-overlay-card.php';
 ?>
 <section
-	class="bbai-dashboard-trial-preview<?php echo $bbai_trial_exhausted ? ' bbai-dashboard-trial-preview--guest-locked bbai-dashboard-trial-preview--exhausted' : ''; ?>"
+	class="bbai-dashboard-trial-preview bbai-dashboard-trial-preview--guest-locked<?php echo $bbai_trial_exhausted ? ' bbai-dashboard-trial-preview--exhausted' : ' bbai-dashboard-trial-preview--locked-library'; ?>"
 	id="library"
 	data-bbai-trial-preview="1"
 	data-bbai-trial-preview-limit="3"
@@ -68,9 +68,7 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 	<?php endif; ?>
 
 	<div class="bbai-dashboard-locked-preview__shell bbai-dashboard-trial-preview__shell">
-		<?php if ( $bbai_trial_exhausted ) : ?>
 		<div class="bbai-dashboard-trial-preview__blur-wrap" aria-hidden="true" inert>
-		<?php endif; ?>
 			<?php if ( ! empty( $bbai_trial_preview_rows ) && is_readable( $bbai_trial_lib_card_row_path ) ) : ?>
 				<div class="bbai-dashboard-trial-preview__list" role="list" data-bbai-trial-preview-list>
 					<?php foreach ( $bbai_trial_preview_rows as $bbai_preview_row ) : ?>
@@ -86,20 +84,11 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 			<?php else : ?>
 				<div class="bbai-dashboard-trial-preview__list" role="presentation" data-bbai-trial-preview-skeleton>
 					<?php
-					$bbai_skel_set = array(
-						array(
-							'cc' => 'bbai-dashboard-locked-preview__badge--missing',
-							'lb' => __( 'Missing', 'beepbeep-ai-alt-text-generator' ),
-						),
-						array(
-							'cc' => 'bbai-dashboard-locked-preview__badge--review',
-							'lb' => __( 'Review', 'beepbeep-ai-alt-text-generator' ),
-						),
-						array(
-							'cc' => 'bbai-dashboard-locked-preview__badge--optimized',
-							'lb' => __( 'OK', 'beepbeep-ai-alt-text-generator' ),
-						),
-					);
+					$bbai_skel_set = [
+						[ 'cc' => 'bbai-dashboard-locked-preview__badge--missing', 'lb' => __( 'Missing', 'beepbeep-ai-alt-text-generator' ) ],
+						[ 'cc' => 'bbai-dashboard-locked-preview__badge--review', 'lb' => __( 'Review', 'beepbeep-ai-alt-text-generator' ) ],
+						[ 'cc' => 'bbai-dashboard-locked-preview__badge--optimized', 'lb' => __( 'OK', 'beepbeep-ai-alt-text-generator' ) ],
+					];
 					foreach ( $bbai_skel_set as $bbai_skel_row ) :
 						?>
 					<div class="bbai-dashboard-locked-preview__row" aria-hidden="true">
@@ -120,19 +109,16 @@ $bbai_trial_locked_overlay    = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboa
 					?>
 				</div>
 			<?php endif; ?>
-		<?php if ( $bbai_trial_exhausted ) : ?>
 		</div>
-		<?php endif; ?>
 
 		<p class="bbai-dashboard-trial-preview__waiting-label" aria-hidden="true">
 			<?php echo esc_html( $bbai_locked_preview_waiting_line ); ?>
 		</p>
 
-		<?php if ( $bbai_trial_exhausted ) : ?>
 		<div class="bbai-dashboard-locked-preview__fade" aria-hidden="true"></div>
+
 		<?php if ( is_readable( $bbai_trial_locked_overlay ) ) : ?>
 			<?php require $bbai_trial_locked_overlay; ?>
-		<?php endif; ?>
 		<?php endif; ?>
 	</div>
 

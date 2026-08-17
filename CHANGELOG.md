@@ -4,12 +4,101 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
-### Unreleased
+### 4.6.126 — 2026-07-24
 
-### 4.6.8 — 2026-07-16
+- **Improved**: Removed the duplicate monthly progress bar and made limit notices text-only so the dashboard no longer shows stacked meters for the same state.
 
-- **Changed**: Generation retry correlation and terminal telemetry safeguards
+### 4.6.125 — 2026-07-24
 
+- **Improved**: Free-plan usage copy is now context-aware — monthly exhaustion no longer shows the daily-limit explanation.
+
+### 4.6.124 — 2026-07-24
+
+- **Fixed**: Free-plan daily limit no longer looks like a monthly outage — CTA, progress, and usage copy now explain 5/day vs 15/month when today’s allowance is used.
+
+### 4.6.123 — 2026-07-17
+
+- **Fixed**: Guard `get_billing_info()` against missing nested `billing` keys so Settings no longer emits an undefined-array-key warning for free accounts.
+
+### 4.6.122 — 2026-07-16
+
+- **Fixed**: Mounted live generation progress beneath the current visible daily-pass dashboard actions instead of the hidden legacy runtime.
+- **Preserved**: The panel remains hidden while idle, so the existing dashboard UI is unchanged outside active/completed generation.
+
+### 4.6.121 — 2026-07-16
+
+- **Fixed**: Restored the live generation progress panel beneath the existing logged-in dashboard actions.
+- **Preserved**: The current dashboard UI remains unchanged outside the isolated progress panel.
+
+### 4.6.120 — 2026-07-16
+
+- **Improved**: The guest dashboard now clearly explains the five no-signup generations before the first click.
+- **Improved**: Completing the guest trial opens an impact-led signup modal with images improved, ALT coverage gained, and the 15-free-monthly lifetime offer.
+- **Analytics**: Guest generation events now carry explicit anonymous-account properties, and the complete guest offer-to-signup funnel is forwarded to PostHog.
+
+### 4.6.119 — 2026-07-16
+
+- **Improved**: The logged-in dashboard now shows live image-generation progress beneath the primary actions, including the active image, total count, and completion percentage.
+
+### 4.6.118 — 2026-07-16
+
+- **Fixed**: Guest trial usage, coverage, and remaining-image counters now update immediately after successful generation without a page refresh.
+- **Improved**: Exhausted guests now see a stronger free-account prompt offering 15 free generations each month.
+
+### 4.6.117 — 2026-07-16
+
+- **Fixed**: Restored the required `BBAI_Attribution` class to the WordPress.org package so fresh installs and updates activate successfully.
+
+### 4.6.116 — 2026-07-16
+
+- **Fixed**: Generation retries now share a correlation ID, honour explicit non-retryable backend responses, and emit only one terminal telemetry outcome per run.
+
+### 4.6.115 — 2026-07-08
+
+- **Changed**: Telemetry-only release — marketing attribution passthrough to checkout metadata and PostHog identity enrichment for backend billing webhook join.
+
+### 4.6.114 — 2026-07-07
+
+- **Fixed**: Telemetry verification release — `batch_generation_started`, library-page `wp_localize_script` guards, NAI paywall `upgrade_cta_clicked`, checkout redirect `checkout_started`, auth funnel flush, and `$entitlement_state` initialization.
+
+### 4.6.113 — 2026-07-07
+
+- **Fixed**: Exposed `trackFeatureUsed` on `window.bbaiTelemetry` for shared client callers.
+- **Fixed**: NAI dashboard `feature_used` helper normalizes feature names and prefers the telemetry wrapper.
+
+### 4.6.112 — 2026-07-07
+
+- **Fixed**: Rebuilt `bbai-admin.min.js` and `bbai-dashboard.min.js` so production (`SCRIPT_DEBUG` off) serves client telemetry fixes from 4.6.111.
+
+### 4.6.111 — 2026-07-07
+
+- **Fixed**: NAI dashboard generation path now emits client `generation_started` / `generation_completed` telemetry when the legacy drawer runs.
+- **Fixed**: NAI shell navigation now emits `feature_used` for library, settings, dashboard, billing, and statistics destinations.
+- **Fixed**: Client telemetry assigns a per-run `generation_run_id` so `generation_completed` is not dropped when the drawer path starts before `bbai-admin` dispatches.
+
+### 4.6.110 — 2026-07-07
+
+- **Changed**: Central enrichment fills `plugin_slug`, `telemetry_version`, normalized host, `generation_type`, `quota_state`, and `license_state` on all new telemetry events.
+- **Changed**: `feature_used` now always requires `feature_name`.
+- **Added**: PHPUnit regression tests for the canonical telemetry property contract.
+
+### 4.6.109 — 2026-07-07
+
+- **Fixed**: Routed plugin activation and install lifecycle events through the queued PostHog server bridge so `plugin_activated` reaches PostHog after admin bootstrap.
+- **Fixed**: Added the missing `is_posthog_internal_environment()` helper so generation telemetry no longer fatals during `alt_generated` capture.
+- **Fixed**: Defaulted telemetry consent to opt-in for fresh installs so WordPress.org sites emit product analytics without a settings toggle.
+
+### 4.6.90 — 2026-06-23
+
+- **Changed**: Unified logged-out and logged-in dashboard rendering around the shared ALT coverage dashboard structure.
+- **Changed**: Made ALT Coverage, progress ring, scanned/optimised/missing/review counts, and Next Recommended Action the primary dashboard model.
+- **Fixed**: Removed remaining Today’s Pass, ALT Pass, workflow stepper, and duplicate accessibility metric language from dashboard surfaces.
+
+### 4.6.14 — 2026-05-29
+
+- **Changed**: Refactored the nAi dashboard into smaller PHP components and focused JavaScript modules while preserving existing dashboard behaviour.
+- **Changed**: Split ALT Library generation state helpers into focused legacy-compatible modules for locks, notices, bulk orchestration, API request construction, and row/count/filter state.
+- **Fixed**: Added regression coverage and release compliance cleanup for dashboard and ALT Library generation flows.
 
 ### 4.6.4 — 2026-05-14
 

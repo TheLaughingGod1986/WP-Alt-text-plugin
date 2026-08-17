@@ -37,7 +37,7 @@ final class Upgrade_Path_Resolver {
 		if ( 'agency' === $slug ) {
 			return self::agency_row();
 		}
-		if ( in_array( $slug, array( 'pro', 'growth' ), true ) ) {
+		if ( in_array( $slug, [ 'pro', 'growth' ], true ) ) {
 			return self::growth_row( $slug );
 		}
 
@@ -61,131 +61,131 @@ final class Upgrade_Path_Resolver {
 			: ( ! empty( $snapshot['is_anonymous_trial'] ) || ! empty( $snapshot['is_trial'] ) );
 
 		$row = self::resolve(
-			array(
+			[
 				'is_guest_trial' => $guest,
 				'plan_slug'      => (string) ( $snapshot['plan_slug'] ?? 'free' ),
-			)
+			]
 		);
 
-		$library_url  = (string) ( $snapshot['library_url'] ?? admin_url( 'admin.php?page=bbai-library' ) );
+		$library_url = (string) ( $snapshot['library_url'] ?? admin_url( 'admin.php?page=bbai-library' ) );
 		$needs_review = (string) ( $snapshot['needs_review_library_url'] ?? '' );
 		if ( '' === $needs_review && function_exists( 'bbai_alt_library_needs_review_url' ) ) {
 			$needs_review = bbai_alt_library_needs_review_url();
 		}
 
-		$review = array(
-			'label'      => bbai_copy_cta_review_usage(),
-			'href'       => '' !== $needs_review ? $needs_review : $library_url,
-			'attributes' => array(),
-		);
+		$review = [
+			'label'        => bbai_copy_cta_review_usage(),
+			'href'         => '' !== $needs_review ? $needs_review : $library_url,
+			'attributes'   => [],
+		];
 
 		if ( self::STEP_TRIAL === $row['step'] ) {
-			$signup = array(
+			$signup = [
 				'label'      => function_exists( 'bbai_copy_cta_create_free_account' ) ? bbai_copy_cta_create_free_account() : __( 'Create free account', 'beepbeep-ai-alt-text-generator' ),
-				'attributes' => array(
+				'attributes' => [
 					'data-action'                 => 'show-auth-modal',
 					'data-auth-tab'               => 'register',
 					'data-bbai-analytics-upgrade' => 'trial_create_account_clicked',
-				),
-			);
+				],
+			];
 			// Trial ladder: secondary is browse-only pricing, never a paid-plan primary.
-			$view_plans = array(
+			$view_plans = [
 				'label'      => function_exists( 'bbai_copy_cta_view_plans' ) ? bbai_copy_cta_view_plans() : __( 'View plans', 'beepbeep-ai-alt-text-generator' ),
-				'attributes' => array(
+				'attributes' => [
 					'data-action'                 => 'show-upgrade-modal',
 					'data-bbai-pricing-variant'   => 'browse',
 					'data-bbai-analytics-upgrade' => 'pricing_viewed_from_trial',
-				),
-			);
+				],
+			];
 			if ( BBAI_BANNER_CTX_LIBRARY === $page_context && function_exists( 'bbai_banner_merge_library_attrs' ) ) {
 				$view_plans['attributes'] = bbai_banner_merge_library_attrs( $view_plans['attributes'] );
 			}
-			return array( $signup, $view_plans );
+			return [ $signup, $view_plans ];
 		}
 
 		if ( self::STEP_AGENCY === $row['step'] ) {
 			$settings = (string) ( $snapshot['settings_url'] ?? admin_url( 'admin.php?page=bbai-settings' ) );
 			$usage    = (string) ( $snapshot['usage_url'] ?? admin_url( 'admin.php?page=bbai-credit-usage' ) );
-			$primary  = array(
+			$primary  = [
 				'label'      => __( 'Usage & billing', 'beepbeep-ai-alt-text-generator' ),
 				'href'       => $usage,
-				'attributes' => array(
+				'attributes' => [
 					'data-bbai-analytics-upgrade' => 'agency_manage_usage_clicked',
-				),
-			);
-			return array( $primary, $review );
+				],
+			];
+			return [ $primary, $review ];
 		}
 
 		if ( self::STEP_GROWTH === $row['step'] ) {
-			$primary = array(
+			$primary = [
 				'label'      => function_exists( 'bbai_copy_cta_upgrade_agency' ) ? bbai_copy_cta_upgrade_agency() : __( 'Upgrade to Agency', 'beepbeep-ai-alt-text-generator' ),
-				'attributes' => array(
+				'attributes' => [
 					'data-action'                 => 'show-upgrade-modal',
 					'data-bbai-pricing-variant'   => 'agency',
 					'data-bbai-analytics-upgrade' => 'growth_upgrade_agency_clicked',
-				),
-			);
-			return array( $primary, $review );
+				],
+			];
+			return [ $primary, $review ];
 		}
 
 		// Logged-in free: one paid primary; secondary supports workflow without second paid CTA.
-		$primary = array(
+		$primary = [
 			'label'      => function_exists( 'bbai_copy_cta_upgrade_growth' ) ? bbai_copy_cta_upgrade_growth() : __( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' ),
-			'attributes' => array(
+			'attributes' => [
 				'data-action'                 => 'show-upgrade-modal',
 				'data-bbai-pricing-variant'   => 'growth',
 				'data-bbai-analytics-upgrade' => 'free_upgrade_growth_clicked',
-			),
-		);
-		return array( $primary, $review );
+			],
+		];
+		return [ $primary, $review ];
 	}
 
 	/**
 	 * @return array<string, mixed>
 	 */
 	private static function trial_row(): array {
-		return array(
+		return [
 			'step'             => self::STEP_TRIAL,
 			'primary_kind'     => 'signup',
 			'pricing_variant'  => 'browse',
 			'next_paid_target' => 'growth',
-		);
+		];
 	}
 
 	/**
 	 * @return array<string, mixed>
 	 */
 	private static function free_row(): array {
-		return array(
+		return [
 			'step'             => self::STEP_FREE,
 			'primary_kind'     => 'upgrade_growth',
 			'pricing_variant'  => 'growth',
 			'next_paid_target' => 'growth',
-		);
+		];
 	}
 
 	/**
 	 * @return array<string, mixed>
 	 */
 	private static function growth_row( string $slug ): array {
-		return array(
+		return [
 			'step'             => self::STEP_GROWTH,
 			'primary_kind'     => 'upgrade_agency',
 			'pricing_variant'  => 'agency',
 			'next_paid_target' => 'agency',
 			'plan_slug'        => $slug,
-		);
+		];
 	}
 
 	/**
 	 * @return array<string, mixed>
 	 */
 	private static function agency_row(): array {
-		return array(
+		return [
 			'step'             => self::STEP_AGENCY,
 			'primary_kind'     => 'none',
 			'pricing_variant'  => 'browse',
 			'next_paid_target' => '',
-		);
+		];
 	}
 }

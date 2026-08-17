@@ -39,7 +39,7 @@ trait Api_Billing {
 	/**
 	 * Create Stripe checkout session
 	 */
-	public function create_checkout_session( $price_id, $success_url, $cancel_url ) {
+	public function create_checkout_session( $price_id, $success_url, $cancel_url, array $attribution = array() ) {
 		$site_fingerprint = $this->get_site_fingerprint();
 
 		$data = array(
@@ -49,6 +49,20 @@ trait Api_Billing {
 			'site_url'         => get_site_url(),
 			'site_fingerprint' => $site_fingerprint,
 		);
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
+			$stored_attribution = \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload();
+			$data               = array_merge( $data, $stored_attribution, $attribution );
+		} elseif ( ! empty( $attribution ) ) {
+			$data = array_merge( $data, $attribution );
+		}
+
+		if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
+			$data['plugin_version'] = (string) BEEPBEEP_AI_VERSION;
+		}
+		if ( function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
+			$data['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\get_site_identifier() );
+		}
 
 		$response = $this->make_request( '/billing/checkout', 'POST', $data );
 

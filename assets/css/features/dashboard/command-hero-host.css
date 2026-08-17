@@ -369,11 +369,11 @@
 }
 
 .bbai-command-hero-host .bbai-dashboard-hero--command:not(.bbai-banner)[data-tone="attention"] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #c78a30 0%, #d9a85c 100%);
+    background: linear-gradient(90deg, #c97a00 0%, #d48806 100%);
 }
 
 .bbai-command-hero-host .bbai-dashboard-hero--command:not(.bbai-banner)[data-tone="paused"] .bbai-dashboard-hero-progress-fill {
-    background: linear-gradient(90deg, #f97316 0%, #ef4444 100%);
+    background: linear-gradient(90deg, #5b6ea8 0%, #6a6fd1 100%);
 }
 
 .bbai-command-hero-host .bbai-dashboard-hero--command:not(.bbai-banner) .bbai-dashboard-hero__note {

@@ -315,14 +315,14 @@ body.bbai-dashboard .bbai-filter-pill--missing:not(.bbai-alt-review-filters__btn
 body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing']:not(.bbai-alt-review-filters__btn--active) .bbai-alt-review-filters__count {
     color: var(--bbai-status-missing-count-fg);
     background: rgba(255, 255, 255, 0.72);
-    border-color: rgba(244, 63, 94, 0.22);
+    border-color: rgba(201, 122, 0, 0.24);
     box-shadow: var(--bbai-status-filter-count-shadow);
 }
 
 body.bbai-dashboard .bbai-filter-pill--missing:not(.bbai-alt-review-filters__btn--active):not(.bbai-filter-pill--active):hover,
 body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing']:not(.bbai-alt-review-filters__btn--active):hover {
-    background: rgba(255, 228, 230, 0.92);
-    border-color: rgba(244, 63, 94, 0.48);
+    background: rgba(255, 247, 237, 0.92);
+    border-color: rgba(201, 122, 0, 0.48);
     box-shadow: var(--bbai-status-filter-hover-lift);
 }
 
@@ -332,7 +332,7 @@ body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing'].bbai-al
     background: var(--bbai-status-missing-active-bg);
     border-color: var(--bbai-status-missing-active-border);
     color: #ffffff;
-    box-shadow: 0 2px 10px rgba(190, 18, 60, 0.2), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+    box-shadow: 0 2px 10px rgba(201, 122, 0, 0.18), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
 }
 
 body.bbai-dashboard .bbai-filter-pill--missing.bbai-alt-review-filters__btn--active .bbai-alt-review-filters__count,
@@ -454,11 +454,11 @@ body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='optimized'].bbai-
 
 /* Problem emphasis (non-zero queue) */
 body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='missing'].bbai-alt-review-filters__btn--problem:not(.bbai-alt-review-filters__btn--active) {
-    border-color: rgba(244, 63, 94, 0.42);
+    border-color: rgba(201, 122, 0, 0.42);
 }
 
 body.bbai-dashboard .bbai-alt-review-filters__btn[data-filter='weak'].bbai-alt-review-filters__btn--problem:not(.bbai-alt-review-filters__btn--active) {
-    border-color: rgba(245, 158, 11, 0.48);
+    border-color: rgba(217, 164, 65, 0.48);
 }
 
 body.bbai-dashboard .bbai-filter-pill.bbai-pill--attention,
@@ -480,11 +480,11 @@ body.bbai-dashboard .bbai-alt-review-filters__btn.bbai-pill--attention::after {
 }
 
 body.bbai-dashboard .bbai-pill--attention[data-filter='missing'] {
-    --bbai-pill-attention-glow: rgba(244, 63, 94, 0.12);
+    --bbai-pill-attention-glow: rgba(201, 122, 0, 0.12);
 }
 
 body.bbai-dashboard .bbai-pill--attention[data-filter='weak'] {
-    --bbai-pill-attention-glow: rgba(245, 158, 11, 0.12);
+    --bbai-pill-attention-glow: rgba(217, 164, 65, 0.12);
 }
 
 @keyframes bbai-soft-breathe {

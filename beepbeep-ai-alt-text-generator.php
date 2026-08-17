@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BeepBeep AI – Alt Text Generator
  * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
- * Version: 4.6.8
+ * Version: 4.6.126
  * Requires at least: 6.2
  * Author: beepbeepv2
  * Author URI: https://oppti.dev
@@ -23,8 +23,10 @@ if ( defined( 'BBAI_ALREADY_LOADED' ) ) {
 define( 'BBAI_ALREADY_LOADED', true );
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.6.8' );
-define( 'BBAI_VERSION', '4.6.8' ); // Legacy alias for compatibility
+define( 'BEEPBEEP_AI_VERSION', '4.6.126' );
+define( 'BEEPBEEP_AI_PLUGIN_ID', 'alt_text' );
+define( 'BEEPBEEP_AI_PLUGIN_TITLE', 'BeepBeep AI - Alt Text Generator' );
+define( 'BBAI_VERSION', '4.6.115' ); // Legacy alias for compatibility
 define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
@@ -168,11 +170,6 @@ if ( ! function_exists( 'bbai_enable_wp_json_fallback_route' ) ) {
 
 add_action( 'parse_request', 'bbai_enable_wp_json_fallback_route', 5 );
 
-// Shared OptiAI\Core\ package — vendored copy, no cross-plugin dependency.
-// See includes/OptiAICore/ for the shared scoring engine + scan storage the
-// health dashboard below is built on (same package the Titles plugin uses).
-require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/OptiAICore/autoload.php';
-
 // Load cache and DB schema helpers.
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-cache.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-db.php';
@@ -193,6 +190,9 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-attribution.php';
+add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'flush_queued_lifecycle_events' ), 5 );
+add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'maybe_record_plugin_update' ), 6 );
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/phase17-content-pipeline.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
@@ -216,31 +216,6 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-license-contro
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-generation-controller.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/controllers/class-queue-controller.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/bootstrap-v5.php';
-
-// OptiAI health dashboard — "scan, score, optimise" surface built on the
-// shared OptiAI Core scoring engine. Self-contained (own menu page, own
-// AJAX handlers) so it cannot regress the existing admin dashboard.
-require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/Scoring/Alt_Text_Scan_Service.php';
-require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/Scoring/Legacy_Audit_Migrator.php';
-require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/Scoring/Health_Dashboard_Page.php';
-\BeepBeepAI\AltTextGenerator\Scoring\Health_Dashboard_Page::register();
-
-// Hooked on init (not plugins_loaded) — translation functions must not run
-// before the textdomain is loaded (WP 6.7+ _load_textdomain_just_in_time notice).
-add_action( 'init', static function () {
-	\OptiAI\Core\Module_Registry::register(
-		'alt_text',
-		BEEPBEEP_AI_PLUGIN_BASENAME,
-		admin_url( 'admin.php?page=bbai-health' ),
-		__( 'OptiAI Alt Text', 'beepbeep-ai-alt-text-generator' )
-	);
-	\OptiAI\Core\Module_Report::expose( 'alt_text', __( 'OptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ) );
-
-	// One-time, non-destructive carry-over from the earlier (shipped then
-	// reverted) audit table, if this site happens to have it. No-ops
-	// instantly on every site that does not.
-	\BeepBeepAI\AltTextGenerator\Scoring\Legacy_Audit_Migrator::maybe_run();
-} );
 
 if ( ! function_exists( 'beepbeepai_handle_usage_export_admin_post' ) ) {
 	/**
@@ -386,13 +361,6 @@ function beepbeepai_initialize_new_site( $new_site ) {
 
 register_activation_hook( __FILE__, 'beepbeepai_activate' );
 register_deactivation_hook( __FILE__, 'beepbeepai_deactivate' );
-
-// Additive: create the shared OptiAI scan-storage tables. Safe to run
-// alongside the existing activator above — a separate hook callback so this
-// carries zero risk to the existing activation flow.
-register_activation_hook( __FILE__, static function () {
-	\OptiAI\Core\Scan\Schema::install();
-} );
 add_action( 'wp_initialize_site', 'beepbeepai_initialize_new_site', 20 );
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai.php';

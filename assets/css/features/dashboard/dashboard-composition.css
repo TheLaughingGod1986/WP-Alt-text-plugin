@@ -1,331 +1,1119 @@
 /**
- * Dashboard Composition Rebalance
+ * Logged-in dashboard reference composition.
  *
- * Reduces dead vertical space, tightens spacing rhythm, and improves density
- * across the logged-in dashboard (hero cards, CTA strip, insight cards).
- *
- * Rules mirror the scope of the highest-priority block in logged-in-state.css
- * (body.toplevel_page_bbai.bbai-dashboard) so specificity is equal; load-order
- * (this file is registered after bbai-logged-in-state) wins the cascade.
- * !important is used only where the source rule already uses it.
+ * Matches the approved fully-optimised dashboard: hero status card, usage card,
+ * optimisation strip, insight cards, and footer.
  *
  * @package BeepBeep_AI
  * @since   5.3.0
  */
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   DASHBOARD PAGE HEADER
-   High-specificity overrides for the greeting row so WordPress admin CSS
-   cannot suppress the flex layout or the status pill appearance.
-───────────────────────────────────────────────────────────────────────────── */
+body.toplevel_page_bbai.bbai-dashboard {
+    --bbai-ref-bg: #f8fafc;
+    --bbai-ref-card: #ffffff;
+    --bbai-ref-border: rgba(148, 163, 184, 0.12);
+    --bbai-ref-text: #172033;
+    --bbai-ref-muted: #708096;
+    --bbai-ref-soft: #f3f6fa;
+    --bbai-ref-green: #22b573;
+    --bbai-ref-green-dark: #08785c;
+    --bbai-ref-quota: #6274b8;
+    --bbai-ref-quota-dark: #4c5f9f;
+    --bbai-ref-amber: #c97a00;
+    --bbai-ref-amber-dark: #8a5200;
+    --bbai-ref-gold: #d9a441;
+    --bbai-ref-gold-dark: #8f6419;
+    --bbai-ref-slate: #64748b;
+    --bbai-ref-purple: #6657bd;
+    --bbai-ref-progress-height: 6px;
+    --bbai-ref-progress-track: rgba(226, 232, 240, 0.62);
+    --bbai-ref-shadow: 0 1px 2px rgba(15, 23, 42, 0.014), 0 6px 14px rgba(15, 23, 42, 0.018);
+    --bbai-ref-radius: 18px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard #wpcontent {
+    background: var(--bbai-ref-bg);
+}
+
+body.toplevel_page_bbai.bbai-dashboard--connected .wrap.bbai-wrap {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard--connected .wrap.bbai-wrap > .bbai-container.bbai-content-shell.bbai-dashboard-shell {
+    width: min(100%, 1230px) !important;
+    max-width: 1230px !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
+    padding: 24px 38px 40px !important;
+    box-sizing: border-box !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-container.bbai-content-shell #bbai-dashboard-main.bbai-dashboard,
+body.toplevel_page_bbai.bbai-dashboard .bbai-container.bbai-content-shell > .bbai-dashboard.bbai-container {
+    width: min(100%, 1124px) !important;
+    max-width: 1124px !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-growth-review-notice,
+body.toplevel_page_bbai.bbai-dashboard .bbai-legacy-dashboard-runtime,
+body.toplevel_page_bbai.bbai-dashboard #bbai-dashboard-main .bbai-dashboard-command[hidden] {
+    display: none !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard--daily-pass {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 20px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: var(--bbai-ref-text);
+}
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header {
     display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
+    align-items: flex-start !important;
     justify-content: space-between !important;
-    gap: 20px !important;
-    padding-bottom: 20px !important;
+    gap: 24px !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 4px !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__left {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 3px !important;
+    display: grid !important;
+    gap: 8px !important;
     min-width: 0 !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__right {
-    flex-shrink: 0 !important;
-}
-
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__heading {
-    font-size: 26px !important;
-    font-weight: 700 !important;
-    color: #0f172a !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: none !important;
+    border: 0 !important;
     background: none !important;
     box-shadow: none !important;
-    white-space: nowrap !important;
-    line-height: 1.2 !important;
+    color: var(--bbai-ref-text) !important;
+    font-size: 26px !important;
+    font-weight: 700 !important;
+    line-height: 1.14 !important;
+    letter-spacing: 0 !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__subtitle {
-    font-size: 14px !important;
-    font-weight: 400 !important;
-    color: #64748b !important;
     margin: 0 !important;
-    padding: 0 !important;
+    color: var(--bbai-ref-muted) !important;
+    font-size: 15px !important;
+    line-height: 1.45 !important;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__right {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    min-width: 0 !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__status-pill {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    height: 38px !important;
-    padding: 0 16px !important;
-    border-radius: 20px !important;
-    border: 1.5px solid #16a34a !important;
-    background: #f0fdf4 !important;
-    white-space: nowrap !important;
+    min-height: 42px !important;
+    padding: 0 18px !important;
+    border: 1px solid var(--bbai-ref-border) !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.018) !important;
 }
 
 body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__status-text {
+    color: var(--bbai-ref-text) !important;
     font-size: 13px !important;
-    font-weight: 600 !important;
-    color: #15803d !important;
-    line-height: 1 !important;
+    font-weight: 650 !important;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__status-dot {
-    display: block !important;
-    width: 8px !important;
-    height: 8px !important;
-    border-radius: 50% !important;
-    background: #22c55e !important;
-    flex-shrink: 0 !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+    background: #ffffff;
+    color: #526174;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.018);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   SECTION GAP RHYTHM
-   Reduces the 30px gap between the header, hero shell, and insight cards to a
-   tighter 20px.  This removes the "random stacked blocks" feeling.
-───────────────────────────────────────────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-logged-in-dashboard {
-    gap: 20px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__logout:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__logout:focus-visible {
+    border-color: rgba(148, 163, 184, 0.24);
+    color: #334155;
+    outline: none;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
-    gap: 20px;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+body.toplevel_page_bbai.bbai-dashboard #adminmenu .toplevel_page_bbai > a {
+    min-height: 32px;
+    font-weight: 500;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   HERO CARD BORDERS + SHADOWS
-   Slightly softer — cards feel integrated, not floating.
-───────────────────────────────────────────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card {
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
-    border-color: rgba(226, 232, 240, 0.88);
+body.toplevel_page_bbai.bbai-dashboard #adminmenu .toplevel_page_bbai.wp-has-current-submenu > a.wp-has-current-submenu,
+body.toplevel_page_bbai.bbai-dashboard #adminmenu .toplevel_page_bbai.current > a.menu-top {
+    background: #2f74b4;
+    color: #ffffff;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   LEFT CARD — HORIZONTAL LAYOUT
-   Converts the donut card from a narrow stacked card to a wide two-column card:
-   left column = donut ring, right column = title + CTAs + status counts.
-───────────────────────────────────────────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
-    display: grid !important;
-    grid-template-columns: 192px minmax(0, 1fr);
-    column-gap: 24px;
-    row-gap: 0;
-    align-items: start;
-    padding: 20px 24px !important;
+body.toplevel_page_bbai.bbai-dashboard #adminmenu .toplevel_page_bbai .wp-menu-image::before {
+    font-size: 18px;
+    line-height: 20px;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-col {
-    display: flex;
-    flex-direction: column;
+body.toplevel_page_bbai.bbai-dashboard #adminmenu .toplevel_page_bbai .wp-submenu a {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 14px;
+    font-weight: 500;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-card {
+    border: 1px solid var(--bbai-ref-border);
+    border-radius: var(--bbai-ref-radius);
+    background: var(--bbai-ref-card);
+    box-shadow: var(--bbai-ref-shadow);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-top-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+    gap: 26px;
+    align-items: stretch;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-card {
+    display: grid;
+    gap: 32px;
+    min-height: 528px;
+    padding: 46px 36px 36px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-main {
+    display: grid;
+    grid-template-columns: 196px minmax(0, 1fr);
+    gap: 38px;
     align-items: center;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col {
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: relative;
+    box-sizing: border-box;
+    width: 158px;
+    height: 158px;
+    margin: 0 auto;
+    border-radius: 999px;
+    background: var(--bbai-daily-donut-background, conic-gradient(#e2e8f0 0deg 360deg));
+    color: #15803d;
+    font-size: 40px;
+    font-weight: 580;
+    line-height: 1;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.07);
+    transition: background 180ms ease;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut::before {
+    position: absolute;
+    inset: 8px;
+    border-radius: inherit;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.045);
+    content: '';
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut[data-bbai-daily-donut-focus="missing"] {
+    color: #b45309;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut[data-bbai-daily-donut-focus="review"] {
+    color: #b91c1c;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut span {
+    display: block;
+    position: relative;
+    z-index: 1;
+    line-height: 1;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut-value {
+    font-size: 40px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut-label {
+    font-size: 11px;
+    font-weight: 650;
+    text-transform: uppercase;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-copy {
+    display: grid;
+    align-content: center;
+    gap: 18px;
     min-width: 0;
-    gap: 0;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col .bbai-li-card-section--intro {
-    padding: 0;
-    margin-bottom: 12px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-badge,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(236, 253, 245, 0.72);
+    color: #047857;
+    font-size: 11px;
+    font-weight: 620;
+    line-height: 1;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-content-col .bbai-li-card-section--actions {
-    padding: 0;
-    margin-bottom: 12px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-title {
+    max-width: 300px;
+    margin: 0;
+    color: var(--bbai-ref-text);
+    font-size: 24px;
+    font-weight: 650;
+    line-height: 1.16;
+    letter-spacing: 0;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut {
-    width: 168px;
-    height: 168px;
-    margin-bottom: 3px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-text {
+    max-width: 284px;
+    margin: 0;
+    color: #526174;
+    font-size: 15px;
+    line-height: 1.55;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut__inner {
-    inset: 18px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-mini-stats {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 22px;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-area {
-    gap: 5px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-mini-stats span {
+    display: grid;
+    grid-template-columns: 30px auto;
+    column-gap: 8px;
+    align-items: center;
+    color: var(--bbai-ref-muted);
+    font-size: 11px;
+    line-height: 1.1;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-card-meta-row {
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-mini-stats i {
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: rgba(236, 253, 245, 0.72);
+    color: var(--bbai-ref-green-dark);
+    font-style: normal;
+    font-size: 16px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-mini-stats strong {
+    color: var(--bbai-ref-text);
+    font-size: 17px;
+    font-weight: 650;
+    line-height: 1;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-actions,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-side-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-actions {
     margin-top: 8px;
-    padding-top: 8px;
+    margin-bottom: 8px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   RIGHT CONTENT CARD
-   Reduce internal vertical rhythm so content feels grouped, not drifting.
-───────────────────────────────────────────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
-    padding: 18px 22px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress {
+    margin: 14px 0 4px;
+    padding: 12px 14px;
+    border: 1px solid rgba(15, 163, 115, 0.14);
+    border-radius: 10px;
+    background: rgba(236, 253, 245, 0.46);
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-state-badge {
-    margin-bottom: 7px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress[hidden] {
+    display: none;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-support {
-    margin-top: 7px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+    color: #526174;
+    font-size: 13px;
+    line-height: 1.35;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content .bbai-action-block {
-    margin-top: 12px;
-    max-width: 500px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress__meta strong {
+    flex: 0 0 auto;
+    color: var(--bbai-ref-green-dark);
+    font-size: 12px;
+    font-weight: 700;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-card-section--spaced {
-    margin-top: 12px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress__track {
+    position: relative;
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(15, 163, 115, 0.12);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   HERO CTA BUTTONS
-   42px height instead of 48px — tighter, still comfortable.
-───────────────────────────────────────────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-primary,
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-btn-secondary,
-#bbai-dashboard-main .bbai-li-btn-primary.bbai-btn-primary,
-#bbai-dashboard-main .bbai-li-btn-secondary.bbai-btn-secondary {
-    height: 42px !important;
-    min-height: 42px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress__fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--bbai-ref-green), #22c55e);
+    transition: width 0.28s ease;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   AUTOMATION TOGGLE CARD
-   Tighten inner padding so toggle row reads as an intentional inline unit.
-───────────────────────────────────────────────────────────────────────────── */
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress.is-indeterminate .bbai-daily-generation-progress__fill {
+    animation: bbai-daily-generation-progress 1.15s ease-in-out infinite;
+}
 
-#bbai-dashboard-main .bbai-automation-card__toggle-row {
-    padding: 10px 14px;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress.is-complete {
+    border-color: rgba(34, 197, 94, 0.18);
+    background: rgba(240, 253, 244, 0.7);
+}
+
+@keyframes bbai-daily-generation-progress {
+    0% {
+        transform: translateX(-115%);
+    }
+    55% {
+        transform: translateX(360%);
+    }
+    100% {
+        transform: translateX(720%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-generation-progress.is-indeterminate .bbai-daily-generation-progress__fill {
+        animation: none;
+    }
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 620;
+    line-height: 1;
+    text-decoration: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    white-space: nowrap;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn:focus {
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--primary {
+    background: var(--bbai-ref-green);
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(15, 163, 115, 0.085);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--primary:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--primary:focus {
+    background: var(--bbai-ref-green-dark);
+    color: #ffffff;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--premium-gated {
+    border-color: rgba(102, 87, 189, 0.18);
+    background: #f9f7ff;
+    color: var(--bbai-ref-purple);
+    box-shadow: 0 2px 6px rgba(102, 87, 189, 0.045);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--premium-gated:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--premium-gated:focus {
+    border-color: rgba(102, 87, 189, 0.24);
+    background: #f5f2ff;
+    color: #5548a8;
+    box-shadow: 0 3px 8px rgba(102, 87, 189, 0.06);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--secondary,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--upgrade {
+    border-color: rgba(148, 163, 184, 0.13);
+    background: #ffffff;
+    color: #526174;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.01);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--upgrade {
+    border-color: rgba(102, 87, 189, 0.16);
+    background: #ffffff;
+    color: var(--bbai-ref-purple);
+    box-shadow: none;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--secondary:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--secondary:focus {
+    border-color: rgba(148, 163, 184, 0.19);
+    background: #f8fafc;
+    color: var(--bbai-ref-text);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--upgrade:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn--upgrade:focus {
+    border-color: rgba(102, 87, 189, 0.22);
+    background: #faf9ff;
+    color: #5548a8;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn[disabled],
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn[aria-disabled="true"],
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-btn.is-disabled {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: #f8fafc;
+    color: #64748b;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    cursor: not-allowed;
+    opacity: 1;
+    transform: none;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-queue-row {
+    display: flex;
+    gap: 36px;
+    align-items: center;
+    padding: 30px 34px 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.14);
+    color: #64748b;
+    font-size: 14px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-queue-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: color 0.16s ease;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-queue-link:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-queue-link:focus-visible {
+    color: #334155;
+    outline: none;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-queue-link--disabled {
+    pointer-events: none;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-queue-row strong {
+    color: #334155;
+    font-weight: 650;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-dot--red { background: #dc2626; }
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-dot--amber { background: var(--bbai-ref-amber); }
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-dot--gold { background: var(--bbai-ref-gold); }
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-dot--green { background: var(--bbai-ref-green); }
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-flow-row {
+    display: flex;
+    justify-content: center;
     gap: 14px;
+    align-items: center;
+    color: #94a3b8;
+    font-size: 14px;
+    min-height: 28px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   RETENTION / CTA STRIP
-   ~25% height reduction: less padding, smaller title.
-───────────────────────────────────────────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip {
-    padding: 13px 20px !important;
-    gap: 16px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-flow-row .is-active {
+    color: var(--bbai-ref-green-dark);
+    font-weight: 620;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-retention-strip__title {
-    font-size: 15px !important;
-    margin-bottom: 2px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-flow-row [data-bbai-daily-flow-step="generate"].is-active {
+    color: var(--bbai-ref-amber-dark);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   INSIGHT / STAT CARDS
-   Tighter padding, remove forced min-height, lighter shadow, closer spacing.
-───────────────────────────────────────────────────────────────────────────── */
-
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
-    gap: 18px !important;
-    margin-top: 18px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-flow-row [data-bbai-daily-flow-step="review"].is-active {
+    color: var(--bbai-ref-gold-dark);
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card,
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card.bbai-stat-card {
-    min-height: 0 !important;
-    padding: 18px 20px !important;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03) !important;
-    border-color: rgba(226, 232, 240, 0.82) !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-usage-panel {
+    display: grid;
+    gap: 36px;
+    align-content: start;
+    min-height: 528px;
+    padding: 34px 30px 30px;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__value {
-    margin-top: 10px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-eyebrow {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 620;
+    line-height: 1.2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__desc {
-    margin-top: 10px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-usage-head {
+    display: grid;
+    gap: 18px;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__support {
-    margin: 7px 0 0 !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-usage-head strong {
+    color: var(--bbai-ref-text);
+    font-size: 25px;
+    font-weight: 650;
+    line-height: 1.15;
 }
 
-body.toplevel_page_bbai.bbai-dashboard .bbai-li-insight-card__cta {
-    margin: 8px 0 0 !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-usage-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    color: var(--bbai-ref-muted);
+    font-size: 14px;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   RESPONSIVE PRESERVATION
-   These match breakpoints already in logged-in-state.css — ensure overrides
-   don't accidentally break the mobile collapse.
-───────────────────────────────────────────────────────────────────────────── */
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-meter {
+    overflow: hidden;
+    width: 100%;
+    height: var(--bbai-ref-progress-height);
+    border-radius: 999px;
+    background: var(--bbai-ref-progress-track);
+}
 
-@media (max-width: 900px) {
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-insights {
-        gap: 14px !important;
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-meter span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--bbai-ref-green);
+    transition: width 0.35s ease, background-color 0.2s ease;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-meter--low span {
+    background: var(--bbai-ref-quota);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-meter--empty span {
+    background: var(--bbai-ref-quota);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-automation-box,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box {
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 12px;
+    background: #fbfdff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-automation-box {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+    padding: 21px 20px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-automation-box h3 {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 0 0 10px;
+    color: var(--bbai-ref-text);
+    font-size: 17px;
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-automation-box h3 span {
+    color: var(--bbai-ref-green-dark);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-automation-box p,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box a,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box strong {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-automation-box p {
+    max-width: 31ch;
+    margin-top: 2px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-switch {
+    position: relative;
+    width: 52px;
+    height: 30px;
+    border: 0;
+    border-radius: 999px;
+    background: #d3dbe6;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-switch span {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-switch:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-switch:focus-visible {
+    background: #cbd5e1;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
+    outline: none;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box {
+    display: grid;
+    gap: 16px;
+    padding: 19px 18px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box strong {
+    color: var(--bbai-ref-text);
+    font-weight: 650;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box a {
+    color: var(--bbai-ref-purple);
+    font-weight: 620;
+    text-decoration: none;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip {
+    display: grid;
+    grid-template-columns: auto minmax(230px, 1fr) minmax(210px, 240px) minmax(150px, 168px) minmax(132px, 148px);
+    gap: 30px;
+    align-items: center;
+    padding: 32px 56px 32px 26px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-strip-check {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: var(--bbai-ref-green);
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 650;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip--incomplete .bbai-daily-strip-check {
+    background: var(--bbai-ref-amber);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip--incomplete .bbai-daily-meter span {
+    background: var(--bbai-ref-green);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip--review .bbai-daily-strip-check {
+    background: var(--bbai-ref-gold);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip--review .bbai-daily-meter span {
+    background: var(--bbai-ref-green);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip strong {
+    display: block;
+    color: var(--bbai-ref-text);
+    font-size: 16px;
+    font-weight: 650;
+    line-height: 1.18;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding-right: 12px;
+    padding-left: 12px;
+    font-size: 13px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn--primary {
+    background: var(--bbai-ref-green);
+    box-shadow: 0 2px 6px rgba(15, 163, 115, 0.07);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn--primary:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn--primary:focus {
+    background: var(--bbai-ref-green-dark);
+    box-shadow: 0 3px 8px rgba(15, 163, 115, 0.08);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn--secondary {
+    border-color: rgba(148, 163, 184, 0.13);
+    color: #5f6f83;
+    font-weight: 620;
+    box-shadow: none;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn--secondary:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn--secondary:focus {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: #fbfdff;
+    color: #334155;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip p {
+    margin: 4px 0 0;
+    color: #526174;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-strip-progress {
+    display: grid;
+    justify-self: stretch;
+    gap: 12px;
+    max-width: 240px;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-strip-progress span {
+    font-weight: 620;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-strip-progress .bbai-daily-meter {
+    height: var(--bbai-ref-progress-height);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-meter span {
+    background: var(--bbai-ref-green);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-meter--segmented {
+    display: flex;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-meter--segmented .bbai-daily-meter__segment {
+    display: block;
+    flex: 0 0 auto;
+    height: 100%;
+    min-width: 0;
+    border-radius: 0;
+    transition: width 0.35s ease, background-color 0.2s ease;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-meter--segmented .bbai-daily-meter__segment--optimised {
+    background: var(--bbai-ref-green);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-meter--segmented .bbai-daily-meter__segment--review {
+    background: var(--bbai-ref-gold);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-meter--segmented .bbai-daily-meter__segment--missing {
+    background: var(--bbai-ref-amber);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto auto auto auto 1fr auto;
+    align-content: stretch;
+    gap: 14px;
+    min-height: 292px;
+    padding: 22px;
+    overflow: hidden;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--accessibility {
+    background: #fefffe;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--time {
+    background: #fefeff;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--seo {
+    background: #fff;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight-head {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight-head > div:last-child {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: rgba(240, 253, 247, 0.72);
+    color: var(--bbai-ref-green-dark);
+    font-size: 21px;
+    font-weight: 700;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--time .bbai-daily-insight-icon {
+    background: #f6f8fb;
+    color: var(--bbai-ref-slate);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--seo .bbai-daily-insight-icon {
+    background: #fbfaff;
+    color: var(--bbai-ref-purple);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight .bbai-daily-eyebrow {
+    color: var(--bbai-ref-green-dark);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--time .bbai-daily-eyebrow {
+    color: var(--bbai-ref-slate);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--seo .bbai-daily-eyebrow {
+    color: var(--bbai-ref-purple);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight h3 {
+    max-width: 238px;
+    margin: 0;
+    color: var(--bbai-ref-text);
+    font-size: 22px;
+    font-weight: 650;
+    line-height: 1.16;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight p {
+    margin: 0;
+    color: #526174;
+    font-size: 13px;
+    max-width: 29ch;
+    line-height: 1.42;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight > strong {
+    justify-self: start;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(240, 253, 247, 0.72);
+    color: #047857;
+    font-size: 13px;
+    font-weight: 620;
+    line-height: 1;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--time > strong {
+    background: #f6f8fb;
+    color: var(--bbai-ref-slate);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight--seo > strong {
+    background: #fbfaff;
+    color: var(--bbai-ref-purple);
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insight .bbai-daily-btn {
+    align-self: end;
+    justify-self: stretch;
+    margin-top: auto;
+    min-height: 44px;
+}
+
+@media (max-width: 1180px) {
+    body.toplevel_page_bbai.bbai-dashboard--connected .wrap.bbai-wrap > .bbai-container.bbai-content-shell.bbai-dashboard-shell {
+        padding-right: 28px !important;
+        padding-left: 28px !important;
     }
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-hero-grid {
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
-}
 
-@media (max-width: 768px) {
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut {
-        grid-template-columns: minmax(0, 1fr) !important;
-    }
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-donut-col {
-        align-items: flex-start;
-    }
-}
-
-@media (max-width: 680px) {
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--donut,
-    body.toplevel_page_bbai.bbai-dashboard .bbai-li-card--content {
-        padding: 16px !important;
-    }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   DASHBOARD HEADER — MOBILE
-   Must use !important to override the base rules above.
-───────────────────────────────────────────────────────────────────────────── */
-
-@media (max-width: 782px) {
     body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 10px !important;
-        padding-bottom: 16px !important;
-    }
-
-    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__heading {
-        font-size: 20px !important;
-        white-space: normal !important;
-    }
-
-    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__subtitle {
-        font-size: 13px !important;
+        flex-wrap: wrap !important;
     }
 
     body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__right {
-        width: 100% !important;
+        flex: 1 1 100% !important;
+        justify-content: flex-start !important;
     }
 
-    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header__status-pill {
-        width: auto !important;
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip {
+        grid-template-columns: auto minmax(230px, 1fr) minmax(210px, 240px);
     }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn {
+        justify-self: stretch;
+    }
+}
+
+@media (max-width: 900px) {
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-top-grid,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip {
+        grid-template-columns: 1fr;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-optimised-strip .bbai-daily-btn {
+        justify-self: start;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-insights {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 782px) {
+    body.toplevel_page_bbai.bbai-dashboard--connected .wrap.bbai-wrap > .bbai-container.bbai-content-shell.bbai-dashboard-shell {
+        padding: 28px 16px 38px !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header {
+        padding-right: 0 !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header::before,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-dashboard-header::after {
+        display: none !important;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-card,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-usage-panel {
+        min-height: 0;
+        padding: 24px;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-main,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-actions,
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-side-actions {
+        grid-template-columns: 1fr;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-donut {
+        width: 148px;
+        height: 148px;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-hero-title {
+        max-width: none;
+        font-size: 25px;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-queue-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    body.toplevel_page_bbai.bbai-dashboard .bbai-daily-flow-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+/* Daily vs monthly limit helper */
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-limit-note {
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: #64748b;
+}
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-limit-note[hidden] {
+	display: none !important;
+}
+
+/* Limit notice: text only, no extra progress bar */
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-generation-progress--notice [data-bbai-hero-generation-progress-track],
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-generation-progress--notice .bbai-hero-generation-progress__track {
+	display: none !important;
+}
+body.toplevel_page_bbai.bbai-dashboard .bbai-hero-generation-progress--notice [data-bbai-hero-generation-progress-count][hidden] {
+	display: none !important;
+}
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box .bbai-daily-meter {
+	display: none !important;
 }
