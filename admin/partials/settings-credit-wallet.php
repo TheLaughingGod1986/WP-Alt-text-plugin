@@ -12,6 +12,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Signed-in only — never render for guests / logged-out Settings.
+$bbai_wallet_signed_in = ( isset( $bbai_is_authenticated ) && $bbai_is_authenticated )
+	|| ( isset( $bbai_has_license ) && $bbai_has_license );
+if ( ! $bbai_wallet_signed_in ) {
+	return;
+}
+
 $bbai_wallet_usage = is_array( $bbai_usage_box ?? null ) ? $bbai_usage_box : [];
 $bbai_wallet_raw   = [];
 if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
@@ -21,14 +28,22 @@ if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
 	}
 }
 
-// Prefer live GET /api/usage figures already loaded into $bbai_usage_box.
-$bbai_wallet_used   = max( 0, (int) ( $bbai_used_credits ?? $bbai_wallet_usage['used'] ?? $bbai_wallet_raw['used'] ?? 0 ) );
-$bbai_wallet_limit  = max( 1, (int) ( $bbai_total_credits ?? $bbai_wallet_usage['limit'] ?? $bbai_wallet_raw['limit'] ?? 25 ) );
-$bbai_wallet_remain = max( 0, (int) ( $bbai_wallet_usage['remaining'] ?? $bbai_wallet_raw['remaining'] ?? ( $bbai_wallet_limit - $bbai_wallet_used ) ) );
-$bbai_wallet_pct    = $bbai_wallet_limit > 0
+// Prefer live GET /api/usage figures — never invent a Free 25 limit.
+$bbai_wallet_used = max( 0, (int) ( $bbai_used_credits ?? $bbai_wallet_usage['used'] ?? $bbai_wallet_raw['used'] ?? 0 ) );
+$bbai_wallet_limit_candidate = $bbai_total_credits ?? $bbai_wallet_usage['limit'] ?? $bbai_wallet_raw['limit'] ?? null;
+$bbai_wallet_has_limit       = null !== $bbai_wallet_limit_candidate && '' !== $bbai_wallet_limit_candidate && (int) $bbai_wallet_limit_candidate > 0;
+$bbai_wallet_limit           = $bbai_wallet_has_limit ? (int) $bbai_wallet_limit_candidate : 0;
+if ( isset( $bbai_wallet_usage['remaining'] ) || isset( $bbai_wallet_raw['remaining'] ) ) {
+	$bbai_wallet_remain = max( 0, (int) ( $bbai_wallet_usage['remaining'] ?? $bbai_wallet_raw['remaining'] ?? 0 ) );
+} elseif ( $bbai_wallet_has_limit ) {
+	$bbai_wallet_remain = max( 0, $bbai_wallet_limit - $bbai_wallet_used );
+} else {
+	$bbai_wallet_remain = 0;
+}
+$bbai_wallet_pct = $bbai_wallet_has_limit
 	? (int) min( 100, round( ( 100 * $bbai_wallet_used ) / $bbai_wallet_limit ) )
 	: 0;
-$bbai_wallet_reset  = (string) ( $bbai_reset_label ?? $bbai_wallet_usage['reset_date'] ?? __( 'next month', 'beepbeep-ai-alt-text-generator' ) );
+$bbai_wallet_reset = (string) ( $bbai_reset_label ?? $bbai_wallet_usage['reset_date'] ?? __( 'next month', 'beepbeep-ai-alt-text-generator' ) );
 
 $bbai_wallet_plan_slug = strtolower( (string) ( $bbai_plan_normalized ?? $bbai_wallet_usage['plan'] ?? $bbai_wallet_raw['plan'] ?? 'free' ) );
 if ( 'growth' === $bbai_wallet_plan_slug ) {
@@ -53,11 +68,13 @@ if ( $bbai_wallet_is_agency ) {
 	$bbai_wallet_service_title = __( 'OpptiAI Free service', 'beepbeep-ai-alt-text-generator' );
 }
 
-$bbai_wallet_service_desc = sprintf(
-	/* translators: %d: monthly shared credit limit from GET /api/usage. */
-	__( '%d AI service credits per cycle · shared across your OpptiAI plugins · usable manually, in bulk, or with Autopilot.', 'beepbeep-ai-alt-text-generator' ),
-	$bbai_wallet_limit
-);
+$bbai_wallet_service_desc = $bbai_wallet_has_limit
+	? sprintf(
+		/* translators: %d: monthly shared credit limit from GET /api/usage. */
+		__( '%d AI service credits per cycle · shared across your OpptiAI plugins · usable manually, in bulk, or with Autopilot.', 'beepbeep-ai-alt-text-generator' ),
+		$bbai_wallet_limit
+	)
+	: __( 'AI service credits shared across your OpptiAI plugins · usable manually, in bulk, or with Autopilot.', 'beepbeep-ai-alt-text-generator' );
 
 // Same usage_by_feature / feature_usage split Titles already reads.
 $bbai_wallet_usage_source = [];
@@ -214,26 +231,40 @@ $bbai_wallet_plan_mod       = $bbai_wallet_is_paid ? 'bbai-wallet-plan--paid' : 
 			<span><?php esc_html_e( 'This billing cycle', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			<span class="bbai-wallet-plan__usage-num">
 				<?php
-				echo esc_html(
-					sprintf(
-						/* translators: 1: credits used, 2: monthly credit limit from GET /api/usage. */
-						__( '%1$s / %2$s AI service credits used', 'beepbeep-ai-alt-text-generator' ),
-						number_format_i18n( $bbai_wallet_used ),
-						number_format_i18n( $bbai_wallet_limit )
-					)
-				);
+				if ( $bbai_wallet_has_limit ) {
+					echo esc_html(
+						sprintf(
+							/* translators: 1: credits used, 2: monthly credit limit from GET /api/usage. */
+							__( '%1$s / %2$s AI service credits used', 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $bbai_wallet_used ),
+							number_format_i18n( $bbai_wallet_limit )
+						)
+					);
+				} else {
+					echo esc_html(
+						sprintf(
+							/* translators: %s: credits used. */
+							__( '%s AI service credits used', 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $bbai_wallet_used )
+						)
+					);
+				}
 				?>
 			</span>
 		</div>
+		<?php if ( $bbai_wallet_has_limit ) : ?>
 		<div class="bbai-wallet-progress bbai-wallet-progress--<?php echo esc_attr( $bbai_wallet_progress_mod ); ?>" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?php echo esc_attr( (string) $bbai_wallet_pct ); ?>">
 			<span style="width:<?php echo esc_attr( (string) $bbai_wallet_pct ); ?>%;"></span>
 		</div>
+		<?php endif; ?>
 		<div class="bbai-wallet-plan__usage-foot">
+			<?php if ( $bbai_wallet_has_limit ) : ?>
 			<span><?php echo esc_html( sprintf(
 				/* translators: %s: remaining credits. */
 				__( '%s remaining', 'beepbeep-ai-alt-text-generator' ),
 				number_format_i18n( $bbai_wallet_remain )
 			) ); ?></span>
+			<?php endif; ?>
 			<span><?php echo esc_html( sprintf(
 				/* translators: %s: reset date from usage payload. */
 				__( 'Resets %s', 'beepbeep-ai-alt-text-generator' ),
@@ -251,25 +282,29 @@ $bbai_wallet_plan_mod       = $bbai_wallet_is_paid ? 'bbai-wallet-plan--paid' : 
 		</div>
 		<div class="bbai-wallet-card__total">
 			<strong><?php echo esc_html( number_format_i18n( $bbai_wallet_used ) ); ?></strong>
-			<?php
-			echo esc_html(
-				sprintf(
-					/* translators: %s: monthly credit limit. */
-					__( '/ %s credits used', 'beepbeep-ai-alt-text-generator' ),
-					number_format_i18n( $bbai_wallet_limit )
-				)
-			);
-			?>
-			<span class="bbai-wallet-card__dot" aria-hidden="true">·</span>
-			<span><?php echo esc_html( sprintf(
-				/* translators: %s: remaining credits. */
-				__( '%s remaining', 'beepbeep-ai-alt-text-generator' ),
-				number_format_i18n( $bbai_wallet_remain )
-			) ); ?></span>
+			<?php if ( $bbai_wallet_has_limit ) : ?>
+				<?php
+				echo esc_html(
+					sprintf(
+						/* translators: %s: monthly credit limit. */
+						__( '/ %s credits used', 'beepbeep-ai-alt-text-generator' ),
+						number_format_i18n( $bbai_wallet_limit )
+					)
+				);
+				?>
+				<span class="bbai-wallet-card__dot" aria-hidden="true">·</span>
+				<span><?php echo esc_html( sprintf(
+					/* translators: %s: remaining credits. */
+					__( '%s remaining', 'beepbeep-ai-alt-text-generator' ),
+					number_format_i18n( $bbai_wallet_remain )
+				) ); ?></span>
+			<?php else : ?>
+				<?php echo esc_html__( ' credits used', 'beepbeep-ai-alt-text-generator' ); ?>
+			<?php endif; ?>
 		</div>
 	</div>
 
-	<?php if ( ! $bbai_wallet_show_breakdown ) : ?>
+	<?php if ( ! $bbai_wallet_show_breakdown && $bbai_wallet_has_limit ) : ?>
 		<div class="bbai-wallet-card__shared">
 			<div class="bbai-wallet-card__shared-head">
 				<span class="bbai-wallet-card__eyebrow"><?php esc_html_e( 'Shared usage', 'beepbeep-ai-alt-text-generator' ); ?></span>

@@ -500,9 +500,9 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                 </div>
 
                 <?php
-                // Signed-in Account: Titles-parity Free/Growth service card + Credit Wallet.
+                // Signed-in Account only — never show Credit Wallet to guests / logged-out Settings.
                 $bbai_credit_wallet_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-credit-wallet.php';
-                if ( is_readable( $bbai_credit_wallet_partial ) ) {
+                if ( ( $bbai_is_authenticated || $bbai_has_license ) && is_readable( $bbai_credit_wallet_partial ) ) {
                     echo '<div class="bbai-page-section bbai-settings-credit-wallet">';
                     require $bbai_credit_wallet_partial;
                     echo '</div>';

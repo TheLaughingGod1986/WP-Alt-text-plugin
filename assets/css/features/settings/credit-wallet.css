@@ -12,11 +12,6 @@ body.bbai-dashboard .bbai-wallet-card {
 	overflow: hidden;
 }
 
-body.bbai-dashboard .bbai-wallet-plan--growth {
-	background: #f5f3ff;
-	border-color: #ddd6fe;
-}
-
 body.bbai-dashboard .bbai-wallet-plan--paid {
 	background: #f5f3ff;
 	border-color: #ddd6fe;
@@ -42,7 +37,6 @@ body.bbai-dashboard .bbai-wallet-plan__icon {
 	color: #64748b;
 }
 
-body.bbai-dashboard .bbai-wallet-plan--growth .bbai-wallet-plan__icon,
 body.bbai-dashboard .bbai-wallet-plan--paid .bbai-wallet-plan__icon {
 	background: #7c3aed;
 	border: none;
@@ -90,7 +84,6 @@ body.bbai-dashboard .bbai-wallet-chip {
 	line-height: 1.4;
 }
 
-body.bbai-dashboard .bbai-wallet-chip--growth,
 body.bbai-dashboard .bbai-wallet-chip--paid {
 	border-color: #ddd6fe;
 	background: #ede9fe;
