@@ -3675,7 +3675,7 @@
                         }
                         creditCopy.textContent = sprintf(__('%1$s / %2$s', 'beepbeep-ai-alt-text-generator'), String(usedNow), String(limitNow));
                     } else if (monthlyRemainingNow === 0) {
-                        creditCopy.textContent = __('No credits left this month', 'beepbeep-ai-alt-text-generator');
+                        creditCopy.textContent = __('No credits remaining this month', 'beepbeep-ai-alt-text-generator');
                     }
                 }
             } catch (dailyUiErr) {}

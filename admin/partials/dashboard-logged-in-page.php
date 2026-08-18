@@ -400,7 +400,7 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 			<div class="bbai-daily-credit-box">
 					<strong data-bbai-daily-credit-copy="1"><?php
 					if ( $bbai_daily_remaining <= 0 ) {
-						echo esc_html__( 'No credits left this month', 'beepbeep-ai-alt-text-generator' );
+						echo esc_html__( 'No credits remaining this month', 'beepbeep-ai-alt-text-generator' );
 					} elseif ( $bbai_daily_remaining <= 5 ) {
 						echo esc_html( sprintf(
 							/* translators: %s: remaining monthly credit count. */
