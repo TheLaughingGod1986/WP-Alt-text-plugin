@@ -1117,3 +1117,37 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-hero-generation-progress--notice [d
 body.toplevel_page_bbai.bbai-dashboard .bbai-daily-credit-box .bbai-daily-meter {
 	display: none !important;
 }
+
+/* Quiet Titles sibling cross-sell (Dashboard home only) */
+body.toplevel_page_bbai.bbai-dashboard .bbai-titles-cross-sell {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.35rem 0.75rem;
+	margin: 4px 4px 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	box-shadow: none;
+	color: var(--bbai-ref-muted, #64748b);
+	font-size: 13px;
+	line-height: 1.45;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-titles-cross-sell__text {
+	margin: 0;
+	flex: 1 1 16rem;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-titles-cross-sell__cta {
+	flex: 0 0 auto;
+	color: var(--bbai-ref-text, #0f172a);
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+body.toplevel_page_bbai.bbai-dashboard .bbai-titles-cross-sell__cta:hover,
+body.toplevel_page_bbai.bbai-dashboard .bbai-titles-cross-sell__cta:focus-visible {
+	color: var(--bbai-ref-text, #0f172a);
+}

@@ -511,6 +511,13 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 		</article>
 	</section>
 
+	<?php
+	$bbai_titles_cross_sell_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-titles-cross-sell.php';
+	if ( is_readable( $bbai_titles_cross_sell_partial ) ) {
+		require $bbai_titles_cross_sell_partial;
+	}
+	?>
+
 	<div class="bbai-legacy-dashboard-runtime" hidden aria-hidden="true">
 		<?php
 		$bbai_logged_in_hero_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-logged-in-hero.php';
