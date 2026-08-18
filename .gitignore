@@ -23,6 +23,7 @@ tests/e2e/node_modules/
 tests/e2e/playwright-report/
 tests/e2e/test-results/
 pcp-report.json
+.phpunit.result.cache
 
 # Local env / deployment working copies
 .wporg-svn/

@@ -9,6 +9,10 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 - **Changed**: User-facing BeepBeep chrome in wp-admin (logos, toasts, modals, empty states, settings copy) → OpptiAI Alt Text.
 - **Changed**: Upgrade to Pro CTAs → Upgrade to Growth (billing id `pro` unchanged).
 
+### 4.6.130 — 2026-08-18
+
+- **Fixed**: When OpptiAI Titles is installed first, Alt Text adopts that site's `beepti_site_id` so both plugins share one credit wallet. Adoption only runs when Alt Text has no site id yet; already-split sites stay split.
+
 ### 4.6.129 — 2026-08-17
 
 - **Fixed**: Unified leftover Free/guest copy and shipped defaults to Free 25 / guest 10 (exhausted-guest post-generation copy, local free-credit allocation, and monetisation Free positioning). Paid plan entitlements and scan/coverage limits unchanged.

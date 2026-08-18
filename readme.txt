@@ -158,6 +158,9 @@ Privacy policy: https://posthog.com/privacy
 * Updated remaining user-facing BeepBeep chrome in wp-admin to OpptiAI Alt Text.
 * Renamed Upgrade to Pro CTAs to Upgrade to Growth (billing id unchanged).
 
+= 4.6.130 =
+* Fixed: When OpptiAI Titles is installed first, Alt Text now adopts that site's `beepti_site_id` so both plugins share one credit wallet (Titles-first install order). Adoption only runs when Alt Text has no site id yet.
+
 = 4.6.129 =
 * Unified leftover Free/guest copy and shipped defaults to Free 25 / guest 10 (exhausted-guest messaging, local free-credit allocation, Free plan positioning).
 
