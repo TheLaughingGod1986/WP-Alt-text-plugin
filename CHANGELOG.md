@@ -9,7 +9,7 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 - **Added**: Quiet OpptiAI Titles cross-sell at the bottom of the home Dashboard tab for signed-in Free, Starter, and Growth users (hidden from guests and Agency). Links to the Titles admin page when active, otherwise WordPress.org.
 - **Changed**: Dashboard usage card shows “Only X credits left this month” only when remaining ≤ 5; above that it shows used/limit numbers only.
 - **Added**: Quiet usage clarification under the usage card: credits count generations (including retries and titles); images count what you saved.
-- **Added**: Settings Account Credit Wallet matching Titles — Free/Growth service card, shared monthly pool, per-plugin `usage_by_feature` breakdown (Image ALT Text first as “This plugin”; Titles Open when installed; Internal Linking / Schema Not installed without Get). “View Growth plan” CTA (billing id `pro` unchanged).
+- **Added**: Settings Account Credit Wallet matching Titles — Free/Starter/Growth service card, shared monthly pool from GET /api/usage, per-plugin `usage_by_feature` breakdown (Image ALT Text first as “This plugin”; Titles used/% when billed or Open/Not installed; Internal Linking / Schema Not installed without Get/Install). Shared-wallet note under rows. “View Growth plan” CTA (billing id `pro` unchanged). Guests never see the wallet.
 
 ### 4.6.131 — 2026-08-18
 

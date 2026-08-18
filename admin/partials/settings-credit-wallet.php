@@ -1,16 +1,9 @@
 <?php
 /**
- * Settings Account — OpptiAI Credit Wallet (parity with Titles).
+ * Settings Account — OpptiAI Credit Wallet (locked Titles parity).
  *
- * Signed-in only. Free/Growth service card + shared credit wallet with
- * per-plugin breakdown from usage_by_feature. Image ALT Text is listed first
- * (“This plugin”). Titles shows Open when the sibling is active; Internal
- * Linking and Schema show Not installed (no Get button).
- *
- * Expects parent scope from settings-tab.php:
- *   $bbai_usage_box, $bbai_plan_label, $bbai_is_growth_plan / $bbai_is_pro /
- *   $bbai_is_agency / $bbai_is_starter, $bbai_used_credits, $bbai_total_credits,
- *   $bbai_reset_label, $bbai_has_paid_plan
+ * Settings / Account only (not Dashboard). Signed-in Free/paid only.
+ * Guests never see this partial (parent settings-tab gates it).
  *
  * @package BeepBeep_AI
  */
@@ -28,27 +21,45 @@ if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
 	}
 }
 
-$bbai_wallet_used  = max( 0, (int) ( $bbai_used_credits ?? $bbai_wallet_usage['used'] ?? 0 ) );
-$bbai_wallet_limit = max( 1, (int) ( $bbai_total_credits ?? $bbai_wallet_usage['limit'] ?? 25 ) );
-$bbai_wallet_remain = max( 0, $bbai_wallet_limit - $bbai_wallet_used );
+// Prefer live GET /api/usage figures already loaded into $bbai_usage_box.
+$bbai_wallet_used   = max( 0, (int) ( $bbai_used_credits ?? $bbai_wallet_usage['used'] ?? $bbai_wallet_raw['used'] ?? 0 ) );
+$bbai_wallet_limit  = max( 1, (int) ( $bbai_total_credits ?? $bbai_wallet_usage['limit'] ?? $bbai_wallet_raw['limit'] ?? 25 ) );
+$bbai_wallet_remain = max( 0, (int) ( $bbai_wallet_usage['remaining'] ?? $bbai_wallet_raw['remaining'] ?? ( $bbai_wallet_limit - $bbai_wallet_used ) ) );
 $bbai_wallet_pct    = $bbai_wallet_limit > 0
 	? (int) min( 100, round( ( 100 * $bbai_wallet_used ) / $bbai_wallet_limit ) )
 	: 0;
-$bbai_wallet_reset  = (string) ( $bbai_reset_label ?? __( 'next month', 'beepbeep-ai-alt-text-generator' ) );
+$bbai_wallet_reset  = (string) ( $bbai_reset_label ?? $bbai_wallet_usage['reset_date'] ?? __( 'next month', 'beepbeep-ai-alt-text-generator' ) );
 
-$bbai_wallet_is_growth = ! empty( $bbai_is_growth_plan ) || ! empty( $bbai_is_pro ) || ! empty( $bbai_is_agency );
-$bbai_wallet_plan_chip = (string) ( $bbai_plan_label ?? __( 'Free', 'beepbeep-ai-alt-text-generator' ) );
-$bbai_wallet_service_title = $bbai_wallet_is_growth
-	? __( 'OpptiAI Growth service', 'beepbeep-ai-alt-text-generator' )
-	: __( 'OpptiAI Free service', 'beepbeep-ai-alt-text-generator' );
+$bbai_wallet_plan_slug = strtolower( (string) ( $bbai_plan_normalized ?? $bbai_wallet_usage['plan'] ?? $bbai_wallet_raw['plan'] ?? 'free' ) );
+if ( 'growth' === $bbai_wallet_plan_slug ) {
+	$bbai_wallet_plan_slug = 'pro';
+}
+$bbai_wallet_is_starter = ! empty( $bbai_is_starter ) || in_array( $bbai_wallet_plan_slug, [ 'starter', 'basic' ], true );
+$bbai_wallet_is_growth  = ! empty( $bbai_is_pro ) || in_array( $bbai_wallet_plan_slug, [ 'pro', 'growth' ], true );
+$bbai_wallet_is_agency  = ! empty( $bbai_is_agency ) || 'agency' === $bbai_wallet_plan_slug;
+$bbai_wallet_is_paid    = $bbai_wallet_is_starter || $bbai_wallet_is_growth || $bbai_wallet_is_agency || ! empty( $bbai_has_paid_plan );
+
+if ( $bbai_wallet_is_agency ) {
+	$bbai_wallet_plan_chip     = __( 'Agency', 'beepbeep-ai-alt-text-generator' );
+	$bbai_wallet_service_title = __( 'OpptiAI Agency service', 'beepbeep-ai-alt-text-generator' );
+} elseif ( $bbai_wallet_is_growth ) {
+	$bbai_wallet_plan_chip     = __( 'Growth', 'beepbeep-ai-alt-text-generator' );
+	$bbai_wallet_service_title = __( 'OpptiAI Growth service', 'beepbeep-ai-alt-text-generator' );
+} elseif ( $bbai_wallet_is_starter ) {
+	$bbai_wallet_plan_chip     = __( 'Starter', 'beepbeep-ai-alt-text-generator' );
+	$bbai_wallet_service_title = __( 'OpptiAI Starter service', 'beepbeep-ai-alt-text-generator' );
+} else {
+	$bbai_wallet_plan_chip     = __( 'Free', 'beepbeep-ai-alt-text-generator' );
+	$bbai_wallet_service_title = __( 'OpptiAI Free service', 'beepbeep-ai-alt-text-generator' );
+}
 
 $bbai_wallet_service_desc = sprintf(
-	/* translators: %d: monthly shared credit limit. */
+	/* translators: %d: monthly shared credit limit from GET /api/usage. */
 	__( '%d AI service credits per cycle · shared across your OpptiAI plugins · usable manually, in bulk, or with Autopilot.', 'beepbeep-ai-alt-text-generator' ),
 	$bbai_wallet_limit
 );
 
-// Same usage_by_feature split sources as Titles.
+// Same usage_by_feature / feature_usage split Titles already reads.
 $bbai_wallet_usage_source = [];
 foreach ( [ 'usage_by_feature', 'feature_usage', 'usage_by_plugin', 'plugin_usage', 'usage_breakdown', 'credit_usage' ] as $bbai_wallet_key ) {
 	if ( isset( $bbai_wallet_usage[ $bbai_wallet_key ] ) && is_array( $bbai_wallet_usage[ $bbai_wallet_key ] ) ) {
@@ -62,20 +73,20 @@ foreach ( [ 'usage_by_feature', 'feature_usage', 'usage_by_plugin', 'plugin_usag
 }
 
 $bbai_wallet_aliases = [
-	'alt'               => 'alt_text',
-	'alttext'           => 'alt_text',
-	'image_alt'         => 'alt_text',
-	'image_alt_text'    => 'alt_text',
-	'titles'            => 'title_meta',
-	'title'             => 'title_meta',
-	'titles_meta'       => 'title_meta',
-	'titles_and_meta'   => 'title_meta',
-	'linking'           => 'internal_linking',
-	'internal_link'     => 'internal_linking',
-	'internal_links'    => 'internal_linking',
-	'oppti_linking'     => 'internal_linking',
-	'schema_markup'     => 'schema',
-	'rich_snippets'     => 'schema',
+	'alt'             => 'alt_text',
+	'alttext'         => 'alt_text',
+	'image_alt'       => 'alt_text',
+	'image_alt_text'  => 'alt_text',
+	'titles'          => 'title_meta',
+	'title'           => 'title_meta',
+	'titles_meta'     => 'title_meta',
+	'titles_and_meta' => 'title_meta',
+	'linking'         => 'internal_linking',
+	'internal_link'   => 'internal_linking',
+	'internal_links'  => 'internal_linking',
+	'oppti_linking'   => 'internal_linking',
+	'schema_markup'   => 'schema',
+	'rich_snippets'   => 'schema',
 ];
 
 $bbai_wallet_split = [];
@@ -100,10 +111,10 @@ foreach ( $bbai_wallet_usage_source as $bbai_wallet_feature_key => $bbai_wallet_
 if ( ! function_exists( 'is_plugin_active' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/plugin.php';
 }
-// Same sibling detect as the Dashboard Titles cross-sell.
-$bbai_wallet_titles_file     = 'opptiai-titles/beepbeep-titles.php';
-$bbai_wallet_titles_active   = function_exists( 'is_plugin_active' ) && is_plugin_active( $bbai_wallet_titles_file );
-$bbai_wallet_titles_admin    = admin_url( 'admin.php?page=beepbeep-titles' );
+// WP.org folder opptiai-titles; main file confirmed beepbeep-titles.php (same as Dashboard cross-sell).
+$bbai_wallet_titles_file   = 'opptiai-titles/beepbeep-titles.php';
+$bbai_wallet_titles_active = function_exists( 'is_plugin_active' ) && is_plugin_active( $bbai_wallet_titles_file );
+$bbai_wallet_titles_admin  = admin_url( 'admin.php?page=beepbeep-titles' );
 
 $bbai_wallet_icon = static function ( string $name ): string {
 	$paths = [
@@ -122,7 +133,7 @@ $bbai_wallet_icon = static function ( string $name ): string {
 	);
 };
 
-// Fixed catalog — this plugin (ALT Text) first, then siblings (Titles catalog order).
+// Roster: this plugin first, then Titles, Internal Linking, Schema.
 $bbai_wallet_catalog = [
 	[
 		'id'        => 'alt_text',
@@ -165,30 +176,29 @@ foreach ( $bbai_wallet_catalog as $bbai_wallet_cat ) {
 	$row_used = (int) ( $bbai_wallet_split[ $bbai_wallet_cat['id'] ] ?? 0 );
 	$bbai_wallet_attributed += $row_used;
 	$bbai_wallet_cat['used'] = $row_used;
-	// Keep install flags from the catalog: Alt Text is current; Titles uses
-	// is_plugin_active; Internal Linking / Schema stay Not installed (no Get).
-	$bbai_wallet_rows[] = $bbai_wallet_cat;
+	$bbai_wallet_rows[]      = $bbai_wallet_cat;
 }
 
-// Only itemise when attributed credits reconcile with the total used.
+// Itemise only when attributed credits reconcile with total used — never invent splits.
 $bbai_wallet_show_breakdown = $bbai_wallet_used > 0 && $bbai_wallet_has_split && $bbai_wallet_attributed >= $bbai_wallet_used;
 $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wallet_pct > 75 ? 'is-warn' : 'is-ok' );
+$bbai_wallet_plan_mod       = $bbai_wallet_is_paid ? 'bbai-wallet-plan--paid' : '';
 ?>
 
-<section class="bbai-wallet-plan <?php echo $bbai_wallet_is_growth ? 'bbai-wallet-plan--growth' : ''; ?>" aria-label="<?php esc_attr_e( 'OpptiAI service plan', 'beepbeep-ai-alt-text-generator' ); ?>">
+<section class="bbai-wallet-plan <?php echo esc_attr( $bbai_wallet_plan_mod ); ?>" aria-label="<?php esc_attr_e( 'OpptiAI service plan', 'beepbeep-ai-alt-text-generator' ); ?>">
 	<div class="bbai-wallet-plan__row">
 		<div class="bbai-wallet-plan__icon" aria-hidden="true">
-			<?php echo $bbai_wallet_icon( $bbai_wallet_is_growth ? 'crown' : 'shield' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG. ?>
+			<?php echo $bbai_wallet_icon( $bbai_wallet_is_paid ? 'crown' : 'shield' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG. ?>
 		</div>
 		<div class="bbai-wallet-plan__copy">
 			<div class="bbai-wallet-plan__name">
 				<span><?php echo esc_html( $bbai_wallet_service_title ); ?></span>
-				<span class="bbai-wallet-chip<?php echo $bbai_wallet_is_growth ? ' bbai-wallet-chip--growth' : ''; ?>"><?php echo esc_html( $bbai_wallet_plan_chip ); ?></span>
+				<span class="bbai-wallet-chip<?php echo $bbai_wallet_is_paid ? ' bbai-wallet-chip--paid' : ''; ?>"><?php echo esc_html( $bbai_wallet_plan_chip ); ?></span>
 			</div>
 			<p class="bbai-wallet-plan__desc"><?php echo esc_html( $bbai_wallet_service_desc ); ?></p>
 		</div>
 		<div class="bbai-wallet-plan__actions">
-			<?php if ( $bbai_wallet_is_growth ) : ?>
+			<?php if ( $bbai_wallet_is_growth || $bbai_wallet_is_agency ) : ?>
 				<button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="manage-subscription">
 					<?php esc_html_e( 'Manage billing', 'beepbeep-ai-alt-text-generator' ); ?>
 				</button>
@@ -206,7 +216,7 @@ $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wall
 				<?php
 				echo esc_html(
 					sprintf(
-						/* translators: 1: credits used, 2: monthly credit limit. */
+						/* translators: 1: credits used, 2: monthly credit limit from GET /api/usage. */
 						__( '%1$s / %2$s AI service credits used', 'beepbeep-ai-alt-text-generator' ),
 						number_format_i18n( $bbai_wallet_used ),
 						number_format_i18n( $bbai_wallet_limit )
@@ -225,7 +235,7 @@ $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wall
 				number_format_i18n( $bbai_wallet_remain )
 			) ); ?></span>
 			<span><?php echo esc_html( sprintf(
-				/* translators: %s: reset date. */
+				/* translators: %s: reset date from usage payload. */
 				__( 'Resets %s', 'beepbeep-ai-alt-text-generator' ),
 				$bbai_wallet_reset
 			) ); ?></span>
@@ -259,27 +269,6 @@ $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wall
 		</div>
 	</div>
 
-	<div class="bbai-wallet-card__note">
-		<span class="bbai-wallet-card__note-icon" aria-hidden="true"><?php echo $bbai_wallet_icon( 'info' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
-		<span>
-			<?php
-			echo esc_html(
-				$bbai_wallet_show_breakdown
-					? sprintf(
-						/* translators: %s: credit reset date. */
-						__( 'One monthly credit balance shared across every OpptiAI solution on this site. The breakdown below shows which plugin consumed each credit · resets %s.', 'beepbeep-ai-alt-text-generator' ),
-						$bbai_wallet_reset
-					)
-					: sprintf(
-						/* translators: %s: credit reset date. */
-						__( "One monthly credit balance shared across every OpptiAI solution on this site. Per-plugin credits aren't itemised yet — the total above is shared across these plugins · resets %s.", 'beepbeep-ai-alt-text-generator' ),
-						$bbai_wallet_reset
-					)
-			);
-			?>
-		</span>
-	</div>
-
 	<?php if ( ! $bbai_wallet_show_breakdown ) : ?>
 		<div class="bbai-wallet-card__shared">
 			<div class="bbai-wallet-card__shared-head">
@@ -295,7 +284,11 @@ $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wall
 	<div class="bbai-wallet-card__rows">
 		<?php foreach ( $bbai_wallet_rows as $bbai_wallet_row ) : ?>
 			<?php
-			$bbai_wallet_has_number = $bbai_wallet_show_breakdown;
+			$row_id = (string) $bbai_wallet_row['id'];
+			// Numbers only when a real split reconciles — never fake per-plugin counts.
+			// ALT Text + Titles can show used/% when billed; IL/Schema stay roster-only.
+			$bbai_wallet_billed     = $bbai_wallet_show_breakdown && in_array( $row_id, [ 'alt_text', 'title_meta' ], true );
+			$bbai_wallet_has_number = $bbai_wallet_billed;
 			$bbai_wallet_row_pct    = ( $bbai_wallet_has_number && $bbai_wallet_used > 0 )
 				? (int) min( 100, round( ( 100 * $bbai_wallet_row['used'] ) / $bbai_wallet_used ) )
 				: 0;
@@ -303,7 +296,7 @@ $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wall
 			if ( ! empty( $bbai_wallet_row['current'] ) ) {
 				$bbai_wallet_row_classes .= ' bbai-wallet-feature--current';
 			}
-			if ( empty( $bbai_wallet_row['installed'] ) ) {
+			if ( empty( $bbai_wallet_row['installed'] ) && empty( $bbai_wallet_row['current'] ) ) {
 				$bbai_wallet_row_classes .= ' bbai-wallet-feature--uninstalled';
 			}
 			?>
@@ -316,9 +309,9 @@ $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wall
 						<span><?php echo esc_html( (string) $bbai_wallet_row['label'] ); ?></span>
 						<?php if ( ! empty( $bbai_wallet_row['current'] ) ) : ?>
 							<span class="bbai-wallet-chip"><?php esc_html_e( 'This plugin', 'beepbeep-ai-alt-text-generator' ); ?></span>
-						<?php elseif ( 'title_meta' === $bbai_wallet_row['id'] && ! empty( $bbai_wallet_row['installed'] ) ) : ?>
+						<?php elseif ( 'title_meta' === $row_id && ! empty( $bbai_wallet_row['installed'] ) ) : ?>
 							<a class="bbai-wallet-feature__open" href="<?php echo esc_url( $bbai_wallet_titles_admin ); ?>"><?php esc_html_e( 'Open', 'beepbeep-ai-alt-text-generator' ); ?></a>
-						<?php elseif ( empty( $bbai_wallet_row['installed'] ) ) : ?>
+						<?php else : ?>
 							<span class="bbai-wallet-feature__muted"><?php esc_html_e( 'Not installed', 'beepbeep-ai-alt-text-generator' ); ?></span>
 						<?php endif; ?>
 					</div>
@@ -349,5 +342,26 @@ $bbai_wallet_progress_mod   = $bbai_wallet_pct > 90 ? 'is-danger' : ( $bbai_wall
 				<?php endif; ?>
 			</div>
 		<?php endforeach; ?>
+	</div>
+
+	<div class="bbai-wallet-card__note">
+		<span class="bbai-wallet-card__note-icon" aria-hidden="true"><?php echo $bbai_wallet_icon( 'info' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
+		<span>
+			<?php
+			echo esc_html(
+				$bbai_wallet_show_breakdown
+					? sprintf(
+						/* translators: %s: credit reset date. */
+						__( 'One monthly credit balance shared across every OpptiAI solution on this site. The breakdown above shows which plugin consumed each credit · resets %s.', 'beepbeep-ai-alt-text-generator' ),
+						$bbai_wallet_reset
+					)
+					: sprintf(
+						/* translators: %s: credit reset date. */
+						__( "One monthly credit balance shared across every OpptiAI solution on this site. Per-plugin credits aren't itemised yet — the total above is shared across these plugins · resets %s.", 'beepbeep-ai-alt-text-generator' ),
+						$bbai_wallet_reset
+					)
+			);
+			?>
+		</span>
 	</div>
 </section>

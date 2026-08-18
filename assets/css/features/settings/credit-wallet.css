@@ -17,6 +17,11 @@ body.bbai-dashboard .bbai-wallet-plan--growth {
 	border-color: #ddd6fe;
 }
 
+body.bbai-dashboard .bbai-wallet-plan--paid {
+	background: #f5f3ff;
+	border-color: #ddd6fe;
+}
+
 body.bbai-dashboard .bbai-wallet-plan__row {
 	display: flex;
 	align-items: flex-start;
@@ -37,7 +42,8 @@ body.bbai-dashboard .bbai-wallet-plan__icon {
 	color: #64748b;
 }
 
-body.bbai-dashboard .bbai-wallet-plan--growth .bbai-wallet-plan__icon {
+body.bbai-dashboard .bbai-wallet-plan--growth .bbai-wallet-plan__icon,
+body.bbai-dashboard .bbai-wallet-plan--paid .bbai-wallet-plan__icon {
 	background: #7c3aed;
 	border: none;
 	color: #fff;
@@ -84,7 +90,8 @@ body.bbai-dashboard .bbai-wallet-chip {
 	line-height: 1.4;
 }
 
-body.bbai-dashboard .bbai-wallet-chip--growth {
+body.bbai-dashboard .bbai-wallet-chip--growth,
+body.bbai-dashboard .bbai-wallet-chip--paid {
 	border-color: #ddd6fe;
 	background: #ede9fe;
 	color: #5b21b6;
@@ -196,7 +203,7 @@ body.bbai-dashboard .bbai-wallet-card__note {
 	align-items: flex-start;
 	gap: 9px;
 	padding: 11px 20px;
-	border-bottom: 1px solid #f1f5f9;
+	border-top: 1px solid #f1f5f9;
 	background: #f8fafc;
 	font-size: 12px;
 	line-height: 1.45;
