@@ -299,7 +299,7 @@ $bbai_wallet_plan_mod       = $bbai_wallet_is_paid ? 'bbai-wallet-plan--paid' : 
 					number_format_i18n( $bbai_wallet_remain )
 				) ); ?></span>
 			<?php else : ?>
-				<?php echo esc_html__( ' credits used', 'beepbeep-ai-alt-text-generator' ); ?>
+				<?php esc_html_e( 'credits used', 'beepbeep-ai-alt-text-generator' ); ?>
 			<?php endif; ?>
 		</div>
 	</div>
