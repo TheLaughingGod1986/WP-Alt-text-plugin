@@ -404,7 +404,7 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 					} elseif ( $bbai_daily_remaining <= 5 ) {
 						echo esc_html( sprintf(
 							/* translators: %s: remaining monthly credit count. */
-							__( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ),
+							_n( 'Only %s credit left this month', 'Only %s credits left this month', $bbai_daily_remaining, 'beepbeep-ai-alt-text-generator' ),
 							number_format_i18n( $bbai_daily_remaining )
 						) );
 					} else {

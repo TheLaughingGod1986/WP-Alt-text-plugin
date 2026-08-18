@@ -461,7 +461,7 @@ if ( $bbai_hero_c_rem <= 0 ) {
 } elseif ( $bbai_hero_c_rem <= 5 ) {
 	$bbai_hero_credit_context_line = sprintf(
 		/* translators: %s: remaining credits */
-		__( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ),
+		_n( 'Only %s credit left this month', 'Only %s credits left this month', $bbai_hero_c_rem, 'beepbeep-ai-alt-text-generator' ),
 		number_format_i18n( $bbai_hero_c_rem )
 	);
 } else {
@@ -1400,6 +1400,8 @@ $bbai_hero_credit_bar_aria = sprintf(
 		heroCreditHelperExhausted: '<?php echo esc_js( __( 'Add credits to continue generating ALT text.', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditNoneRemainingThisMonth: '<?php echo esc_js( __( 'No credits remaining this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditRemainingThisMonth: '<?php echo esc_js( __( '%s remaining this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditOnlyLeftThisMonthSingular: '<?php echo esc_js( __( 'Only %s credit left this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
+		heroCreditOnlyLeftThisMonthPlural: '<?php echo esc_js( __( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditOnlyLeftThisMonth: '<?php echo esc_js( __( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditEnoughForBatch: '<?php echo esc_js( __( '✔ Enough credits to finish this batch', 'beepbeep-ai-alt-text-generator' ) ); ?>',
 		heroCreditCanGenerateMore: '<?php echo esc_js( __( 'You can generate %s more images', 'beepbeep-ai-alt-text-generator' ) ); ?>',
@@ -1865,7 +1867,10 @@ $bbai_hero_credit_bar_aria = sprintf(
 			return TEXT.heroCreditNoneRemainingThisMonth || '';
 		}
 		if ( r <= 5 ) {
-			return replaceTokens( TEXT.heroCreditOnlyLeftThisMonth || '', {
+			var onlyLeftTpl = ( 1 === r )
+				? ( TEXT.heroCreditOnlyLeftThisMonthSingular || TEXT.heroCreditOnlyLeftThisMonth || '' )
+				: ( TEXT.heroCreditOnlyLeftThisMonthPlural || TEXT.heroCreditOnlyLeftThisMonth || '' );
+			return replaceTokens( onlyLeftTpl, {
 				'%s': formatCount( r ),
 			} );
 		}

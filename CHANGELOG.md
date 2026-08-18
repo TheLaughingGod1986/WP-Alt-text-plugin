@@ -7,9 +7,9 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 ### 4.6.132 — 2026-08-18
 
 - **Added**: Quiet OpptiAI Titles cross-sell at the bottom of the home Dashboard tab for signed-in Free, Starter, and Growth users (hidden from guests and Agency). Links to the Titles admin page when active, otherwise WordPress.org.
-- **Changed**: Dashboard usage card shows “Only X credits left this month” only when remaining ≤ 5; above that it shows used/limit numbers only.
+- **Changed**: Dashboard usage card / hero “Only X credit(s) left this month” only when remaining 1–5 (singular at 1); remaining 0 keeps exhausted copy (“No credits remaining/left this month”); above 5 shows used/limit numbers only.
 - **Added**: Quiet usage clarification under the usage card: credits count generations (including retries and titles); images count what you saved.
-- **Added**: Settings Account Credit Wallet matching Titles — Free/Starter/Growth service card, shared monthly pool from GET /api/usage, per-plugin `usage_by_feature` breakdown (Image ALT Text first as “This plugin”; Titles used/% when billed or Open/Not installed; Internal Linking / Schema Not installed without Get/Install). Shared-wallet note under rows. “View Growth plan” CTA (billing id `pro` unchanged). Guests never see the wallet.
+- **Added**: Settings Account Credit Wallet matching Titles — Free/Starter/Growth service card, shared monthly pool from GET /api/usage, per-plugin `usage_by_feature` breakdown (Image ALT Text first as “This plugin”; Titles used/% when billed or Open/Not installed; Internal Linking / Schema Not installed without Get/Install). Shared-wallet note under rows. “View Growth plan” CTA (billing id `pro` unchanged). Guests never see the wallet. No invented Free-25 limit when usage is missing; unused `--growth` wallet CSS removed (keep `--paid`).
 
 ### 4.6.131 — 2026-08-18
 
