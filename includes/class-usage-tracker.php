@@ -835,6 +835,13 @@ class Usage_Tracker {
             'quota_source_displayed_to_user' => $is_trial ? 'anonymous_trial' : ($source ?: 'authenticated_account'),
         ];
 
+        // Pass through shared-wallet attribution so Settings can match Titles.
+        foreach (['usage_by_feature', 'feature_usage', 'usage_by_plugin', 'plugin_usage', 'usage_breakdown', 'credit_usage'] as $feature_usage_key) {
+            if (isset($usage[$feature_usage_key]) && is_array($usage[$feature_usage_key])) {
+                $display[$feature_usage_key] = $usage[$feature_usage_key];
+            }
+        }
+
         self::debug_quota_state(
             'quota_source_displayed_to_user',
             [

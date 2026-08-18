@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.131
+Stable tag: 4.6.132
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -153,6 +153,12 @@ Purpose: If the site owner opts in, send anonymous plugin usage analytics such a
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.132 =
+* Added a quiet OpptiAI Titles cross-sell line at the bottom of the home Dashboard for signed-in Free, Starter, and Growth users.
+* Show “Only X credits left this month” on the usage card only when remaining ≤ 5; otherwise show used/limit numbers.
+* Added a quiet usage clarification: credits count generations (including retries and titles); images count what you saved.
+* Added Settings Account Credit Wallet matching Titles (shared pool, per-plugin breakdown, Titles Open when installed, View Growth plan).
 
 = 4.6.131 =
 * Updated remaining user-facing BeepBeep chrome in wp-admin to OpptiAI Alt Text.

@@ -3658,10 +3658,24 @@
                 }
                 var creditCopy = document.querySelector('[data-bbai-daily-credit-copy="1"]');
                 if (creditCopy) {
-                    if (monthlyRemainingNow !== null && monthlyRemainingNow > 0) {
-                        creditCopy.textContent = sprintf(__('%s monthly credits left — daily limit used for today', 'beepbeep-ai-alt-text-generator'), String(monthlyRemainingNow));
+                    if (monthlyRemainingNow !== null && monthlyRemainingNow > 0 && monthlyRemainingNow <= 5) {
+                        creditCopy.textContent = sprintf(
+                            _n('Only %s credit left this month', 'Only %s credits left this month', monthlyRemainingNow, 'beepbeep-ai-alt-text-generator'),
+                            String(monthlyRemainingNow)
+                        );
+                    } else if (monthlyRemainingNow !== null && monthlyRemainingNow > 5) {
+                        var dashRootForCredits = document.querySelector('[data-bbai-dashboard-root="1"]');
+                        var usedNow = dashRootForCredits ? parseInt(dashRootForCredits.getAttribute('data-bbai-credits-used') || '0', 10) : NaN;
+                        var limitNow = dashRootForCredits ? parseInt(dashRootForCredits.getAttribute('data-bbai-credits-total') || '0', 10) : NaN;
+                        if (!isFinite(usedNow) || usedNow < 0) {
+                            usedNow = isFinite(limitNow) && limitNow > 0 ? Math.max(0, limitNow - monthlyRemainingNow) : 0;
+                        }
+                        if (!isFinite(limitNow) || limitNow <= 0) {
+                            limitNow = usedNow + monthlyRemainingNow;
+                        }
+                        creditCopy.textContent = sprintf(__('%1$s / %2$s', 'beepbeep-ai-alt-text-generator'), String(usedNow), String(limitNow));
                     } else if (monthlyRemainingNow === 0) {
-                        creditCopy.textContent = __('No credits left this month', 'beepbeep-ai-alt-text-generator');
+                        creditCopy.textContent = __('No credits remaining this month', 'beepbeep-ai-alt-text-generator');
                     }
                 }
             } catch (dailyUiErr) {}
@@ -12314,8 +12328,11 @@
         if (rem <= 0) {
             return __('No credits remaining this month', 'beepbeep-ai-alt-text-generator');
         }
-        if (rem < 20) {
-            return sprintf(__('Only %s credits left this month', 'beepbeep-ai-alt-text-generator'), rem.toLocaleString());
+        if (rem <= 5) {
+            return sprintf(
+                _n('Only %s credit left this month', 'Only %s credits left this month', rem, 'beepbeep-ai-alt-text-generator'),
+                rem.toLocaleString()
+            );
         }
         return sprintf(__('%s remaining this month', 'beepbeep-ai-alt-text-generator'), rem.toLocaleString());
     }
