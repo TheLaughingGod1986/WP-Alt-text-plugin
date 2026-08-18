@@ -1106,6 +1106,18 @@ body.toplevel_page_bbai.bbai-dashboard .bbai-daily-limit-note[hidden] {
 	display: none !important;
 }
 
+body.toplevel_page_bbai.bbai-dashboard .bbai-daily-usage-clarify {
+	margin: 4px 0 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	box-shadow: none;
+	color: var(--bbai-ref-muted, #64748b);
+	font-size: 12px;
+	line-height: 1.45;
+	font-weight: 400;
+}
+
 /* Limit notice: text only, no extra progress bar */
 body.toplevel_page_bbai.bbai-dashboard .bbai-hero-generation-progress--notice [data-bbai-hero-generation-progress-track],
 body.toplevel_page_bbai.bbai-dashboard .bbai-hero-generation-progress--notice .bbai-hero-generation-progress__track {

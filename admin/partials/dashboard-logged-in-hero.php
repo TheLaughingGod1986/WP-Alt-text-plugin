@@ -458,7 +458,7 @@ $bbai_hero_growth_credit_limit = 1000;
 
 if ( $bbai_hero_c_rem <= 0 ) {
 	$bbai_hero_credit_context_line = __( 'No credits remaining this month', 'beepbeep-ai-alt-text-generator' );
-} elseif ( $bbai_hero_c_rem < 20 ) {
+} elseif ( $bbai_hero_c_rem <= 5 ) {
 	$bbai_hero_credit_context_line = sprintf(
 		/* translators: %s: remaining credits */
 		__( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ),
@@ -1864,7 +1864,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		if ( r <= 0 ) {
 			return TEXT.heroCreditNoneRemainingThisMonth || '';
 		}
-		if ( r < 20 ) {
+		if ( r <= 5 ) {
 			return replaceTokens( TEXT.heroCreditOnlyLeftThisMonth || '', {
 				'%s': formatCount( r ),
 			} );

@@ -7,6 +7,8 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 ### 4.6.132 — 2026-08-18
 
 - **Added**: Quiet OpptiAI Titles cross-sell at the bottom of the home Dashboard tab for signed-in Free, Starter, and Growth users (hidden from guests and Agency). Links to the Titles admin page when active, otherwise WordPress.org.
+- **Changed**: Dashboard usage card shows “Only X credits left this month” only when remaining ≤ 5; above that it shows used/limit numbers only.
+- **Added**: Quiet usage clarification under the usage card: credits count generations (including retries and titles); images count what you saved.
 
 ### 4.6.131 — 2026-08-18
 

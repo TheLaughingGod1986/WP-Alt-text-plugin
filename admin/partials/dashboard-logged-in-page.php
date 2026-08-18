@@ -375,6 +375,9 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 				<?php else : ?>
 					<p class="bbai-daily-limit-note" data-bbai-daily-limit-note="1" hidden></p>
 				<?php endif; ?>
+				<p class="bbai-daily-usage-clarify" data-bbai-daily-usage-clarify="1">
+					<?php esc_html_e( 'Credits count generations, including retries and titles. Images count what you saved.', 'beepbeep-ai-alt-text-generator' ); ?>
+				</p>
 			</div>
 
 				<div class="bbai-daily-automation-box">
@@ -398,11 +401,18 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 					<strong data-bbai-daily-credit-copy="1"><?php
 					if ( $bbai_daily_remaining <= 0 ) {
 						echo esc_html__( 'No credits left this month', 'beepbeep-ai-alt-text-generator' );
-					} else {
+					} elseif ( $bbai_daily_remaining <= 5 ) {
 						echo esc_html( sprintf(
 							/* translators: %s: remaining monthly credit count. */
 							__( 'Only %s credits left this month', 'beepbeep-ai-alt-text-generator' ),
 							number_format_i18n( $bbai_daily_remaining )
+						) );
+					} else {
+						echo esc_html( sprintf(
+							/* translators: 1: used credit count, 2: monthly credit limit. */
+							__( '%1$s / %2$s', 'beepbeep-ai-alt-text-generator' ),
+							number_format_i18n( $bbai_daily_used ),
+							number_format_i18n( $bbai_daily_limit )
 						) );
 					}
 					?></strong>
