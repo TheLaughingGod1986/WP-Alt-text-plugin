@@ -499,38 +499,25 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     </div>
                 </div>
 
-                <!-- Account Status Card -->
+                <?php
+                // Signed-in Account: Titles-parity Free/Growth service card + Credit Wallet.
+                $bbai_credit_wallet_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-credit-wallet.php';
+                if ( is_readable( $bbai_credit_wallet_partial ) ) {
+                    echo '<div class="bbai-page-section bbai-settings-credit-wallet">';
+                    require $bbai_credit_wallet_partial;
+                    echo '</div>';
+                }
+                if ( $bbai_show_debug_license_key ) :
+                ?>
                 <div class="bbai-card bbai-card--compact bbai-settings-plan-summary-card bbai-page-section">
-                    <h3 class="bbai-settings-card-title bbai-card-title"><?php esc_html_e('Account Status', 'beepbeep-ai-alt-text-generator'); ?></h3>
-
                     <div class="bbai-settings-plan-info">
-                        <div class="bbai-settings-plan-info-item">
-                            <span class="bbai-settings-account-status-label"><?php esc_html_e('Plan:', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-settings-account-status-value"><?php echo esc_html($bbai_plan_label); ?></span>
-                        </div>
-                        <div class="bbai-settings-plan-info-item">
-                            <span class="bbai-settings-account-status-label"><?php esc_html_e('Credits used:', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-settings-account-status-value">
-                                <?php echo esc_html(number_format_i18n($bbai_used_credits) . ' / ' . number_format_i18n($bbai_total_credits)); ?>
-                            </span>
-                        </div>
-                        <div class="bbai-settings-plan-info-item">
-                            <span class="bbai-settings-account-status-label"><?php esc_html_e('Next reset:', 'beepbeep-ai-alt-text-generator'); ?></span>
-                            <span class="bbai-settings-account-status-value"><?php echo esc_html($bbai_reset_label); ?></span>
-                        </div>
-                        <?php if ($bbai_show_debug_license_key) : ?>
                         <div class="bbai-settings-plan-info-item">
                             <span class="bbai-settings-account-status-label"><?php esc_html_e('License key:', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <span class="bbai-settings-account-status-value"><?php echo esc_html($bbai_stored_license_key); ?></span>
                         </div>
-                        <?php endif; ?>
                     </div>
-                    <?php if (!$bbai_is_growth_plan) : ?>
-                    <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-lg" data-action="show-upgrade-modal" data-bbai-tooltip="<?php esc_attr_e('Automation, bulk optimisation, and higher monthly limits', 'beepbeep-ai-alt-text-generator'); ?>" data-bbai-tooltip-position="bottom">
-                        <?php esc_html_e('Enable Auto-Optimisation', 'beepbeep-ai-alt-text-generator'); ?>
-                    </button>
-                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
 
                 <!-- Account Management Card -->
                 <div class="bbai-card bbai-settings-card bbai-page-section">

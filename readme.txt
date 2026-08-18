@@ -158,6 +158,7 @@ Privacy policy: https://posthog.com/privacy
 * Added a quiet OpptiAI Titles cross-sell line at the bottom of the home Dashboard for signed-in Free, Starter, and Growth users.
 * Show “Only X credits left this month” on the usage card only when remaining ≤ 5; otherwise show used/limit numbers.
 * Added a quiet usage clarification: credits count generations (including retries and titles); images count what you saved.
+* Added Settings Account Credit Wallet matching Titles (shared pool, per-plugin breakdown, Titles Open when installed, View Growth plan).
 
 = 4.6.131 =
 * Updated remaining user-facing BeepBeep chrome in wp-admin to OpptiAI Alt Text.

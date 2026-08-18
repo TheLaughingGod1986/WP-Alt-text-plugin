@@ -927,12 +927,23 @@ JS,
 			);
 			if ( 'bbai-settings' === $current_admin_page ) {
 				$nai_settings_css = 'assets/css/nai/nai-settings.css';
-				wp_enqueue_style(
-					'bbai-nai-settings',
-					$base_url . $nai_settings_css,
-					array( 'bbai-nai-dashboard' ),
-					$asset_version( $nai_settings_css, '1.0.0' )
-				);
+				if ( file_exists( $base_path . $nai_settings_css ) ) {
+					wp_enqueue_style(
+						'bbai-nai-settings',
+						$base_url . $nai_settings_css,
+						array( 'bbai-nai-dashboard' ),
+						$asset_version( $nai_settings_css, '1.0.0' )
+					);
+				}
+				$credit_wallet_css = 'assets/css/features/settings/credit-wallet.css';
+				if ( file_exists( $base_path . $credit_wallet_css ) ) {
+					wp_enqueue_style(
+						'bbai-settings-credit-wallet',
+						$base_url . $credit_wallet_css,
+						array( 'bbai-admin-surfaces' ),
+						$asset_version( $credit_wallet_css, '1.0.0' )
+					);
+				}
 			}
 			if ( 'bbai' === $current_admin_page ) {
 				$nai_home_css = 'assets/css/nai/nai-dashboard.css';

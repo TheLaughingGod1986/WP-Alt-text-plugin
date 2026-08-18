@@ -1,0 +1,378 @@
+/**
+ * Settings Account — OpptiAI Credit Wallet (Titles parity).
+ * Scoped to the signed-in Settings page.
+ */
+
+body.bbai-dashboard .bbai-wallet-plan,
+body.bbai-dashboard .bbai-wallet-card {
+	margin: 0 0 18px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+body.bbai-dashboard .bbai-wallet-plan--growth {
+	background: #f5f3ff;
+	border-color: #ddd6fe;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__row {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 16px 20px;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 36px;
+	height: 36px;
+	border-radius: 9px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	color: #64748b;
+}
+
+body.bbai-dashboard .bbai-wallet-plan--growth .bbai-wallet-plan__icon {
+	background: #7c3aed;
+	border: none;
+	color: #fff;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__copy {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__name {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__desc {
+	margin: 2px 0 0;
+	font-size: 12.5px;
+	line-height: 1.45;
+	color: #475569;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__actions {
+	display: flex;
+	flex-shrink: 0;
+	gap: 8px;
+}
+
+body.bbai-dashboard .bbai-wallet-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.1rem 0.45rem;
+	border-radius: 999px;
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	color: #475569;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+body.bbai-dashboard .bbai-wallet-chip--growth {
+	border-color: #ddd6fe;
+	background: #ede9fe;
+	color: #5b21b6;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__usage {
+	padding: 12px 20px 14px;
+	border-top: 1px solid #f1f5f9;
+	background: #f8fafc;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__usage-head,
+body.bbai-dashboard .bbai-wallet-plan__usage-foot,
+body.bbai-dashboard .bbai-wallet-card__shared-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 11.5px;
+	color: #94a3b8;
+	font-weight: 500;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__usage-head {
+	margin-bottom: 6px;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__usage-num {
+	color: #475569;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+body.bbai-dashboard .bbai-wallet-plan__usage-foot {
+	margin-top: 6px;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+}
+
+body.bbai-dashboard .bbai-wallet-progress {
+	overflow: hidden;
+	width: 100%;
+	height: 5px;
+	border-radius: 999px;
+	background: #e2e8f0;
+}
+
+body.bbai-dashboard .bbai-wallet-progress span {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: #7c3aed;
+	transition: width 0.2s ease;
+}
+
+body.bbai-dashboard .bbai-wallet-progress--is-warn span {
+	background: #d97706;
+}
+
+body.bbai-dashboard .bbai-wallet-progress--is-danger span {
+	background: #dc2626;
+}
+
+body.bbai-dashboard .bbai-wallet-card__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px 20px;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+body.bbai-dashboard .bbai-wallet-card__eyebrow {
+	margin-bottom: 2px;
+	font-size: 10.5px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #94a3b8;
+}
+
+body.bbai-dashboard .bbai-wallet-card__title {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+body.bbai-dashboard .bbai-wallet-card__total {
+	font-size: 13px;
+	color: #475569;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+body.bbai-dashboard .bbai-wallet-card__total strong {
+	color: #0f172a;
+	font-weight: 600;
+}
+
+body.bbai-dashboard .bbai-wallet-card__dot {
+	margin: 0 6px;
+	opacity: 0.5;
+}
+
+body.bbai-dashboard .bbai-wallet-card__note {
+	display: flex;
+	align-items: flex-start;
+	gap: 9px;
+	padding: 11px 20px;
+	border-bottom: 1px solid #f1f5f9;
+	background: #f8fafc;
+	font-size: 12px;
+	line-height: 1.45;
+	color: #475569;
+}
+
+body.bbai-dashboard .bbai-wallet-card__note-icon {
+	flex-shrink: 0;
+	margin-top: 1px;
+	color: #94a3b8;
+}
+
+body.bbai-dashboard .bbai-wallet-card__shared {
+	padding: 14px 20px;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+body.bbai-dashboard .bbai-wallet-card__shared-head {
+	margin-bottom: 7px;
+}
+
+body.bbai-dashboard .bbai-wallet-feature {
+	display: grid;
+	grid-template-columns: 36px minmax(0, 1fr) auto;
+	gap: 12px;
+	align-items: center;
+	padding: 12px 20px;
+	border-bottom: 1px solid #f1f5f9;
+	background: #fff;
+}
+
+body.bbai-dashboard .bbai-wallet-feature:last-child {
+	border-bottom: 0;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--current {
+	background: #ecfdf5;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--uninstalled {
+	opacity: 0.72;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 9px;
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	color: #64748b;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--alt .bbai-wallet-feature__icon {
+	color: #059669;
+	background: #ecfdf5;
+	border-color: #a7f3d0;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--titles .bbai-wallet-feature__icon {
+	color: #2563eb;
+	background: #eff6ff;
+	border-color: #bfdbfe;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--linking .bbai-wallet-feature__icon {
+	color: #7c3aed;
+	background: #f5f3ff;
+	border-color: #ddd6fe;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--schema .bbai-wallet-feature__icon {
+	color: #d97706;
+	background: #fffbeb;
+	border-color: #fde68a;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__main {
+	min-width: 0;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__label {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 7px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__label + .bbai-wallet-feature__track {
+	margin-top: 7px;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__muted {
+	font-size: 11.5px;
+	font-weight: 500;
+	color: #94a3b8;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__open {
+	font-size: 11.5px;
+	font-weight: 600;
+	color: #2563eb;
+	text-decoration: none;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__open:hover,
+body.bbai-dashboard .bbai-wallet-feature__open:focus-visible {
+	text-decoration: underline;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__track {
+	overflow: hidden;
+	height: 5px;
+	border-radius: 999px;
+	background: #e2e8f0;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__track span {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: #64748b;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--alt .bbai-wallet-feature__track span {
+	background: #059669;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--titles .bbai-wallet-feature__track span {
+	background: #2563eb;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--linking .bbai-wallet-feature__track span {
+	background: #7c3aed;
+}
+
+body.bbai-dashboard .bbai-wallet-feature--schema .bbai-wallet-feature__track span {
+	background: #d97706;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__value {
+	min-width: 46px;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__value strong {
+	display: block;
+	font-size: 13px;
+	color: #0f172a;
+}
+
+body.bbai-dashboard .bbai-wallet-feature__value span {
+	display: block;
+	margin-top: 1px;
+	font-size: 11px;
+	color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+	body.bbai-dashboard .bbai-wallet-plan__row,
+	body.bbai-dashboard .bbai-wallet-card__head {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	body.bbai-dashboard .bbai-wallet-plan__actions {
+		justify-content: flex-start;
+	}
+
+	body.bbai-dashboard .bbai-wallet-card__total {
+		white-space: normal;
+	}
+}
