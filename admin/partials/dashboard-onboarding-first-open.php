@@ -55,7 +55,7 @@ $bbai_library_ob             = add_query_arg(['page' => 'bbai-library'], admin_u
     class="bbai-onboarding-dashboard"
     data-bbai-onboarding-first-open="1"
     data-bbai-onboarding-phase="<?php echo esc_attr($bbai_ob_phase); ?>"
-    aria-label="<?php esc_attr_e('Get started with BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?>"
+    aria-label="<?php esc_attr_e('Get started with OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'); ?>"
 >
     <?php if ('pre_scan' === $bbai_ob_phase) : ?>
         <header class="bbai-onboarding-dashboard__hero-panel">

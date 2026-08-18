@@ -128,7 +128,7 @@ function bbai_plan_top_banner_resolve(array $input): array
         ],
     ];
     $upgrade_pro_primary = [
-        'label'      => __('Upgrade to Pro', 'beepbeep-ai-alt-text-generator'),
+        'label'      => __('Upgrade to Growth', 'beepbeep-ai-alt-text-generator'),
         'href'       => '#',
         'attributes' => [
             'data-action'            => 'show-upgrade-modal',
@@ -161,7 +161,7 @@ function bbai_plan_top_banner_resolve(array $input): array
         return [
             'tier'             => $tier,
             'headline'         => __('Need more capacity?', 'beepbeep-ai-alt-text-generator'),
-            'subtext'          => __('Upgrade to Pro for higher limits and advanced workflows.', 'beepbeep-ai-alt-text-generator'),
+            'subtext'          => __('Upgrade to Growth for higher limits and advanced workflows.', 'beepbeep-ai-alt-text-generator'),
             'tone'             => 'attention',
             'banner_variant'   => 'warning',
             'semantic_state'   => 'plan-growth',
@@ -251,7 +251,7 @@ function bbai_plan_top_banner_build_command_hero(string $page_context, array $in
         'tone'                   => (string) $resolved['tone'],
         'banner_variant'         => (string) $resolved['banner_variant'],
         'suppress_banner_render'   => false,
-        'aria_label'               => (string) ($opts['aria_label'] ?? __('BeepBeep AI', 'beepbeep-ai-alt-text-generator')),
+        'aria_label'               => (string) ($opts['aria_label'] ?? __('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator')),
         'eyebrow'                  => (string) ($opts['eyebrow'] ?? ''),
         'title'                    => (string) $resolved['headline'],
         'body'                     => (string) $resolved['subtext'],

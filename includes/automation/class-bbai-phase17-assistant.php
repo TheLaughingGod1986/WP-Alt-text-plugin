@@ -85,7 +85,7 @@ class Phase17_Assistant {
 
 		if ( preg_match( '/\b(woo|commerce|product|shop|catalog)\b/i', $message ) ) {
 			return self::wrap(
-				__( 'BeepBeep AI can target WooCommerce product images alongside the Media Library. Run a scan, then bulk-generate or fix missing ALT on product imagery from ALT Library.', 'beepbeep-ai-alt-text-generator' ),
+				__( 'OpptiAI Alt Text can target WooCommerce product images alongside the Media Library. Run a scan, then bulk-generate or fix missing ALT on product imagery from ALT Library.', 'beepbeep-ai-alt-text-generator' ),
 				[ __( 'Open ALT Library', 'beepbeep-ai-alt-text-generator' ) ],
 				[ $sources_lib, $sources_guide ],
 				'woocommerce'

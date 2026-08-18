@@ -44,7 +44,7 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
     <!-- Header Section -->
     <div class="bbai-guide-header bbai-page-section">
         <h1 class="bbai-page-title"><?php esc_html_e('Help Center', 'beepbeep-ai-alt-text-generator'); ?></h1>
-        <p class="bbai-page-subtitle"><?php esc_html_e('Learn how scanning, generation, credits, and accessibility workflows work in BeepBeep AI.', 'beepbeep-ai-alt-text-generator'); ?></p>
+        <p class="bbai-page-subtitle"><?php esc_html_e('Learn how scanning, generation, credits, and accessibility workflows work in OpptiAI Alt Text.', 'beepbeep-ai-alt-text-generator'); ?></p>
     </div>
 
     <!-- Growth Features Block (Free users only) -->
@@ -109,7 +109,7 @@ $bbai_settings_url = add_query_arg(['page' => 'bbai', 'tab' => 'settings'], admi
                     <p class="bbai-guide-step-desc"><?php esc_html_e('Find images missing ALT text in seconds.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <ul class="bbai-guide-step-bullets">
                         <li><?php echo esc_html(sprintf(/* translators: %s: CTA label */ __('Click "%s"', 'beepbeep-ai-alt-text-generator'), bbai_copy_cta_scan_media_library())); ?></li>
-                        <li><?php esc_html_e('BeepBeep AI will analyze all images', 'beepbeep-ai-alt-text-generator'); ?></li>
+                        <li><?php esc_html_e('OpptiAI Alt Text will analyze all images', 'beepbeep-ai-alt-text-generator'); ?></li>
                         <li><?php esc_html_e('Missing ALT text will appear in the ALT Library', 'beepbeep-ai-alt-text-generator'); ?></li>
                     </ul>
                     <a href="<?php echo esc_url($bbai_library_missing_url); ?>" class="bbai-btn bbai-btn-primary bbai-guide-step-cta"><?php echo esc_html(bbai_copy_cta_scan_media_library()); ?></a>

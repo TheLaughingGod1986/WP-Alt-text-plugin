@@ -122,7 +122,7 @@ $bbai_on_authenticated_free = $bbai_modal_has_saas && $bbai_is_free_plan;
 
 $bbai_modal_title = $bbai_on_authenticated_free
     ? __('Choose your upgrade', 'beepbeep-ai-alt-text-generator')
-    : __('Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator');
+    : __('Manage your OpptiAI Alt Text plan', 'beepbeep-ai-alt-text-generator');
 
 $bbai_modal_subtitle = $bbai_on_authenticated_free
     ? __('You’ve used your free images. Pick the plan that fits your site.', 'beepbeep-ai-alt-text-generator')
@@ -130,7 +130,7 @@ $bbai_modal_subtitle = $bbai_on_authenticated_free
 
 $bbai_locked_modal_title = $bbai_on_authenticated_free
     ? __('You’ve used this month’s free allowance', 'beepbeep-ai-alt-text-generator')
-    : __('Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator');
+    : __('Manage your OpptiAI Alt Text plan', 'beepbeep-ai-alt-text-generator');
 
 $bbai_locked_modal_subtitle = $bbai_on_authenticated_free
     ? sprintf(

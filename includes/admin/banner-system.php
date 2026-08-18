@@ -1315,7 +1315,7 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
             ];
 
             return array_merge($base, [
-                'title'            => __('BeepBeep AI', 'beepbeep-ai-alt-text-generator'),
+                'title'            => __('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'),
                 'body'             => '',
                 'primary_action'   => bbai_banner_action_scan($page_context),
                 'secondary_action' => $open_library,
@@ -1409,7 +1409,7 @@ function bbai_banner_build_command_hero(string $page_context, array $s, array $o
         'banner_variant'           => (string) $cfg['banner_variant'],
         'suppress_banner_render'   => !empty($cfg['suppress_banner_render']),
         'page_hero_variant'        => (string) ($opts['page_hero_variant'] ?? ''),
-        'aria_label'               => (string) ($opts['aria_label'] ?? __('BeepBeep AI', 'beepbeep-ai-alt-text-generator')),
+        'aria_label'               => (string) ($opts['aria_label'] ?? __('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator')),
         'eyebrow'                  => (string) ($opts['eyebrow'] ?? ''),
         'title'                    => (string) $cfg['title'],
         'body'                     => (string) $cfg['body'],

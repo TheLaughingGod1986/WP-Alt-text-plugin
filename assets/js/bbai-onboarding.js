@@ -167,7 +167,7 @@
                         this.hide();
                         // Show success toast if available
                         if (window.bbaiToast) {
-                            window.bbaiToast.success('Welcome to BeepBeep AI! You\'re all set.');
+                            window.bbaiToast.success('Welcome to OpptiAI Alt Text! You\'re all set.');
                         }
                     },
                     error: () => {

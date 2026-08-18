@@ -198,7 +198,7 @@ class Growth_Engine {
 		echo '<div class="notice notice-info bbai-growth-review-notice" data-bbai-growth-review-notice="1"><p>';
 		echo esc_html(
 			__(
-				'If BeepBeep AI saves you time on ALT text and image SEO, a short WordPress.org review helps other site owners find the plugin. Thank you for considering it — no obligation.',
+				'If OpptiAI Alt Text saves you time on ALT text and image SEO, a short WordPress.org review helps other site owners find the plugin. Thank you for considering it — no obligation.',
 				'beepbeep-ai-alt-text-generator'
 			)
 		);

@@ -125,7 +125,7 @@ class BbAIAuthModal {
             if (title) title.textContent = 'Welcome back';
             if (subtitle) subtitle.textContent = 'Sign in to sync your subscription, usage quota, and account preferences.';
         } else {
-            if (title) title.textContent = 'Create your free BeepBeep AI account';
+            if (title) title.textContent = 'Create your free OpptiAI account';
             if (subtitle) subtitle.textContent = 'Get 25 free AI generations every month. No credit card needed.';
         }
     }
@@ -341,7 +341,7 @@ class BbAIAuthModal {
                             <button class="alttext-auth-modal__close" type="button" aria-label="Close dialog">&times;</button>
                         
                         <div class="alttext-auth-modal__header">
-                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">BeepBeep AI Account</h2>
+                            <h2 class="alttext-auth-modal__title" id="alttext-auth-modal-title">OpptiAI Account</h2>
                             <p class="alttext-auth-modal__subtitle" id="alttext-auth-modal-desc">Sign in to sync your subscription, usage quota, and account preferences.</p>
                         </div>
                         
@@ -361,7 +361,7 @@ class BbAIAuthModal {
 
                             <!-- Login Form -->
                             <div id="alttext-login-form" class="alttext-auth-form">
-                                <form id="login-form" autocomplete="off" aria-label="Sign in to your BeepBeep AI account">
+                                <form id="login-form" autocomplete="off" aria-label="Sign in to your OpptiAI account">
                                     <div class="alttext-form-group">
                                         <label for="login-email">Email</label>
                                         <input type="email" id="login-email" name="email" placeholder="Email" autocomplete="off" required aria-required="true">
@@ -385,7 +385,7 @@ class BbAIAuthModal {
 
                             <!-- Register Form -->
                             <div id="alttext-register-form" class="alttext-auth-form" style="display: none;">
-                                <form id="register-form" autocomplete="off" aria-label="Create a new BeepBeep AI account">
+                                <form id="register-form" autocomplete="off" aria-label="Create a new OpptiAI account">
                                     <div class="alttext-form-group">
                                         <label for="register-email">Email</label>
                                         <input type="email" id="register-email" name="email" placeholder="Email" autocomplete="off" required aria-required="true">

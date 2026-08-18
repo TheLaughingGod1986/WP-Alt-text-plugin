@@ -22,7 +22,7 @@ $bbai_library_url = add_query_arg( [ 'page' => 'bbai-library' ], admin_url( 'adm
 
 $bbai_has_scanned = $bbai_total_images > 0;
 $bbai_show_optimized_guide = $bbai_has_scanned && 0 === $bbai_missing_images && 0 === $bbai_weak_images && 0 === $bbai_filename_only_count && 0 === $bbai_duplicate_alt_count;
-$bbai_default_summary = __( 'Follow this simple workflow to use BeepBeep AI:', 'beepbeep-ai-alt-text-generator' );
+$bbai_default_summary = __( 'Follow this simple workflow to use OpptiAI Alt Text:', 'beepbeep-ai-alt-text-generator' );
 $bbai_generate_disabled = 0 === $bbai_missing_images;
 $bbai_workflow_steps = [
     [
@@ -106,7 +106,7 @@ $bbai_render_usage_steps = static function ( array $steps ): void {
 <section class="bbai-dashboard-card bbai-opportunity-scanner" aria-labelledby="bbai-opportunity-title">
     <article class="bbai-opportunity-scanner__card">
         <header class="bbai-card__header">
-            <h3 id="bbai-opportunity-title" class="bbai-opportunity-scanner__title"><?php esc_html_e( 'How to use BeepBeep AI', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+            <h3 id="bbai-opportunity-title" class="bbai-opportunity-scanner__title"><?php esc_html_e( 'How to use OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ); ?></h3>
             <p class="bbai-card__copy bbai-opportunity-scanner__desc"><?php esc_html_e( 'Quick workflow for scanning and generating ALT text.', 'beepbeep-ai-alt-text-generator' ); ?></p>
         </header>
         <div class="bbai-card__body">

@@ -31,7 +31,7 @@ class Privacy {
 	 */
 	public static function register_exporter( array $exporters ): array {
 		$exporters[ self::EXPORTER_ID ] = [
-			'exporter_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
+			'exporter_friendly_name' => __( 'OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ),
 			'callback'               => [ __CLASS__, 'exporter' ],
 		];
 
@@ -46,7 +46,7 @@ class Privacy {
 	 */
 	public static function register_eraser( array $erasers ): array {
 		$erasers[ self::ERASER_ID ] = [
-			'eraser_friendly_name' => __( 'BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator' ),
+			'eraser_friendly_name' => __( 'OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ),
 			'callback'             => [ __CLASS__, 'eraser' ],
 		];
 
@@ -114,7 +114,7 @@ class Privacy {
 		}
 
 		if ( ! $items_removed && ! $items_retained ) {
-			$messages[] = __( 'No BeepBeep AI data found for this email address.', 'beepbeep-ai-alt-text-generator' );
+			$messages[] = __( 'No OpptiAI Alt Text data found for this email address.', 'beepbeep-ai-alt-text-generator' );
 		}
 
 		return [
@@ -178,7 +178,7 @@ class Privacy {
 		foreach ( $rows as $row ) {
 			$items[] = [
 				'group_id'    => 'bbai_contact_submissions',
-				'group_label' => __( 'BeepBeep AI Contact Submissions', 'beepbeep-ai-alt-text-generator' ),
+				'group_label' => __( 'OpptiAI Alt Text Contact Submissions', 'beepbeep-ai-alt-text-generator' ),
 				'item_id'     => 'submission-' . absint( $row->id ),
 				'data'        => [
 					[ 'name' => __( 'Name', 'beepbeep-ai-alt-text-generator' ), 'value' => sanitize_text_field( $row->name ?? '' ) ],
@@ -222,7 +222,7 @@ class Privacy {
 		return [
 			[
 				'group_id'    => 'bbai_trial_usage',
-				'group_label' => __( 'BeepBeep AI Trial Usage', 'beepbeep-ai-alt-text-generator' ),
+				'group_label' => __( 'OpptiAI Alt Text Trial Usage', 'beepbeep-ai-alt-text-generator' ),
 				'item_id'     => 'trial-usage-local',
 				'data'        => [
 					[ 'name' => __( 'Trial Limit', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) $limit ],
@@ -254,7 +254,7 @@ class Privacy {
 			if ( $stored_email && strcasecmp( $stored_email, $email_address ) === 0 ) {
 				$items[] = [
 					'group_id'    => 'bbai_account_data',
-					'group_label' => __( 'BeepBeep AI Account Data', 'beepbeep-ai-alt-text-generator' ),
+					'group_label' => __( 'OpptiAI Account Data', 'beepbeep-ai-alt-text-generator' ),
 					'item_id'     => 'account-data',
 					'data'        => [
 						[ 'name' => __( 'Email', 'beepbeep-ai-alt-text-generator' ), 'value' => $stored_email ],
@@ -301,7 +301,7 @@ class Privacy {
 				if ( ! empty( $summary ) && (int) $summary['events'] > 0 ) {
 					$items[] = [
 						'group_id'    => 'bbai_credit_usage',
-						'group_label' => __( 'BeepBeep AI Credit Usage', 'beepbeep-ai-alt-text-generator' ),
+						'group_label' => __( 'OpptiAI Alt Text Credit Usage', 'beepbeep-ai-alt-text-generator' ),
 						'item_id'     => 'credit-usage-' . $user_id,
 						'data'        => [
 							[ 'name' => __( 'Events', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['events'] ) ],
@@ -333,7 +333,7 @@ class Privacy {
 				if ( ! empty( $summary ) && (int) $summary['events'] > 0 ) {
 					$items[] = [
 						'group_id'    => 'bbai_usage_logs',
-						'group_label' => __( 'BeepBeep AI Usage Logs', 'beepbeep-ai-alt-text-generator' ),
+						'group_label' => __( 'OpptiAI Alt Text Usage Logs', 'beepbeep-ai-alt-text-generator' ),
 						'item_id'     => 'usage-logs-' . $user_id,
 						'data'        => [
 							[ 'name' => __( 'Events', 'beepbeep-ai-alt-text-generator' ), 'value' => (string) intval( $summary['events'] ) ],

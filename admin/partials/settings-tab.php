@@ -64,7 +64,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     <!-- Hero -->
                     <div class="bbai-hero bbai-hero--neutral bbai-sg-hero">
                         <div class="bbai-sg-hero__text">
-                            <h1 class="bbai-sg-hero__title"><?php esc_html_e('Control how BeepBeep AI writes your ALT text', 'beepbeep-ai-alt-text-generator'); ?></h1>
+                            <h1 class="bbai-sg-hero__title"><?php esc_html_e('Control how OpptiAI Alt Text writes your ALT text', 'beepbeep-ai-alt-text-generator'); ?></h1>
                             <p class="bbai-sg-hero__desc"><?php esc_html_e('Tune the tone, length, and style for every image. Log in to save your preferences across all your sites.', 'beepbeep-ai-alt-text-generator'); ?></p>
                         </div>
                         <div class="bbai-sg-hero__actions">
@@ -390,10 +390,10 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     ?? ''
                 );
                 $bbai_has_stripe_billing = $bbai_billing_customer_id !== '' || $bbai_billing_subscription_id !== '';
-                $bbai_support_subject = __('Downgrade or cancel BeepBeep AI membership', 'beepbeep-ai-alt-text-generator');
+                $bbai_support_subject = __('Downgrade or cancel OpptiAI Alt Text membership', 'beepbeep-ai-alt-text-generator');
                 $bbai_support_message = sprintf(
                     /* translators: 1: site URL, 2: plan label */
-                    __('Please help me downgrade or cancel the BeepBeep AI membership for %1$s. Current plan shown in WordPress: %2$s.', 'beepbeep-ai-alt-text-generator'),
+                    __('Please help me downgrade or cancel the OpptiAI Alt Text membership for %1$s. Current plan shown in WordPress: %2$s.', 'beepbeep-ai-alt-text-generator'),
                     get_site_url(),
                     wp_strip_all_tags($bbai_plan_label)
                 );
@@ -441,7 +441,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                 <!-- Header Section -->
                 <div class="bbai-hero bbai-hero--neutral bbai-dashboard-header-section bbai-page-section">
                     <h1 class="bbai-dashboard-title bbai-page-title"><?php esc_html_e('Settings', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                    <p class="bbai-dashboard-subtitle bbai-page-subtitle"><?php esc_html_e('Configure BeepBeep AI and control how ALT text is generated for your media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p class="bbai-dashboard-subtitle bbai-page-subtitle"><?php esc_html_e('Configure OpptiAI Alt Text and control how ALT text is generated for your media library.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     <p class="bbai-dashboard-subtitle bbai-settings-disclosure bbai-sub-label">
                         <?php esc_html_e('Alt text generation and review send image data and related context to external AI services over HTTPS. The free plan includes 25 generations per month; paid plans increase your monthly limits.', 'beepbeep-ai-alt-text-generator'); ?>
                         <a href="<?php echo esc_url('https://oppti.dev/privacy'); ?>" target="_blank" rel="noopener"><?php esc_html_e('Privacy Policy', 'beepbeep-ai-alt-text-generator'); ?></a>

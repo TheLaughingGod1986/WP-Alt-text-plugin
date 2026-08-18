@@ -1493,7 +1493,7 @@ JS,
 					'nonce'              => wp_create_nonce( 'wp_rest' ),
 					'strings'            => array(
 						'fab'            => __( 'Help', 'beepbeep-ai-alt-text-generator' ),
-						'title'          => __( 'BeepBeep guide', 'beepbeep-ai-alt-text-generator' ),
+						'title'          => __( 'OpptiAI Alt Text guide', 'beepbeep-ai-alt-text-generator' ),
 						'close'          => __( 'Close', 'beepbeep-ai-alt-text-generator' ),
 						'ask'            => __( 'Your question', 'beepbeep-ai-alt-text-generator' ),
 						'placeholder'    => __( 'e.g. How do credits work? What does “needs review” mean?', 'beepbeep-ai-alt-text-generator' ),

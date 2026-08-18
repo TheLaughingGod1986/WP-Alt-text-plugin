@@ -62,7 +62,7 @@ test('Connect account via normal auth flow (register)', async ({ page }) => {
 
   const resolveRegisterForm = async () => {
     const candidates = [
-      page.locator('form[aria-label="Create a new BeepBeep AI account"]'),
+      page.locator('form[aria-label="Create a new OpptiAI account"]'),
       page.locator('#alttext-register-form form'),
       page.locator('form#register-form'),
     ];

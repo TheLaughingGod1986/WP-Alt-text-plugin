@@ -1725,7 +1725,7 @@ class Core {
         $limit = number_format_i18n($this->token_notice['limit'] ?? 0);
         echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html(sprintf(
             /* translators: 1: tokens used, 2: token threshold */
-            __('BeepBeep AI – Alt Text Generator has used %1$s tokens (threshold %2$s). Consider reviewing usage.', 'beepbeep-ai-alt-text-generator'),
+            __('OpptiAI Alt Text has used %1$s tokens (threshold %2$s). Consider reviewing usage.', 'beepbeep-ai-alt-text-generator'),
             $total,
             $limit
         )) . '</p></div>';
@@ -2397,7 +2397,7 @@ class Core {
                             </defs>
                         </svg>
                         <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-logo-text"><?php esc_html_e('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <span class="bbai-logo-tagline"><?php esc_html_e('AI-Powered Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </a>
@@ -2412,7 +2412,7 @@ class Core {
                 <div class="bbai-page-header bbai-mb-6">
                     <div class="bbai-page-header-content">
                         <h1 class="bbai-page-title"><?php esc_html_e('Scan your media library', 'beepbeep-ai-alt-text-generator'); ?></h1>
-                        <p class="bbai-page-subtitle"><?php esc_html_e('BeepBeep AI will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                        <p class="bbai-page-subtitle"><?php esc_html_e('OpptiAI Alt Text will scan your WordPress media library and find images missing alt text.', 'beepbeep-ai-alt-text-generator'); ?></p>
                     </div>
                     <div class="bbai-page-header-actions">
                         <div class="bbai-onboarding-progress">
@@ -2538,7 +2538,7 @@ class Core {
                             </defs>
                         </svg>
                         <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-logo-text"><?php esc_html_e('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </a>
@@ -2705,7 +2705,7 @@ class Core {
                             </defs>
                         </svg>
                         <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-logo-text"><?php esc_html_e('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </a>
@@ -3115,7 +3115,7 @@ class Core {
                             </defs>
                         </svg>
                         <div class="bbai-logo-content">
-                            <span class="bbai-logo-text"><?php esc_html_e('BeepBeep AI – Alt Text Generator', 'beepbeep-ai-alt-text-generator'); ?></span>
+                            <span class="bbai-logo-text"><?php esc_html_e('OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
                             <span class="bbai-logo-tagline"><?php esc_html_e('WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?></span>
                         </div>
                     </div>
@@ -3501,7 +3501,7 @@ class Core {
             
             <!-- Footer -->
             <div class="bbai-footer">
-                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
+                <?php esc_html_e('OpptiAI Alt Text • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
             <?php else : ?>
                 <!-- Fallback: No tab matched -->
                 <div class="bbai-container bbai-unauth-container">
@@ -3542,7 +3542,7 @@ class Core {
 
             <!-- Footer -->
             <div class="bbai-footer">
-                <?php esc_html_e('BeepBeep AI • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
+                <?php esc_html_e('OpptiAI Alt Text • WordPress AI Tools', 'beepbeep-ai-alt-text-generator'); ?> — <a href="<?php echo esc_url('https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/'); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('WordPress.org Plugin', 'beepbeep-ai-alt-text-generator'); ?></a>
             </div>
         </div>
         
@@ -11867,7 +11867,7 @@ class Core {
         $site_url = esc_url_raw($contact_data['site_url'] ?? get_site_url());
         $license_hash = !empty($contact_data['license_key']) ? wp_hash((string) $contact_data['license_key']) : '';
 
-        $body = '<h2>BeepBeep AI support request</h2>';
+        $body = '<h2>OpptiAI Alt Text support request</h2>';
         $body .= '<p><strong>Name:</strong> ' . esc_html($name) . '</p>';
         $body .= '<p><strong>Email:</strong> ' . esc_html($reply_to) . '</p>';
         $body .= '<p><strong>Site:</strong> ' . esc_html($site_url) . '</p>';
@@ -11892,7 +11892,7 @@ class Core {
 
         $sent = wp_mail(
             $recipient,
-            '[BeepBeep AI Support] ' . $subject,
+            '[OpptiAI Alt Text Support] ' . $subject,
             $body,
             $headers,
             $attachments
@@ -11975,7 +11975,7 @@ class Core {
         $debug_excerpt = $this->read_contact_debug_attachment_excerpt($debug_attachment);
         if ($debug_excerpt) {
             $payload['message'] = rtrim((string) ($payload['message'] ?? ''))
-                . "\n\n--- Recent BeepBeep AI debug log ---\n"
+                . "\n\n--- Recent OpptiAI Alt Text debug log ---\n"
                 . $debug_excerpt;
         }
 
@@ -12014,7 +12014,7 @@ class Core {
             : [];
 
         $lines = [];
-        $lines[] = 'BeepBeep AI Support Debug Log';
+        $lines[] = 'OpptiAI Alt Text Support Debug Log';
         $lines[] = 'Generated: ' . gmdate('c');
         $lines[] = 'Site: ' . get_site_url();
         $lines[] = 'WordPress: ' . get_bloginfo('version');

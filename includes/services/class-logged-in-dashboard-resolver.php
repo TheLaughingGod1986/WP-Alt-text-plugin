@@ -494,7 +494,7 @@ class Logged_In_Dashboard_Resolver {
 				return [
 					'badge'         => [ 'text' => __( 'Getting started', 'beepbeep-ai-alt-text-generator' ), 'mod' => 'gray' ],
 					'headline'      => __( 'Upload images to get started', 'beepbeep-ai-alt-text-generator' ),
-					'support'       => __( 'Add images to your media library and BeepBeep will generate ALT text automatically.', 'beepbeep-ai-alt-text-generator' ),
+					'support'       => __( 'Add images to your media library and OpptiAI Alt Text will generate ALT text automatically.', 'beepbeep-ai-alt-text-generator' ),
 					'variant'       => 'default',
 					'primary_cta'   => [
 						'label'  => __( 'Go to Media Library', 'beepbeep-ai-alt-text-generator' ),
@@ -971,7 +971,7 @@ class Logged_In_Dashboard_Resolver {
 			case self::STATE_NO_IMAGES:
 				return array_merge( $base, [
 					'title'          => __( 'Welcome — let\'s get your images optimised', 'beepbeep-ai-alt-text-generator' ),
-					'body'           => __( 'Upload images to your media library and BeepBeep will generate SEO-ready ALT text automatically.', 'beepbeep-ai-alt-text-generator' ),
+					'body'           => __( 'Upload images to your media library and OpptiAI Alt Text will generate SEO-ready ALT text automatically.', 'beepbeep-ai-alt-text-generator' ),
 					'tone'           => 'setup',
 					'banner_variant' => 'info',
 					'semantic_state' => 'setup',

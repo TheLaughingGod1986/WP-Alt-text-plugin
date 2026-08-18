@@ -206,7 +206,7 @@ final class Upgrade_Cta_Resolver {
 	 * @return array<string, mixed>
 	 */
 	private static function payload_growth_tier(): array {
-		$pro = function_exists( 'bbai_copy_cta_upgrade_agency' ) ? bbai_copy_cta_upgrade_agency() : __( 'Upgrade to Pro', 'beepbeep-ai-alt-text-generator' );
+		$pro = function_exists( 'bbai_copy_cta_upgrade_agency' ) ? bbai_copy_cta_upgrade_agency() : __( 'Upgrade to Growth', 'beepbeep-ai-alt-text-generator' );
 
 		return [
 			'state'                 => self::STATE_GROWTH,
@@ -214,7 +214,7 @@ final class Upgrade_Cta_Resolver {
 			'primary_action'        => 'open_pro_upgrade',
 			'secondary_label'       => __( 'View plans', 'beepbeep-ai-alt-text-generator' ),
 			'secondary_action'      => 'open_pricing',
-			'tooltip_locked'        => __( 'Upgrade to Pro for more capacity', 'beepbeep-ai-alt-text-generator' ),
+			'tooltip_locked'        => __( 'Upgrade to Growth for more capacity', 'beepbeep-ai-alt-text-generator' ),
 			'modal_mode'            => 'pro_upgrade',
 			'upgrade_target'        => 'pro',
 			'locked_labels'         => [
@@ -224,7 +224,7 @@ final class Upgrade_Cta_Resolver {
 				'default'          => $pro,
 			],
 			'modal_primary_label'   => $pro,
-			'modal_title_default'   => __( 'Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator' ),
+			'modal_title_default'   => __( 'Manage your OpptiAI Alt Text plan', 'beepbeep-ai-alt-text-generator' ),
 			'modal_subtitle_default' => __( 'Compare plans or open billing to adjust your subscription.', 'beepbeep-ai-alt-text-generator' ),
 			'show_credit_pack'      => true,
 			'analytics'             => [
@@ -259,7 +259,7 @@ final class Upgrade_Cta_Resolver {
 				'default'          => $usage,
 			],
 			'modal_primary_label'   => __( 'Open billing portal', 'beepbeep-ai-alt-text-generator' ),
-			'modal_title_default'   => __( 'Manage your BeepBeep AI plan', 'beepbeep-ai-alt-text-generator' ),
+			'modal_title_default'   => __( 'Manage your OpptiAI Alt Text plan', 'beepbeep-ai-alt-text-generator' ),
 			'modal_subtitle_default' => __( 'Compare plans, manage billing, or add credits.', 'beepbeep-ai-alt-text-generator' ),
 			'show_credit_pack'      => true,
 			'analytics'             => [

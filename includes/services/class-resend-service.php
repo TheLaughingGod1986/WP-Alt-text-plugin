@@ -170,9 +170,9 @@ class Resend_Service {
 
         // Prepare request payload
         $payload = [
-            'from' => 'BeepBeep AI Support <noreply@resend.dev>', // Default, should be configured in Resend
+            'from' => 'OpptiAI Alt Text Support <noreply@resend.dev>', // Default, should be configured in Resend
             'to' => [$recipient_email],
-            'subject' => sprintf('[BeepBeep AI Support] %s', sanitize_text_field($data['subject'])),
+            'subject' => sprintf('[OpptiAI Alt Text Support] %s', sanitize_text_field($data['subject'])),
             'html' => $html_content,
             'reply_to' => [
                 sanitize_email($data['email']) => sanitize_text_field($data['name'])

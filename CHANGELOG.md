@@ -4,6 +4,11 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.131 — 2026-08-18
+
+- **Changed**: User-facing BeepBeep chrome in wp-admin (logos, toasts, modals, empty states, settings copy) → OpptiAI Alt Text.
+- **Changed**: Upgrade to Pro CTAs → Upgrade to Growth (billing id `pro` unchanged).
+
 ### 4.6.129 — 2026-08-17
 
 - **Fixed**: Unified leftover Free/guest copy and shipped defaults to Free 25 / guest 10 (exhausted-guest post-generation copy, local free-credit allocation, and monetisation Free positioning). Paid plan entitlements and scan/coverage limits unchanged.

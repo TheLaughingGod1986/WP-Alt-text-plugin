@@ -331,7 +331,7 @@
          * Show scroll depth prompt
          */
         showScrollDepthPrompt: function() {
-            const message = 'You\'re exploring BeepBeep AI! Upgrade to Growth to unlock all features and maximize your SEO impact.';
+            const message = 'You\'re exploring OpptiAI Alt Text! Upgrade to Growth to unlock all features and maximize your SEO impact.';
             this.showUpgradeToast(message, {
                 action: () => {
                     const upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');
@@ -346,7 +346,7 @@
          * Show time-based prompt
          */
         showTimeBasedPrompt: function() {
-            const message = 'You\'ve been using BeepBeep AI for a while. Upgrade to Growth for unlimited monthly credits!';
+            const message = 'You\'ve been using OpptiAI Alt Text for a while. Upgrade to Growth for unlimited monthly credits!';
             this.showUpgradeToast(message, {
                 action: () => {
                     const upgradeBtn = document.querySelector('[data-action="show-upgrade-modal"]');

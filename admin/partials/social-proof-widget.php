@@ -302,7 +302,7 @@ $bbai_plugin_url = defined('BEEPBEEP_AI_PLUGIN_URL') ? BEEPBEEP_AI_PLUGIN_URL : 
                     );
                     ?>
                 </span>
-                <span class="bbai-trust-badge-subtitle"><?php esc_html_e('Using BeepBeep AI', 'beepbeep-ai-alt-text-generator'); ?></span>
+                <span class="bbai-trust-badge-subtitle"><?php esc_html_e('Using OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator'); ?></span>
             </span>
         </div>
     </div>

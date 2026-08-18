@@ -5346,7 +5346,7 @@
 
         if (!optimizedOnly) {
             return {
-                summary: __('Follow this simple workflow to use BeepBeep AI:', 'beepbeep-ai-alt-text-generator'),
+                summary: __('Follow this simple workflow to use OpptiAI Alt Text:', 'beepbeep-ai-alt-text-generator'),
                 label: '',
                 steps: workflowSteps
             };
@@ -9867,7 +9867,7 @@
         var intro = document.createElement('p');
         intro.className = 'bbai-dashboard-generator-modal__intro';
         intro.id = descriptionId;
-        intro.textContent = __('BeepBeep AI will automatically generate ALT text for images missing descriptions.', 'beepbeep-ai-alt-text-generator');
+        intro.textContent = __('OpptiAI Alt Text will automatically generate ALT text for images missing descriptions.', 'beepbeep-ai-alt-text-generator');
         messageNode.appendChild(intro);
 
         var summaryCard = document.createElement('div');
