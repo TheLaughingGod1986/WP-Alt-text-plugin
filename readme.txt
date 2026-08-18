@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.129
+Stable tag: 4.6.130
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -153,6 +153,9 @@ Purpose: If the site owner opts in, send anonymous plugin usage analytics such a
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.130 =
+* Fixed: When OpptiAI Titles is installed first, Alt Text now adopts that site's `beepti_site_id` so both plugins share one credit wallet (Titles-first install order). Adoption only runs when Alt Text has no site id yet.
 
 = 4.6.129 =
 * Unified leftover Free/guest copy and shipped defaults to Free 25 / guest 10 (exhausted-guest messaging, local free-credit allocation, Free plan positioning).
