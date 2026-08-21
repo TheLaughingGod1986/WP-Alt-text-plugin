@@ -4,7 +4,7 @@
  * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
  * Version: 4.6.132
  * Requires at least: 6.2
- * Author: beepbeepv2
+ * Author: OpptiAI
  * Author URI: https://oppti.dev
  * Plugin URI: https://wordpress.org/plugins/beepbeep-ai-alt-text-generator/
  * License: GPLv2 or later
