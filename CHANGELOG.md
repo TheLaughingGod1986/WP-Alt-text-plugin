@@ -4,6 +4,10 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.133 — 2026-08-21
+
+- **Changed**: In-plugin By line is now OpptiAI linked to https://oppti.dev.
+
 ### 4.6.132 — 2026-08-18
 
 - **Added**: Quiet OpptiAI Titles cross-sell at the bottom of the home Dashboard tab for signed-in Free, Starter, and Growth users (hidden from guests and Agency). Links to the Titles admin page when active, otherwise WordPress.org.
