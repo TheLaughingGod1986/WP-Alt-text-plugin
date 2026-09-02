@@ -993,10 +993,9 @@ trait Core_Admin_UI {
         
         <?php endif; // End tab check (dashboard/library/help/usage/settings/admin views)
         
-        // Include upgrade modal OUTSIDE of tab conditionals so it's always available
-        // Set up currency for upgrade modal - Always use GBP (£) with Stripe prices
-        // GBP prices: Growth £12.99, Agency £49.99, Credits £9.99 (matching Stripe payment links)
-        $bbai_currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
+        // Include upgrade modal OUTSIDE of tab conditionals so it's always available.
+        // Currency + Price IDs follow locale: en_US → USD, everyone else → existing GBP.
+        $bbai_currency = $this->get_checkout_currency();
         
         // Include upgrade modal - always available for all tabs
         $bbai_checkout_prices = $this->get_checkout_price_ids();
