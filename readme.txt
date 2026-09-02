@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 4.6.134
+Stable tag: 4.6.135
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -153,6 +153,9 @@ Purpose: If the site owner opts in, send anonymous plugin usage analytics such a
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.135 =
+* Agency plan top banner now says You’re on OpptiAI Agency with one-subscription Alt Text + Titles subtext (no Pro wording).
 
 = 4.6.134 =
 * Upgrade modal: US request country (CF-IPCountry) uses USD Stripe Price IDs and dollar amounts; missing/non-US keeps GBP.

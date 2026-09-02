@@ -4,6 +4,10 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.135 — 2026-09-02
+
+- **Changed**: Agency (highest-tier) plan top banner copy → “You’re on OpptiAI Agency” / “One subscription covers Alt Text + Titles.” (no Pro / BeepBeep wording; billing id `pro` unchanged).
+
 ### 4.6.134 — 2026-09-02
 
 - **Changed**: Alt Text upgrade modal uses USD Stripe Price IDs and $ amounts when the wp-admin request country is US (Cloudflare CF-IPCountry); missing/non-US keeps existing GBP Price IDs and £ copy.
