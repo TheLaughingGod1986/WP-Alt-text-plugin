@@ -31,20 +31,40 @@ $bbai_pro_price_id = $checkout_prices['pro'] ?? '';
 $bbai_agency_price_id = $checkout_prices['agency'] ?? '';
 $bbai_credits_price_id = $checkout_prices['credits'] ?? '';
 
-// Fallback to hardcoded Stripe links if API price IDs not available
-$bbai_stripe_links = [
-    'starter' => 'https://buy.stripe.com/eVqbJ25vg0wQ05Mfaj7ss03',
-    'pro' => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
-    'agency' => 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01',
-    'credits' => 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00'
-];
-
-// Currency - Default to GBP, but support detection
+// Currency - Default to GBP; US request-country sets USD via get_checkout_currency().
 $bbai_currency = $bbai_currency ?? ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'starter' => 4.99, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
+$bbai_is_us_checkout = isset( $bbai_currency['code'] ) && 'USD' === $bbai_currency['code'];
+
+// GBP buy.stripe.com Payment Links are non-US fallbacks only.
+// Never attach them for US clients — failed USD checkout must not fall through to GBP.
+$bbai_stripe_links = $bbai_is_us_checkout
+    ? [
+        'starter' => '',
+        'pro'     => '',
+        'agency'  => '',
+        'credits' => '',
+    ]
+    : [
+        'starter' => 'https://buy.stripe.com/eVqbJ25vg0wQ05Mfaj7ss03',
+        'pro'     => 'https://buy.stripe.com/dRm28s4rc5Raf0GbY77ss02',
+        'agency'  => 'https://buy.stripe.com/28E14og9U0wQ19Q4vF7ss01',
+        'credits' => 'https://buy.stripe.com/6oU9AUf5Q2EYaKq0fp7ss00',
+    ];
 
 // Calculate annual prices (2 months free = 10 months of monthly price)
 $bbai_starter_monthly = $bbai_currency['starter'] ?? 4.99;
 $bbai_growth_monthly = $bbai_currency['growth'] ?? 12.99;
+// Per-image compare copy must match Stripe charge currency (no £ line for US/USD).
+if ( $bbai_is_us_checkout ) {
+    $bbai_growth_per_image_label = sprintf(
+        /* translators: 1: currency symbol, 2: per-image price */
+        __( '~%1$s%2$s per image', 'beepbeep-ai-alt-text-generator' ),
+        $bbai_currency['symbol'] ?? '$',
+        number_format( (float) $bbai_growth_monthly / 1000, 3 )
+    );
+} else {
+    $bbai_growth_per_image_label = __( '~£0.012 per image', 'beepbeep-ai-alt-text-generator' );
+}
 $bbai_growth_annual = round($bbai_growth_monthly * 10, 2);
 $bbai_agency_monthly = $bbai_currency['agency'] ?? 49.99;
 $bbai_agency_annual = round($bbai_agency_monthly * 10, 2);
@@ -541,7 +561,7 @@ $bbai_show_agency_by_default = $bbai_is_agency_plan;
                                     <span class="bbai-pricing-card__period"><?php esc_html_e('/month', 'beepbeep-ai-alt-text-generator'); ?></span>
                                 </div>
                                 <div class="bbai-pricing-card__limit"><?php esc_html_e('1,000 images optimised/month', 'beepbeep-ai-alt-text-generator'); ?></div>
-                                <div class="bbai-pricing-card__limit-sub"><?php esc_html_e('~£0.012 per image', 'beepbeep-ai-alt-text-generator'); ?></div>
+                                <div class="bbai-pricing-card__limit-sub"><?php echo esc_html( $bbai_growth_per_image_label ); ?></div>
                             </div>
                             <?php if ( $bbai_modal_signup_first ) : ?>
                                 <p class="bbai-pricing-card__upgrade-trigger"><?php esc_html_e('After you create your free account, you can upgrade to Growth anytime from billing.', 'beepbeep-ai-alt-text-generator'); ?></p>

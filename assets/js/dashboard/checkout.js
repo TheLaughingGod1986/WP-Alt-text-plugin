@@ -22,6 +22,12 @@ function resolveCheckoutPriceId($btn, priceId, plan) {
 }
 
 function resolveCheckoutFallbackUrl($btn, plan) {
+    // US-country checkout must never fall through to GBP buy.stripe.com Payment Links.
+    var isUsCheckout = !!(window.bbai_ajax && window.bbai_ajax.is_us_checkout);
+    if (isUsCheckout) {
+        return '';
+    }
+
     var fallbackUrl = $btn && typeof $btn.attr === 'function' ? ($btn.attr('data-fallback-url') || '') : '';
     var stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
     var resolvedLink = fallbackUrl || stripeLinks[plan] || '';

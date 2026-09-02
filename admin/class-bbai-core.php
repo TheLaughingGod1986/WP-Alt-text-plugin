@@ -1631,13 +1631,41 @@ class Core {
     /**
      * Resolve the direct Stripe checkout fallback URL for a plan or price ID.
      */
+    /**
+     * Stripe Payment Link map for checkout fallbacks.
+     * US clients get an empty map so GBP buy.stripe.com links are never used.
+     *
+     * @return array<string, string>
+     */
+    private function get_checkout_stripe_links(): array {
+        if ( $this->is_us_checkout_client() ) {
+            $links = [
+                'starter' => '',
+                'pro'     => '',
+                'growth'  => '',
+                'agency'  => '',
+                'credits' => '',
+            ];
+        } else {
+            $links = self::DEFAULT_STRIPE_LINKS;
+        }
+
+        $filtered = apply_filters( 'bbai_checkout_stripe_links', $links );
+        return is_array( $filtered ) ? $filtered : $links;
+    }
+
     private function get_checkout_fallback_url(string $plan_id = '', string $price_id = ''): string {
+        // Never fall through to GBP Payment Links for US-country checkout.
+        if ( $this->is_us_checkout_client() ) {
+            return '';
+        }
+
         $normalized_plan_id = sanitize_key($plan_id);
         if ($normalized_plan_id === '' && $price_id !== '') {
             $normalized_plan_id = $this->get_checkout_plan_from_price_id($price_id);
         }
 
-        $fallback_links = apply_filters('bbai_checkout_stripe_links', self::DEFAULT_STRIPE_LINKS);
+        $fallback_links = $this->get_checkout_stripe_links();
         if (!is_array($fallback_links) || $normalized_plan_id === '') {
             return '';
         }
