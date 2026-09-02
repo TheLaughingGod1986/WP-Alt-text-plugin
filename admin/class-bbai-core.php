@@ -127,6 +127,18 @@ class Core {
     ];
 
     /**
+     * USD Stripe Price IDs for US-locale upgrade checkout only.
+     * Billing plan key `pro` remains the Growth plan id.
+     */
+    private const DEFAULT_CHECKOUT_PRICE_IDS_USD = [
+        'starter' => 'price_1UBBZlJl9Rm418cMyqCUYrxp',
+        'pro'     => 'price_1UBBOuJl9Rm418cMz5HG1Lnu',
+        'growth'  => 'price_1UBBOuJl9Rm418cMz5HG1Lnu', // alias for pro
+        'agency'  => 'price_1UBBSDJl9Rm418cMvzW2OxG9',
+        'credits' => 'price_1UBBVeJl9Rm418cM1k7PC7wO',
+    ];
+
+    /**
      * Stripe Payment Link URLs (direct buy links that bypass checkout session creation).
      */
     private const DEFAULT_STRIPE_LINKS = [
@@ -1397,55 +1409,172 @@ class Core {
     }
 
     /**
-     * Retrieve checkout price IDs sourced from the backend
+     * Whether this admin upgrade UI should use US/USD Stripe checkout.
+     *
+     * US client = the person loading wp-admin has request country US, via
+     * Cloudflare (or similar) country headers on this admin request.
+     * Missing/unknown country is NOT US — keep GBP. No WordPress locale,
+     * browser language, or invented geo API lookup.
+     */
+    public function is_us_checkout_client(): bool {
+        $country = $this->get_request_country_code();
+        $is_us   = ( $country === 'US' );
+
+        /**
+         * Filter whether Alt Text upgrade checkout uses USD Price IDs.
+         *
+         * @param bool   $is_us   Whether the admin request country is US.
+         * @param string $country ISO country code from request headers, or ''.
+         */
+        return (bool) apply_filters( 'bbai_is_us_checkout_client', $is_us, $country );
+    }
+
+    /**
+     * Resolve visitor country for the current wp-admin request.
+     *
+     * Prefers Cloudflare CF-IPCountry / HTTP_CF_IPCOUNTRY and similar edge
+     * country headers. Does not call an external geo API. Unknown/missing = ''.
+     *
+     * @return string Uppercase ISO 3166-1 alpha-2 country code, or '' if unknown.
+     */
+    private function get_request_country_code(): string {
+        $header_keys = [
+            'HTTP_CF_IPCOUNTRY', // Cloudflare
+            'CF-IPCountry',
+            'HTTP_CLOUDFRONT_VIEWER_COUNTRY', // CloudFront
+            'HTTP_X_COUNTRY_CODE',
+            'HTTP_X_APPENGINE_COUNTRY', // App Engine
+            'HTTP_X_VERCEL_IP_COUNTRY', // Vercel
+        ];
+
+        $server = isset( $_SERVER ) && is_array( $_SERVER ) ? $_SERVER : [];
+
+        foreach ( $header_keys as $key ) {
+            if ( empty( $server[ $key ] ) || ! is_string( $server[ $key ] ) ) {
+                continue;
+            }
+            $raw = strtoupper( trim( sanitize_text_field( wp_unslash( $server[ $key ] ) ) ) );
+            // Cloudflare uses XX for unknown; T1 for Tor — treat as unknown.
+            if ( $raw === '' || $raw === 'XX' || $raw === 'T1' || $raw === 'ZZ' ) {
+                continue;
+            }
+            if ( preg_match( '/^[A-Z]{2}$/', $raw ) ) {
+                /**
+                 * Filter resolved request country code for upgrade checkout currency.
+                 *
+                 * @param string $raw Resolved ISO country code.
+                 * @param string $key Header key that supplied the value.
+                 */
+                $filtered = apply_filters( 'bbai_request_country_code', $raw, $key );
+                return is_string( $filtered ) ? strtoupper( trim( $filtered ) ) : $raw;
+            }
+        }
+
+        $filtered = apply_filters( 'bbai_request_country_code', '', '' );
+        return is_string( $filtered ) ? strtoupper( trim( $filtered ) ) : '';
+    }
+
+    /**
+     * Currency amounts/symbols for the Alt Text upgrade modal.
+     * Display currency matches the Stripe Price IDs used for checkout.
+     *
+     * @return array{symbol:string,code:string,free:float|int,starter:float,growth:float,pro:float,agency:float,credits:float}
+     */
+    public function get_checkout_currency(): array {
+        if ($this->is_us_checkout_client()) {
+            $currency = [
+                'symbol'  => '$',
+                'code'    => 'USD',
+                'free'    => 0,
+                'starter' => 6.99,
+                'growth'  => 17.99,
+                'pro'     => 17.99,
+                'agency'  => 67.99,
+                'credits' => 13.99,
+            ];
+        } else {
+            $currency = [
+                'symbol'  => '£',
+                'code'    => 'GBP',
+                'free'    => 0,
+                'starter' => 4.99,
+                'growth'  => 12.99,
+                'pro'     => 12.99,
+                'agency'  => 49.99,
+                'credits' => 9.99,
+            ];
+        }
+
+        /**
+         * Filter upgrade-modal currency display values.
+         *
+         * @param array $currency Currency config for the upgrade modal.
+         */
+        $filtered = apply_filters('bbai_checkout_currency', $currency);
+        return is_array($filtered) ? $filtered : $currency;
+    }
+
+    /**
+     * Retrieve checkout price IDs for the upgrade modal / create_checkout_session.
+     *
+     * US request country gets USD Price IDs; everyone else (including unknown) keeps GBP defaults.
+     * Remote overlays are GBP-oriented and are skipped for US-country clients so they cannot
+     * replace USD Price IDs. Existing GBP Growth subscriptions are untouched.
      */
     public function get_checkout_price_ids() {
         if (is_array($this->checkout_price_cache)) {
             return $this->checkout_price_cache;
         }
 
-        $prices = self::DEFAULT_CHECKOUT_PRICE_IDS;
+        $is_us  = $this->is_us_checkout_client();
+        $prices = $is_us ? self::DEFAULT_CHECKOUT_PRICE_IDS_USD : self::DEFAULT_CHECKOUT_PRICE_IDS;
 
-        $cached = get_transient('bbai_remote_price_ids');
-        if (!is_array($cached)) {
-            $plans = $this->api_client->get_plans();
-            if (!is_wp_error($plans) && !empty($plans)) {
-                $remote = [];
-                foreach ($plans as $bbai_plan) {
-                    if (!is_array($bbai_plan)) {
-                        continue;
+        // Remote plan price IDs are the GBP catalogue — do not overlay them onto US/USD.
+        if (!$is_us) {
+            $cached = get_transient('bbai_remote_price_ids');
+            if (!is_array($cached)) {
+                $plans = $this->api_client->get_plans();
+                if (!is_wp_error($plans) && !empty($plans)) {
+                    $remote = [];
+                    foreach ($plans as $bbai_plan) {
+                        if (!is_array($bbai_plan)) {
+                            continue;
+                        }
+                        $plan_id = isset($bbai_plan['id']) && is_string($bbai_plan['id']) ? sanitize_key($bbai_plan['id']) : '';
+                        $price_id = !empty($bbai_plan['priceId']) && is_string($bbai_plan['priceId']) ? sanitize_text_field($bbai_plan['priceId']) : '';
+                        if ($plan_id && $price_id) {
+                            $remote[$plan_id] = $price_id;
+                        }
                     }
-                    $plan_id = isset($bbai_plan['id']) && is_string($bbai_plan['id']) ? sanitize_key($bbai_plan['id']) : '';
-                    $price_id = !empty($bbai_plan['priceId']) && is_string($bbai_plan['priceId']) ? sanitize_text_field($bbai_plan['priceId']) : '';
-                    if ($plan_id && $price_id) {
-                        $remote[$plan_id] = $price_id;
+                    if (!empty($remote)) {
+                        set_transient('bbai_remote_price_ids', $remote, 10 * MINUTE_IN_SECONDS);
+                        $cached = $remote;
                     }
-                }
-                if (!empty($remote)) {
-                    set_transient('bbai_remote_price_ids', $remote, 10 * MINUTE_IN_SECONDS);
-                    $cached = $remote;
                 }
             }
-        }
 
-        if (is_array($cached)) {
-            foreach ($cached as $plan_id => $price_id) {
-                $plan_id = is_string($plan_id) ? sanitize_key($plan_id) : '';
-                $price_id = is_string($price_id) ? sanitize_text_field($price_id) : '';
-                if ($plan_id && $price_id) {
-                    $prices[$plan_id] = $price_id;
+            if (is_array($cached)) {
+                foreach ($cached as $plan_id => $price_id) {
+                    $plan_id = is_string($plan_id) ? sanitize_key($plan_id) : '';
+                    $price_id = is_string($price_id) ? sanitize_text_field($price_id) : '';
+                    if ($plan_id && $price_id) {
+                        $prices[$plan_id] = $price_id;
+                    }
                 }
             }
         }
 
         // Backwards compatibility: use saved overrides when a plan is missing a mapped price.
-        $stored = get_option('bbai_checkout_prices', []);
-        if (is_array($stored) && !empty($stored)) {
-            foreach ($stored as $key => $value) {
-                $key = is_string($key) ? sanitize_key($key) : '';
-                $value = is_string($value) ? sanitize_text_field($value) : '';
-                if ($key && $value && empty($prices[$key])) {
-                    $prices[$key] = $value;
+        // For US clients, never fill from stored GBP overrides — keep USD defaults intact.
+        if (!$is_us) {
+            $stored = get_option('bbai_checkout_prices', []);
+            if (is_array($stored) && !empty($stored)) {
+                foreach ($stored as $key => $value) {
+                    $key = is_string($key) ? sanitize_key($key) : '';
+                    $value = is_string($value) ? sanitize_text_field($value) : '';
+                    if ($key && $value && empty($prices[$key])) {
+                        $prices[$key] = $value;
+                    }
                 }
             }
         }
@@ -1474,12 +1603,25 @@ class Core {
             return '';
         }
 
-        foreach ($this->get_checkout_price_ids() as $plan_id => $mapped_price_id) {
-            $plan_id = is_string($plan_id) ? sanitize_key($plan_id) : '';
-            $mapped_price_id = is_string($mapped_price_id) ? sanitize_text_field($mapped_price_id) : '';
+        // Check active locale prices first, then both GBP and USD defaults so existing
+        // GBP Growth subscriptions still resolve after a US-locale admin views checkout.
+        $price_maps = [
+            $this->get_checkout_price_ids(),
+            self::DEFAULT_CHECKOUT_PRICE_IDS,
+            self::DEFAULT_CHECKOUT_PRICE_IDS_USD,
+        ];
 
-            if ($plan_id !== '' && $mapped_price_id !== '' && hash_equals($mapped_price_id, $normalized_price_id)) {
-                return $plan_id;
+        foreach ($price_maps as $price_map) {
+            if (!is_array($price_map)) {
+                continue;
+            }
+            foreach ($price_map as $plan_id => $mapped_price_id) {
+                $plan_id = is_string($plan_id) ? sanitize_key($plan_id) : '';
+                $mapped_price_id = is_string($mapped_price_id) ? sanitize_text_field($mapped_price_id) : '';
+
+                if ($plan_id !== '' && $mapped_price_id !== '' && hash_equals($mapped_price_id, $normalized_price_id)) {
+                    return $plan_id;
+                }
             }
         }
 
@@ -1489,13 +1631,41 @@ class Core {
     /**
      * Resolve the direct Stripe checkout fallback URL for a plan or price ID.
      */
+    /**
+     * Stripe Payment Link map for checkout fallbacks.
+     * US clients get an empty map so GBP buy.stripe.com links are never used.
+     *
+     * @return array<string, string>
+     */
+    private function get_checkout_stripe_links(): array {
+        if ( $this->is_us_checkout_client() ) {
+            $links = [
+                'starter' => '',
+                'pro'     => '',
+                'growth'  => '',
+                'agency'  => '',
+                'credits' => '',
+            ];
+        } else {
+            $links = self::DEFAULT_STRIPE_LINKS;
+        }
+
+        $filtered = apply_filters( 'bbai_checkout_stripe_links', $links );
+        return is_array( $filtered ) ? $filtered : $links;
+    }
+
     private function get_checkout_fallback_url(string $plan_id = '', string $price_id = ''): string {
+        // Never fall through to GBP Payment Links for US-country checkout.
+        if ( $this->is_us_checkout_client() ) {
+            return '';
+        }
+
         $normalized_plan_id = sanitize_key($plan_id);
         if ($normalized_plan_id === '' && $price_id !== '') {
             $normalized_plan_id = $this->get_checkout_plan_from_price_id($price_id);
         }
 
-        $fallback_links = apply_filters('bbai_checkout_stripe_links', self::DEFAULT_STRIPE_LINKS);
+        $fallback_links = $this->get_checkout_stripe_links();
         if (!is_array($fallback_links) || $normalized_plan_id === '') {
             return '';
         }
@@ -3548,10 +3718,9 @@ class Core {
         
         <?php endif; // End tab check (dashboard/library/help/usage/settings/admin views)
         
-        // Include upgrade modal OUTSIDE of tab conditionals so it's always available
-        // Set up currency for upgrade modal - Always use GBP (£) with Stripe prices
-        // GBP prices: Growth £12.99, Agency £49.99, Credits £9.99 (matching Stripe payment links)
-        $bbai_currency = ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
+        // Include upgrade modal OUTSIDE of tab conditionals so it's always available.
+        // Currency + Price IDs follow admin-request geo: US country → USD; missing/other → GBP.
+        $bbai_currency = $this->get_checkout_currency();
         
         // Include upgrade modal - always available for all tabs.
         $bbai_checkout_prices = $this->get_checkout_price_ids();

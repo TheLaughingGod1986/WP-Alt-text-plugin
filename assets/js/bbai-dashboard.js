@@ -2148,6 +2148,12 @@ bbaiRunWithJQuery(function($) {
     }
 
     function resolveCheckoutFallbackUrl($button, planName) {
+        // US-country checkout must never fall through to GBP buy.stripe.com Payment Links.
+        const isUsCheckout = !!(window.bbai_ajax && window.bbai_ajax.is_us_checkout);
+        if (isUsCheckout) {
+            return '';
+        }
+
         const fallbackUrl = ($button && $button.attr('data-fallback-url')) || '';
         const stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
         let resolvedLink = fallbackUrl || stripeLinks[planName] || '';

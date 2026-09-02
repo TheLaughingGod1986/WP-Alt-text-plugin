@@ -1086,13 +1086,15 @@ function initiateCheckout($btn, priceId, plan) {
         return typeof url === 'string' && /^https:\/\/buy\.stripe\.com\//i.test(url);
     };
 
-    var fallbackUrl = $btn && typeof $btn.attr === 'function' ? $btn.attr('data-fallback-url') : '';
-    var stripeLinks = (window.bbai_ajax && window.bbai_ajax.stripe_links) || {};
-    var resolvedLink = fallbackUrl || stripeLinks[plan] || '';
+    // US-country checkout must never fall through to GBP buy.stripe.com Payment Links.
+    var isUsCheckout = !!(window.bbai_ajax && window.bbai_ajax.is_us_checkout);
+    var fallbackUrl = isUsCheckout ? '' : ($btn && typeof $btn.attr === 'function' ? $btn.attr('data-fallback-url') : '');
+    var stripeLinks = isUsCheckout ? {} : ((window.bbai_ajax && window.bbai_ajax.stripe_links) || {});
+    var resolvedLink = isUsCheckout ? '' : (fallbackUrl || stripeLinks[plan] || '');
     var directCheckoutUrl = resolveDirectCheckoutUrl();
 
-    if (!resolvedLink) {
-        // Hardcoded fallback Payment Links
+    if (!isUsCheckout && !resolvedLink) {
+        // Hardcoded fallback Payment Links (GBP) — non-US only.
         if (plan === 'starter') {
             resolvedLink = 'https://buy.stripe.com/eVqbJ25vg0wQ05Mfaj7ss03';
         } else if (plan === 'pro' || plan === 'growth') {
