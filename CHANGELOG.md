@@ -6,7 +6,7 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 
 ### 4.6.134 — 2026-09-02
 
-- **Changed**: Alt Text upgrade modal uses USD Stripe Price IDs and $ amounts for en_US site/user locales; non-US keeps existing GBP Price IDs and £ copy.
+- **Changed**: Alt Text upgrade modal uses USD Stripe Price IDs and $ amounts when the wp-admin request country is US (Cloudflare CF-IPCountry); missing/non-US keeps existing GBP Price IDs and £ copy.
 
 ### 4.6.133 — 2026-08-21
 

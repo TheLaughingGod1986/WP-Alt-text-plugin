@@ -1411,23 +1411,67 @@ class Core {
     /**
      * Whether this admin upgrade UI should use US/USD Stripe checkout.
      *
-     * US client = WordPress site locale or current user locale is en_US.
-     * No IP geolocation.
+     * US client = the person loading wp-admin has request country US, via
+     * Cloudflare (or similar) country headers on this admin request.
+     * Missing/unknown country is NOT US — keep GBP. No WordPress locale,
+     * browser language, or invented geo API lookup.
      */
     public function is_us_checkout_client(): bool {
-        $site_locale = function_exists('get_locale') ? (string) get_locale() : '';
-        $user_locale = function_exists('get_user_locale') ? (string) get_user_locale() : '';
-
-        $is_us = ( $site_locale === 'en_US' || $user_locale === 'en_US' );
+        $country = $this->get_request_country_code();
+        $is_us   = ( $country === 'US' );
 
         /**
          * Filter whether Alt Text upgrade checkout uses USD Price IDs.
          *
-         * @param bool   $is_us       Whether locale indicates a US client.
-         * @param string $site_locale Site locale.
-         * @param string $user_locale User locale.
+         * @param bool   $is_us   Whether the admin request country is US.
+         * @param string $country ISO country code from request headers, or ''.
          */
-        return (bool) apply_filters('bbai_is_us_checkout_client', $is_us, $site_locale, $user_locale);
+        return (bool) apply_filters( 'bbai_is_us_checkout_client', $is_us, $country );
+    }
+
+    /**
+     * Resolve visitor country for the current wp-admin request.
+     *
+     * Prefers Cloudflare CF-IPCountry / HTTP_CF_IPCOUNTRY and similar edge
+     * country headers. Does not call an external geo API. Unknown/missing = ''.
+     *
+     * @return string Uppercase ISO 3166-1 alpha-2 country code, or '' if unknown.
+     */
+    private function get_request_country_code(): string {
+        $header_keys = [
+            'HTTP_CF_IPCOUNTRY', // Cloudflare
+            'CF-IPCountry',
+            'HTTP_CLOUDFRONT_VIEWER_COUNTRY', // CloudFront
+            'HTTP_X_COUNTRY_CODE',
+            'HTTP_X_APPENGINE_COUNTRY', // App Engine
+            'HTTP_X_VERCEL_IP_COUNTRY', // Vercel
+        ];
+
+        $server = isset( $_SERVER ) && is_array( $_SERVER ) ? $_SERVER : [];
+
+        foreach ( $header_keys as $key ) {
+            if ( empty( $server[ $key ] ) || ! is_string( $server[ $key ] ) ) {
+                continue;
+            }
+            $raw = strtoupper( trim( sanitize_text_field( wp_unslash( $server[ $key ] ) ) ) );
+            // Cloudflare uses XX for unknown; T1 for Tor — treat as unknown.
+            if ( $raw === '' || $raw === 'XX' || $raw === 'T1' || $raw === 'ZZ' ) {
+                continue;
+            }
+            if ( preg_match( '/^[A-Z]{2}$/', $raw ) ) {
+                /**
+                 * Filter resolved request country code for upgrade checkout currency.
+                 *
+                 * @param string $raw Resolved ISO country code.
+                 * @param string $key Header key that supplied the value.
+                 */
+                $filtered = apply_filters( 'bbai_request_country_code', $raw, $key );
+                return is_string( $filtered ) ? strtoupper( trim( $filtered ) ) : $raw;
+            }
+        }
+
+        $filtered = apply_filters( 'bbai_request_country_code', '', '' );
+        return is_string( $filtered ) ? strtoupper( trim( $filtered ) ) : '';
     }
 
     /**
@@ -1473,8 +1517,8 @@ class Core {
     /**
      * Retrieve checkout price IDs for the upgrade modal / create_checkout_session.
      *
-     * US locales get USD Price IDs; everyone else keeps the existing GBP defaults.
-     * Remote overlays are GBP-oriented and are skipped for US clients so they cannot
+     * US request country gets USD Price IDs; everyone else (including unknown) keeps GBP defaults.
+     * Remote overlays are GBP-oriented and are skipped for US-country clients so they cannot
      * replace USD Price IDs. Existing GBP Growth subscriptions are untouched.
      */
     public function get_checkout_price_ids() {
@@ -3647,7 +3691,7 @@ class Core {
         <?php endif; // End tab check (dashboard/library/help/usage/settings/admin views)
         
         // Include upgrade modal OUTSIDE of tab conditionals so it's always available.
-        // Currency + Price IDs follow locale: en_US → USD, everyone else → existing GBP.
+        // Currency + Price IDs follow admin-request geo: US country → USD; missing/other → GBP.
         $bbai_currency = $this->get_checkout_currency();
         
         // Include upgrade modal - always available for all tabs.

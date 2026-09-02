@@ -994,7 +994,7 @@ trait Core_Admin_UI {
         <?php endif; // End tab check (dashboard/library/help/usage/settings/admin views)
         
         // Include upgrade modal OUTSIDE of tab conditionals so it's always available.
-        // Currency + Price IDs follow locale: en_US → USD, everyone else → existing GBP.
+        // Currency + Price IDs follow admin-request geo: US country → USD; missing/other → GBP.
         $bbai_currency = $this->get_checkout_currency();
         
         // Include upgrade modal - always available for all tabs

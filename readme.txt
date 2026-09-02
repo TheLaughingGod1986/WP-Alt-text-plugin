@@ -155,7 +155,7 @@ Privacy policy: https://posthog.com/privacy
 == Changelog ==
 
 = 4.6.134 =
-* Upgrade modal: en_US locales use USD Stripe Price IDs and dollar amounts; non-US keeps existing GBP checkout.
+* Upgrade modal: US request country (CF-IPCountry) uses USD Stripe Price IDs and dollar amounts; missing/non-US keeps GBP.
 
 = 4.6.133 =
 * In-plugin By line is now OpptiAI linked to https://oppti.dev.
