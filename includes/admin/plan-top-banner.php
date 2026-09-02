@@ -147,8 +147,8 @@ function bbai_plan_top_banner_resolve(array $input): array
     if (BBAI_PLAN_TOP_TIER_PRO === $tier) {
         return [
             'tier'             => $tier,
-            'headline'         => __('You’re on the Pro plan', 'beepbeep-ai-alt-text-generator'),
-            'subtext'          => __('You’re using the highest available plan.', 'beepbeep-ai-alt-text-generator'),
+            'headline'         => __('You’re on OpptiAI Agency', 'beepbeep-ai-alt-text-generator'),
+            'subtext'          => __('One subscription covers Alt Text + Titles.', 'beepbeep-ai-alt-text-generator'),
             'tone'             => 'healthy',
             'banner_variant'   => 'success',
             'semantic_state'   => 'plan-pro',
