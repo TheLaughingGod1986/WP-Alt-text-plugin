@@ -63,6 +63,8 @@ class Admin_Hooks {
 		add_action( 'admin_post_bbai_logout', array( $this->core, 'handle_logout' ) );
 		add_action( 'init', array( $this->core, 'ensure_capability' ) );
 		add_action( 'admin_notices', array( $this->core, 'maybe_render_queue_notice' ) );
+		add_action( 'admin_notices', array( $this->core, 'maybe_render_trial_exhausted_notice' ) );
+		add_action( 'admin_post_bbai_dismiss_trial_exhausted', array( $this->core, 'dismiss_trial_exhausted_notice' ) );
 		add_action( 'admin_footer', array( $this->core, 'maybe_render_external_api_notice' ) );
 
 		$bbai_growth_engine_file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/growth/class-bbai-growth-engine.php';

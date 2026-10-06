@@ -2821,6 +2821,7 @@ function showAuthLogin() {
 }
 
 function showAuthModal(tab) {
+    tab = tab === 'signup' ? 'register' : tab;
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
     if (typeof emitDashboardAnalyticsEvent === 'function') {
         emitDashboardAnalyticsEvent(

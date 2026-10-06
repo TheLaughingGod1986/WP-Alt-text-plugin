@@ -718,6 +718,7 @@ function showAuthLogin() {
  * Show auth modal with specific tab
  */
 function showAuthModal(tab) {
+    tab = tab === 'signup' ? 'register' : tab;
     if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Showing auth modal, tab:', tab);
 
     if (typeof window.authModal !== 'undefined' && window.authModal && typeof window.authModal.show === 'function') {
@@ -2116,6 +2117,7 @@ bbaiRunWithJQuery(function($) {
         $(document).on('click', '[data-action="show-auth-modal"]', function(e) {
             e.preventDefault();
             var authTab = $(this).attr('data-auth-tab') || 'login';
+            authTab = authTab === 'signup' ? 'register' : authTab;
             if (typeof showAuthModal === 'function') {
                 showAuthModal(authTab);
             }

@@ -37,7 +37,7 @@ trait Core_Ajax_Auth {
 			            $action = 'beepbeepai_nonce';
 			            if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
 			                restore_error_handler();
-			                wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
+			                wp_send_json_error(["code" => "invalid_nonce", "message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
 			                return;
 			            }
 			            \bbai_debug_log( 'ajax_register nonce verified' );
@@ -79,6 +79,7 @@ trait Core_Ajax_Auth {
                             __('This site is already connected to an account%s. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator'),
                             $existing_email ? ' (' . $existing_email . ')' : ''
                         ),
+	                        'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
 	                        'code' => 'site_has_license',
 	                        'existing_email' => $existing_email
 	                    ]);
@@ -88,6 +89,7 @@ trait Core_Ajax_Auth {
 	                if ($error_code === 'free_plan_exists' || (is_string($error_message) && strpos(strtolower($error_message), 'free plan') !== false)) {
 	                    wp_send_json_error([
 	                        'message' => __('A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator'),
+	                        'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
 	                        'code' => 'free_plan_exists'
 	                    ]);
 	                    return;
@@ -100,6 +102,7 @@ trait Core_Ajax_Auth {
 	                    }
 	                    wp_send_json_error([
 	                        'message' => $error_message,
+	                        'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
 	                        'code' => 'invite_required',
 	                        'invite_url' => $invite_url,
 	                    ]);
@@ -108,6 +111,7 @@ trait Core_Ajax_Auth {
 
 	                wp_send_json_error([
 	                    'message' => $error_message,
+	                    'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
 	                    'code' => is_string($error_code) ? strtolower($error_code) : '',
 	                ]);
 	                return;
@@ -153,7 +157,7 @@ trait Core_Ajax_Auth {
 		    public function ajax_login() {
 		        $action = 'beepbeepai_nonce';
 		        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-		            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
+		            wp_send_json_error(["code" => "invalid_nonce", "message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
 		            return;
 		        }
 		        if (!$this->user_can_manage()) {
@@ -182,6 +186,7 @@ trait Core_Ajax_Auth {
 	                }
 	                wp_send_json_error([
 	                    'message' => $result->get_error_message(),
+	                    'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
 	                    'code' => 'site_has_license',
 	                    'existing_email' => $existing_email,
 	                ]);
@@ -196,6 +201,7 @@ trait Core_Ajax_Auth {
 
 	                wp_send_json_error([
 	                    'message' => $result->get_error_message(),
+	                    'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
 	                    'code' => 'invite_required',
 	                    'invite_url' => $invite_url,
 	                ]);
@@ -204,6 +210,7 @@ trait Core_Ajax_Auth {
 
 	            wp_send_json_error([
 	                'message' => $result->get_error_message(),
+	                'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
 	                'code' => is_string($error_code) ? strtolower($error_code) : '',
 	            ]);
 	            return;
