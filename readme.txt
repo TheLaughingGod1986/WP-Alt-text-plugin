@@ -5,7 +5,7 @@ Plugin URI: https://oppti.dev/plugins/alt-text
 Author URI: https://oppti.dev
 Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 4.6.137
 License: GPLv2 or later
