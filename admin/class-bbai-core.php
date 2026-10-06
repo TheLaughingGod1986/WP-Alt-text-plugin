@@ -8973,7 +8973,7 @@ class Core {
     public function ajax_login() {
         $action = "beepbeepai_nonce";
         if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
+            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator"), "code" => "invalid_nonce"], 403);
             return;
         }
         if (!$this->user_can_manage()) {
@@ -9004,6 +9004,7 @@ class Core {
                 wp_send_json_error([
                     'message' => $result->get_error_message(),
                     'code' => 'site_has_license',
+                    'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
                     'existing_email' => $existing_email,
                 ]);
                 return;
@@ -9018,6 +9019,7 @@ class Core {
                 wp_send_json_error([
                     'message' => $result->get_error_message(),
                     'code' => 'invite_required',
+                    'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
                     'invite_url' => $invite_url,
                 ]);
                 return;
@@ -9026,9 +9028,13 @@ class Core {
             wp_send_json_error([
                 'message' => $result->get_error_message(),
                 'code' => is_string($error_code) ? strtolower($error_code) : '',
+                'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
             ]);
             return;
         }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
+        \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
 
         wp_send_json_success([
             'message' => __('Logged in successfully', 'beepbeep-ai-alt-text-generator'),

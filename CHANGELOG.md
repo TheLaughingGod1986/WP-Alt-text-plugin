@@ -4,6 +4,10 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.137 — 2026-10-06
+
+- **Fixed**: The "Create a free account" link in the trial-done notice opens the sign-up form; clearer sign-up errors (existing email goes to log in, password problems in plain words).
+
 ### 4.6.136 — 2026-10-06
 
 - **Fixed**: Guest 402 TRIAL_EXHAUSTED now stops the processing queue and shows a sign-up notice; sign-up buttons open the sign-up form (not login); clearer login/sign-up error messages; login_failed / signup_failed telemetry.

@@ -1161,7 +1161,8 @@ class API_Client_V2 {
 		$status_code  = $response['status_code'] ?? 0;
 
 		// Handle 4xx errors (like 409 Conflict for site already has license)
-		if ( ! $response['success'] && $status_code >= 400 && $status_code < 500 ) {
+		if ( ( ! $response['success'] && $status_code >= 400 && $status_code < 500 )
+			|| ( is_array( $backend_data ) && array_key_exists( 'success', $backend_data ) && false === $backend_data['success'] ) ) {
 			$error_code = '';
 			if ( isset( $backend_data['code'] ) && is_string( $backend_data['code'] ) ) {
 				$error_code = $backend_data['code'];
@@ -1198,7 +1199,7 @@ class API_Client_V2 {
 			if ( in_array( $normalized_code, array( 'user_exists', 'email_exists' ), true ) ) {
 				return new \WP_Error(
 					'user_exists',
-					$error_message ? $error_message : __( 'An account with this email already exists. Please log in instead.', 'beepbeep-ai-alt-text-generator' ),
+					__( 'An account with that email already exists. Log in instead.', 'beepbeep-ai-alt-text-generator' ),
 					array( 'status_code' => $status_code, 'backend_code' => $error_code )
 				);
 			}
