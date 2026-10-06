@@ -156,6 +156,7 @@ Privacy policy: https://posthog.com/privacy
 
 = 4.6.137 =
 * Fix: the "Create a free account" link in the trial-done notice opens the sign-up form; clearer sign-up errors (existing email goes to log in, password problems in plain words).
+* Fix: SVG images are skipped instead of being sent and failing on every Generate click (no credit used), and no longer show a misleading "Generation failed" headline.
 
 = 4.6.136 =
 * Fix: stop the queue when the free trial is used up, clearer sign-up prompt, sign-up buttons open the right form, clearer login error messages.

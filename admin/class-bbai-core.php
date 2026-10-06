@@ -3819,6 +3819,22 @@ class Core {
         return strpos((string)$mime, 'image/') === 0;
     }
 
+    /** Formats the generation backend accepts (verified: JPEG, PNG, GIF, WebP, AVIF; SVG is rejected with 400). */
+    private function is_supported_generation_format($attachment_id){
+        $mime = strtolower((string) get_post_mime_type($attachment_id));
+        $supported = (array) apply_filters('bbai_supported_generation_mimes', ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'], $attachment_id);
+        return in_array($mime, $supported, true);
+    }
+
+    private function unsupported_format_message($attachment_id){
+        $mime = strtolower((string) get_post_mime_type($attachment_id));
+        if ('image/svg+xml' === $mime) {
+            return __('SVG images can\'t be described yet, so they were skipped. No credit used.', 'beepbeep-ai-alt-text-generator');
+        }
+        /* translators: %s: file format, e.g. HEIC */
+        return sprintf(__('%s images can\'t be described yet, so they were skipped. No credit used.', 'beepbeep-ai-alt-text-generator'), strtoupper((string) wp_get_default_extension_for_mime_type($mime)) ?: 'This format');
+    }
+
     public function invalidate_stats_cache(){
         wp_cache_delete('bbai_stats', 'bbai');
         delete_transient('bbai_stats_v3');
@@ -4820,8 +4836,8 @@ class Core {
 	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        return array_map('intval', (array) $wpdb->get_col($wpdb->prepare(
 	            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
-	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
-	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, '', $limit, $offset
+	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND p.post_mime_type <> %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
+	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, 'image/svg+xml', '', $limit, $offset
 	        )));
 	    }
 
@@ -6311,6 +6327,11 @@ class Core {
 
     public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
         $opts = get_option(self::OPTION_KEY, []);
+
+        // Skip formats the backend rejects (e.g. SVG) before any quota check or API call: no credit used.
+        if ($this->is_image($attachment_id) && !$this->is_supported_generation_format($attachment_id)) {
+            return new \WP_Error('bbai_unsupported_format', $this->unsupported_format_message($attachment_id), ['status' => 400, 'skipped' => true]);
+        }
 
         if ($this->is_upload_automation_source($source) && !$this->is_upload_generation_enabled($opts)) {
             return new \WP_Error(
@@ -11004,6 +11025,16 @@ class Core {
                 ];
                 continue;
             }
+            if (!$this->is_supported_generation_format($id)) {
+                $results[] = [
+                    'attachment_id' => $id,
+                    'success' => false,
+                    'skipped' => true,
+                    'code'    => 'bbai_unsupported_format',
+                    'message' => $this->unsupported_format_message($id),
+                ];
+                continue;
+            }
 
             try {
                 // CRITICAL: generate_and_save() will only log credits if alt_text is successfully generated
@@ -11100,7 +11131,7 @@ class Core {
                 continue;
             }
             $row_code = isset( $row['code'] ) ? (string) $row['code'] : '';
-            if ( 'bbai_not_an_image' === $row_code ) {
+            if ( 'bbai_not_an_image' === $row_code || 'bbai_unsupported_format' === $row_code ) {
                 continue;
             }
             ++$processable_count;
