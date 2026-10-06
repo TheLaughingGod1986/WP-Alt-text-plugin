@@ -511,11 +511,11 @@ class BbAIAuthModal {
                                    (authTrigger.id === 'bbai-show-auth-login-btn' ? 'login' : 'register');
                 const source = self.resolveSource(authTrigger, 'dashboard');
                 const modalContext = authTrigger.getAttribute('data-bbai-modal-context') ||
-                    (requestedTab === 'register' ? 'register' : 'login');
+                    ((requestedTab === 'register' || requestedTab === 'signup') ? 'register' : 'login');
 
                 self.setModalContext(modalContext);
 
-                if (requestedTab === 'register') {
+                if (requestedTab === 'register' || requestedTab === 'signup') {
                     self.emitAnalyticsEvent('signup_cta_clicked', {
                         source: source,
                         modal_context: modalContext,
@@ -736,7 +736,7 @@ class BbAIAuthModal {
 
     getRequestedTab(options) {
         if (typeof options === 'string') {
-            return options === 'register' ? 'register' : 'login';
+            return options === 'register' || options === 'signup' ? 'register' : 'login';
         }
         if (!options || typeof options !== 'object') {
             return '';
@@ -756,7 +756,7 @@ class BbAIAuthModal {
     show(options) {
         const requestedTab = this.getRequestedTab(options);
 
-        if (requestedTab === 'register') {
+        if (requestedTab === 'register' || requestedTab === 'signup') {
             this.showRegisterForm();
         } else if (requestedTab === 'login') {
             this.showLoginForm();
@@ -832,6 +832,24 @@ class BbAIAuthModal {
         }
     }
 
+    emitAuthFailure(eventName, source, rawCode) {
+        const code = String(rawCode || '').toLowerCase();
+        let reason = 'other';
+        if (['invalid_nonce', 'nonce_failed', 'rest_cookie_invalid_nonce'].includes(code)) {
+            reason = 'nonce';
+        } else if (['network_error', 'http_request_failed', 'api_connection_error', 'api_unreachable', 'api_error', 'api_timeout', 'server_error', 'api_server_error', 'ssl_error', 'connection_refused', 'endpoint_not_found'].includes(code)) {
+            reason = 'network';
+        } else if (eventName === 'login_failed') {
+            if (['invalid_credentials', 'invalid_password', 'auth_failed', 'unauthorized'].includes(code)) reason = 'invalid_credentials';
+            else if (code === 'no_password') reason = 'no_password';
+            else if (code === 'account_inactive') reason = 'inactive';
+        } else {
+            if (['user_exists', 'email_exists'].includes(code)) reason = 'email_exists';
+            else if (['weak_password', 'password_too_weak', 'password_too_short'].includes(code)) reason = 'weak_password';
+        }
+        this.emitAnalyticsEvent(eventName, { source: source, error_code: rawCode || 'unknown', reason: reason });
+    }
+
     async handleLogin() {
         const form = document.getElementById('login-form');
         const formData = new FormData(form);
@@ -848,6 +866,7 @@ class BbAIAuthModal {
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
             window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] AJAX configuration not loaded');
+            this.emitAuthFailure('login_failed', source, 'configuration_error');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
             return;
@@ -906,8 +925,9 @@ class BbAIAuthModal {
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Login failed';
-                const rawErrorCode = data.data?.code || data.code || '';
-                const errorCode = String(rawErrorCode || '').toLowerCase();
+                const rawErrorCode = data.data?.backend_code || data.data?.code || data.code || '';
+                const uiErrorCode = data.data?.code || data.code || rawErrorCode;
+                const errorCode = String(uiErrorCode || '').toLowerCase();
                 const existingEmail = data.data?.existing_email || '';
                 const inviteUrl = data.data?.invite_url || data.invite_url || '';
 
@@ -922,12 +942,9 @@ class BbAIAuthModal {
                 if (errorCode === 'invite_required' && inviteUrl) {
                     this.showError(`${errorMessage} ${inviteUrl}`);
                 } else {
-                    this.showError(errorMessage);
+                    this.showError(errorMessage, errorCode === 'invalid_credentials');
                 }
-                this.emitAnalyticsEvent('login_failed', {
-                    source: source,
-                    error_code: errorCode || 'login_failed'
-                });
+                this.emitAuthFailure('login_failed', source, rawErrorCode);
                 // Clear portal flag on login failure
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
@@ -938,10 +955,7 @@ class BbAIAuthModal {
             } else {
                 this.showError('Network error. Please try again.');
             }
-            this.emitAnalyticsEvent('login_failed', {
-                source: source,
-                error_code: 'network_error'
-            });
+            this.emitAuthFailure('login_failed', source, 'network_error');
             // Clear portal flag on network error
             localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {
@@ -961,6 +975,7 @@ class BbAIAuthModal {
 
         this.isAuthRedirecting = false;
         if (password !== confirmPassword) {
+            this.emitAuthFailure('signup_failed', source, 'password_mismatch');
             this.showError('Passwords do not match');
             return;
         }
@@ -984,6 +999,7 @@ class BbAIAuthModal {
         // Validate AJAX config exists
         if (!window.bbai_ajax?.ajaxurl) {
             window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] AJAX configuration not loaded');
+            this.emitAuthFailure('signup_failed', source, 'configuration_error');
             this.showError('Configuration error. Please refresh the page and try again.');
             this.setLoading(form, false);
             return;
@@ -1041,8 +1057,9 @@ class BbAIAuthModal {
             } else {
                 // WordPress AJAX error response - message is in data.data.message
                 const errorMessage = data.data?.message || data.message || 'Registration failed';
-                const rawErrorCode = data.data?.code || data.code || '';
-                const errorCode = String(rawErrorCode || '').toLowerCase();
+                const rawErrorCode = data.data?.backend_code || data.data?.code || data.code || '';
+                const uiErrorCode = data.data?.code || data.code || rawErrorCode;
+                const errorCode = String(uiErrorCode || '').toLowerCase();
                 const existingEmail = data.data?.existing_email || data.data?.existingEmail || '';
                 const inviteUrl = data.data?.invite_url || data.invite_url || '';
 
@@ -1065,6 +1082,7 @@ class BbAIAuthModal {
                 } else {
                     this.showError(errorMessage);
                 }
+                this.emitAuthFailure('signup_failed', source, rawErrorCode);
                 // Clear portal flag on registration failure
                 localStorage.removeItem('alttextai_open_portal_after_login');
             }
@@ -1080,6 +1098,7 @@ class BbAIAuthModal {
                 errorMessage = 'Request timed out. The server may be busy. Please try again in a moment.';
             }
             this.showError(errorMessage);
+            this.emitAuthFailure('signup_failed', source, 'network_error');
             // Clear portal flag on network error
             localStorage.removeItem('alttextai_open_portal_after_login');
         } finally {
@@ -1592,13 +1611,22 @@ class BbAIAuthModal {
         }
     }
 
-    showError(message) {
+    showError(message, offerRegister = false) {
         // Remove existing alerts
         document.querySelectorAll('.alttext-alert').forEach(el => el.remove());
 
         const alert = document.createElement('div');
         alert.className = 'alttext-alert alttext-alert--error';
         alert.textContent = message;
+        if (offerRegister) {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.textContent = window.wp?.i18n?.__('Create a free account', 'beepbeep-ai-alt-text-generator') || 'Create a free account';
+            link.setAttribute('data-action', 'show-auth-modal');
+            link.setAttribute('data-auth-tab', 'register');
+            alert.appendChild(document.createTextNode(' '));
+            alert.appendChild(link);
+        }
 
         const modalBody = document.querySelector('.alttext-auth-modal__body');
         modalBody.insertBefore(alert, modalBody.firstChild);

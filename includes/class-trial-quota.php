@@ -266,6 +266,13 @@ class Trial_Quota {
 	}
 
 	/**
+	 * Persist an authoritative backend trial exhaustion so admin gates agree.
+	 */
+	public static function mark_exhausted(): void {
+		update_option( self::option_key(), self::get_limit(), false );
+	}
+
+	/**
 	 * Mark the current request as executing a previously claimed trial generation.
 	 *
 	 * @return void

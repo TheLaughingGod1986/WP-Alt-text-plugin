@@ -2069,6 +2069,7 @@ class Core {
                     'login_submitted',
                     'login_succeeded',
                     'login_failed',
+                    'signup_failed',
                     'signup_started',
                     'signup_succeeded',
                     'account_created',
@@ -3374,7 +3375,7 @@ class Core {
                                     href="#"
                                     class="bbai-header-trial-credits<?php echo esc_attr($bbai_header_trial_credits_class); ?>"
                                     data-action="show-auth-modal"
-                                    data-auth-tab="signup"
+                                    data-auth-tab="register"
                                     aria-label="<?php echo esc_attr($bbai_trial_badge_label); ?>"
                                 >
                                     <?php if ( $bbai_trial_badge_is_exhausted ) : ?>
@@ -8667,6 +8668,55 @@ class Core {
         ]);
     }
 
+    public function dismiss_trial_exhausted_notice() {
+        if (!$this->user_can_manage()) {
+            wp_die(esc_html__('Unauthorized', 'beepbeep-ai-alt-text-generator'));
+        }
+        check_admin_referer('bbai_dismiss_trial_exhausted');
+        update_user_meta(get_current_user_id(), 'bbai_trial_exhausted_notice_dismissed', 1);
+        wp_safe_redirect(wp_get_referer() ?: admin_url('admin.php?page=bbai'));
+        exit;
+    }
+
+    public function maybe_render_trial_exhausted_notice() {
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-trial-quota.php';
+        if (!$this->user_can_manage() || !Trial_Quota::is_trial_user() ||
+            $this->api_client->is_authenticated() || $this->api_client->get_license_key() ||
+            (!bbai_is_trial_exhausted() && !Trial_Quota::is_exhausted()) ||
+            get_user_meta(get_current_user_id(), 'bbai_trial_exhausted_notice_dismissed', true)) {
+            return;
+        }
+        // Dashboard guests already see the exhausted wall; help still needs the notice.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin routing.
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin routing.
+        $tab = isset($_GET['tab']) ? sanitize_key(wp_unslash($_GET['tab'])) : '';
+        if ($page === 'bbai' && in_array($tab, ['', 'dashboard', 'credit-usage'], true)) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-dashboard-state.php';
+            $state = \BeepBeepAI\AltTextGenerator\Services\Dashboard_State::resolve([
+                'is_guest_trial' => true,
+                'trial_status' => Trial_Quota::get_status(),
+            ]);
+            if (!empty($state['flags']['show_exhausted_upgrade_wall'])) {
+                return;
+            }
+        }
+        $url = add_query_arg(['page' => 'bbai', 'bbai_open_auth' => '1', 'bbai_auth_tab' => 'register', 'bbai_auth_context' => 'register_exhausted'], admin_url('admin.php'));
+        ?>
+        <div class="notice notice-info bbai-trial-exhausted-notice">
+            <p><?php esc_html_e('Your 10 free alt texts are done. Create a free account for 25 a month, no card.', 'beepbeep-ai-alt-text-generator'); ?>
+                <a href="<?php echo esc_url($url); ?>"<?php if (in_array($page, ['bbai', 'bbai-guide'], true)) : ?> data-action="show-auth-modal" data-auth-tab="register" data-bbai-modal-context="register_exhausted"<?php endif; ?>><?php esc_html_e('Create a free account', 'beepbeep-ai-alt-text-generator'); ?></a>
+            </p>
+            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+                <input type="hidden" name="action" value="bbai_dismiss_trial_exhausted">
+                <?php wp_nonce_field('bbai_dismiss_trial_exhausted'); ?>
+                <p><button type="submit" class="button-link"><?php esc_html_e('Dismiss', 'beepbeep-ai-alt-text-generator'); ?></button></p>
+            </form>
+        </div>
+        <?php
+    }
+
     public function process_queue() {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
 
@@ -8683,7 +8733,7 @@ class Core {
             return;
         }
 
-        foreach ($jobs as $job) {
+        foreach ($jobs as $job_index => $job) {
             $attachment_id = intval($job->attachment_id);
             if ($attachment_id <= 0 || !$this->is_image($attachment_id)) {
                 Queue::mark_complete($job->id);
@@ -8699,6 +8749,27 @@ class Core {
                 if ($code === 'bbai_automation_unavailable') {
                     Queue::mark_complete($job->id);
                     continue;
+                }
+
+                if ($code === 'limit_reached') {
+                    $error_data = $result->get_error_data();
+                    $error_data = is_array($error_data) ? $error_data : [];
+                    $usage = isset($error_data['usage']) && is_array($error_data['usage']) ? $error_data['usage'] : [];
+                    $trial_exhausted = ($error_data['trial_exhausted'] ?? false) === true || ($usage['trial_exhausted'] ?? false) === true;
+                    $backend_error = isset($error_data['backend_error']) && is_array($error_data['backend_error']) ? $error_data['backend_error'] : [];
+                    foreach ([$error_data, $usage, $backend_error] as $payload) {
+                        foreach (['backend_code', 'code', 'error'] as $key) {
+                            if (isset($payload[$key]) && is_string($payload[$key]) && strtoupper($payload[$key]) === 'TRIAL_EXHAUSTED') {
+                                $trial_exhausted = true;
+                            }
+                        }
+                    }
+                    if ($trial_exhausted) {
+                        if (Trial_Quota::is_trial_user()) {
+                            Trial_Quota::mark_exhausted();
+                        }
+                        $code = 'bbai_trial_exhausted';
+                    }
                 }
 
                 if ($code === 'limit_reached') {
@@ -8726,6 +8797,10 @@ class Core {
 
         // If trial was exhausted mid-batch, fail any remaining pending jobs now to avoid a stuck queue.
         if ($bbai_trial_blocked) {
+            foreach (array_slice($jobs, $job_index + 1) as $remaining_job) {
+                Queue::mark_failed($remaining_job->id, $bbai_trial_message);
+            }
+            wp_clear_scheduled_hook(Queue::CRON_HOOK);
             $bbai_safety_loops = 0;
             while ($bbai_safety_loops < 20) {
                 $pending_jobs = Queue::claim_batch(50);

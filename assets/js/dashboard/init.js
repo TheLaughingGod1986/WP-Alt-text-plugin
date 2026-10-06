@@ -458,6 +458,7 @@ bbaiRunWithJQuery(function($) {
         $(document).on('click', '[data-action="show-auth-modal"]', function(e) {
             e.preventDefault();
             var authTab = $(this).attr('data-auth-tab') || 'login';
+            authTab = authTab === 'signup' ? 'register' : authTab;
             var modalContext = $(this).attr('data-bbai-modal-context') || (authTab === 'login' ? 'login' : 'fix');
             if (typeof showAuthModal === 'function') {
                 showAuthModal(authTab, modalContext);

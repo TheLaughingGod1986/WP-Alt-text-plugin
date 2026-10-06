@@ -804,7 +804,7 @@ class API_Client_V2 {
 		$this->log_api_event( $status_code >= 400 ? 'warning' : 'debug', 'API response received', $log_context );
 
 		// Handle authentication errors FIRST (401/403) - these are more specific than 404
-		if ( 401 === $status_code || 403 === $status_code ) {
+		if ( ( 401 === $status_code || 403 === $status_code ) && ! in_array( $endpoint, array( '/auth/login', '/auth/register' ), true ) ) {
 			$body_str            = is_string( $body ) ? $body : '';
 			$data_array          = is_array( $data ) ? $data : array();
 			$endpoint_str        = is_string( $endpoint ) ? $endpoint : '';
@@ -1199,7 +1199,7 @@ class API_Client_V2 {
 				return new \WP_Error(
 					'user_exists',
 					$error_message ? $error_message : __( 'An account with this email already exists. Please log in instead.', 'beepbeep-ai-alt-text-generator' ),
-					array( 'status_code' => $status_code )
+					array( 'status_code' => $status_code, 'backend_code' => $error_code )
 				);
 			}
 
@@ -1208,7 +1208,8 @@ class API_Client_V2 {
 					'invite_required',
 					$error_message ? $error_message : __( 'This site is connected to an existing account. Ask the site owner to invite your email to the team.', 'beepbeep-ai-alt-text-generator' ),
 					array(
-						'status_code' => $status_code,
+						'backend_code' => $error_code,
+						'status_code'  => $status_code,
 						'invite_url'  => $invite_url,
 					)
 				);
@@ -1230,6 +1231,7 @@ class API_Client_V2 {
 					$error_message ? $error_message : __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
 					array(
 						'existing_email' => $existing_email,
+						'backend_code'   => $error_code,
 						'status_code'    => $status_code,
 					)
 				);
@@ -1240,7 +1242,7 @@ class API_Client_V2 {
 				return new \WP_Error(
 					'free_plan_exists',
 					__( 'A free plan has already been used for this site. Upgrade to Growth or Agency to increase your quota.', 'beepbeep-ai-alt-text-generator' ),
-					array( 'status_code' => $status_code )
+					array( 'status_code' => $status_code, 'backend_code' => $error_code )
 				);
 			}
 
@@ -1249,6 +1251,7 @@ class API_Client_V2 {
 				'registration_failed',
 				$error_message ? $error_message : __( 'Registration failed', 'beepbeep-ai-alt-text-generator' ),
 				array(
+					'backend_code' => $error_code,
 					'status_code' => $status_code,
 					'error_code'  => $normalized_code ? $normalized_code : $error_code,
 				)
@@ -1356,6 +1359,7 @@ class API_Client_V2 {
 					$error_message ? $error_message : __( 'This site is already connected to an account. Multiple emails can use this site, but all WordPress users share the same quota.', 'beepbeep-ai-alt-text-generator' ),
 					array(
 						'existing_email' => $existing_email,
+						'backend_code'   => $error_code,
 						'status_code'    => $status_code,
 					)
 				);
@@ -1366,17 +1370,26 @@ class API_Client_V2 {
 					'invite_required',
 					$error_message ? $error_message : __( 'This email is not yet invited for this site. Ask the site owner to send an invite.', 'beepbeep-ai-alt-text-generator' ),
 					array(
-						'status_code' => $status_code,
+						'backend_code' => $error_code,
+						'status_code'  => $status_code,
 						'invite_url'  => $invite_url,
 					)
 				);
 			}
 
+			$login_messages = array(
+				'no_password'      => __( 'This account has no password. Reset your password to sign in.', 'beepbeep-ai-alt-text-generator' ),
+				'account_inactive' => __( 'This account is inactive. Contact support to reactivate it.', 'beepbeep-ai-alt-text-generator' ),
+			);
+			if ( isset( $login_messages[ $normalized_code ] ) ) {
+				return new \WP_Error( $normalized_code, $login_messages[ $normalized_code ], array( 'status_code' => $status_code, 'backend_code' => $error_code ) );
+			}
+
 			if ( in_array( $normalized_code, array( 'invalid_credentials', 'invalid_password', 'auth_failed', 'unauthorized' ), true ) ) {
 				return new \WP_Error(
 					'invalid_credentials',
-					$error_message ? $error_message : __( 'Invalid email or password.', 'beepbeep-ai-alt-text-generator' ),
-					array( 'status_code' => $status_code )
+					__( "That email and password don't match an account. New here?", 'beepbeep-ai-alt-text-generator' ),
+					array( 'status_code' => $status_code, 'backend_code' => $error_code )
 				);
 			}
 
@@ -1384,6 +1397,7 @@ class API_Client_V2 {
 				'login_failed',
 				$error_message ? $error_message : __( 'Login failed', 'beepbeep-ai-alt-text-generator' ),
 				array(
+					'backend_code' => $error_code,
 					'status_code' => $status_code,
 					'error_code'  => $normalized_code ? $normalized_code : $error_code,
 				)
@@ -2788,7 +2802,9 @@ class API_Client_V2 {
 						'usage'        => $quota_error_data['usage'] ?? $quota_error_data,
 						'status_code'  => $quota_status_code,
 						'code'         => $is_daily_quota_response ? 'daily_quota_exceeded' : 'quota_exhausted',
-						'backend_code' => $quota_error_data['code'] ?? null,
+						'backend_code' => $quota_error_data['backend_code'] ?? $quota_error_data['code'] ?? $quota_error_data['error'] ?? null,
+						'trial_exhausted' => $quota_error_data['trial_exhausted'] ?? false,
+						'backend_error' => $quota_error_data,
 				)
 			);
 		}

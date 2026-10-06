@@ -61,6 +61,7 @@
         login_submitted: true,
         login_succeeded: true,
         login_failed: true,
+        signup_failed: true,
         signup_started: true,
         signup_succeeded: true,
         scan_started: true,

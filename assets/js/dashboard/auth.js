@@ -60,6 +60,7 @@ function showAuthLogin() {
  * Show auth modal with specific tab
  */
 function showAuthModal(tab, modalContext) {
+    tab = tab === 'signup' ? 'register' : tab;
     var analyticsSource = 'dashboard';
     var context = modalContext || (tab === 'login' ? 'login' : 'fix');
 

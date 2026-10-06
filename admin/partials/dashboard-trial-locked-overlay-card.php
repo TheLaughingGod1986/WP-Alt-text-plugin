@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $bbai_locked_ctx = isset( $bbai_locked_preview_context_line ) ? (string) $bbai_locked_preview_context_line : '';
 $bbai_trial_exhausted = isset( $bbai_trial_exhausted ) ? (bool) $bbai_trial_exhausted : false;
-$bbai_primary_auth_tab = 'signup';
+$bbai_primary_auth_tab = 'register';
 ?>
 <div
 	class="bbai-dashboard-locked-preview__overlay bbai-modal-overlay"
