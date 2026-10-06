@@ -5,9 +5,9 @@ Plugin URI: https://oppti.dev/plugins/alt-text
 Author URI: https://oppti.dev
 Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.136
+Stable tag: 4.6.137
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -153,6 +153,10 @@ Purpose: If the site owner opts in, send anonymous plugin usage analytics such a
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.137 =
+* Fix: the "Create a free account" link in the trial-done notice opens the sign-up form; clearer sign-up errors (existing email goes to log in, password problems in plain words).
+* Fix: SVG images are skipped instead of being sent and failing on every Generate click (no credit used), and no longer show a misleading "Generation failed" headline.
 
 = 4.6.136 =
 * Fix: stop the queue when the free trial is used up, clearer sign-up prompt, sign-up buttons open the right form, clearer login error messages.

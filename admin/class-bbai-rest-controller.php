@@ -936,7 +936,7 @@ class REST_Controller {
 					$status = 403;
 				} elseif ( $error_code === 'auth_required' || $error_code === 'user_not_found' ) {
 					$status = 401;
-				} elseif ( $error_code === 'not_image' || $error_code === 'invalid_attachment' ) {
+				} elseif ( $error_code === 'not_image' || $error_code === 'invalid_attachment' || $error_code === 'bbai_unsupported_format' ) {
 					$status = 400;
 				}
 

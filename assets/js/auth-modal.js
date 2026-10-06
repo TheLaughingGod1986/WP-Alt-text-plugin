@@ -845,7 +845,7 @@ class BbAIAuthModal {
             else if (code === 'account_inactive') reason = 'inactive';
         } else {
             if (['user_exists', 'email_exists'].includes(code)) reason = 'email_exists';
-            else if (['weak_password', 'password_too_weak', 'password_too_short'].includes(code)) reason = 'weak_password';
+            else if (['weak_password', 'password_too_weak', 'password_too_short', 'invalid_request'].includes(code)) reason = 'weak_password';
         }
         this.emitAnalyticsEvent(eventName, { source: source, error_code: rawCode || 'unknown', reason: reason });
     }
@@ -1079,6 +1079,8 @@ class BbAIAuthModal {
 
                 if (errorCode === 'invite_required' && inviteUrl) {
                     this.showError(`${errorMessage} ${inviteUrl}`);
+                } else if (['weak_password', 'password_too_weak', 'password_too_short', 'invalid_request'].some(code => code === String(rawErrorCode || '').toLowerCase() || code === errorCode)) {
+                    this.showError('Please choose a stronger password (at least 8 characters) and check your email address.');
                 } else {
                     this.showError(errorMessage);
                 }

@@ -17834,6 +17834,15 @@
         return processed > 0 ? 'partial' : 'failure';
     }
 
+    function getBulkProgressOnlySkippedMessage(state) {
+        if (!state || state.quotaBlocked || !state.skipMessage) {
+            return '';
+        }
+        var processed = Math.max(0, parseInt(state.processed, 10) || 0);
+        var failed = Math.max(0, parseInt(state.failed, 10) || 0);
+        return processed === 0 && failed === 0 ? String(state.skipMessage) : '';
+    }
+
     function buildBulkProgressHeaderTitle(state) {
         if (isBulkProgressCompleteState(state)) {
             return buildBulkProgressSuccessTitleText(state);
@@ -18538,7 +18547,7 @@
         } else {
             $modal.find('.bbai-bulk-progress__title').text(
                 isFailure
-                    ? __('Generation failed', 'beepbeep-ai-alt-text-generator')
+                    ? (getBulkProgressOnlySkippedMessage(state) || __('Generation failed', 'beepbeep-ai-alt-text-generator'))
                     : (outcome === 'partial'
                         ? __('Completed with issues', 'beepbeep-ai-alt-text-generator')
                         : buildBulkProgressHeaderTitle(state))
@@ -18663,7 +18672,7 @@
                 !hasIssues
                     ? __('All images processed 🎉', 'beepbeep-ai-alt-text-generator')
                     : (isFailure
-                        ? __('Generation failed', 'beepbeep-ai-alt-text-generator')
+                        ? (getBulkProgressOnlySkippedMessage(state) || __('Generation failed', 'beepbeep-ai-alt-text-generator'))
                         : sprintf(
                             __('%1$s of %2$s images processed', 'beepbeep-ai-alt-text-generator'),
                             formatDashboardNumber(state.processed),
@@ -18676,7 +18685,7 @@
                 !hasIssues
                     ? __('ALT text is ready to review.', 'beepbeep-ai-alt-text-generator')
                     : (isFailure
-                        ? __('No images could be processed. Please review the log and try again.', 'beepbeep-ai-alt-text-generator')
+                        ? (getBulkProgressOnlySkippedMessage(state) ? '' : __('No images could be processed. Please review the log and try again.', 'beepbeep-ai-alt-text-generator'))
                         : __('Successful ALT text is ready to review. Unprocessed images can be retried.', 'beepbeep-ai-alt-text-generator'))
             );
         }
@@ -19146,6 +19155,7 @@
         var successes = 0;
         var failures = 0;
         var skipped = 0;
+        var skipMessage = '';
         var active = 0;
         var blockedByQuota = false;
         var quotaError = null;
@@ -19199,6 +19209,7 @@
                 processed: successes,
                 failed: failures,
                 skipped: skipped,
+                skipMessage: skipMessage,
                 source: String($modal.data('source') || 'generate-missing'),
                 activeTitle: nextTitle,
                 quotaBlocked: blockedByQuota,
@@ -19337,6 +19348,21 @@
                         handleQuotaStop(error);
                         if (window.bbaiJobState) {
                             window.bbaiJobState.update({ skipped: skipped });
+                        }
+                        return;
+                    }
+
+                    if (error && String(error.code || '').toLowerCase() === 'bbai_unsupported_format') {
+                        skipped++;
+                        skipMessage = String(error.message || '') || __('SVG images can\'t be described yet, so they were skipped. No credit used.', 'beepbeep-ai-alt-text-generator');
+                        var skipState = syncState();
+                        appendBulkProgressLogEntry($modal, 'warning', sprintf(__('Image #%d: %s', 'beepbeep-ai-alt-text-generator'), id, skipMessage));
+                        updateBulkProgress(skipState.current, skipState.total);
+                        if (window.bbaiJobState) {
+                            window.bbaiJobState.update({ skipped: skipped });
+                        }
+                        if (rowEl) {
+                            rowEl.classList.remove('bbai-library-row--processing', 'bbai-library-row--bulk-queued');
                         }
                         return;
                     }
@@ -20263,6 +20289,7 @@
             processed: 0,
             failed: 0,
             skipped: 0,
+            skipMessage: '',
             source: String($modal.data('source') || 'generate-missing'),
             activeTitle: __('Processing your images', 'beepbeep-ai-alt-text-generator'),
             quotaBlocked: false,
