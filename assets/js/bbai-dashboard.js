@@ -2265,6 +2265,23 @@ bbaiRunWithJQuery(function($) {
         return payload;
     }
 
+    function dispatchCheckoutFallbackAnalytics(planName, errorCode, extra) {
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                detail: Object.assign({
+                    event: 'checkout_fallback_payment_link',
+                    source: 'checkout',
+                    endpoint: 'beepbeepai_create_checkout',
+                    timestamp: Date.now(),
+                    plan: planName || '',
+                    error_code: errorCode
+                }, extra || {})
+            }));
+        } catch (error) {
+            // Ignore analytics failures.
+        }
+    }
+
     function initiateCheckout($button, priceId, planName) {
         if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Initiating checkout:', planName, priceId);
 
@@ -2276,6 +2293,11 @@ bbaiRunWithJQuery(function($) {
 
         if (!ajaxUrl || !nonce || !resolvedPriceId || !window.jQuery || typeof $.ajax !== 'function') {
             if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Falling back to Stripe payment link:', fallbackUrl);
+            if (fallbackUrl) {
+                // eslint-disable-next-line no-console
+                window.console && window.console.warn && window.console.warn('[AltText AI] Checkout session unavailable (missing ajax config or price); using static payment link fallback', { plan: planName || '' });
+                dispatchCheckoutFallbackAnalytics(planName, 'checkout_unavailable');
+            }
             if (openCheckoutUrl(fallbackUrl, planName)) {
                 return;
             }
@@ -2298,9 +2320,12 @@ bbaiRunWithJQuery(function($) {
                 const checkoutSessionId = checkoutData && (checkoutData.session_id || checkoutData.sessionId)
                     ? String(checkoutData.session_id || checkoutData.sessionId)
                     : '';
+                // A hosted session URL embeds its own cs_ id, so it is valid even when
+                // the response omits session_id.
                 const invalidHostedSession = checkoutUrl
                     && /checkout\.stripe\.com\/c\/pay\//i.test(checkoutUrl)
-                    && checkoutSessionId === '';
+                    && checkoutSessionId === ''
+                    && !/\/c\/pay\/cs_(live|test)_/i.test(checkoutUrl);
 
                 setCheckoutButtonLoading($button, false);
 
@@ -2314,7 +2339,11 @@ bbaiRunWithJQuery(function($) {
                     window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Hosted checkout response missing session ID, falling back to payment link', checkoutData);
                 }
 
-                if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Checkout session missing URL, falling back to payment link');
+                // eslint-disable-next-line no-console
+                window.console && window.console.warn && window.console.warn('[AltText AI] Checkout session missing URL, falling back to static payment link', { plan: planName || '' });
+                if (fallbackUrl) {
+                    dispatchCheckoutFallbackAnalytics(planName, 'missing_checkout_url');
+                }
                 if (openCheckoutUrl(fallbackUrl, planName)) {
                     return;
                 }
@@ -2325,11 +2354,16 @@ bbaiRunWithJQuery(function($) {
             }).fail(function(xhr) {
                 setCheckoutButtonLoading($button, false);
 
-                if (alttextaiDebug) {
-                    window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Checkout session creation failed, falling back to payment link', {
+                {
+                    // eslint-disable-next-line no-console
+                    window.console && window.console.warn && window.console.warn('[AltText AI] Checkout session creation failed, falling back to static payment link', {
                         status: xhr && xhr.status,
                         response: xhr && xhr.responseJSON ? xhr.responseJSON : null
                     });
+                }
+
+                if (fallbackUrl) {
+                    dispatchCheckoutFallbackAnalytics(planName, 'checkout_session_failed', { status: xhr && xhr.status ? xhr.status : null });
                 }
 
                 if (openCheckoutUrl(fallbackUrl, planName)) {
@@ -6272,7 +6306,7 @@ bbaiRunWithJQuery(function($) {
             impact.coverageLabel,
             impact.optimizedLabel
         );
-        impact.embedHtml = '<a href="https://beepbeep.ai" target="_blank" rel="noreferrer noopener">\n<img src="' + getAccessibilityBadgeDataUrl(impact) + '"\nalt="' + escapeSvgText(impact.altText) + '">\n</a>';
+        impact.embedHtml = '<a href="https://oppti.dev/" target="_blank" rel="noreferrer noopener">\n<img src="' + getAccessibilityBadgeDataUrl(impact) + '"\nalt="' + escapeSvgText(impact.altText) + '">\n</a>';
         impact.shareText = sprintf(
             __('My WordPress site has an accessibility score of %1$s%% with %2$s optimized images powered by OpptiAI Alt Text.', 'beepbeep-ai-alt-text-generator'),
             impact.coverageLabel,
@@ -6536,7 +6570,7 @@ bbaiRunWithJQuery(function($) {
         if (shareNode) {
             shareNode.setAttribute(
                 'href',
-                'https://twitter.com/intent/tweet?text=' + encodeURIComponent(impact.shareText) + '&url=' + encodeURIComponent('https://beepbeep.ai')
+                'https://twitter.com/intent/tweet?text=' + encodeURIComponent(impact.shareText) + '&url=' + encodeURIComponent('https://oppti.dev/')
             );
         }
     }
