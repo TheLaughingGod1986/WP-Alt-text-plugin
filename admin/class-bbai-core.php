@@ -366,6 +366,11 @@ class Core {
             '$insert_id'          => 'alt_generated:' . $fingerprint,
         ];
 
+        // Website Auditor deep-link attribution (source=auditor&finding=<type>).
+        if (function_exists('\\BeepBeepAI\\AltTextGenerator\\get_auditor_attribution')) {
+            $properties = array_merge($properties, \BeepBeepAI\AltTextGenerator\get_auditor_attribution());
+        }
+
         $image_context = $this->infer_alt_image_context($context);
         if (null !== $image_context) {
             $properties['image_context'] = $image_context;
