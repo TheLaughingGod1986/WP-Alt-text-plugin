@@ -76,10 +76,12 @@ function normalize_auditor_finding( $raw ): string {
 		return '';
 	}
 	$raw = (string) $raw;
-	if ( '' === $raw || strlen( $raw ) > 256 ) {
+	// Length limits apply to the raw value, before any cleaning, so an
+	// over-long value can't be accepted by being shortened by sanitize_key().
+	if ( '' === $raw || strlen( $raw ) > 256 || strlen( $raw ) > AUDITOR_FINDING_MAX_LEN ) {
 		return '';
 	}
-	$id = substr( sanitize_key( $raw ), 0, AUDITOR_FINDING_MAX_LEN );
+	$id = sanitize_key( $raw );
 	$aliases = auditor_finding_aliases();
 	if ( isset( $aliases[ $id ] ) ) {
 		$id = $aliases[ $id ];
@@ -108,9 +110,9 @@ function auditor_attribution_from_request(): ?array {
 		if ( ! isset( $_REQUEST[ $param ] ) ) {
 			continue;
 		}
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only attribution tag from an admin link, no state change.
-		$raw = $_REQUEST[ $param ];
-		$finding = normalize_auditor_finding( is_scalar( $raw ) ? wp_unslash( (string) $raw ) : null );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Read-only attribution tag; normalize_auditor_finding() length-checks the raw value, runs sanitize_key() and an allow-list.
+		$raw = is_scalar( $_REQUEST[ $param ] ) ? wp_unslash( (string) $_REQUEST[ $param ] ) : null;
+		$finding = normalize_auditor_finding( $raw );
 		if ( '' !== $finding ) {
 			break;
 		}
@@ -256,7 +258,8 @@ function consume_auditor_landing(): ?string {
 	);
 	$finding = (string) ( $stored['finding'] ?? '' );
 	if ( '' !== $finding ) {
-		$args['finding'] = $finding;
+		$args['finding']        = $finding;
+		$args['auditor_source'] = $finding;
 	}
 	if ( 'missing_alt' === $finding ) {
 		$args['status'] = 'missing';

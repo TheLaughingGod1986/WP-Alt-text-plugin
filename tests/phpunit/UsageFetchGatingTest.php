@@ -164,5 +164,45 @@ namespace {
 			Usage_Tracker::get_cached_usage( true );
 			$this->assertSame( 1, $this->calls() );
 		}
+		/**
+		 * One Alt Text screen load = what trait-core-assets enqueue (Usage_Helper)
+		 * plus the upgrade modal template read. Both must share the cache/backoff.
+		 */
+		private function alt_text_screen_load(): void {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-usage-helper.php';
+			$client = API_Client_V2::get_instance();
+			\BeepBeepAI\AltTextGenerator\Services\Usage_Helper::get_usage( $client, true );
+			// templates/upgrade-modal.php reads usage this way now.
+			Usage_Tracker::get_cached_usage( false );
+		}
+
+		public function test_screen_load_failing_backend_is_one_call_then_zero_within_backoff(): void {
+			$GLOBALS['bbai_test_is_admin']    = true;
+			$_GET['page']                     = 'bbai';
+			$GLOBALS['bbai_test_usage_reply'] = array( 'used' => 0, 'limit' => 0, 'source' => 'local_snapshot' );
+			$this->alt_text_screen_load();
+			$this->assertSame( 1, $this->calls(), 'first load' );
+			$this->alt_text_screen_load();
+			$this->alt_text_screen_load();
+			$this->assertSame( 1, $this->calls(), 'later loads within the backoff' );
+			$this->assertSame( 300, $GLOBALS['bbai_test_ttl'][ Usage_Tracker::FETCH_BACKOFF_KEY ] );
+		}
+
+		public function test_screen_load_success_is_one_call_then_zero_within_cache(): void {
+			$GLOBALS['bbai_test_is_admin'] = true;
+			$_GET['page']                  = 'bbai';
+			$this->alt_text_screen_load();
+			$this->assertSame( 1, $this->calls(), 'first load' );
+			$this->alt_text_screen_load();
+			$this->alt_text_screen_load();
+			$this->assertSame( 1, $this->calls(), 'later loads within the cache' );
+		}
+
+		public function test_screen_templates_never_call_get_usage_directly(): void {
+			foreach ( array( 'templates/upgrade-modal.php', 'admin/partials/settings-tab.php', 'includes/services/class-usage-helper.php' ) as $f ) {
+				$src = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . $f );
+				$this->assertDoesNotMatchRegularExpression( '/->get_usage\(\)/', $src, $f );
+			}
+		}
 	}
 }

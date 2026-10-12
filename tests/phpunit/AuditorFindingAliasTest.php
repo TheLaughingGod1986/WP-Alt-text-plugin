@@ -70,6 +70,24 @@ namespace {
 			$this->assertSame( 'sitemap_missing', normalize_auditor_finding( 'SITEMAP' ) );
 		}
 
+		public function test_length_cap_applies_to_raw_value_before_cleaning(): void {
+			$raw71 = 'missing_alt' . str_repeat( '!', 60 ); // sanitize_key() would shorten it to "missing_alt"
+			$this->assertSame( 71, strlen( $raw71 ) );
+			$this->assertSame( '', normalize_auditor_finding( $raw71 ) );
+			foreach ( array( 'finding', 'auditor_source' ) as $p ) {
+				$this->assertSame( '', $this->finding( array( 'source' => 'auditor', $p => $raw71 ) ), $p );
+				$this->assertSame( '', $this->finding( array( 'source' => 'auditor', $p => str_repeat( ' ', 300 ) . 'https' ) ), "$p 256" );
+			}
+			$raw64 = 'missing_alt' . str_repeat( '!', 53 );
+			$this->assertSame( 64, strlen( $raw64 ) );
+			$this->assertSame( 'missing_alt', normalize_auditor_finding( $raw64 ) );
+		}
+
+		public function test_non_scalar_request_values_are_ignored(): void {
+			$this->assertSame( 'https_not_enforced', $this->finding( array( 'source' => 'auditor', 'finding' => array( 'x' ), 'auditor_source' => 'https' ) ) );
+			$this->assertNull( $this->finding( array( 'source' => array( 'auditor' ), 'finding' => 'https' ) ) );
+		}
+
 		public function test_requires_source_auditor(): void {
 			$this->assertNull( $this->finding( array( 'finding' => 'missing_alt' ) ) );
 			$this->assertNull( $this->finding( array( 'auditor_source' => 'missing_alt' ) ) );

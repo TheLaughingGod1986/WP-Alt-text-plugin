@@ -114,6 +114,8 @@ namespace {
 			$this->assertSame( 'bbai-library', $q['page'] );
 			$this->assertSame( 'missing', $q['status'] );
 			$this->assertSame( 'auditor', $q['source'] );
+			$this->assertSame( 'missing_alt', $q['finding'] ?? null );
+			$this->assertSame( 'missing_alt', $q['auditor_source'] ?? null, 'Landing carries auditor_source= as well as finding=.' );
 			$this->assertNull( consume_auditor_landing(), 'Landing happens only once.' );
 			// Landing on the library with the args again must not re-fire the event.
 			$this->visit( $q );

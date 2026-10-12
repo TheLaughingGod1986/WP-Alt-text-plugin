@@ -248,18 +248,13 @@ class Usage_Helper {
                         'remaining' => $usage_stats['remaining'] ?? null,
                     ],
                 ]);
-                $live_usage = $api_client->get_usage();
-                if (is_array($live_usage) && !empty($live_usage) && !is_wp_error($live_usage)) {
-                    $source = strtolower(trim((string) ($live_usage['source'] ?? 'remote_usage')));
-                    if ('generation_success' === $source) {
-                        return self::normalize_usage($usage_stats, $live_usage);
-                    }
-                    $has_backend_usage = !in_array($source, ['local_snapshot', 'local_trial_snapshot'], true);
-                    if ($has_backend_usage) {
-                        // Signed in with a fresh backend read: trust backend used/remaining,
-                        // even when lower than the local count (local floor retired).
-                        Usage_Tracker::update_usage($live_usage);
-                    }
+                // Go through the shared cache + failure backoff (and the screen gate)
+                // instead of calling /api/usage directly on every Alt Text page load.
+                Usage_Tracker::get_cached_usage($force_refresh);
+                $usage_stats = Usage_Tracker::get_local_usage_snapshot();
+                if (false !== get_transient(Usage_Tracker::CACHE_KEY)) {
+                    // Fresh (or still-cached) backend usage is now in the local snapshot.
+                    return $usage_stats;
                 }
             }
         } catch (Exception $e) {

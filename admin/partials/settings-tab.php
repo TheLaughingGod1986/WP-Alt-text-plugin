@@ -271,11 +271,8 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
             <!-- Settings Page -->
             <div class="bbai-container bbai-settings-page">
                 <?php
-                    // Pull fresh usage from backend to avoid stale cache in Settings
-                    if (isset($this->api_client)) {
-                        $bbai_live = $this->api_client->get_usage();
-                        if (is_array($bbai_live) && !empty($bbai_live)) { \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($bbai_live); }
-                    }
+                    // Cached + backoff-gated usage read (the Refresh button forces a live fetch).
+                    \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
                     $bbai_usage_box = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_stats_display();
                     $bbai_o = wp_parse_args($opts, []);
                     
