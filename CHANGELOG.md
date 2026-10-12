@@ -4,9 +4,16 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
-### 4.6.137 — 2026-10-06
+### 4.6.138 — 2026-10-12
 
-- **Fixed**: The "Create a free account" link in the trial-done notice opens the sign-up form; clearer sign-up errors (existing email goes to log in, password problems in plain words).
+Includes the unreleased 4.6.137 changes.
+
+- **Added**: Optional "How did you find us?" field on sign-up (sent as `signup_source`; invalid values ignored).
+- **Fixed**: Signed-in credit usage always reflects the backend account (local monotonic usage floor retired and purged once).
+- **Fixed**: Upgrade/credit buttons always create a backend Stripe Checkout Session tied to the account; static Payment Links are only a logged last resort (`checkout_fallback_payment_link`).
+- **Fixed**: Checkout success/cancel notices render on the plugin pages (`bbai-preserve-notice`); return URLs point at `admin.php?page=bbai`.
+- **Changed**: Pricing and badge links go to oppti.dev instead of beepbeep.ai.
+- **Security**: Security hardening.
 - **Fixed**: SVG images (rejected by the generation backend) are skipped before any API call or credit use, excluded from the missing-ALT queue, return HTTP 400 over REST, and the bulk modal shows "SVG images can't be described yet, so they were skipped. No credit used." instead of "Generation failed".
 
 ### 4.6.136 — 2026-10-06
