@@ -144,6 +144,8 @@ Service: AltText AI Backend API (https://alttext-ai-backend.onrender.com)
 Purpose: Generate alt text descriptions, perform alt text review checks, and handle authentication, license, usage, billing, and contact requests.
 Privacy policy: https://oppti.dev/privacy
 
+Credit usage check (GET /api/usage on the backend above): only made when you are signed in to an account or have a license key. It is made on the plugin's own admin screens, on the Media Library and media upload screens (to check whether generate-on-upload is available on your plan), when you use one of the plugin's own actions, and while the plugin is generating alt text, including queued images processed in the background. It is not made on ordinary page loads: not on the public front end of your site, not by WP-Cron on its own and not from WP-CLI on its own. The routine check is cached for 5 minutes, and a failed one is not retried for 5 minutes. The request has no body. It sends your site URL, the plugin's random site identifier and site fingerprint, and your account token or license key, so the backend can return your plan and credit balance.
+
 Service: OpenAI API (used by the backend service)
 Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy

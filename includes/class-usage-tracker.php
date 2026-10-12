@@ -12,6 +12,7 @@ class Usage_Tracker {
     
     const CACHE_KEY = 'bbai_usage_cache';
     const CACHE_EXPIRY = 300; // 5 minutes
+    const FETCH_BACKOFF_KEY = 'bbai_usage_fetch_backoff';
 
     /**
      * Lightweight debug log for quota/auth state transitions.
@@ -683,6 +684,51 @@ class Usage_Tracker {
     /**
      * Get cached usage data
      */
+    /**
+     * Whether this request may call the backend's GET /api/usage.
+     *
+     * Only Alt Text admin screens (bbai* pages and the Media screens where
+     * generate-on-upload runs), Alt Text AJAX actions (bbai_*) and Alt Text
+     * REST routes (/bbai/v1/...). Never the front end, cron or WP-CLI: those
+     * use the cached figures (or the local snapshot) instead.
+     */
+    public static function remote_fetch_allowed(): bool {
+        return (bool) apply_filters('bbai_usage_remote_fetch_allowed', self::detect_remote_fetch_context());
+    }
+
+    private static function detect_remote_fetch_context(): bool {
+        if (defined('WP_CLI') && WP_CLI) {
+            return false;
+        }
+        if (function_exists('wp_doing_cron') ? wp_doing_cron() : (defined('DOING_CRON') && DOING_CRON)) {
+            return false;
+        }
+        // phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only routing check, no state change.
+        if (function_exists('wp_doing_ajax') ? wp_doing_ajax() : (defined('DOING_AJAX') && DOING_AJAX)) {
+            $action = isset($_REQUEST['action']) ? sanitize_key(wp_unslash($_REQUEST['action'])) : '';
+            return 0 === strpos($action, 'bbai_');
+        }
+        if (defined('REST_REQUEST') && REST_REQUEST) {
+            $route = '';
+            if (isset($GLOBALS['wp']) && is_object($GLOBALS['wp']) && isset($GLOBALS['wp']->query_vars['rest_route'])) {
+                $route = (string) $GLOBALS['wp']->query_vars['rest_route'];
+            } elseif (isset($_GET['rest_route'])) {
+                $route = sanitize_text_field(wp_unslash($_GET['rest_route']));
+            }
+            return 0 === strpos(ltrim($route, '/'), 'bbai/v1');
+        }
+        if (function_exists('is_admin') && is_admin()) {
+            $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+            if (0 === strpos($page, 'bbai')) {
+                return true;
+            }
+            $script = isset($GLOBALS['pagenow']) ? (string) $GLOBALS['pagenow'] : '';
+            return in_array($script, array('upload.php', 'media-new.php', 'async-upload.php'), true);
+        }
+        // phpcs:enable WordPress.Security.NonceVerification.Recommended
+        return false;
+    }
+
     public static function get_cached_usage($force_refresh = false) {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
@@ -722,15 +768,29 @@ class Usage_Tracker {
         $has_credentialed_account = !empty($token) || !empty($license_key) || $api_client->has_active_license();
 
         if ($has_credentialed_account) {
+            // Cache miss outside Alt Text screens/actions (front end, cron, CLI):
+            // don't call the backend, use the local snapshot.
+            if (!$force_refresh && !self::remote_fetch_allowed()) {
+                return self::get_local_usage_snapshot();
+            }
+            // A failed fetch isn't cached as usage, so back off instead of
+            // retrying on every Alt Text page load while the backend is down.
+            if (!$force_refresh && false !== get_transient(self::FETCH_BACKOFF_KEY)) {
+                return self::get_local_usage_snapshot();
+            }
             $live_usage = $api_client->get_usage();
             if (!is_wp_error($live_usage) && is_array($live_usage) && !empty($live_usage)) {
                 if (($live_usage['source'] ?? '') !== 'local_snapshot') {
                     self::update_usage($live_usage);
+                    delete_transient(self::FETCH_BACKOFF_KEY);
+                } else {
+                    set_transient(self::FETCH_BACKOFF_KEY, time(), self::CACHE_EXPIRY);
                 }
 
                 return self::get_local_usage_snapshot();
             }
 
+            set_transient(self::FETCH_BACKOFF_KEY, time(), self::CACHE_EXPIRY);
             return self::get_local_usage_snapshot();
         }
 
@@ -743,6 +803,7 @@ class Usage_Tracker {
      */
     public static function clear_cache() {
         delete_transient(self::CACHE_KEY);
+        delete_transient(self::FETCH_BACKOFF_KEY);
         delete_transient('bbai_quota_cache');
 
         if (defined('WP_DEBUG') && WP_DEBUG) {

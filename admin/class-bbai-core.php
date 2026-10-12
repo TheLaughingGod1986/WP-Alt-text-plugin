@@ -435,7 +435,14 @@ class Core {
                 }
             }
         }
-        $this->ensure_upload_generation_default();
+        // Needs the account plan (GET /api/usage on a cache miss), so only on
+        // Alt Text screens/actions, never on every front-end, cron or CLI load.
+        if (!class_exists('\BeepBeepAI\AltTextGenerator\Usage_Tracker')) {
+            require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
+        }
+        if (\BeepBeepAI\AltTextGenerator\Usage_Tracker::remote_fetch_allowed()) {
+            $this->ensure_upload_generation_default();
+        }
 
         if (class_exists('\BeepBeepAI\AltTextGenerator\Debug_Log')) {
             // Log initialization (table is created by DB_Schema on activation/upgrade).
@@ -910,17 +917,11 @@ class Core {
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
         }
 
+        // Cached for Usage_Tracker::CACHE_EXPIRY; on a miss this fetches only
+        // where Usage_Tracker::remote_fetch_allowed(). No uncached live call here.
         $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
         if (is_array($usage) && $this->is_paid_plan_slug($usage['plan_type'] ?? ($usage['plan'] ?? ''))) {
             return true;
-        }
-
-        if (is_object($this->api_client) && method_exists($this->api_client, 'is_authenticated') && $this->api_client->is_authenticated()) {
-            $live_usage = method_exists($this->api_client, 'get_usage') ? $this->api_client->get_usage() : null;
-            if (is_array($live_usage) && $this->is_paid_plan_slug($live_usage['plan_type'] ?? ($live_usage['plan'] ?? ''))) {
-                \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($live_usage);
-                return true;
-            }
         }
 
         return false;
