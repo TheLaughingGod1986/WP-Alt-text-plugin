@@ -377,3 +377,11 @@ beepbeepai_run();
 
 // Check for DB schema upgrades on admin pages (handles plugin updates without reactivation).
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\DB_Schema', 'maybe_upgrade' ) );
+add_action(
+	'admin_init',
+	static function () {
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+			\BeepBeepAI\AltTextGenerator\Usage_Tracker::maybe_purge_generation_success_floors();
+		}
+	}
+);

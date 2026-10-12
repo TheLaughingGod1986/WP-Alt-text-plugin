@@ -105,7 +105,51 @@ class Usage_Tracker {
 	 * @return int
 	 */
 	private static function get_generation_success_floor(): int {
-		return max(0, (int) get_option(self::generation_success_floor_option_key(), 0));
+		// Retired: the monthly floor could only go up, so it walled signed-in
+		// users on a local count even when the backend reported credits left.
+		// Backend usage is authoritative; the option is no longer read.
+		return 0;
+	}
+
+	/**
+	 * Whether this site has signed-in account credentials (token/license).
+	 */
+	public static function has_account_credentials(): bool {
+		try {
+			if (! class_exists(API_Client_V2::class)) {
+				require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
+			}
+			$api_client = API_Client_V2::get_instance();
+			return ! empty($api_client->get_token())
+				|| ! empty($api_client->get_license_key())
+				|| $api_client->has_active_license();
+		} catch (\Throwable $e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Delete every stored monthly generation-success floor option.
+	 */
+	public static function purge_generation_success_floors(): void {
+		global $wpdb;
+		if (isset($wpdb) && is_object($wpdb) && method_exists($wpdb, 'query')) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup of retired options.
+			$wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like('bbai_generation_success_floor_') . '%'));
+		}
+		delete_option(self::generation_success_floor_option_key());
+		wp_cache_delete(self::local_generated_count_cache_key(), 'bbai_usage');
+	}
+
+	/**
+	 * One-time cleanup on upgrade (admin_init): drop retired floor options.
+	 */
+	public static function maybe_purge_generation_success_floors(): void {
+		if ('1' === (string) get_option('bbai_generation_floor_retired', '')) {
+			return;
+		}
+		self::purge_generation_success_floors();
+		update_option('bbai_generation_floor_retired', '1', false);
 	}
 
 	/**
@@ -115,19 +159,9 @@ class Usage_Tracker {
 	 * @return int Updated floor.
 	 */
 	private static function raise_generation_success_floor(int $used): int {
-		$used = max(0, (int) $used);
-		if ($used <= 0) {
-			return self::get_generation_success_floor();
-		}
-
-		$current = self::get_generation_success_floor();
-		if ($used > $current) {
-			update_option(self::generation_success_floor_option_key(), $used, false);
-			wp_cache_delete(self::local_generated_count_cache_key(), 'bbai_usage');
-			return $used;
-		}
-
-		return $current;
+		// Retired (see get_generation_success_floor). Kept as a no-op for callers.
+		unset($used);
+		return 0;
 	}
 
     /**
@@ -499,6 +533,13 @@ class Usage_Tracker {
      * @return array<string,mixed>|null Newer local generation-success usage, or null.
      */
 	public static function get_newer_generation_success_snapshot(array $live_usage): ?array {
+		// Signed in + fresh backend read: backend used/remaining wins, even when lower.
+		$live_source = strtolower((string) ($live_usage['source'] ?? ''));
+		if (! in_array($live_source, ['local_snapshot', 'local_trial_snapshot'], true) && self::has_account_credentials()) {
+			delete_option(self::generation_success_floor_option_key());
+			return null;
+		}
+
 		$cached = get_transient(self::CACHE_KEY);
 		$cached = is_array($cached) ? self::normalize_usage_payload($cached) : [];
 		$source = strtolower((string) ($cached['source'] ?? ''));
