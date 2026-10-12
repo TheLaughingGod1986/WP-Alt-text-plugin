@@ -1102,7 +1102,7 @@ class API_Client_V2 {
 	 * @return string[]
 	 */
 	public static function get_signup_source_values() {
-		return array( 'wporg_search', 'google', 'ai_assistant', 'oppti_site', 'friend_colleague', 'social', 'other' );
+		return array( 'wporg', 'search', 'x', 'facebook_group', 'friend', 'other' );
 	}
 
 	/**

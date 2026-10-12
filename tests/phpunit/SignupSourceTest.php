@@ -36,8 +36,18 @@ final class SignupSourceTest extends TestCase {
 	}
 
 	public function test_valid_values_pass_and_ignore_other_text(): void {
-		foreach ( array( 'wporg_search', 'google', 'ai_assistant', 'oppti_site', 'friend_colleague', 'social' ) as $value ) {
+		foreach ( array( 'wporg', 'search', 'x', 'facebook_group', 'friend' ) as $value ) {
 			$this->assertSame( array( 'signup_source' => $value ), API_Client_V2::sanitize_signup_source( $value, 'ignored' ) );
+		}
+	}
+
+	public function test_codes_are_the_shared_fixed_set(): void {
+		$this->assertSame( array( 'wporg', 'search', 'x', 'facebook_group', 'friend', 'other' ), API_Client_V2::get_signup_source_values() );
+	}
+
+	public function test_legacy_codes_are_dropped(): void {
+		foreach ( array( 'wporg_search', 'google', 'ai_assistant', 'oppti_site', 'friend_colleague', 'social' ) as $value ) {
+			$this->assertSame( array(), API_Client_V2::sanitize_signup_source( $value, '' ) );
 		}
 	}
 
