@@ -1093,10 +1093,61 @@ class API_Client_V2 {
 	}
 
 	/**
+	 * Allowed values for the optional "How did you find us?" sign-up answer.
+	 *
+	 * @return string[]
+	 */
+	public static function get_signup_source_values() {
+		return array( 'wporg_search', 'google', 'ai_assistant', 'oppti_site', 'friend_colleague', 'social', 'other' );
+	}
+
+	/**
+	 * Sanitize the optional sign-up source fields.
+	 * Returns an empty array when nothing valid was picked (blank = send nothing).
+	 *
+	 * @param mixed $source Raw source value.
+	 * @param mixed $other  Raw free-text value (only kept for "other").
+	 * @return array<string,string>
+	 */
+	public static function sanitize_signup_source( $source, $other = '' ) {
+		$source = is_string( $source ) ? sanitize_key( $source ) : '';
+		if ( '' === $source || ! in_array( $source, self::get_signup_source_values(), true ) ) {
+			return array();
+		}
+		$fields = array( 'signup_source' => $source );
+		if ( 'other' === $source && is_string( $other ) ) {
+			$other = trim( sanitize_text_field( wp_strip_all_tags( $other ) ) );
+			$other = function_exists( 'mb_substr' ) ? mb_substr( $other, 0, 200 ) : substr( $other, 0, 200 );
+			if ( '' !== $other ) {
+				$fields['signup_source_other'] = $other;
+			}
+		}
+		return $fields;
+	}
+
+	/**
+	 * Read the optional sign-up source fields from the current POST request.
+	 * Callers must already have verified the nonce.
+	 *
+	 * @return array<string,string>
+	 */
+	public static function get_signup_source_from_request() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by the calling AJAX handler.
+		$source = isset( $_POST['signup_source'] ) ? sanitize_key( wp_unslash( $_POST['signup_source'] ) ) : '';
+		$other  = isset( $_POST['signup_source_other'] ) ? sanitize_text_field( wp_unslash( $_POST['signup_source_other'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		return self::sanitize_signup_source( $source, $other );
+	}
+
+	/**
 	 * Register new user
 	 * Includes site_id so backend can link this account to the current site context
 	 */
-	public function register( $email, $password ) {
+	public function register( $email, $password, $signup = array() ) {
+		$signup = self::sanitize_signup_source(
+			is_array( $signup ) && isset( $signup['signup_source'] ) ? $signup['signup_source'] : '',
+			is_array( $signup ) && isset( $signup['signup_source_other'] ) ? $signup['signup_source_other'] : ''
+		);
 		// Get site identifier
 		$site_id = $this->get_site_id();
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
@@ -1118,7 +1169,7 @@ class API_Client_V2 {
 				'is_multisite'      => $is_multisite,
 				'plugin_version'    => defined( 'BEEPBEEP_AI_VERSION' ) ? BEEPBEEP_AI_VERSION : '1.0.0',
 				'wordpress_version' => get_bloginfo( 'version' ),
-			)
+			) + $signup
 		);
 
 		if ( is_wp_error( $response ) ) {

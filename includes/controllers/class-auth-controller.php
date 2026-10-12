@@ -65,7 +65,9 @@ class Auth_Controller {
 		$password_input = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passwords must not be text-sanitized.
 		$password       = is_string( $password_input ) ? $password_input : '';
 
-		return $this->auth_service->register( $email, $password );
+		$signup = \BeepBeepAI\AltTextGenerator\API_Client_V2::get_signup_source_from_request();
+
+		return $this->auth_service->register( $email, $password, $signup );
 	}
 
 	/**

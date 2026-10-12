@@ -57,7 +57,8 @@ trait Core_Ajax_Auth {
 		            }
 
 		            \bbai_debug_log( 'ajax_register calling API register' );
-		            $result = $this->api_client->register($email, $password);
+		            $signup_source = \BeepBeepAI\AltTextGenerator\API_Client_V2::get_signup_source_from_request();
+		            $result = $this->api_client->register($email, $password, $signup_source);
 		            \bbai_debug_log(
 		                'ajax_register API result',
 		                [
