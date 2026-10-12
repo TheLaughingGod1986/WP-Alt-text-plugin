@@ -646,14 +646,25 @@ class Core {
         $has_connected_account = ! empty( $auth_state['has_connected_account'] );
 
         if ( $has_connected_account ) {
+            // Signed in after arriving from a Website Auditor Fix link: land once on that view.
+            $auditor_landing = \BeepBeepAI\AltTextGenerator\consume_auditor_landing();
+            if ( null !== $auditor_landing ) {
+                wp_safe_redirect( $auditor_landing );
+                exit;
+            }
             return;
+        }
+
+        // Signed out: remember an Auditor deep-link so sign-in can return to it.
+        if ( null !== \BeepBeepAI\AltTextGenerator\auditor_attribution_from_request() ) {
+            \BeepBeepAI\AltTextGenerator\mark_auditor_landing_pending();
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
         $page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 
         if ( self::MENU_SLUG_DASHBOARD !== $page ) {
-            wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) );
+            wp_safe_redirect( \BeepBeepAI\AltTextGenerator\with_auditor_args( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) ) );
             exit;
         }
 
@@ -661,7 +672,7 @@ class Core {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
         $tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
         if ( '' !== $tab && 'dashboard' !== $tab ) {
-            wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) );
+            wp_safe_redirect( \BeepBeepAI\AltTextGenerator\with_auditor_args( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) ) );
             exit;
         }
     }
@@ -689,7 +700,7 @@ class Core {
             admin_url('admin.php')
         );
 
-        wp_safe_redirect($redirect_url);
+        wp_safe_redirect(\BeepBeepAI\AltTextGenerator\with_auditor_args($redirect_url));
         exit;
     }
 
@@ -3130,7 +3141,7 @@ class Core {
                         $bbai_guest_redirect_url
                     );
                 }
-                wp_safe_redirect($bbai_guest_redirect_url);
+                wp_safe_redirect(\BeepBeepAI\AltTextGenerator\with_auditor_args($bbai_guest_redirect_url));
                 exit;
             }
             $bbai_tab = $bbai_requested_tab;
