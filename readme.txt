@@ -151,10 +151,15 @@ Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
 Service: PostHog (optional product analytics)
-Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. BeepBeep AI does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
+Purpose: Off by default. Only if a site administrator turns on "Share anonymous usage stats" in the plugin's Settings, the plugin sends anonymous feature usage events (for example plugin activated or updated, screen viewed, button clicked, alt text generated) from your server to PostHog (https://us.i.posthog.com). Each event carries a random ID created only for these stats, the event name, and plugin, WordPress and PHP versions, plan type and short feature labels. It never sends alt text, image content, filenames, URLs, your site address, email addresses, account, user or post IDs, search terms, error messages, API tokens or license keys. The PostHog browser library is not loaded. Turning the setting off stops all sending.
+Terms of use: https://posthog.com/terms
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.141 =
+* Performance: fewer background requests.
+* Privacy: usage stats are only sent after you opt in.
 
 = 4.6.140 =
 * Improved: sign-up question options.

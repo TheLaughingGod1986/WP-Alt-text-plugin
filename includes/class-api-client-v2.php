@@ -1144,6 +1144,28 @@ class API_Client_V2 {
 	}
 
 	/**
+	 * Website Auditor attribution for the sign-up request body. Sent to the
+	 * backend directly, whether or not usage stats are enabled; never via PostHog.
+	 *
+	 * @return array<string,string> auditor_source / finding, or empty.
+	 */
+	public static function get_auditor_signup_fields() {
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\auditor_signup_properties' ) ) {
+			return array();
+		}
+		$props = \BeepBeepAI\AltTextGenerator\auditor_signup_properties();
+		if ( ! is_array( $props ) || 'auditor' !== ( $props['auditor_source'] ?? '' ) ) {
+			return array();
+		}
+		$fields  = array( 'auditor_source' => 'auditor' );
+		$finding = isset( $props['auditor_finding'] ) && is_string( $props['auditor_finding'] ) ? sanitize_key( $props['auditor_finding'] ) : '';
+		if ( '' !== $finding ) {
+			$fields['finding'] = $finding;
+		}
+		return $fields;
+	}
+
+	/**
 	 * Register new user
 	 * Includes site_id so backend can link this account to the current site context
 	 */
@@ -1173,7 +1195,7 @@ class API_Client_V2 {
 				'is_multisite'      => $is_multisite,
 				'plugin_version'    => defined( 'BEEPBEEP_AI_VERSION' ) ? BEEPBEEP_AI_VERSION : '1.0.0',
 				'wordpress_version' => get_bloginfo( 'version' ),
-			) + $signup
+			) + $signup + self::get_auditor_signup_fields()
 		);
 
 		if ( is_wp_error( $response ) ) {

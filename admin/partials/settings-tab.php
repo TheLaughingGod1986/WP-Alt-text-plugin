@@ -266,6 +266,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                         </div>
                     </div>
                     <?php endif; ?>
+                    <?php include BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-usage-stats.php'; ?>
                 </div>
             <?php else : ?>
             <!-- Settings Page -->
@@ -624,6 +625,7 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     </div>
                 </div>
 
+                <?php include BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-usage-stats.php'; ?>
                 <!-- Settings Form -->
                 <form method="post" action="options.php" autocomplete="off">
                     <?php settings_fields('bbai_group'); ?>

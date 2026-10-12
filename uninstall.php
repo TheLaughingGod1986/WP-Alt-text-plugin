@@ -57,6 +57,10 @@ $bbai_options = [
 	'bbai_legacy_cache_cleaned',
 	'bbai_legacy_settings_cleaned',
 	'bbai_growth_installed_at',
+	'bbai_telemetry_optin',
+	'bbai_telemetry_anon_id',
+	'bbai_telemetry_consent',
+	'bbai_telemetry_lifecycle_queue',
 ];
 
 foreach ( $bbai_options as $bbai_option ) {
