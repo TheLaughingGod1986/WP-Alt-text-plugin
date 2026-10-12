@@ -86,7 +86,7 @@ class BbAIAuthModal {
                                         </select>
                                     </div>
                                     <div class="alttext-form-group" id="register-signup-source-other-group" style="display: none;">
-                                        <label for="register-signup-source-other">${this.escapeHtml(this.t('Where did you hear about us?'))}</label>
+                                        <label for="register-signup-source-other">${this.escapeHtml(this.t('Tell us where (optional)'))}</label>
                                         <input type="text" id="register-signup-source-other" name="signup_source_other" maxlength="200" autocomplete="off">
                                     </div>`;
     }
@@ -980,9 +980,7 @@ class BbAIAuthModal {
                     auth_state: 'authenticated',
                     account_state: 'connected_account',
                     plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
-                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free',
-                    // Enum value only; free text stays server-side.
-                    ...(signupSource.signup_source ? { signup_source: signupSource.signup_source } : {})
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
                 });
                 if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
                     window.bbaiTelemetry.flush();
@@ -1125,7 +1123,9 @@ class BbAIAuthModal {
                     trial_used: this.modalMetrics.trialUsed || 0,
                     trial_limit: this.modalMetrics.trialLimit || 0,
                     plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
-                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free',
+                    // Enum value only; free text stays server-side.
+                    ...(signupSource.signup_source ? { signup_source: signupSource.signup_source } : {})
                 });
                 if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
                     window.bbaiTelemetry.flush();
