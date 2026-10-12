@@ -84,9 +84,16 @@ class Generation_Lock {
 	 * @param callable $current_alt fn(): string  current saved alt text
 	 * @return mixed
 	 */
+	/**
+	 * Default time a waiting request re-checks before giving up. The backend
+	 * generation call alone takes ~7-8 s, so this must comfortably exceed it.
+	 * Stays far below the 3-minute lock TTL.
+	 */
+	const DEFAULT_WAIT_MS = 15000;
+
 	public static function run( int $attachment_id, callable $generate, callable $current_alt ) {
 		$alt_before = (string) call_user_func( $current_alt );
-		$wait_ms    = max( 0, (int) apply_filters( 'bbai_generation_lock_wait_ms', 8000 ) );
+		$wait_ms    = max( 0, (int) apply_filters( 'bbai_generation_lock_wait_ms', self::DEFAULT_WAIT_MS ) );
 		$step_ms    = max( 50, (int) apply_filters( 'bbai_generation_lock_poll_ms', 500 ) );
 		$waited     = 0;
 

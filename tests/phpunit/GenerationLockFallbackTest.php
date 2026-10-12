@@ -124,6 +124,30 @@ namespace {
 			$this->assertTrue( Generation_Lock::is_held( 14 ) );
 		}
 
+		public function test_default_wait_is_15_seconds(): void {
+			$this->assertSame( 15000, Generation_Lock::DEFAULT_WAIT_MS );
+			$this->hold_lock( 16 );
+			$pauses = 0;
+			Generation_Lock::$sleeper = static function () use ( &$pauses ) { $pauses++; };
+			$result = Generation_Lock::run( 16, static function () { return 'x'; }, $this->alt() );
+			$this->assertSame( 'generation_in_progress', $result->get_error_code() );
+			// 500 ms poll: 30 pauses = 15 s of waiting (8 s would be 16).
+			$this->assertSame( 30, $pauses );
+		}
+
+		public function test_waiter_still_catches_holder_finishing_after_ten_seconds(): void {
+			$this->hold_lock( 17 );
+			$pauses = 0;
+			Generation_Lock::$sleeper = static function () use ( &$pauses ) {
+				$pauses++;
+				if ( 20 === $pauses ) { $GLOBALS['bbai_alt'] = 'Slow holder alt'; }
+			};
+			$calls  = 0;
+			$result = Generation_Lock::run( 17, static function () use ( &$calls ) { $calls++; return 'x'; }, $this->alt() );
+			$this->assertSame( 'Slow holder alt', $result );
+			$this->assertSame( 0, $calls );
+		}
+
 		public function test_expired_lock_is_taken_over(): void {
 			$GLOBALS['bbai_test_options'][ Generation_Lock::key( 15 ) ] = time() - 10;
 			$result = Generation_Lock::run( 15, static function () { return 'ok'; }, $this->alt() );
