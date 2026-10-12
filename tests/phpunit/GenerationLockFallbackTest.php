@@ -25,9 +25,7 @@ namespace {
 			if ( ! function_exists( 'delete_option' ) ) {
 				function delete_option( $key ) { unset( $GLOBALS['bbai_test_options'][ $key ] ); return true; }
 			}
-			if ( ! function_exists( 'wp_cache_delete' ) ) {
-				function wp_cache_delete( $key, $group = '' ) { return true; }
-			}
+			require_once __DIR__ . '/stubs-post-meta.php';
 			if ( ! function_exists( '__' ) ) {
 				function __( $text, $domain = 'default' ) { return $text; }
 			}
