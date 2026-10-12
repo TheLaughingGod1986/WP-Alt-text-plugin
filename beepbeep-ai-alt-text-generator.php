@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpptiAI Alt Text – Alt Text Generator
  * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
- * Version: 4.6.136
+ * Version: 4.6.137
  * Requires at least: 6.2
  * Author: OpptiAI
  * Author URI: https://oppti.dev
@@ -23,7 +23,7 @@ if ( defined( 'BBAI_ALREADY_LOADED' ) ) {
 define( 'BBAI_ALREADY_LOADED', true );
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.6.136' );
+define( 'BEEPBEEP_AI_VERSION', '4.6.137' );
 define( 'BEEPBEEP_AI_PLUGIN_ID', 'alt_text' );
 define( 'BEEPBEEP_AI_PLUGIN_TITLE', 'OpptiAI Alt Text' );
 define( 'BBAI_VERSION', '4.6.115' ); // Legacy alias for compatibility
@@ -377,3 +377,11 @@ beepbeepai_run();
 
 // Check for DB schema upgrades on admin pages (handles plugin updates without reactivation).
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\DB_Schema', 'maybe_upgrade' ) );
+add_action(
+	'admin_init',
+	static function () {
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Usage_Tracker' ) ) {
+			\BeepBeepAI\AltTextGenerator\Usage_Tracker::maybe_purge_generation_success_floors();
+		}
+	}
+);

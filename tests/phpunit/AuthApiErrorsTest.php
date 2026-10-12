@@ -133,6 +133,20 @@ final class AuthApiErrorsTest extends TestCase {
 		$this->assertNotEmpty($error->get_error_message());
 	}
 
+	public function test_register_maps_http_200_backend_failures(): void {
+		foreach (['USER_EXISTS' => 'user_exists', 'INVALID_REQUEST' => 'registration_failed'] as $raw_code => $mapped_code) {
+			$GLOBALS['bbai_test_http_response'] = ['status' => 200, 'body' => ['success' => false, 'code' => $raw_code]];
+			$error = $this->api->register('known@example.test', 'password');
+			$this->assertInstanceOf(WP_Error::class, $error);
+			$this->assertSame($mapped_code, $error->get_error_code());
+			$this->assertSame($raw_code, $error->get_error_data()['backend_code']);
+			$this->assertSame(200, $error->get_error_data()['status_code']);
+			if ($raw_code === 'USER_EXISTS') {
+				$this->assertSame('An account with that email already exists. Log in instead.', $error->get_error_message());
+			}
+		}
+	}
+
 	public function test_non_auth_endpoints_still_require_authentication(): void {
 		$GLOBALS['bbai_test_http_response'] = ['status' => 401, 'body' => ['code' => 'INVALID_CREDENTIALS']];
 		$method = new ReflectionMethod(API_Client_V2::class, 'make_request');

@@ -53,9 +53,10 @@ class Authentication_Service {
 	 *
 	 * @param string $email    User email.
 	 * @param string $password User password.
+	 * @param array  $signup   Optional sanitized signup_source / signup_source_other.
 	 * @return array{success: bool, message: string, user?: array, code?: string, existing_email?: string} Registration result.
 	 */
-	public function register( string $email, string $password ): array {
+	public function register( string $email, string $password, array $signup = array() ): array {
 		// Validate inputs.
 		if ( empty( $email ) || empty( $password ) ) {
 			return array(
@@ -65,7 +66,7 @@ class Authentication_Service {
 		}
 
 		// Attempt registration via API.
-		$result = $this->api_client->register( $email, $password );
+		$result = $this->api_client->register( $email, $password, $signup );
 
 		if ( is_wp_error( $result ) ) {
 			$error_code    = $result->get_error_code();

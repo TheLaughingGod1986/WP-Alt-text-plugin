@@ -1707,13 +1707,25 @@ class Core {
             return '';
         }
 
-        $session_id = isset($result['sessionId']) && is_string($result['sessionId'])
-            ? sanitize_text_field($result['sessionId'])
-            : '';
+        $session_id = '';
+        foreach (['sessionId', 'session_id'] as $session_key) {
+            if (isset($result[$session_key]) && is_string($result[$session_key]) && $result[$session_key] !== '') {
+                $session_id = sanitize_text_field($result[$session_key]);
+                break;
+            }
+        }
 
-        if ($this->is_stripe_hosted_checkout_session_url($checkout_url) && $session_id === '') {
+        // A hosted Checkout Session URL (/c/pay/cs_...) already identifies its
+        // session, so it is always preferred over the static Payment Link even
+        // when the response omits the session id.
+        if (
+            $this->is_stripe_hosted_checkout_session_url($checkout_url)
+            && $session_id === ''
+            && !preg_match('#/c/pay/cs_(live|test)_#i', $checkout_url)
+        ) {
             $fallback_url = $this->get_checkout_fallback_url($plan_id, $price_id);
             if ($fallback_url !== '') {
+                \bbai_debug_log('checkout_static_link_fallback', ['reason' => 'unrecognised_hosted_url', 'plan' => $plan_id]);
                 return $fallback_url;
             }
         }
@@ -1797,7 +1809,8 @@ class Core {
 	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
 	        $page = $bbai_page_input;
-	        if ($page !== 'beepbeep-ai-alt-text-generator') {
+	        // Checkout success_url/cancel_url return to admin.php?page=bbai&checkout=success|cancel.
+	        if ($page !== 'beepbeep-ai-alt-text-generator' && $page !== 'bbai' && strpos($page, 'bbai-') !== 0) {
 	            return;
 	        }
 
@@ -1829,14 +1842,15 @@ class Core {
             $checkout = isset($_GET['checkout']) ? sanitize_key(wp_unslash($_GET['checkout'])) : '';
             if ($checkout === 'success') {
                 ?>
-                <div class="notice notice-success is-dismissible">
-                    <p><?php esc_html_e('Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <div class="notice notice-success is-dismissible bbai-preserve-notice">
+                    <p><strong><?php esc_html_e('Thanks, your payment went through.', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                    <?php esc_html_e('Your plan and credits update on this site within a minute. Refresh this page if they have not changed yet.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php
             } elseif ($checkout === 'cancel') {
                 ?>
-                <div class="notice notice-warning is-dismissible">
-                    <p><?php esc_html_e('Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                <div class="notice notice-warning is-dismissible bbai-preserve-notice">
+                    <p><?php esc_html_e('Checkout cancelled. You have not been charged and your plan is unchanged. You can upgrade or buy credits any time from the Upgrade button.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php
             }
@@ -3819,6 +3833,22 @@ class Core {
         return strpos((string)$mime, 'image/') === 0;
     }
 
+    /** Formats the generation backend accepts (verified: JPEG, PNG, GIF, WebP, AVIF; SVG is rejected with 400). */
+    private function is_supported_generation_format($attachment_id){
+        $mime = strtolower((string) get_post_mime_type($attachment_id));
+        $supported = (array) apply_filters('bbai_supported_generation_mimes', ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'], $attachment_id);
+        return in_array($mime, $supported, true);
+    }
+
+    private function unsupported_format_message($attachment_id){
+        $mime = strtolower((string) get_post_mime_type($attachment_id));
+        if ('image/svg+xml' === $mime) {
+            return __('SVG images can\'t be described yet, so they were skipped. No credit used.', 'beepbeep-ai-alt-text-generator');
+        }
+        /* translators: %s: file format, e.g. HEIC */
+        return sprintf(__('%s images can\'t be described yet, so they were skipped. No credit used.', 'beepbeep-ai-alt-text-generator'), strtoupper((string) wp_get_default_extension_for_mime_type($mime)) ?: 'This format');
+    }
+
     public function invalidate_stats_cache(){
         wp_cache_delete('bbai_stats', 'bbai');
         delete_transient('bbai_stats_v3');
@@ -4820,8 +4850,8 @@ class Core {
 	        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	        return array_map('intval', (array) $wpdb->get_col($wpdb->prepare(
 	            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.UnescapedDBParameter -- Table identifiers come from trusted core $wpdb properties; value placeholders remain prepared.
-	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
-	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, '', $limit, $offset
+	            'SELECT p.ID FROM ' . $wpdb->posts . ' p LEFT JOIN ' . $wpdb->postmeta . ' m ON (p.ID = m.post_id AND m.meta_key = %s) WHERE p.post_type = %s AND p.post_status = %s AND p.post_mime_type LIKE %s AND p.post_mime_type <> %s AND (m.meta_value IS NULL OR TRIM(m.meta_value) = %s) ORDER BY p.ID DESC LIMIT %d OFFSET %d',
+	            '_wp_attachment_image_alt', 'attachment', 'inherit', $image_mime_like, 'image/svg+xml', '', $limit, $offset
 	        )));
 	    }
 
@@ -6311,6 +6341,11 @@ class Core {
 
     public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
         $opts = get_option(self::OPTION_KEY, []);
+
+        // Skip formats the backend rejects (e.g. SVG) before any quota check or API call: no credit used.
+        if ($this->is_image($attachment_id) && !$this->is_supported_generation_format($attachment_id)) {
+            return new \WP_Error('bbai_unsupported_format', $this->unsupported_format_message($attachment_id), ['status' => 400, 'skipped' => true]);
+        }
 
         if ($this->is_upload_automation_source($source) && !$this->is_upload_generation_enabled($opts)) {
             return new \WP_Error(
@@ -8973,7 +9008,7 @@ class Core {
     public function ajax_login() {
         $action = "beepbeepai_nonce";
         if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), $action ) ) {
-            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator")], 403);
+            wp_send_json_error(["message" => __("Invalid nonce.", "beepbeep-ai-alt-text-generator"), "code" => "invalid_nonce"], 403);
             return;
         }
         if (!$this->user_can_manage()) {
@@ -9004,6 +9039,7 @@ class Core {
                 wp_send_json_error([
                     'message' => $result->get_error_message(),
                     'code' => 'site_has_license',
+                    'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
                     'existing_email' => $existing_email,
                 ]);
                 return;
@@ -9018,6 +9054,7 @@ class Core {
                 wp_send_json_error([
                     'message' => $result->get_error_message(),
                     'code' => 'invite_required',
+                    'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
                     'invite_url' => $invite_url,
                 ]);
                 return;
@@ -9026,9 +9063,13 @@ class Core {
             wp_send_json_error([
                 'message' => $result->get_error_message(),
                 'code' => is_string($error_code) ? strtolower($error_code) : '',
+                'backend_code' => is_array($error_data) ? ($error_data['backend_code'] ?? $error_data['error_code'] ?? $error_code) : $error_code,
             ]);
             return;
         }
+
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
+        \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
 
         wp_send_json_success([
             'message' => __('Logged in successfully', 'beepbeep-ai-alt-text-generator'),
@@ -9531,6 +9572,9 @@ class Core {
         if (is_wp_error($result) || $resolved_checkout_url === '') {
             $fallback_checkout_url = $this->get_checkout_fallback_url($plan_hint, $price_id);
             if ($fallback_checkout_url !== '') {
+                // Last resort: unattributed static Payment Link. Log so it is visible.
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log('[BBAI] Checkout session unavailable; falling back to static payment link for plan ' . sanitize_key($plan_hint) . ( is_wp_error($result) ? ' (' . $result->get_error_code() . ')' : '' ));
                 wp_send_json_success([
                     'url' => $fallback_checkout_url,
                     'session_id' => '',
@@ -9545,7 +9589,7 @@ class Core {
 
         wp_send_json_success([
             'url' => $resolved_checkout_url,
-            'session_id' => $fallback_used ? '' : ($result['sessionId'] ?? ''),
+            'session_id' => $fallback_used ? '' : ($result['sessionId'] ?? $result['session_id'] ?? ''),
             'fallback' => $fallback_used,
         ]);
     }
@@ -10998,6 +11042,16 @@ class Core {
                 ];
                 continue;
             }
+            if (!$this->is_supported_generation_format($id)) {
+                $results[] = [
+                    'attachment_id' => $id,
+                    'success' => false,
+                    'skipped' => true,
+                    'code'    => 'bbai_unsupported_format',
+                    'message' => $this->unsupported_format_message($id),
+                ];
+                continue;
+            }
 
             try {
                 // CRITICAL: generate_and_save() will only log credits if alt_text is successfully generated
@@ -11094,7 +11148,7 @@ class Core {
                 continue;
             }
             $row_code = isset( $row['code'] ) ? (string) $row['code'] : '';
-            if ( 'bbai_not_an_image' === $row_code ) {
+            if ( 'bbai_not_an_image' === $row_code || 'bbai_unsupported_format' === $row_code ) {
                 continue;
             }
             ++$processable_count;
