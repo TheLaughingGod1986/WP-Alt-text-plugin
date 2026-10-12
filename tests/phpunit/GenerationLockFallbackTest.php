@@ -25,9 +25,7 @@ namespace {
 			if ( ! function_exists( 'delete_option' ) ) {
 				function delete_option( $key ) { unset( $GLOBALS['bbai_test_options'][ $key ] ); return true; }
 			}
-			if ( ! function_exists( 'wp_cache_delete' ) ) {
-				function wp_cache_delete( $key, $group = '' ) { return true; }
-			}
+			require_once __DIR__ . '/stubs-post-meta.php';
 			if ( ! function_exists( '__' ) ) {
 				function __( $text, $domain = 'default' ) { return $text; }
 			}
@@ -122,6 +120,30 @@ namespace {
 			$this->assertSame( 0, $calls );
 			$this->assertGreaterThan( 0, $pauses );
 			$this->assertTrue( Generation_Lock::is_held( 14 ) );
+		}
+
+		public function test_default_wait_is_15_seconds(): void {
+			$this->assertSame( 15000, Generation_Lock::DEFAULT_WAIT_MS );
+			$this->hold_lock( 16 );
+			$pauses = 0;
+			Generation_Lock::$sleeper = static function () use ( &$pauses ) { $pauses++; };
+			$result = Generation_Lock::run( 16, static function () { return 'x'; }, $this->alt() );
+			$this->assertSame( 'generation_in_progress', $result->get_error_code() );
+			// 500 ms poll: 30 pauses = 15 s of waiting (8 s would be 16).
+			$this->assertSame( 30, $pauses );
+		}
+
+		public function test_waiter_still_catches_holder_finishing_after_ten_seconds(): void {
+			$this->hold_lock( 17 );
+			$pauses = 0;
+			Generation_Lock::$sleeper = static function () use ( &$pauses ) {
+				$pauses++;
+				if ( 20 === $pauses ) { $GLOBALS['bbai_alt'] = 'Slow holder alt'; }
+			};
+			$calls  = 0;
+			$result = Generation_Lock::run( 17, static function () use ( &$calls ) { $calls++; return 'x'; }, $this->alt() );
+			$this->assertSame( 'Slow holder alt', $result );
+			$this->assertSame( 0, $calls );
 		}
 
 		public function test_expired_lock_is_taken_over(): void {

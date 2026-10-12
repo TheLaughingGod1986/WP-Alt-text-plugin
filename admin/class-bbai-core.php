@@ -6371,7 +6371,8 @@ class Core {
             },
             static function () use ($lock_id) {
                 return $lock_id > 0 ? trim((string) get_post_meta($lock_id, '_wp_attachment_image_alt', true)) : '';
-            }
+            },
+            (bool) $regenerate // explicit Regenerate never reuses an earlier attempt's Idempotency-Key
         );
     }
 

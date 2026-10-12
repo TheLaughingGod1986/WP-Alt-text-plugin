@@ -2734,6 +2734,12 @@ class API_Client_V2 {
 			$body['trial_site_hash']            = $trial_hash;
 		}
 
+		// Shared, deterministic Idempotency-Key for this attachment's generation attempt
+		// (click, cron queue, CLI...), so the backend dedupes if two processes both POST.
+		if ( class_exists( '\\BeepBeepAI\\AltTextGenerator\\Generation_Lock' ) ) {
+			$extra_headers = \BeepBeepAI\AltTextGenerator\Generation_Lock::apply_idempotency_header( $extra_headers, (int) $image_id );
+		}
+
 		$response = $this->request_with_retry( $endpoint, 'POST', $body, 3, false, $extra_headers );
 
 		// WP_DEBUG-only: log raw generation response for credit tracking investigations.
