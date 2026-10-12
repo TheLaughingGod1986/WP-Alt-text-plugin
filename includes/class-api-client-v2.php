@@ -86,6 +86,10 @@ class API_Client_V2 {
 
 			if ( $is_generation_request ) {
 				$request_headers['X-Generation-Run-ID'] = $generation_run_id;
+				// Stable across retries so the backend can dedupe and never charge twice.
+				if ( empty( $request_headers['Idempotency-Key'] ) ) {
+					$request_headers['Idempotency-Key'] = $generation_run_id;
+				}
 				$request_headers['X-Generation-Attempt'] = (string) $attempt;
 				$request_headers['X-Retry-Count'] = (string) $attempt;
 				if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
