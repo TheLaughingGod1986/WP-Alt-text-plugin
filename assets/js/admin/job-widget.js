@@ -87,7 +87,7 @@
                     window.updateBulkProgress(progress, total);
                 }
                 if (
-                    (status === 'complete' || status === 'error' || status === 'quota') &&
+                    (status === 'complete' || status === 'partial' || status === 'error' || status === 'quota') &&
                     typeof window.showBulkProgressComplete === 'function'
                 ) {
                     window.showBulkProgressComplete(
@@ -129,7 +129,7 @@
             event.stopPropagation();
             if (window.bbaiJobState) {
                 var state = window.bbaiJobState.getState ? window.bbaiJobState.getState() : {};
-                if (state && !state.running && (state.status === 'complete' || state.status === 'error' || state.status === 'quota')) {
+                if (state && !state.running && (state.status === 'complete' || state.status === 'partial' || state.status === 'error' || state.status === 'quota')) {
                     window.bbaiJobState.reset();
                     $widget.prop('hidden', true);
                     return;
@@ -155,6 +155,7 @@
         var shouldShow = !state.modalVisible && (
             state.status === 'processing' ||
             state.status === 'complete' ||
+            state.status === 'partial' ||
             state.status === 'error' ||
             state.status === 'quota'
         );
@@ -199,6 +200,17 @@
             $widget.removeClass('bbai-job-widget--processing bbai-job-widget--error')
                    .addClass('bbai-job-widget--complete');
             viewBtn.text('Review images');
+        } else if (state.status === 'partial') {
+            closeBtn.prop('hidden', false);
+            statusEl.text(state.successes + ' of ' + state.total + ' images optimised');
+            $widget.find('.bbai-job-widget__progress-text').text(
+                state.failures + ' could not be processed. Review the results for details.'
+            );
+            $widget.find('.bbai-job-widget__eta').text('');
+            $widget.find('.bbai-job-widget__bar-fill').css('width', '100%');
+            $widget.removeClass('bbai-job-widget--processing bbai-job-widget--complete')
+                   .addClass('bbai-job-widget--error');
+            viewBtn.text('Review results');
         } else if (state.status === 'quota') {
             closeBtn.prop('hidden', false);
             statusEl.text('Credits exhausted');
@@ -262,7 +274,7 @@
             window.updateBulkProgressTitle(state.label);
         }
         if (
-            (status === 'complete' || status === 'error' || status === 'quota') &&
+            (status === 'complete' || status === 'partial' || status === 'error' || status === 'quota') &&
             !$modal.data('bbaiComplete') &&
             typeof window.showBulkProgressComplete === 'function'
         ) {

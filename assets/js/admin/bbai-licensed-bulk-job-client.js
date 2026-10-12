@@ -508,7 +508,7 @@
                         recoveryStarted = false;
                         if (window.bbaiJobState) {
                             window.bbaiJobState.complete({
-                                status: counts.failed > 0 ? 'error' : 'complete',
+                                status: counts.failed > 0 ? (counts.completed > 0 ? 'partial' : 'error') : 'complete',
                                 successes: counts.completed,
                                 failures: counts.failed,
                                 skipped: 0

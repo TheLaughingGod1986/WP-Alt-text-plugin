@@ -17841,6 +17841,17 @@
         );
     }
 
+    function buildBulkProgressPartialTitleText(state) {
+        var processed = Math.max(0, parseInt(state && state.processed, 10) || 0);
+        var total = Math.max(processed, parseInt(state && state.total, 10) || 0);
+
+        return sprintf(
+            __('%1$s of %2$s images optimised', 'beepbeep-ai-alt-text-generator'),
+            formatDashboardNumber(processed),
+            formatDashboardNumber(total)
+        );
+    }
+
     function buildBulkProgressMeterLabel(current, total) {
         var safeCurrent = Math.max(0, parseInt(current, 10) || 0);
         var safeTotal = Math.max(0, parseInt(total, 10) || 0);
@@ -18457,6 +18468,7 @@
         var animationKey;
         var countNode;
         var checkNode;
+        var showSuccessCheck;
 
         if (!$modal || !$modal.length) {
             return;
@@ -18476,9 +18488,13 @@
         $modal.data('bbaiBulkCompleteAnimationKey', animationKey);
         countNode = $modal.find('[data-bbai-bulk-progress-success-count]').get(0);
         checkNode = $modal.find('[data-bbai-bulk-progress-success-check]').get(0);
+        showSuccessCheck = !state.quotaBlocked &&
+            Math.max(0, parseInt(state.processed, 10) || 0) > 0 &&
+            Math.max(0, parseInt(state.failed, 10) || 0) === 0;
 
         if (checkNode) {
             checkNode.classList.remove('is-visible');
+            checkNode.hidden = !showSuccessCheck;
         }
 
         window.requestAnimationFrame(function() {
@@ -18489,7 +18505,7 @@
                 animateBulkProgressNumber(countNode, state.processed);
             }, 70);
 
-            if (checkNode) {
+            if (checkNode && showSuccessCheck) {
                 window.setTimeout(function() {
                     checkNode.classList.add('is-visible');
                 }, 180);
@@ -18679,8 +18695,14 @@
         }
 
         isComplete = isBulkProgressCompleteState(state);
-        var hasError = !!(state && (state.quotaBlocked || (isComplete && (parseInt(state.failed, 10) || 0) > 0)));
+        var processedCount = Math.max(0, parseInt(state && state.processed, 10) || 0);
+        var failedCount = Math.max(0, parseInt(state && state.failed, 10) || 0);
+        var hasPartial = !!(isComplete && !state.quotaBlocked && processedCount > 0 && failedCount > 0);
+        var hasError = !!(state && (state.quotaBlocked || (isComplete && failedCount > 0 && processedCount === 0)));
         var mode = hasError ? 'error' : (isComplete ? 'complete' : 'running');
+        var completionTitle = hasPartial
+            ? buildBulkProgressPartialTitleText(state)
+            : buildBulkProgressSuccessTitleText(state);
 
         presentation = isComplete ? getBulkProgressCompletionPresentation(state) : null;
         ctaConfig = presentation ? presentation.ctaConfig : resolveBulkProgressCompletionCtaConfig(state);
@@ -18704,7 +18726,7 @@
         $modal.attr('data-bbai-bulk-progress-mode', mode);
         $modal.toggleClass('bbai-modal--complete', isComplete && !hasError);
         if (isComplete && !hasError) {
-            $modal.find('.bbai-bulk-progress__title').text(buildBulkProgressSuccessTitleText(state));
+            $modal.find('.bbai-bulk-progress__title').text(completionTitle);
         } else {
             $modal.find('.bbai-bulk-progress__title').text(
                 hasError && isComplete ? __('Generation failed', 'beepbeep-ai-alt-text-generator') : buildBulkProgressHeaderTitle(state)
@@ -18795,6 +18817,10 @@
             } else if (mode === 'error') {
                 setStep('send', 'is-error');
                 setStep('save', 'is-error');
+            } else if (hasPartial) {
+                setStep('send', 'is-done');
+                setStep('save', 'is-error');
+                setStep('review', 'is-done');
             } else {
                 setStep('send', 'is-done');
                 setStep('save', 'is-done');
@@ -18827,14 +18853,19 @@
         if ($completeTitle.length) {
             $completeTitle.text(
                 !hasError
-                    ? buildBulkProgressSuccessTitleText(state)
+                    ? completionTitle
                     : __('Generation failed', 'beepbeep-ai-alt-text-generator')
             );
         }
         if ($completeSubtitle.length) {
             $completeSubtitle.text(
                 !hasError
-                    ? (presentation && presentation.successLine ? presentation.successLine : __('Your SEO coverage improved.', 'beepbeep-ai-alt-text-generator'))
+                    ? (hasPartial
+                        ? sprintf(
+                            _n('%s image could not be processed. Review the log for details.', '%s images could not be processed. Review the log for details.', failedCount, 'beepbeep-ai-alt-text-generator'),
+                            formatDashboardNumber(failedCount)
+                        )
+                        : (presentation && presentation.successLine ? presentation.successLine : __('Your SEO coverage improved.', 'beepbeep-ai-alt-text-generator')))
                     : __('Some images could not be processed. Please review the log and try again.', 'beepbeep-ai-alt-text-generator')
             );
         }
@@ -19917,7 +19948,7 @@
 
         if (window.bbaiJobState) {
             window.bbaiJobState.complete({
-                status: quotaError ? 'quota' : (failures > 0 ? 'error' : 'complete'),
+                status: quotaError ? 'quota' : (failures > 0 ? (successes > 0 ? 'partial' : 'error') : 'complete'),
                 successes: successes,
                 failures: failures,
                 skipped: skipped

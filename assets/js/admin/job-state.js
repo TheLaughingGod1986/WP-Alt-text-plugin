@@ -24,7 +24,7 @@
         successes: 0,
         failures: 0,
         skipped: 0,
-        status: 'idle',       // idle | processing | complete | error | quota
+        status: 'idle',       // idle | processing | complete | partial | error | quota
         label: '',
         mode: '',
         startTime: null,
@@ -38,6 +38,7 @@
             next.running ||
             next.status === 'processing' ||
             next.status === 'complete' ||
+            next.status === 'partial' ||
             next.status === 'error' ||
             next.status === 'quota'
         );
@@ -211,12 +212,14 @@
      */
     function complete(opts) {
         opts = opts || {};
+        var finalSuccesses = opts.successes !== undefined ? Math.max(0, parseInt(opts.successes, 10) || 0) : state.successes;
+        var finalFailures = opts.failures !== undefined ? Math.max(0, parseInt(opts.failures, 10) || 0) : state.failures;
         update({
             running: false,
-            successes: opts.successes !== undefined ? Math.max(0, parseInt(opts.successes, 10) || 0) : state.successes,
-            failures: opts.failures !== undefined ? Math.max(0, parseInt(opts.failures, 10) || 0) : state.failures,
+            successes: finalSuccesses,
+            failures: finalFailures,
             skipped: opts.skipped !== undefined ? Math.max(0, parseInt(opts.skipped, 10) || 0) : state.skipped,
-            status: opts.status || (state.failures > 0 ? 'error' : 'complete'),
+            status: opts.status || (finalFailures > 0 ? (finalSuccesses > 0 ? 'partial' : 'error') : 'complete'),
             percentage: 100,
             eta: '',
             progress: state.total
