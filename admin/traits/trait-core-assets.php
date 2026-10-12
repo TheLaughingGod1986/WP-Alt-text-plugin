@@ -453,6 +453,120 @@ JS,
 	}
 
 	/**
+	 * Check if current tab is the image audit.
+	 *
+	 * Gates the audit assets so they never load on unrelated admin screens.
+	 *
+	 * @return bool
+	 */
+	private function is_audit_tab(): bool {
+		return $this->get_resolved_tab() === 'audit';
+	}
+
+	/**
+	 * Enqueue the image audit stylesheet and scan controller.
+	 *
+	 * Called only from the audit tab. The controller is inert without the
+	 * localised nonce, so it cannot do anything if it ever loads elsewhere.
+	 *
+	 * @param string   $base_url      Plugin URL.
+	 * @param string   $base_path     Plugin path.
+	 * @param callable $asset_version Version resolver.
+	 * @return void
+	 */
+	private function enqueue_audit_assets( string $base_url, string $base_path, callable $asset_version ): void {
+		$audit_css = 'assets/css/features/audit/audit.css';
+		if ( file_exists( $base_path . $audit_css ) ) {
+			wp_enqueue_style(
+				'bbai-audit',
+				$base_url . $audit_css,
+				array( 'bbai-admin-micro-motion' ),
+				$asset_version( $audit_css, '1.0.0' )
+			);
+		}
+
+		// Shared resolver: prefers the minified build in production, falls back to
+		// the source file, so `npm run build:js` is optional for this script.
+		$use_debug_assets = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG;
+		$audit_js         = $this->get_asset_path( 'assets/js/', 'bbai-audit', $use_debug_assets, 'js', $base_path );
+
+		if ( '' === $audit_js || ! is_readable( $base_path . $audit_js ) ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'bbai-audit',
+			$base_url . $audit_js,
+			array(),
+			$asset_version( $audit_js, '1.0.0' ),
+			true
+		);
+
+		$audit_state = array();
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Audit\Audit_Progress_Service' ) ) {
+			$audit_state = \BeepBeepAI\AltTextGenerator\Audit\Audit_Progress_Service::get_state();
+		}
+
+		// The findings table is a separate view, so its controller loads only there.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only view routing, not form processing.
+		$audit_view = isset( $_GET['view'] ) ? sanitize_key( wp_unslash( $_GET['view'] ) ) : '';
+
+		if ( 'issues' === $audit_view ) {
+			$issues_js = $this->get_asset_path( 'assets/js/', 'bbai-audit-issues', $use_debug_assets, 'js', $base_path );
+
+			if ( '' !== $issues_js && is_readable( $base_path . $issues_js ) ) {
+				wp_enqueue_script(
+					'bbai-audit-issues',
+					$base_url . $issues_js,
+					array(),
+					$asset_version( $issues_js, '1.0.0' ),
+					true
+				);
+
+				wp_localize_script(
+					'bbai-audit-issues',
+					'bbaiAuditIssues',
+					array(
+						'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+						'nonce'     => wp_create_nonce( 'beepbeepai_nonce' ),
+						'telemetry' => class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry' )
+							&& \BeepBeepAI\AltTextGenerator\BBAI_Telemetry::has_telemetry_consent(),
+						'strings'   => array(
+							'generating'         => __( 'Generating…', 'beepbeep-ai-alt-text-generator' ),
+							'generated'          => __( 'Alt text updated.', 'beepbeep-ai-alt-text-generator' ),
+							'resolved'           => __( 'Resolved.', 'beepbeep-ai-alt-text-generator' ),
+							'saving'             => __( 'Saving…', 'beepbeep-ai-alt-text-generator' ),
+							'markedDecorative'   => __( 'Marked as decorative.', 'beepbeep-ai-alt-text-generator' ),
+							'unmarkedDecorative' => __( 'No longer decorative.', 'beepbeep-ai-alt-text-generator' ),
+							'dismissed'          => __( 'Finding dismissed.', 'beepbeep-ai-alt-text-generator' ),
+							'dismissConfirm'     => __( 'Hide this finding? The image itself is not changed.', 'beepbeep-ai-alt-text-generator' ),
+							'genericError'       => __( 'Something went wrong. Please try again.', 'beepbeep-ai-alt-text-generator' ),
+						),
+					)
+				);
+			}
+		}
+
+		wp_localize_script(
+			'bbai-audit',
+			'bbaiAudit',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'beepbeepai_nonce' ),
+				'isStale' => ! empty( $audit_state )
+					&& \BeepBeepAI\AltTextGenerator\Audit\Audit_Progress_Service::is_stale( $audit_state ),
+				'strings' => array(
+					/* translators: 1: images scanned so far, 2: images in total, 3: percentage complete. */
+					'progress'       => __( 'Scanned %1$s of %2$s images (%3$d%%).', 'beepbeep-ai-alt-text-generator' ),
+					'genericError'   => __( 'Something went wrong while running the audit.', 'beepbeep-ai-alt-text-generator' ),
+					'resumeHint'     => __( 'You can resume the audit to carry on from where it stopped.', 'beepbeep-ai-alt-text-generator' ),
+					'restartConfirm' => __( 'Start a new audit and discard the partial results from the interrupted one?', 'beepbeep-ai-alt-text-generator' ),
+				),
+			)
+		);
+	}
+
+	/**
 	 * Get the current OpptiAI admin page slug.
 	 *
 	 * @return string
@@ -497,6 +611,7 @@ JS,
 		$page_to_tab = array(
 			'bbai'                 => 'dashboard',
 			'bbai-library'         => 'library',
+			'bbai-audit'           => 'audit',
 			'bbai-analytics'       => 'analytics',
 			'bbai-credit-usage'    => 'usage',
 			'bbai-guide'           => 'help',
@@ -1114,6 +1229,10 @@ JS,
 				array( 'bbai-admin-micro-motion' ),
 				$asset_version( $analytics_page_css, '1.4.1' )
 			);
+		}
+
+		if ( $this->is_audit_tab() ) {
+			$this->enqueue_audit_assets( $base_url, $base_path, $asset_version );
 		}
 
 		$card_rhythm_css = 'assets/css/system/bbai-card-rhythm.css';

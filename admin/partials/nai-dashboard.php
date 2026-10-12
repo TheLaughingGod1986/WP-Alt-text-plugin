@@ -18,6 +18,7 @@ $nai_total       = max( 0, (int) ( $nai_state['totalImages'] ?? 0 ) );
 $nai_optimized   = max( 0, (int) ( $nai_state['optimizedCount'] ?? 0 ) );
 $nai_missing     = max( 0, (int) ( $nai_state['missingCount'] ?? 0 ) );
 $nai_weak        = max( 0, (int) ( $nai_state['weakCount'] ?? 0 ) );
+$nai_duplicate   = max( 0, (int) ( $nai_state['duplicateCount'] ?? 0 ) );
 $nai_coverage    = max( 0, min( 100, (int) ( $nai_state['coveragePercent'] ?? 0 ) ) );
 $nai_plan_slug   = sanitize_key( (string) ( $nai_state['planSlug'] ?? $nai_state['plan_slug'] ?? $nai_state['plan'] ?? $nai_state['plan_type'] ?? 'free' ) );
 if ( 'pro' === $nai_plan_slug ) {
@@ -190,9 +191,9 @@ $nai_icon = static function ( string $name, int $size = 16, float $stroke = 1.75
 	);
 };
 
-// Ring geometry.
-$nai_ring_size   = 56;
-$nai_ring_stroke = 5;
+// Ring geometry — sized to match the Titles-style hero score ring (dominant page element).
+$nai_ring_size   = 104;
+$nai_ring_stroke = 9;
 $nai_ring_radius = ( $nai_ring_size - $nai_ring_stroke ) / 2;
 $nai_ring_circ   = 2 * M_PI * $nai_ring_radius;
 $nai_ring_dash   = ( $nai_coverage / 100 ) * $nai_ring_circ;
@@ -213,17 +214,23 @@ require BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/nai-shell-open.php';
 	data-nai-coverage="<?php echo esc_attr( (string) $nai_coverage ); ?>"
 >
 
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-priorities.php'; ?>
+
 	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-quota-card.php'; ?>
 
-<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-hero.php'; ?>
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-hero.php'; ?>
 
-<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-stats.php'; ?>
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-stats.php'; ?>
 
-<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-progress.php'; ?>
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-summary-tiles.php'; ?>
 
-<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-recent-activity.php'; ?>
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-priority-action-centre.php'; ?>
 
-<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-actions.php'; ?>
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-progress.php'; ?>
+
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-recent-activity.php'; ?>
+
+	<?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-actions.php'; ?>
 </div>
 
 <?php require BEEPBEEP_AI_PLUGIN_DIR . 'admin/components/dashboard/dashboard-generation-drawer.php'; ?>

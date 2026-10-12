@@ -531,7 +531,11 @@ class Core {
 	private function current_user_can_access_library(): bool {
 		$auth_state = Auth_State::resolve( $this->api_client );
 
-		return ! empty( $auth_state['has_connected_account'] ) && ! empty( $auth_state['is_authenticated'] );
+		if ( ! empty( $auth_state['has_connected_account'] ) && ! empty( $auth_state['is_authenticated'] ) ) {
+			return true;
+		}
+
+		return current_user_can( self::CAPABILITY ) || current_user_can( 'manage_options' );
 	}
 
 	/**
@@ -571,6 +575,7 @@ class Core {
 
 		$bbai_pages = array(
 			self::MENU_SLUG_DASHBOARD,
+			'bbai-dashboard',
 			self::MENU_SLUG_LIBRARY,
 			'bbai-autopilot',
 			'bbai-analytics',
@@ -586,7 +591,7 @@ class Core {
 	}
 
 	/**
-	 * Guests (no connected account) should only be able to access the Dashboard page.
+	 * Guests (no connected account) should only be able to access local trial-safe pages.
 	 *
 	 * This is a hard guard for direct URL access, not just menu visibility.
 	 *
@@ -608,7 +613,17 @@ class Core {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 
-		if ( self::MENU_SLUG_DASHBOARD !== $page ) {
+		$allowed_guest_pages = array(
+			self::MENU_SLUG_DASHBOARD,
+			'bbai-dashboard',
+			self::MENU_SLUG_LIBRARY,
+			'bbai-analytics',
+			'bbai-credit-usage',
+			'bbai-settings',
+			'bbai-guide',
+		);
+
+		if ( ! in_array( $page, $allowed_guest_pages, true ) ) {
 			wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) );
 			exit;
 		}
@@ -616,7 +631,7 @@ class Core {
 		// Block tab-based deep links while still on the dashboard route.
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing only.
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
-		if ( '' !== $tab && 'dashboard' !== $tab ) {
+		if ( '' !== $tab && in_array( $page, array( self::MENU_SLUG_DASHBOARD, 'bbai-dashboard' ), true ) && 'dashboard' !== $tab ) {
 			wp_safe_redirect( admin_url( 'admin.php?page=' . self::MENU_SLUG_DASHBOARD ) );
 			exit;
 		}
@@ -1070,6 +1085,27 @@ class Core {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Whether the image accessibility audit is available.
+	 *
+	 * Mirrors the gate used when registering the audit hooks, so the menu entry
+	 * and the endpoints it links to are always switched on and off together.
+	 *
+	 * @return bool
+	 */
+	private function is_audit_enabled(): bool {
+		if ( defined( 'BBAI_DISABLE_AUDIT' ) && BBAI_DISABLE_AUDIT ) {
+			return false;
+		}
+
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Audit\Image_Audit_Service' ) ) {
+			return false;
+		}
+
+		/** This filter is documented in admin/class-bbai-admin-hooks.php */
+		return (bool) apply_filters( 'bbai_audit_enabled', true );
 	}
 
 	/**
@@ -1884,6 +1920,7 @@ class Core {
 		$page                  = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 		$dashboard_shell_pages = array(
 			self::MENU_SLUG_DASHBOARD,
+			'bbai-dashboard',
 			self::MENU_SLUG_LIBRARY,
 			'bbai-analytics',
 			'bbai-credit-usage',
@@ -1941,6 +1978,15 @@ class Core {
 			);
 
 			add_submenu_page(
+				'',
+				__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+				$cap,
+				'bbai-dashboard',
+				array( $this, 'render_settings_page' )
+			);
+
+			add_submenu_page(
 				self::MENU_SLUG_DASHBOARD,
 				__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
 				__( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
@@ -1956,6 +2002,17 @@ class Core {
 					__( 'Autopilot', 'beepbeep-ai-alt-text-generator' ),
 					$cap,
 					'bbai-autopilot',
+					array( $this, 'render_settings_page' )
+				);
+			}
+
+			if ( $this->is_audit_enabled() ) {
+				add_submenu_page(
+					'bbai',
+					__( 'Image Audit', 'beepbeep-ai-alt-text-generator' ),
+					__( 'Image Audit', 'beepbeep-ai-alt-text-generator' ),
+					$cap,
+					'bbai-audit',
 					array( $this, 'render_settings_page' )
 				);
 			}
@@ -1987,6 +2044,15 @@ class Core {
 				array( $this, 'render_settings_page' )
 			);
 		} else {
+			add_submenu_page(
+				'',
+				__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+				__( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+				$cap,
+				'bbai-dashboard',
+				array( $this, 'render_settings_page' )
+			);
+
 			// Keep guarded routes routable for redirects without exposing sidebar navigation.
 			add_submenu_page(
 				'',
@@ -2702,6 +2768,7 @@ class Core {
 			if ( ! is_array( $bbai_guest_usage ) ) {
 				$bbai_guest_usage = array();
 			}
+			$bbai_guest_can_access_library = $this->current_user_can_access_library();
 			$bbai_guest_trial_remaining = max(
 				0,
 				(int) (
@@ -2716,13 +2783,27 @@ class Core {
 			);
 			$bbai_allowed_tabs          = array(
 				'dashboard' => __( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+				'library'   => __( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
 				'help'      => __( 'Help', 'beepbeep-ai-alt-text-generator' ),
 			);
 			$bbai_page_to_tab           = array(
-				'bbai'         => 'dashboard',
-				'bbai-library' => 'library',
-				'bbai-guide'   => 'help',
+				'bbai'              => 'dashboard',
+				'bbai-dashboard'    => 'dashboard',
+				'bbai-library'      => 'library',
+				'bbai-analytics'    => 'dashboard',
+				'bbai-credit-usage' => 'dashboard',
+				'bbai-settings'     => 'dashboard',
+				'bbai-guide'        => 'help',
 			);
+
+			// The image audit reads only the local Media Library — it needs no
+			// account, no credits and no API. Letting a signed-out administrator
+			// see what is wrong with their own site is the point of it.
+			if ( $this->is_audit_enabled() ) {
+				$bbai_tabs['audit']         = __( 'Image Audit', 'beepbeep-ai-alt-text-generator' );
+				$bbai_allowed_tabs['audit'] = __( 'Image Audit', 'beepbeep-ai-alt-text-generator' );
+				$bbai_page_to_tab['bbai-audit'] = 'audit';
+			}
 			$bbai_tab_aliases           = array(
 				'credit-usage' => 'dashboard',
 			);
@@ -2803,6 +2884,21 @@ class Core {
 				);
 			}
 
+			if ( $this->is_audit_enabled() ) {
+				// Sits after Library: audit finds the work, the library does it.
+				$bbai_tabs_with_audit = array();
+				foreach ( $bbai_tabs as $bbai_tab_key => $bbai_tab_label ) {
+					$bbai_tabs_with_audit[ $bbai_tab_key ] = $bbai_tab_label;
+					if ( 'library' === $bbai_tab_key ) {
+						$bbai_tabs_with_audit['audit'] = __( 'Image Audit', 'beepbeep-ai-alt-text-generator' );
+					}
+				}
+				if ( ! isset( $bbai_tabs_with_audit['audit'] ) ) {
+					$bbai_tabs_with_audit['audit'] = __( 'Image Audit', 'beepbeep-ai-alt-text-generator' );
+				}
+				$bbai_tabs = $bbai_tabs_with_audit;
+			}
+
 			$bbai_can_show_debug_tab = $this->can_show_debug_logs_tab();
 			$bbai_allowed_tabs       = $bbai_tabs + array(
 				'help' => __( 'Help', 'beepbeep-ai-alt-text-generator' ),
@@ -2829,7 +2925,9 @@ class Core {
 			// Normalize legacy page slugs and tab params into the simplified nav model.
 			$bbai_page_to_tab = array(
 				'bbai'                 => 'dashboard',
+				'bbai-dashboard'       => 'dashboard',
 				'bbai-library'         => 'library',
+				'bbai-audit'           => 'audit',
 				'bbai-autopilot'       => 'autopilot',
 				'bbai-analytics'       => 'analytics',
 				'bbai-credit-usage'    => 'usage',
@@ -2884,6 +2982,7 @@ class Core {
 			$bbai_active_nav_map = array(
 				'dashboard'       => 'dashboard',
 				'library'         => 'library',
+				'audit'           => 'audit',
 				'autopilot'       => 'autopilot',
 				'analytics'       => 'analytics',
 				'usage'           => 'usage',
@@ -3097,13 +3196,24 @@ class Core {
 				);
 				?>
 
-<?php elseif ( 'library' === $bbai_tab && $bbai_has_connected_account ) : ?>
+<?php elseif ( 'library' === $bbai_tab && ( $bbai_has_connected_account || $bbai_guest_can_access_library ) ) : ?>
 	<?php
 	$bbai_library_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/library-tab.php';
 	bbai_render_layout_template(
 		$bbai_library_partial,
 		get_defined_vars(),
 		__( 'Library content unavailable.', 'beepbeep-ai-alt-text-generator' ),
+		$this
+	);
+	?>
+
+<?php elseif ( 'audit' === $bbai_tab && $this->is_audit_enabled() ) : ?>
+	<?php
+	$bbai_audit_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/audit-tab.php';
+	bbai_render_layout_template(
+		$bbai_audit_partial,
+		get_defined_vars(),
+		__( 'Image Audit content unavailable.', 'beepbeep-ai-alt-text-generator' ),
 		$this
 	);
 	?>

@@ -1,5 +1,49 @@
 /* Extracted from assets/css/nai-dashboard.css. Keep imports ordered in the aggregator. */
 
+/* ---------- Today's Priorities ---------- */
+.nai-screen .nai-priorities {
+	margin-bottom: 14px;
+}
+.nai-screen .nai-priorities__body {
+	padding: 14px 18px 12px;
+}
+.nai-screen .nai-priorities__empty {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+	color: var(--nai-text-2);
+	line-height: 1.5;
+}
+.nai-screen .nai-priorities__list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.nai-screen .nai-priorities__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13.5px;
+	color: var(--nai-text);
+}
+.nai-screen .nai-priorities__footer {
+	border-top: 1px solid var(--nai-hairline);
+	padding: 9px 18px;
+	background: var(--nai-surface-2);
+}
+.nai-screen .nai-priorities__link {
+	background: transparent;
+	border: none;
+	padding: 0;
+	font-size: 12.5px;
+	color: var(--nai-text-2);
+	font-weight: 600;
+	text-decoration: none;
+	display: inline-block;
+}
+.nai-screen .nai-priorities__link:hover { color: var(--nai-text); }
+
 /* ---------- Hero (Today's pass) ---------- */
 .nai-screen .nai-entitlement-notice {
 	padding: 14px 20px;
@@ -124,14 +168,16 @@
 }
 
 /* ---------- Library health ---------- */
+/* Ring is drawn at 104px/stroke-9 (see $nai_ring_size in nai-dashboard.php) so this
+   card is the visually dominant hero element of the page, matching Titles' HeroScoreCard. */
 .nai-screen .nai-health {
 	display: flex;
 	flex-direction: column;
 }
 .nai-screen .nai-health__top {
-	padding: 14px 18px 12px;
+	padding: 22px 24px 20px;
 	display: flex;
-	gap: 14px;
+	gap: 24px;
 	align-items: center;
 }
 .nai-screen .nai-health__headline {
@@ -141,12 +187,12 @@
 	flex-wrap: wrap;
 }
 .nai-screen .nai-health__num {
-	font-size: 22px;
-	font-weight: 600;
+	font-size: 36px;
+	font-weight: 700;
 	letter-spacing: -0.02em;
 	line-height: 1.1;
 }
-.nai-screen .nai-health__max { font-size: 13px; color: var(--nai-text-3); }
+.nai-screen .nai-health__max { font-size: 14px; color: var(--nai-text-3); }
 .nai-screen .nai-health__delta {
 	font-size: 12px;
 	color: var(--nai-ok-ink);
@@ -274,6 +320,125 @@
 	border-color: var(--nai-primary);
 }
 .nai-screen .nai-toggle--on .nai-toggle__knob { left: 16px; }
+
+/* ---------- Summary stat tiles ---------- */
+.nai-screen .nai-summary-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 10px;
+	margin-top: 14px;
+}
+.nai-screen .nai-summary-tile__inner {
+	padding: 12px 14px;
+}
+.nai-screen .nai-summary-tile__label {
+	font-size: 10px;
+	color: var(--nai-text-3);
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	margin-bottom: 6px;
+}
+.nai-screen .nai-summary-tile__value {
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: var(--nai-text);
+}
+.nai-screen .nai-summary-tile__value--text { font-size: 13px; font-weight: 500; }
+.nai-screen .nai-summary-tile__value--neutral { color: var(--nai-text); }
+.nai-screen .nai-summary-tile__value--ok      { color: var(--nai-ok-ink); }
+.nai-screen .nai-summary-tile__value--warn    { color: var(--nai-warn-ink); }
+.nai-screen .nai-summary-tile__value--danger  { color: var(--nai-danger-ink); }
+
+/* ---------- Priority Action Centre ---------- */
+.nai-screen .nai-priority-centre { margin-top: 20px; }
+.nai-screen .nai-priority-centre__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 10px;
+}
+.nai-screen .nai-priority-centre__title {
+	font-size: 10.5px;
+	color: var(--nai-text-3);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+.nai-screen .nai-priority-centre__viewall {
+	background: transparent;
+	border: none;
+	font-size: 12px;
+	color: var(--nai-text-2);
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: none;
+}
+.nai-screen .nai-priority-centre__viewall:hover { color: var(--nai-text); }
+.nai-screen .nai-priority-centre__empty {
+	padding: 16px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13.5px;
+	color: var(--nai-text-2);
+	line-height: 1.5;
+}
+.nai-screen .nai-priority-centre__list {
+	display: flex;
+	flex-direction: column;
+}
+.nai-screen .nai-priority-centre__row {
+	padding: 14px 16px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	border-top: 1px solid var(--nai-hairline);
+}
+.nai-screen .nai-priority-centre__row:first-child { border-top: none; }
+.nai-screen .nai-priority-centre__row-main {
+	flex: 1;
+	min-width: 220px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.nai-screen .nai-priority-centre__row-name {
+	font-size: 13.5px;
+	font-weight: 500;
+	color: var(--nai-text);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-bottom: 3px;
+}
+.nai-screen .nai-priority-centre__row-title {
+	font-size: 14.5px;
+	font-weight: 600;
+	color: var(--nai-text);
+	margin-bottom: 3px;
+}
+.nai-screen .nai-priority-centre__row-sub {
+	font-size: 12.5px;
+	color: var(--nai-text-2);
+	line-height: 1.5;
+}
+.nai-screen .nai-priority-centre__row-actions {
+	display: flex;
+	gap: 8px;
+	flex-shrink: 0;
+}
+.nai-screen .nai-priority-centre__footer {
+	border-top: 1px solid var(--nai-hairline);
+	padding: 12px 16px;
+	display: flex;
+	justify-content: flex-end;
+	background: var(--nai-surface-2);
+}
 
 /* ---------- Library coverage ---------- */
 .nai-screen .nai-coverage {

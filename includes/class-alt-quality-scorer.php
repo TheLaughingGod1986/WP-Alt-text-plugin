@@ -133,6 +133,92 @@ class BBAI_Alt_Quality_Scorer {
 		'/\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff?)$/i',
 	);
 
+	private static $stop_words = array(
+		'a',
+		'an',
+		'the',
+		'is',
+		'are',
+		'was',
+		'were',
+		'be',
+		'been',
+		'being',
+		'of',
+		'in',
+		'on',
+		'at',
+		'to',
+		'for',
+		'with',
+		'and',
+		'or',
+		'but',
+		'my',
+		'our',
+		'your',
+		'his',
+		'her',
+		'its',
+		'their',
+		'this',
+		'that',
+		'it',
+		'he',
+		'she',
+		'we',
+		'they',
+		'i',
+		'me',
+		'him',
+		'us',
+		'them',
+	);
+
+	/* ─── Shared vocabulary accessors ─── */
+
+	/**
+	 * Placeholder / junk words that signal ALT text was never really written.
+	 *
+	 * Exposed so the image audit rules share one vocabulary with the scorer.
+	 *
+	 * @since 4.8.0
+	 * @return string[]
+	 */
+	public static function get_placeholder_words() {
+		return self::$placeholder_words;
+	}
+
+	/**
+	 * Words that name the medium rather than describe the content.
+	 *
+	 * @since 4.8.0
+	 * @return string[]
+	 */
+	public static function get_generic_image_words() {
+		return self::$generic_image_words;
+	}
+
+	/**
+	 * Lead-in phrases that add no information for a screen-reader user.
+	 *
+	 * @since 4.8.0
+	 * @return string[]
+	 */
+	public static function get_redundant_prefixes() {
+		return self::$redundant_prefixes;
+	}
+
+	/**
+	 * Function words excluded when counting meaningful words.
+	 *
+	 * @since 4.8.0
+	 * @return string[]
+	 */
+	public static function get_stop_words() {
+		return self::$stop_words;
+	}
+
 	/* ─── Public API ─── */
 
 	/**
@@ -777,47 +863,7 @@ PROMPT;
 	 * Count meaningful words (excluding stop words, generic words, articles).
 	 */
 	private static function count_meaningful_words( $lc_words ) {
-		$stop_words = array(
-			'a',
-			'an',
-			'the',
-			'is',
-			'are',
-			'was',
-			'were',
-			'be',
-			'been',
-			'being',
-			'of',
-			'in',
-			'on',
-			'at',
-			'to',
-			'for',
-			'with',
-			'and',
-			'or',
-			'but',
-			'my',
-			'our',
-			'your',
-			'his',
-			'her',
-			'its',
-			'their',
-			'this',
-			'that',
-			'it',
-			'he',
-			'she',
-			'we',
-			'they',
-			'i',
-			'me',
-			'him',
-			'us',
-			'them',
-		);
+		$stop_words = self::$stop_words;
 		$count      = 0;
 		foreach ( $lc_words as $w ) {
 			if ( strlen( $w ) < 2 ) {

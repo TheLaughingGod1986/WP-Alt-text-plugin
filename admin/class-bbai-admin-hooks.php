@@ -78,6 +78,7 @@ class Admin_Hooks {
 		}
 
 		$this->register_ajax_hooks();
+		$this->register_audit_hooks();
 
 		add_action( \BeepBeepAI\AltTextGenerator\Queue::CRON_HOOK, array( $this->core, 'process_queue' ) );
 		add_action( 'beepbeepai_run_migration', array( $this->core, 'run_migration' ) );
@@ -152,6 +153,53 @@ class Admin_Hooks {
 		foreach ( $ajax_actions as $action => $callback ) {
 			add_action( "wp_ajax_{$action}", array( $this->core, $callback ) );
 		}
+	}
+
+	/**
+	 * Register the image accessibility audit hooks.
+	 *
+	 * Kept behind a filter so the whole feature can be switched off without a
+	 * code change if it ever misbehaves on a site.
+	 */
+	private function register_audit_hooks() {
+		if ( defined( 'BBAI_DISABLE_AUDIT' ) && BBAI_DISABLE_AUDIT ) {
+			return;
+		}
+
+		/**
+		 * Filter whether the image accessibility audit is active.
+		 *
+		 * @since 4.8.0
+		 *
+		 * @param bool $enabled Whether to register the audit.
+		 */
+		if ( ! apply_filters( 'bbai_audit_enabled', true ) ) {
+			return;
+		}
+
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Audit\Audit_Ajax_Controller' ) ) {
+			return;
+		}
+
+		$audit_controller = new \BeepBeepAI\AltTextGenerator\Audit\Audit_Ajax_Controller();
+		$audit_controller->register();
+
+		// Keep a single image's findings honest when its alt text changes elsewhere.
+		add_action( 'delete_attachment', array( __CLASS__, 'handle_audit_attachment_deleted' ), 20 );
+	}
+
+	/**
+	 * Drop audit findings for a deleted attachment.
+	 *
+	 * @param int $attachment_id Attachment ID.
+	 * @return void
+	 */
+	public static function handle_audit_attachment_deleted( $attachment_id ) {
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Audit\Image_Audit_Repository' ) ) {
+			return;
+		}
+
+		\BeepBeepAI\AltTextGenerator\Audit\Image_Audit_Repository::delete_row( (int) $attachment_id );
 	}
 
 	/**

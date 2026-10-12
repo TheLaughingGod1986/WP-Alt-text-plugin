@@ -5,7 +5,7 @@ Plugin URI: https://oppti.dev/plugins/alt-text
 Author URI: https://oppti.dev
 Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 4.7.0
 License: GPLv2 or later
@@ -63,9 +63,17 @@ Good alt text does two jobs at once: it tells Google Images and product search w
 * **SEO teams** improving image discoverability and consistency across content and commerce pages.
 * **Accessibility-focused site owners** improving image descriptions as part of WCAG and content-quality work.
 
-= Free plan and paid options =
+= Pricing: free plan and paid options =
 
-Try 10 generations before you even create an account. The free plan then includes 15 AI alt text generations per month - enough to fix your highest-value images and see the workflow on your own site. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
+Start free and upgrade only if you need more volume. No separate AI key to buy and no per-image bills - the AI cost is included in every plan.
+
+* Free - £0. Try 10 generations before you create an account, then 15 AI alt text generations every month.
+* Starter - £4.99/month. 100 AI generations per month. Best for smaller WordPress and small-business sites.
+* Growth - £12.99/month. 1,000 AI generations per month, plus bulk processing and Autopilot for new uploads. Best value for busy blogs, stores, and agencies.
+* Agency - £49.99/month. 10,000+ AI generations per month, with multi-site bulk optimisation and client usage reporting.
+* One-time top-up - £9.99 for 100 extra generations, when you just need a one-off boost with no subscription.
+
+Every plan includes the full review-before-save workflow. Cancel anytime. Prices in GBP. Full details at https://oppti.dev/pricing
 
 = A quick favour =
 
@@ -93,6 +101,14 @@ https://www.youtube.com/watch?v=VLP302GcMBs
 = Is there a free AI alt text generator for WordPress? =
 
 Yes. OpptiAI Alt Text has a free plan: 10 generations to try before signing up, then 15 AI alt text generations per month. That's enough to fix your most important images and judge the quality on your own content before deciding on a paid plan.
+
+= How much does OpptiAI Alt Text cost? =
+
+There's a free plan: 10 generations to try with no account, then 15 per month. Paid plans are Starter at £4.99/month (100 generations), Growth at £12.99/month (1,000 generations, with bulk processing and Autopilot), and Agency at £49.99/month (10,000+ generations, multi-site). A one-time top-up of 100 generations is £9.99. There's no separate OpenAI key to buy and no usage bill - the AI cost is included. Full details: https://oppti.dev/pricing
+
+= What image formats does OpptiAI Alt Text support? =
+
+It works with the image types WordPress handles natively - JPEG, PNG, GIF, WebP, and AVIF. Large images are automatically resized before processing so generation stays fast and reliable. SVG and HEIC aren't supported yet: SVG isn't a standard WordPress upload type and has no photographic content to describe, and HEIC relies on server libraries most hosts don't include. Both are on the roadmap.
 
 = Do I need my own OpenAI API key? =
 

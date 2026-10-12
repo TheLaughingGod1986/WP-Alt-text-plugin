@@ -95,6 +95,7 @@ $nai_set_icon = static function ( string $name, int $size = 16, float $stroke = 
 		'info'     => '<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/>',
 		'image'    => '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
 		'edit'     => '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/>',
+		'link'     => '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
 		'code'     => '<path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/>',
 		'sparkles' => '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/>',
 	);
@@ -141,6 +142,7 @@ foreach ( array( 'usage_by_feature', 'feature_usage', 'usage_by_plugin', 'plugin
 $nai_set_feature_aliases = array(
 	'alt' => 'alt_text', 'alttext' => 'alt_text', 'image_alt' => 'alt_text', 'image_alt_text' => 'alt_text',
 	'titles' => 'title_meta', 'title' => 'title_meta', 'titles_meta' => 'title_meta', 'titles_and_meta' => 'title_meta',
+	'linking' => 'internal_linking', 'internal_link' => 'internal_linking', 'internal_links' => 'internal_linking', 'oppti_linking' => 'internal_linking',
 	'schema_markup' => 'schema', 'rich_snippets' => 'schema',
 );
 
@@ -158,18 +160,20 @@ foreach ( $nai_set_usage_source as $nai_set_feature_key => $nai_set_feature_valu
 	$nai_set_split[ $nai_set_feature_id ] = ( $nai_set_split[ $nai_set_feature_id ] ?? 0 ) + max( 0, (int) $nai_set_feature_used );
 }
 
-// Detect the Titles sibling so we can badge it "Not installed" when absent.
+// Detect sibling plugins so we can badge them "Not installed" when absent.
 if ( ! function_exists( 'is_plugin_active' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/plugin.php';
 }
-$nai_set_titles_installed = is_plugin_active( 'beepbeep-titles/beepbeep-titles.php' );
+$nai_set_titles_installed  = is_plugin_active( 'beepbeep-titles/beepbeep-titles.php' );
+$nai_set_linking_installed = is_plugin_active( 'oppti-internal-linking/oppti-internal-linking.php' );
 
 // Fixed catalog of OpptiAI plugins that draw from the shared pool, this
 // plugin (ALT Text) first. Always rendered so the card reads as a roster.
 $nai_set_catalog = array(
-	array( 'id' => 'alt_text',   'label' => __( 'Image ALT Text', 'beepbeep-ai-alt-text-generator' ),               'icon' => 'image', 'class' => 'nai-credit-feature--alt',    'current' => true,  'installed' => true ),
-	array( 'id' => 'title_meta', 'label' => __( 'Titles & Meta Descriptions', 'beepbeep-ai-alt-text-generator' ),  'icon' => 'edit',  'class' => 'nai-credit-feature--titles', 'current' => false, 'installed' => $nai_set_titles_installed ),
-	array( 'id' => 'schema',     'label' => __( 'Schema & Rich Snippets', 'beepbeep-ai-alt-text-generator' ),       'icon' => 'code',  'class' => 'nai-credit-feature--schema', 'current' => false, 'installed' => false ),
+	array( 'id' => 'alt_text',          'label' => __( 'Image ALT Text', 'beepbeep-ai-alt-text-generator' ),               'icon' => 'image', 'class' => 'nai-credit-feature--alt',     'current' => true,  'installed' => true ),
+	array( 'id' => 'title_meta',        'label' => __( 'Titles & Meta Descriptions', 'beepbeep-ai-alt-text-generator' ),  'icon' => 'edit',  'class' => 'nai-credit-feature--titles',  'current' => false, 'installed' => $nai_set_titles_installed ),
+	array( 'id' => 'internal_linking',  'label' => __( 'Internal Linking', 'beepbeep-ai-alt-text-generator' ),            'icon' => 'link',  'class' => 'nai-credit-feature--linking', 'current' => false, 'installed' => $nai_set_linking_installed ),
+	array( 'id' => 'schema',            'label' => __( 'Schema & Rich Snippets', 'beepbeep-ai-alt-text-generator' ),       'icon' => 'code',  'class' => 'nai-credit-feature--schema',  'current' => false, 'installed' => false ),
 );
 
 $nai_set_attributed  = 0;
@@ -230,12 +234,12 @@ $nai_set_plan_name = $nai_set_is_paid
 					<?php
 					echo esc_html(
 							$nai_set_can_autopilot
-								? __( '1,000 AI generations per month · no daily cap within your monthly allowance · bulk processing and Autopilot.', 'beepbeep-ai-alt-text-generator' )
+								? __( '1,000 AI service credits per cycle · shared across your OpptiAI plugins · usable manually, in bulk, or with Autopilot.', 'beepbeep-ai-alt-text-generator' )
 								: ( $nai_set_is_paid
-								? __( '100 AI generations per month · manual generation only.', 'beepbeep-ai-alt-text-generator' )
+								? __( '100 AI service credits per cycle · shared across your OpptiAI plugins · manual generation only.', 'beepbeep-ai-alt-text-generator' )
 								: sprintf(
-								/* translators: %d: monthly free generations included with Free plan. */
-								__( 'Up to %d AI generations per month · manual generation only.', 'beepbeep-ai-alt-text-generator' ),
+								/* translators: %d: monthly free credits included with Free plan. */
+								__( 'Up to %d AI service credits per cycle · shared across your OpptiAI plugins · manual generation only.', 'beepbeep-ai-alt-text-generator' ),
 								$nai_set_limit
 							) )
 					);
@@ -261,50 +265,27 @@ $nai_set_plan_name = $nai_set_is_paid
 		</div>
 
 		<div class="nai-plan-card__usage">
-			<?php if ( $nai_set_is_paid ) : ?>
-				<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-					<div style="display:flex;align-items:center;gap:8px;">
-						<span class="nai-pulse-dot" style="width:6px;height:6px;"></span>
-						<span style="font-size:12px;color:var(--nai-text-2);font-weight:500;"><?php echo esc_html( $nai_set_can_autopilot ? __( 'Continuous optimisation available', 'beepbeep-ai-alt-text-generator' ) : __( 'Manual generation plan', 'beepbeep-ai-alt-text-generator' ) ); ?></span>
-					</div>
-					<div class="nai-tnum" style="font-size:11.5px;color:var(--nai-text-3);">
-						<span class="nai-mono" style="color:var(--nai-text-2);font-weight:500;"><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></span>
-						<?php esc_html_e( 'images improved this cycle', 'beepbeep-ai-alt-text-generator' ); ?>
-						<span style="margin:0 6px;opacity:0.6;">·</span>
-						<?php
-						echo esc_html(
-							sprintf(
-								/* translators: %s: renewal date. */
-								__( 'Renews %s', 'beepbeep-ai-alt-text-generator' ),
-								$nai_set_resetfmt
-							)
-						);
-						?>
-					</div>
-				</div>
-			<?php else : ?>
-				<div class="nai-plan-card__usage-head">
-					<span><?php esc_html_e( 'This billing cycle', 'beepbeep-ai-alt-text-generator' ); ?></span>
-					<span class="nai-plan-card__usage-num"><span data-bbai-entitlement-used><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></span> / <span data-bbai-entitlement-limit><?php echo esc_html( number_format_i18n( $nai_set_limit ) ); ?></span> <?php esc_html_e( 'AI generations used', 'beepbeep-ai-alt-text-generator' ); ?></span>
-				</div>
-				<div class="nai-progress <?php echo esc_attr( $nai_set_progress_tone ); ?>" style="height:5px;">
-					<div class="nai-progress__bar" style="width:<?php echo (int) $nai_set_pct; ?>%;"></div>
-				</div>
-				<div class="nai-plan-card__usage-foot">
-					<span><span data-bbai-entitlement-remaining><?php echo esc_html( number_format_i18n( $nai_set_remain ) ); ?></span> <?php esc_html_e( 'remaining', 'beepbeep-ai-alt-text-generator' ); ?></span>
-					<span>
-						<?php
-						echo esc_html(
-							sprintf(
-								/* translators: %s: monthly reset date. */
-								__( 'Resets %s', 'beepbeep-ai-alt-text-generator' ),
-								$nai_set_resetfmt
-							)
-						);
-						?>
-					</span>
-				</div>
-			<?php endif; ?>
+			<div class="nai-plan-card__usage-head">
+				<span><?php esc_html_e( 'This billing cycle', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span class="nai-plan-card__usage-num"><span data-bbai-entitlement-used><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></span> / <span data-bbai-entitlement-limit><?php echo esc_html( number_format_i18n( $nai_set_limit ) ); ?></span> <?php esc_html_e( 'AI service credits used', 'beepbeep-ai-alt-text-generator' ); ?></span>
+			</div>
+			<div class="nai-progress <?php echo esc_attr( $nai_set_progress_tone ); ?>" style="height:5px;">
+				<div class="nai-progress__bar" style="width:<?php echo (int) $nai_set_pct; ?>%;"></div>
+			</div>
+			<div class="nai-plan-card__usage-foot">
+				<span><span data-bbai-entitlement-remaining><?php echo esc_html( number_format_i18n( $nai_set_remain ) ); ?></span> <?php esc_html_e( 'remaining', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %s: monthly reset date. */
+							__( 'Resets %s', 'beepbeep-ai-alt-text-generator' ),
+							$nai_set_resetfmt
+						)
+					);
+					?>
+				</span>
+			</div>
 		</div>
 	</div>
 
@@ -315,7 +296,7 @@ $nai_set_plan_name = $nai_set_is_paid
 				<div class="nai-eyebrow" style="margin-bottom:2px;"><?php esc_html_e( 'OpptiAI Credit Wallet', 'beepbeep-ai-alt-text-generator' ); ?></div>
 				<h2 class="nai-credit-card__title"><?php esc_html_e( 'Credit usage', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 			</div>
-			<div class="nai-credit-card__total nai-tnum"><strong><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></strong> / <?php echo esc_html( number_format_i18n( $nai_set_limit ) ); ?> <?php esc_html_e( 'credits used', 'beepbeep-ai-alt-text-generator' ); ?></div>
+			<div class="nai-credit-card__total nai-tnum"><strong><?php echo esc_html( number_format_i18n( $nai_set_used ) ); ?></strong> / <?php echo esc_html( number_format_i18n( $nai_set_limit ) ); ?> <?php esc_html_e( 'credits used', 'beepbeep-ai-alt-text-generator' ); ?><span style="margin:0 6px;opacity:0.5;">·</span><span class="nai-mono"><?php echo esc_html( number_format_i18n( $nai_set_remain ) ); ?> <?php esc_html_e( 'remaining', 'beepbeep-ai-alt-text-generator' ); ?></span></div>
 		</div>
 		<div class="nai-credit-card__note">
 			<?php echo $nai_set_icon( 'info', 14, 1.8 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -385,19 +366,21 @@ $nai_set_plan_name = $nai_set_is_paid
 	<?php // -------- ACCOUNT -------- ?>
 	<div class="nai-set-section">
 		<div class="nai-set-section__head">
-			<div class="nai-eyebrow" style="margin-bottom:2px;"><?php esc_html_e( 'Sign-in', 'beepbeep-ai-alt-text-generator' ); ?></div>
+			<div class="nai-eyebrow" style="margin-bottom:2px;"><?php esc_html_e( 'OpptiAI', 'beepbeep-ai-alt-text-generator' ); ?></div>
 			<h2 class="nai-set-section__title"><?php esc_html_e( 'Account', 'beepbeep-ai-alt-text-generator' ); ?></h2>
 		</div>
 		<?php
 		$nai_set_render_row(
-			__( 'Email', 'beepbeep-ai-alt-text-generator' ),
-			__( 'The address connected to your OpptiAI account.', 'beepbeep-ai-alt-text-generator' ),
+			__( 'OpptiAI email', 'beepbeep-ai-alt-text-generator' ),
+			__( 'The account that owns this site\'s plan and shared credit wallet.', 'beepbeep-ai-alt-text-generator' ),
 			'<span class="nai-mono" style="font-size:13px;color:var(--nai-text-2);">' . esc_html( '' !== $nai_set_user_email ? $nai_set_user_email : __( 'Not connected', 'beepbeep-ai-alt-text-generator' ) ) . '</span>'
 		);
 		$nai_set_render_row(
-			__( 'Connection', 'beepbeep-ai-alt-text-generator' ),
-			__( 'Last successful sync with OpptiAI servers.', 'beepbeep-ai-alt-text-generator' ),
-			'<span class="nai-chip nai-chip--ok"><span class="nai-chip__dot" style="background:var(--nai-ok)"></span>' . esc_html__( 'Connected', 'beepbeep-ai-alt-text-generator' ) . '</span>'
+			__( 'Plan & billing', 'beepbeep-ai-alt-text-generator' ),
+			$nai_set_is_paid
+				? __( 'Upgrade, downgrade, or update payment details in the Stripe customer portal.', 'beepbeep-ai-alt-text-generator' )
+				: __( 'Upgrade to a paid plan, or open Stripe to manage billing details.', 'beepbeep-ai-alt-text-generator' ),
+			'<a class="nai-btn nai-btn--secondary nai-btn--sm" href="' . esc_url( $nai_set_usage_url ) . '">' . esc_html__( 'Manage billing', 'beepbeep-ai-alt-text-generator' ) . '</a>'
 		);
 		?>
 	</div>

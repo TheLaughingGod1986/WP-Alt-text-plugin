@@ -780,6 +780,7 @@ if ( $bbai_has_connected_account || $bbai_is_guest_trial ) :
 		'isProPlan'             => $bbai_state_is_pro_plan,
 		'missingCount'          => $bbai_state_missing_count,
 		'weakCount'             => $bbai_state_weak_count,
+		'duplicateCount'        => max( 0, (int) ( $bbai_coverage['duplicate_alt_count'] ?? 0 ) ),
 		'optimizedCount'        => $bbai_state_optimized_count,
 		'totalImages'           => $bbai_state_total_images,
 		'coveragePercent'       => $bbai_state_coverage_percent,

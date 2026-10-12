@@ -36,7 +36,9 @@ class DB_Schema {
 			self::upgrade_to_1_0_0();
 		}
 
-		// Future: if ( version_compare( $installed, '1.1.0', '<' ) ) { self::upgrade_to_1_1_0(); }
+		if ( version_compare( $installed, '1.1.0', '<' ) ) {
+			self::upgrade_to_1_1_0();
+		}
 
 		update_option( self::OPTION_KEY, BEEPBEEP_AI_DB_VERSION, true );
 	}
@@ -72,6 +74,24 @@ class DB_Schema {
 
 		// Create performance indexes on wp_posts and wp_postmeta.
 		self::create_performance_indexes();
+	}
+
+	/**
+	 * Version 1.1.0: Create the per-image audit findings table.
+	 *
+	 * Purely additive — no existing table, option or meta is touched, so this
+	 * upgrade cannot disturb generation, licensing or review data.
+	 */
+	private static function upgrade_to_1_1_0() {
+		$audit_repository = BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-audit-repository.php';
+
+		if ( file_exists( $audit_repository ) ) {
+			require_once $audit_repository;
+		}
+
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Audit\Image_Audit_Repository' ) ) {
+			Audit\Image_Audit_Repository::create_table();
+		}
 	}
 
 	/**

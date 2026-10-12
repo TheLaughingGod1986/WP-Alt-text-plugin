@@ -26,6 +26,13 @@ if ( 'pro' === $bbai_current_plan ) {
 	$bbai_current_plan = 'growth';
 }
 
+// Stripe price IDs from caller (includes set $bbai_checkout_prices; preview uses $checkout_prices).
+if ( ! isset( $checkout_prices ) || ! is_array( $checkout_prices ) ) {
+	$checkout_prices = ( isset( $bbai_checkout_prices ) && is_array( $bbai_checkout_prices ) )
+		? $bbai_checkout_prices
+		: array();
+}
+
 // Get price IDs from backend API
 $bbai_starter_price_id = $checkout_prices['starter'] ?? '';
 $bbai_pro_price_id     = $checkout_prices['pro'] ?? '';

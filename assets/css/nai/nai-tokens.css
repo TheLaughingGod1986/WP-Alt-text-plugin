@@ -2,8 +2,8 @@
 
 .nai-app,
 .nai-screen {
-	--nai-font-sans: "Geist", "Helvetica Neue", system-ui, -apple-system, sans-serif;
-	--nai-font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+	--nai-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--nai-font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
 	--nai-bg: #F6F8FB;
 	--nai-bg-sunken: #EEF2F7;
