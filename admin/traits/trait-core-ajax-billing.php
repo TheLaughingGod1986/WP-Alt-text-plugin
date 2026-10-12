@@ -84,8 +84,8 @@ trait Core_Ajax_Billing {
 			return;
 		}
 
-		$success_url = admin_url( 'upload.php?page=bbai&checkout=success' );
-		$cancel_url  = admin_url( 'upload.php?page=bbai&checkout=cancel' );
+		$success_url = admin_url( 'admin.php?page=bbai&checkout=success' );
+		$cancel_url  = admin_url( 'admin.php?page=bbai&checkout=cancel' );
 
 		$result = $this->api_client->create_checkout_session( $price_id, $success_url, $cancel_url );
 
@@ -118,7 +118,7 @@ trait Core_Ajax_Billing {
 		wp_send_json_success(
 			array(
 				'url'        => $result['url'] ?? '',
-				'session_id' => $result['sessionId'] ?? '',
+				'session_id' => $result['sessionId'] ?? ( $result['session_id'] ?? '' ),
 			)
 		);
 	}

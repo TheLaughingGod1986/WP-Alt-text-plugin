@@ -162,20 +162,9 @@ function initiateCheckout($btn, priceId, plan) {
         return openCheckoutUrl(url);
     };
 
-    if (isStripePaymentLink(fallbackUrl)) {
-        openCheckoutUrl(fallbackUrl);
-        return;
-    }
-
-    if (plan === 'credits' && directCheckoutUrl) {
-        openCheckoutUrl(directCheckoutUrl);
-        return;
-    }
-
-    if (plan === 'starter' && directCheckoutUrl) {
-        openCheckoutUrl(directCheckoutUrl);
-        return;
-    }
+    // Always ask the backend for an account-linked Checkout Session first.
+    // Static buy.stripe.com Payment Links carry no account/site identity, so they
+    // are only used below as a last resort when the backend returns no URL.
 
     if (!ajaxUrl || !nonce || (!resolvedPriceId && !plan) || !$ || typeof $.ajax !== 'function') {
         if (openCheckoutUrl(fallbackUrl || directCheckoutUrl)) {
@@ -210,9 +199,12 @@ function initiateCheckout($btn, priceId, plan) {
             var checkoutSessionId = checkoutData && (checkoutData.session_id || checkoutData.sessionId)
                 ? String(checkoutData.session_id || checkoutData.sessionId)
                 : '';
+            // A hosted session URL embeds its own cs_ id, so it is valid even when
+            // the response omits session_id.
             var invalidHostedSession = checkoutUrl
                 && /checkout\.stripe\.com\/c\/pay\//i.test(checkoutUrl)
-                && checkoutSessionId === '';
+                && checkoutSessionId === ''
+                && !/\/c\/pay\/cs_(live|test)_/i.test(checkoutUrl);
 
             setCheckoutButtonLoading($btn, false);
 
@@ -226,6 +218,11 @@ function initiateCheckout($btn, priceId, plan) {
                 window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Hosted checkout response missing session ID, falling back to payment link', checkoutData);
             }
 
+            if (fallbackUrl || directCheckoutUrl) {
+                // eslint-disable-next-line no-console
+                window.console && window.console.warn && window.console.warn('[AltText AI] Backend returned no checkout session URL; using static payment link fallback', { plan: plan || '' });
+                dispatchCheckoutAnalytics('checkout_fallback_payment_link', { plan: plan || '', error_code: 'missing_checkout_url' });
+            }
             if (sendCheckoutWindow(fallbackUrl || directCheckoutUrl)) {
                 return;
             }
@@ -251,6 +248,11 @@ function initiateCheckout($btn, priceId, plan) {
                 response: xhr && xhr.responseJSON ? xhr.responseJSON : null
             });
 
+            if (fallbackUrl || directCheckoutUrl) {
+                // eslint-disable-next-line no-console
+                window.console && window.console.warn && window.console.warn('[AltText AI] Checkout session request failed; using static payment link fallback', { plan: plan || '', status: xhr && xhr.status });
+                dispatchCheckoutAnalytics('checkout_fallback_payment_link', { plan: plan || '', error_code: 'checkout_session_failed' });
+            }
             if (sendCheckoutWindow(fallbackUrl || directCheckoutUrl)) {
                 return;
             }

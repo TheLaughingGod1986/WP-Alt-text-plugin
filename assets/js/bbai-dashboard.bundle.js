@@ -1107,20 +1107,13 @@ function initiateCheckout($btn, priceId, plan) {
         }
     }
 
-    if (isStripePaymentLink(resolvedLink)) {
-        window.open(resolvedLink, '_blank', 'noopener,noreferrer');
-        return;
-    }
-
-    if (plan === 'credits' && directCheckoutUrl) {
-        window.open(directCheckoutUrl, '_blank', 'noopener,noreferrer');
-        return;
-    }
-
-    if (plan === 'starter' && directCheckoutUrl) {
-        window.open(directCheckoutUrl, '_blank', 'noopener,noreferrer');
-        return;
-    }
+    // Always ask the backend for an account-linked Checkout Session first.
+    // Static buy.stripe.com Payment Links carry no account/site identity, so they
+    // are only used below as a last resort when the backend returns no URL.
+    var warnStaticFallback = function(reason) {
+        // eslint-disable-next-line no-console
+        window.console && window.console.warn && window.console.warn('[AltText AI] Using static payment link fallback (' + reason + ')', { plan: plan || '', static_link: isStripePaymentLink(resolvedLink) });
+    };
 
     if (ajaxUrl && nonce && (resolvedPriceId || plan) && $ && typeof $.ajax === 'function') {
         checkoutWindow = window.open('about:blank', '_blank');
@@ -1145,6 +1138,7 @@ function initiateCheckout($btn, priceId, plan) {
                 return;
             }
             if (resolvedLink || directCheckoutUrl) {
+                warnStaticFallback('no_checkout_session_url');
                 sendCheckoutWindow(resolvedLink || directCheckoutUrl);
                 return;
             }
@@ -1154,6 +1148,7 @@ function initiateCheckout($btn, priceId, plan) {
             }
         }).fail(function() {
             if (resolvedLink || directCheckoutUrl) {
+                warnStaticFallback('no_checkout_session_url');
                 sendCheckoutWindow(resolvedLink || directCheckoutUrl);
                 return;
             }

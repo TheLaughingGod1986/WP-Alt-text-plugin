@@ -1707,13 +1707,25 @@ class Core {
             return '';
         }
 
-        $session_id = isset($result['sessionId']) && is_string($result['sessionId'])
-            ? sanitize_text_field($result['sessionId'])
-            : '';
+        $session_id = '';
+        foreach (['sessionId', 'session_id'] as $session_key) {
+            if (isset($result[$session_key]) && is_string($result[$session_key]) && $result[$session_key] !== '') {
+                $session_id = sanitize_text_field($result[$session_key]);
+                break;
+            }
+        }
 
-        if ($this->is_stripe_hosted_checkout_session_url($checkout_url) && $session_id === '') {
+        // A hosted Checkout Session URL (/c/pay/cs_...) already identifies its
+        // session, so it is always preferred over the static Payment Link even
+        // when the response omits the session id.
+        if (
+            $this->is_stripe_hosted_checkout_session_url($checkout_url)
+            && $session_id === ''
+            && !preg_match('#/c/pay/cs_(live|test)_#i', $checkout_url)
+        ) {
             $fallback_url = $this->get_checkout_fallback_url($plan_id, $price_id);
             if ($fallback_url !== '') {
+                \bbai_debug_log('checkout_static_link_fallback', ['reason' => 'unrecognised_hosted_url', 'plan' => $plan_id]);
                 return $fallback_url;
             }
         }
@@ -1797,7 +1809,8 @@ class Core {
 	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
 	        $bbai_page_input = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
 	        $page = $bbai_page_input;
-	        if ($page !== 'beepbeep-ai-alt-text-generator') {
+	        // Checkout success_url/cancel_url return to admin.php?page=bbai&checkout=success|cancel.
+	        if ($page !== 'beepbeep-ai-alt-text-generator' && $page !== 'bbai' && strpos($page, 'bbai-') !== 0) {
 	            return;
 	        }
 
@@ -1830,13 +1843,14 @@ class Core {
             if ($checkout === 'success') {
                 ?>
                 <div class="notice notice-success is-dismissible">
-                    <p><?php esc_html_e('Redirecting to secure checkout... Complete your payment to unlock up to 1,000 alt text generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p><strong><?php esc_html_e('Thanks, your payment went through.', 'beepbeep-ai-alt-text-generator'); ?></strong>
+                    <?php esc_html_e('Your plan and credits update on this site within a minute. Refresh this page if they have not changed yet.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php
             } elseif ($checkout === 'cancel') {
                 ?>
                 <div class="notice notice-warning is-dismissible">
-                    <p><?php esc_html_e('Checkout cancelled. Your plan remains unchanged. Upgrade anytime to unlock 1,000 generations per month with Growth.', 'beepbeep-ai-alt-text-generator'); ?></p>
+                    <p><?php esc_html_e('Checkout cancelled. You have not been charged and your plan is unchanged. You can upgrade or buy credits any time from the Upgrade button.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php
             }
@@ -9558,6 +9572,9 @@ class Core {
         if (is_wp_error($result) || $resolved_checkout_url === '') {
             $fallback_checkout_url = $this->get_checkout_fallback_url($plan_hint, $price_id);
             if ($fallback_checkout_url !== '') {
+                // Last resort: unattributed static Payment Link. Log so it is visible.
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log('[BBAI] Checkout session unavailable; falling back to static payment link for plan ' . sanitize_key($plan_hint) . ( is_wp_error($result) ? ' (' . $result->get_error_code() . ')' : '' ));
                 wp_send_json_success([
                     'url' => $fallback_checkout_url,
                     'session_id' => '',
@@ -9572,7 +9589,7 @@ class Core {
 
         wp_send_json_success([
             'url' => $resolved_checkout_url,
-            'session_id' => $fallback_used ? '' : ($result['sessionId'] ?? ''),
+            'session_id' => $fallback_used ? '' : ($result['sessionId'] ?? $result['session_id'] ?? ''),
             'fallback' => $fallback_used,
         ]);
     }
