@@ -30,79 +30,49 @@ if ( empty( $nai_is_pro ) && isset( $nai_credits_lim ) && (int) $nai_credits_lim
 	}
 }
 ?>
-	<?php // -------- Footer metrics -------- ?>
+	<?php // -------- Footer metrics (shared OpptiAI chrome — matches Titles) -------- ?>
 	<div class="nai-footer-metrics">
-		<?php if ( $nai_is_pro ) : ?>
-			<div class="nai-footer-metrics__item">
-				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Editing streak', 'beepbeep-ai-alt-text-generator' ); ?></div>
-				<div class="nai-footer-metrics__value">
-					<span class="nai-mono nai-tnum"><?php echo esc_html( (string) $nai_streak ); ?></span><?php esc_html_e( '-day streak', 'beepbeep-ai-alt-text-generator' ); ?>
-				</div>
+		<div class="nai-footer-metrics__item">
+			<div class="nai-footer-metrics__label"><?php esc_html_e( 'Editing streak', 'beepbeep-ai-alt-text-generator' ); ?></div>
+			<div class="nai-footer-metrics__value">
+				<span class="nai-mono nai-tnum"><?php echo esc_html( (string) $nai_streak ); ?></span><?php esc_html_e( '-day streak', 'beepbeep-ai-alt-text-generator' ); ?>
 			</div>
-			<div class="nai-footer-metrics__item">
-				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Improvements this week', 'beepbeep-ai-alt-text-generator' ); ?></div>
-				<div class="nai-footer-metrics__value">
-					<span class="nai-mono nai-tnum"><?php echo esc_html( number_format_i18n( $nai_daily_use > 0 ? $nai_daily_use : min( $nai_credits_use, 18 ) ) ); ?></span>
-					<?php esc_html_e( 'images', 'beepbeep-ai-alt-text-generator' ); ?>
-				</div>
+		</div>
+		<?php if ( ! empty( $nai_has_daily_cap ) ) : ?>
+		<div class="nai-footer-metrics__item">
+			<div class="nai-footer-metrics__label"><?php esc_html_e( 'Daily service allowance', 'beepbeep-ai-alt-text-generator' ); ?></div>
+			<div class="nai-footer-metrics__value">
+				<span class="nai-mono nai-tnum" data-bbai-entitlement-daily-used><?php echo esc_html( (string) $nai_daily_use ); ?></span>
+				<?php esc_html_e( 'of', 'beepbeep-ai-alt-text-generator' ); ?>
+				<span class="nai-mono nai-tnum" data-bbai-entitlement-daily-limit><?php echo esc_html( (string) $nai_daily_limit ); ?></span>
+				<?php esc_html_e( 'used today', 'beepbeep-ai-alt-text-generator' ); ?>
 			</div>
-			<div class="nai-footer-metrics__item">
-				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Autopilot', 'beepbeep-ai-alt-text-generator' ); ?></div>
-				<div class="nai-footer-metrics__value">
-					<span class="nai-pulse-dot" style="width:6px;height:6px;"></span>
-					<?php esc_html_e( 'Active', 'beepbeep-ai-alt-text-generator' ); ?>
-					<span class="nai-footer-metrics__muted">·
-						<?php esc_html_e( 'monitoring new uploads', 'beepbeep-ai-alt-text-generator' ); ?>
-					</span>
-				</div>
-			</div>
-		<?php else : ?>
-			<div class="nai-footer-metrics__item">
-				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Editing streak', 'beepbeep-ai-alt-text-generator' ); ?></div>
-				<div class="nai-footer-metrics__value">
-					<span class="nai-mono nai-tnum"><?php echo esc_html( (string) $nai_streak ); ?></span><?php esc_html_e( '-day streak', 'beepbeep-ai-alt-text-generator' ); ?>
-				</div>
-			</div>
-			<?php if ( ! empty( $nai_has_daily_cap ) ) : ?>
-			<div class="nai-footer-metrics__item">
-				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Daily allowance', 'beepbeep-ai-alt-text-generator' ); ?></div>
-					<div class="nai-footer-metrics__value">
-						<span class="nai-mono nai-tnum" data-bbai-entitlement-daily-used><?php echo esc_html( (string) $nai_daily_use ); ?></span>
-						<?php esc_html_e( 'of', 'beepbeep-ai-alt-text-generator' ); ?>
-						<span class="nai-mono nai-tnum" data-bbai-entitlement-daily-limit><?php echo esc_html( (string) $nai_daily_limit ); ?></span>
-						<?php if ( $nai_daily_hours_left > 0 ) : ?>
-							<?php
-							$nai_daily_reset_label = $nai_daily_rem <= 0
-								/* translators: %d: hours until the next daily pass. */
-								? sprintf( __( 'next pass in %dh', 'beepbeep-ai-alt-text-generator' ), $nai_daily_hours_left )
-								/* translators: %d: hours until the daily allowance refreshes. */
-								: sprintf( __( 'refreshes in %dh', 'beepbeep-ai-alt-text-generator' ), $nai_daily_hours_left );
-							?>
-							<span class="nai-footer-metrics__muted">· <span data-bbai-entitlement-daily-reset><?php echo esc_html( $nai_daily_reset_label ); ?></span></span>
-						<?php endif; ?>
-					</div>
-				</div>
-			<?php endif; ?>
-			<div class="nai-footer-metrics__item">
-				<div class="nai-footer-metrics__label"><?php esc_html_e( 'Monthly usage', 'beepbeep-ai-alt-text-generator' ); ?></div>
-				<div class="nai-footer-metrics__value">
-					<span class="nai-mono nai-tnum" data-bbai-entitlement-used><?php echo esc_html( (string) $nai_credits_use ); ?></span>
-					<?php esc_html_e( 'of', 'beepbeep-ai-alt-text-generator' ); ?>
-					<span class="nai-mono nai-tnum" data-bbai-entitlement-limit><?php echo esc_html( (string) $nai_credits_lim ); ?></span>
-					<?php if ( $nai_days_reset > 0 ) : ?>
-						<span class="nai-footer-metrics__muted">·
-							<?php
-							echo esc_html(
-								sprintf(
-									/* translators: %d: days until quota resets. */
-									_n( 'resets in %d day', 'resets in %d days', $nai_days_reset, 'beepbeep-ai-alt-text-generator' ),
-									$nai_days_reset
-								)
-							);
-							?>
-						</span>
-					<?php endif; ?>
-				</div>
-			</div>
+		</div>
 		<?php endif; ?>
+		<div class="nai-footer-metrics__item">
+			<div class="nai-footer-metrics__label"><?php esc_html_e( 'Monthly service usage', 'beepbeep-ai-alt-text-generator' ); ?></div>
+			<div class="nai-footer-metrics__value">
+				<span class="nai-mono nai-tnum" data-bbai-entitlement-used><?php echo esc_html( (string) $nai_credits_use ); ?></span>
+				<?php esc_html_e( 'of', 'beepbeep-ai-alt-text-generator' ); ?>
+				<span class="nai-mono nai-tnum" data-bbai-entitlement-limit><?php echo esc_html( (string) $nai_credits_lim ); ?></span>
+				<?php esc_html_e( 'used', 'beepbeep-ai-alt-text-generator' ); ?>
+			</div>
+		</div>
+		<div class="nai-footer-metrics__item">
+			<div class="nai-footer-metrics__label"><?php esc_html_e( 'Continuous Optimisation', 'beepbeep-ai-alt-text-generator' ); ?></div>
+			<div class="nai-footer-metrics__value">
+				<?php
+				$nai_footer_options = is_array( get_option( 'bbai_options', array() ) ) ? get_option( 'bbai_options', array() ) : array();
+				$nai_footer_auto_on = ! empty( $nai_is_pro ) && ! empty( $nai_footer_options['auto_generate'] );
+				echo esc_html( $nai_footer_auto_on ? __( 'Enabled', 'beepbeep-ai-alt-text-generator' ) : __( 'Paused', 'beepbeep-ai-alt-text-generator' ) );
+				?>
+			</div>
+		</div>
+		<div class="nai-footer-metrics__item">
+			<div class="nai-footer-metrics__label"><?php esc_html_e( 'Remaining', 'beepbeep-ai-alt-text-generator' ); ?></div>
+			<div class="nai-footer-metrics__value">
+				<span class="nai-mono nai-tnum" data-bbai-entitlement-remaining><?php echo esc_html( (string) $nai_credits_rem ); ?></span>
+				<?php esc_html_e( 'service credits', 'beepbeep-ai-alt-text-generator' ); ?>
+			</div>
+		</div>
 	</div>

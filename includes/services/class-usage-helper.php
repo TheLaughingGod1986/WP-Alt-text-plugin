@@ -699,6 +699,17 @@ class Usage_Helper {
 			)
 		);
 
+		// Preserve shared-wallet attribution so Settings can show per-plugin
+		// breakdown (Titles / AltText / Linking / Schema).
+		foreach ( array( 'usage_by_feature', 'feature_usage', 'usage_by_plugin', 'plugin_usage', 'usage_breakdown', 'credit_usage' ) as $breakdown_key ) {
+			if ( isset( $live_usage[ $breakdown_key ] ) && is_array( $live_usage[ $breakdown_key ] ) ) {
+				$usage_stats[ $breakdown_key ] = $live_usage[ $breakdown_key ];
+			}
+			if ( isset( $live_usage['usage'] ) && is_array( $live_usage['usage'] ) && isset( $live_usage['usage'][ $breakdown_key ] ) && is_array( $live_usage['usage'][ $breakdown_key ] ) ) {
+				$usage_stats[ $breakdown_key ] = $usage_stats[ $breakdown_key ] ?? $live_usage['usage'][ $breakdown_key ];
+			}
+		}
+
 		return $usage_stats;
 	}
 }

@@ -121,10 +121,10 @@ $plan          = in_array( $requested_plan, array( 'starter', 'pro', 'growth' ),
 	$daily_exhausted_state = $trial_state && ! $exhausted_state && isset( $_GET['daily'] ) && 'exhausted' === (string) $_GET['daily'];
 
 $states = array(
-	'fresh' => array( 'total' => 412, 'optimised' => 28,  'missing' => 384, 'weak' => 0,  'coverage' => 7  ),
-	'mid'   => array( 'total' => 412, 'optimised' => 247, 'missing' => 142, 'weak' => 23, 'coverage' => 60 ),
-	'near'  => array( 'total' => 412, 'optimised' => 389, 'missing' => 11,  'weak' => 12, 'coverage' => 94 ),
-	'done'  => array( 'total' => 412, 'optimised' => 412, 'missing' => 0,   'weak' => 0,  'coverage' => 100 ),
+	'fresh' => array( 'total' => 412, 'optimised' => 28,  'missing' => 384, 'weak' => 0,  'duplicate' => 0,  'coverage' => 7  ),
+	'mid'   => array( 'total' => 412, 'optimised' => 247, 'missing' => 142, 'weak' => 23, 'duplicate' => 18, 'coverage' => 60 ),
+	'near'  => array( 'total' => 412, 'optimised' => 389, 'missing' => 11,  'weak' => 12, 'duplicate' => 4,  'coverage' => 94 ),
+	'done'  => array( 'total' => 412, 'optimised' => 412, 'missing' => 0,   'weak' => 0,  'duplicate' => 0,  'coverage' => 100 ),
 );
 $s = $states[ $library_state ] ?? $states['mid'];
 $preview_pass_items = ( 'fresh' === $library_state || 'done' === $library_state ) ? array() : array(
@@ -146,6 +146,7 @@ $preview_pass_items = ( 'fresh' === $library_state || 'done' === $library_state 
 	'optimizedCount'        => $s['optimised'],
 	'missingCount'          => $s['missing'],
 	'weakCount'             => $s['weak'],
+	'duplicateCount'        => $s['duplicate'],
 	'coveragePercent'       => $s['coverage'],
 	'todaysPassItems'       => $preview_pass_items,
 	'dailyCreditsUsed'      => $preview_daily_used,

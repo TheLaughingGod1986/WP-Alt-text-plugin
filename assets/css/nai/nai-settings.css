@@ -146,6 +146,7 @@
 }
 .nai-screen .nai-credit-feature--alt .nai-credit-feature__icon { color: #059669; background: #ecfdf5; border-color: #a7f3d0; }
 .nai-screen .nai-credit-feature--titles .nai-credit-feature__icon { color: #2563eb; background: #eff6ff; border-color: #bfdbfe; }
+.nai-screen .nai-credit-feature--linking .nai-credit-feature__icon { color: #7c3aed; background: #f5f3ff; border-color: #ddd6fe; }
 .nai-screen .nai-credit-feature--schema .nai-credit-feature__icon { color: #d97706; background: #fffbeb; border-color: #fde68a; }
 .nai-screen .nai-credit-feature__main { min-width: 0; }
 .nai-screen .nai-credit-feature__label {
@@ -171,6 +172,7 @@
 }
 .nai-screen .nai-credit-feature--alt .nai-credit-feature__bar { background: #059669; }
 .nai-screen .nai-credit-feature--titles .nai-credit-feature__bar { background: #2563eb; }
+.nai-screen .nai-credit-feature--linking .nai-credit-feature__bar { background: #7c3aed; }
 .nai-screen .nai-credit-feature--schema .nai-credit-feature__bar { background: #d97706; }
 .nai-screen .nai-credit-feature__value {
 	min-width: 46px;

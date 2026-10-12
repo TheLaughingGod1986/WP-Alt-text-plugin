@@ -23,7 +23,10 @@ $nai_autopilot_upgrade_variant = ( isset( $nai_plan_slug ) && 'starter' === sani
 						<circle class="nai-ring__fill" cx="<?php echo (int) ( $nai_ring_size / 2 ); ?>" cy="<?php echo (int) ( $nai_ring_size / 2 ); ?>" r="<?php echo esc_attr( (string) $nai_ring_radius ); ?>" stroke-width="<?php echo (int) $nai_ring_stroke; ?>" stroke-dasharray="<?php echo esc_attr( sprintf( '%F %F', $nai_ring_dash, $nai_ring_circ ) ); ?>"/>
 					</svg>
 					<div class="nai-ring__center">
-						<div class="nai-mono nai-tnum" style="font-size:15px;font-weight:600;letter-spacing:-0.02em;"><?php echo esc_html( (string) $nai_coverage ); ?></div>
+						<div style="text-align:center;">
+							<div class="nai-mono nai-tnum" style="font-size:30px;font-weight:700;letter-spacing:-0.03em;line-height:1;"><?php echo esc_html( (string) $nai_coverage ); ?></div>
+							<div style="font-size:10.5px;color:var(--nai-text-3);"><?php esc_html_e( '/ 100', 'beepbeep-ai-alt-text-generator' ); ?></div>
+						</div>
 					</div>
 				</div>
 				<div style="flex:1;min-width:0;">

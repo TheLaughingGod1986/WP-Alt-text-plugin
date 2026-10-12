@@ -407,6 +407,10 @@
 				event.preventDefault();
 				modals.closeAll(root);
 				root.querySelector('[data-nai-signedout]').hidden = false;
+				root.setAttribute('data-nai-connected', '0');
+				root.querySelectorAll('[data-nai-requires-auth="1"]').forEach(function (link) {
+					link.hidden = true;
+				});
 				if (root.querySelector('[data-nai-screen="dashboard"]')) {
 					root.querySelector('[data-nai-screen="dashboard"]').hidden = true;
 				}
@@ -431,6 +435,10 @@
 			if (target.closest('[data-nai-signin]')) {
 				event.preventDefault();
 				root.querySelector('[data-nai-signedout]').hidden = true;
+				root.setAttribute('data-nai-connected', '1');
+				root.querySelectorAll('[data-nai-requires-auth="1"]').forEach(function (link) {
+					link.hidden = false;
+				});
 				if (root.querySelector('[data-nai-screen="dashboard"]')) {
 					root.querySelector('[data-nai-screen="dashboard"]').hidden = false;
 				}

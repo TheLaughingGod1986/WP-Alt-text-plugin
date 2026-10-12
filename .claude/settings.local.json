@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:alttext.ai)",
+      "WebFetch(domain:wordpress.org)",
+      "WebFetch(domain:altmagic.ai)"
+    ]
+  }
+}

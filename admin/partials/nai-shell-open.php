@@ -21,13 +21,37 @@ $nai_shell_prototype    = ! empty( $nai_shell_prototype );
 $nai_shell_demo_trigger = isset( $nai_shell_demo_trigger ) ? sanitize_key( (string) $nai_shell_demo_trigger ) : '';
 $nai_shell_user_email   = isset( $nai_shell_user_email ) ? sanitize_email( (string) $nai_shell_user_email ) : '';
 $nai_shell_user_name    = isset( $nai_shell_user_name ) ? sanitize_text_field( (string) $nai_shell_user_name ) : '';
+
+// Connected = OpptiAI account/license — never fall back to "WP admin is logged in".
+if ( ! isset( $nai_shell_connected ) ) {
+	if ( isset( $bbai_has_connected_account ) ) {
+		$nai_shell_connected = ! empty( $bbai_has_connected_account );
+	} elseif ( isset( $nai_state['hasConnectedAccount'] ) ) {
+		$nai_shell_connected = ! empty( $nai_state['hasConnectedAccount'] );
+	} elseif ( isset( $this ) && is_object( $this ) && isset( $this->api_client ) ) {
+		if ( ! class_exists( '\BeepBeepAI\AltTextGenerator\Auth_State', false ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
+		}
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Auth_State' ) ) {
+			$nai_shell_auth      = \BeepBeepAI\AltTextGenerator\Auth_State::resolve( $this->api_client );
+			$nai_shell_connected = ! empty( $nai_shell_auth['has_connected_account'] );
+		} else {
+			$nai_shell_connected = false;
+		}
+	} else {
+		$nai_shell_connected = false;
+	}
+}
+$nai_shell_connected = ! empty( $nai_shell_connected );
+
 if ( '' === $nai_shell_user_email && isset( $bbai_client_user_email ) ) {
 	$nai_shell_user_email = sanitize_email( (string) $bbai_client_user_email );
 }
 if ( '' === $nai_shell_user_email && isset( $bbai_account_summary['email'] ) ) {
 	$nai_shell_user_email = sanitize_email( (string) $bbai_account_summary['email'] );
 }
-if ( '' === $nai_shell_user_email && function_exists( 'wp_get_current_user' ) ) {
+// Do not use the WordPress admin email as the OpptiAI identity when signed out.
+if ( $nai_shell_connected && '' === $nai_shell_user_email && function_exists( 'wp_get_current_user' ) ) {
 	$nai_shell_current_user = wp_get_current_user();
 	if ( $nai_shell_current_user && ! empty( $nai_shell_current_user->user_email ) ) {
 		$nai_shell_user_email = sanitize_email( (string) $nai_shell_current_user->user_email );
@@ -63,24 +87,36 @@ $nai_shell_icon         = static function ( string $name, int $size = 16, float 
 
 $nai_shell_nav_items = array(
 	'dashboard' => array(
-		'label' => __( 'Home', 'beepbeep-ai-alt-text-generator' ),
-		'url'   => add_query_arg( array( 'page' => 'bbai', 'bbai_preview' => 'nai' ), admin_url( 'admin.php' ) ),
+		'label'        => __( 'Home', 'beepbeep-ai-alt-text-generator' ),
+		'url'          => add_query_arg( array( 'page' => 'bbai', 'bbai_preview' => 'nai' ), admin_url( 'admin.php' ) ),
+		'requiresAuth' => false,
 	),
 	'library'   => array(
-		'label' => __( 'Library', 'beepbeep-ai-alt-text-generator' ),
-		'url'   => admin_url( 'admin.php?page=bbai-library' ),
+		'label'        => __( 'Library', 'beepbeep-ai-alt-text-generator' ),
+		'url'          => admin_url( 'admin.php?page=bbai-library' ),
+		'requiresAuth' => false,
 	),
 	'autopilot' => array(
-		'label' => __( 'Autopilot', 'beepbeep-ai-alt-text-generator' ),
-		'url'   => admin_url( 'admin.php?page=bbai-autopilot' ),
+		'label'        => __( 'Autopilot', 'beepbeep-ai-alt-text-generator' ),
+		'url'          => admin_url( 'admin.php?page=bbai-autopilot' ),
+		'requiresAuth' => true,
 	),
 	'settings'  => array(
-		'label' => __( 'Settings', 'beepbeep-ai-alt-text-generator' ),
-		'url'   => admin_url( 'admin.php?page=bbai-settings' ),
+		'label'        => __( 'Settings', 'beepbeep-ai-alt-text-generator' ),
+		'url'          => admin_url( 'admin.php?page=bbai-settings' ),
+		'requiresAuth' => true,
 	),
 );
+if ( ! $nai_shell_connected ) {
+	$nai_shell_nav_items = array_filter(
+		$nai_shell_nav_items,
+		static function ( $item ) {
+			return empty( $item['requiresAuth'] );
+		}
+	);
+}
 ?>
-<div class="nai-app" data-nai-app-shell="1" data-nai-is-pro="<?php echo $nai_shell_is_pro ? '1' : '0'; ?>" data-nai-prototype="<?php echo $nai_shell_prototype ? '1' : '0'; ?>" data-nai-demo-trigger="<?php echo esc_attr( $nai_shell_demo_trigger ); ?>">
+<div class="nai-app" data-nai-app-shell="1" data-nai-connected="<?php echo $nai_shell_connected ? '1' : '0'; ?>" data-nai-is-pro="<?php echo $nai_shell_is_pro ? '1' : '0'; ?>" data-nai-prototype="<?php echo $nai_shell_prototype ? '1' : '0'; ?>" data-nai-demo-trigger="<?php echo esc_attr( $nai_shell_demo_trigger ); ?>">
 	<div hidden data-nai-drawer-items data-nai-drawer-items-json="<?php echo esc_attr( $nai_shell_json ); ?>"></div>
 	<header class="nai-topbar" aria-label="<?php esc_attr_e( 'OpptiAI navigation', 'beepbeep-ai-alt-text-generator' ); ?>">
 		<div class="nai-topbar__brand"><?php esc_html_e( 'OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ); ?></div>
@@ -90,6 +126,8 @@ $nai_shell_nav_items = array(
 				<a
 					class="nai-topbar__link<?php echo $active ? ' is-active' : ''; ?>"
 					href="<?php echo esc_url( (string) $item['url'] ); ?>"
+					data-nai-nav="<?php echo esc_attr( $slug ); ?>"
+					data-nai-requires-auth="<?php echo ! empty( $item['requiresAuth'] ) ? '1' : '0'; ?>"
 					<?php echo $active ? 'aria-current="page"' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				>
 					<?php echo esc_html( (string) $item['label'] ); ?>

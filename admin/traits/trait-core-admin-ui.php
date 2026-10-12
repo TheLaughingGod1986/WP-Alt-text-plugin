@@ -362,16 +362,44 @@ trait Core_Admin_UI {
 		$bbai_help_is_active   = false;
 		$bbai_settings_section = 'general';
 
-		// Non-registered users: show Dashboard only (other tabs appear after login).
+		// Non-registered users: keep the top nav minimal, but allow direct
+		// access to the local Library flow so wp-admin trial/guest states can
+		// still review and act on Media Library images.
 		if ( ! $bbai_has_registered_user ) {
-			$bbai_tabs = array(
+			$bbai_tabs         = array(
 				'dashboard' => __( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
 			);
-			$bbai_tab  = 'dashboard';
+			$bbai_allowed_tabs = array(
+				'dashboard' => __( 'Dashboard', 'beepbeep-ai-alt-text-generator' ),
+				'library'   => __( 'ALT Library', 'beepbeep-ai-alt-text-generator' ),
+				'help'      => __( 'Help', 'beepbeep-ai-alt-text-generator' ),
+			);
+			$bbai_page_to_tab  = array(
+				'bbai'         => 'dashboard',
+				'bbai-library' => 'library',
+				'bbai-guide'   => 'help',
+			);
+			$bbai_tab_aliases  = array(
+				'credit-usage' => 'dashboard',
+			);
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+			$bbai_page_input   = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : 'bbai';
+			$bbai_current_page = $bbai_page_input ? $bbai_page_input : 'bbai';
+			$tab_from_page     = $bbai_page_to_tab[ $bbai_current_page ] ?? 'dashboard';
+			$tab_from_page     = $bbai_tab_aliases[ $tab_from_page ] ?? $tab_from_page;
+	        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin page routing, not form processing.
+			$bbai_tab_input     = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+			$bbai_requested_tab = '' !== $bbai_tab_input ? $bbai_tab_input : $tab_from_page;
+			$bbai_requested_tab = $bbai_tab_aliases[ $bbai_requested_tab ] ?? $bbai_requested_tab;
+			if ( ! in_array( $bbai_requested_tab, array_keys( $bbai_allowed_tabs ), true ) ) {
+				$bbai_requested_tab = 'dashboard';
+			}
+			$bbai_tab = $bbai_requested_tab;
 
 			$bbai_is_pro_for_admin    = false;
 			$bbai_is_agency_for_admin = false;
 			$bbai_can_show_debug_tab  = false;
+			$bbai_help_is_active      = ( 'help' === $bbai_tab );
 		} else {
 			// Determine if agency license
 			// Check API first, then include stored credentials

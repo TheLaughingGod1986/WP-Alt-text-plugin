@@ -54,7 +54,8 @@ body:not(.wp-admin) .nai-app {
 	gap: 0;
 	padding: 0 28px;
 	position: sticky;
-	top: 32px;
+	/* top:0 — #wpbody-content already starts below the fixed WP admin bar. */
+	top: 0;
 	z-index: 20;
 }
 
