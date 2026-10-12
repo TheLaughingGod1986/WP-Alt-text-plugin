@@ -4,6 +4,11 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.139 — 2026-10-12
+
+- **Fixed**: Failed generations no longer use credits.
+- **Fixed**: More reliable background generation.
+
 ### 4.6.138 — 2026-10-12
 
 - **Added**: An optional "How did you find us?" question on the sign-up form. You can skip it.
