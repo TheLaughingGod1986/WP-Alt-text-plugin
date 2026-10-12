@@ -20,6 +20,21 @@ rm -f "$OUTPUT_ZIP"
 
 rsync -a \
     --exclude '.git/' \
+    --exclude '.github/' \
+    --exclude '.editorconfig' \
+    --exclude '.distignore' \
+    --exclude 'composer.json' \
+    --exclude 'composer.lock' \
+    --exclude 'phpunit.xml' \
+    --exclude 'phpunit.xml.dist' \
+    --exclude '.phpunit.result.cache' \
+    --exclude 'phpcs.xml' \
+    --exclude 'phpcs.xml.dist' \
+    --exclude '.phpcs.xml.dist' \
+    --exclude '/*.py' \
+    --exclude '/*.png' \
+    --exclude '/*.zip' \
+    --exclude '/*.log' \
     --exclude '.gitattributes' \
     --exclude '.gitignore' \
     --exclude '.claude/' \
