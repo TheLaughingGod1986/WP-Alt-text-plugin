@@ -18,21 +18,106 @@ defined( 'ABSPATH' ) || exit;
 const AUDITOR_ATTRIBUTION_TTL = 30 * MINUTE_IN_SECONDS;
 
 /**
+ * Longest check id accepted from a deep-link.
+ */
+const AUDITOR_FINDING_MAX_LEN = 64;
+
+/**
+ * Website Auditor check ids Alt Text recognises (Auditor v1 / patch 2 names).
+ *
+ * @return string[]
+ */
+function auditor_known_findings(): array {
+	return array(
+		'missing_alt',
+		'needs_review',
+		'missing_title',
+		'duplicate_title',
+		'missing_meta',
+		'orphan_pages',
+		'thin_links',
+		'search_engines_discouraged',
+		'https_not_enforced',
+		'robots_txt',
+		'sitemap_missing',
+		'llms_txt',
+		'noindex_pages',
+		'canonical_missing',
+		'og_tags_missing',
+		'schema',
+		'performance',
+		'accessibility',
+	);
+}
+
+/**
+ * Auditor 0.8.x check ids renamed in Auditor v1 (old => new).
+ *
+ * @return array<string,string>
+ */
+function auditor_finding_aliases(): array {
+	return array(
+		'search_indexing' => 'search_engines_discouraged',
+		'https'           => 'https_not_enforced',
+		'sitemap'         => 'sitemap_missing',
+		'canonical'       => 'canonical_missing',
+		'open_graph'      => 'og_tags_missing',
+	);
+}
+
+/**
+ * Sanitise a raw check id, map an old id to its new name, and return '' for
+ * anything Alt Text does not recognise.
+ *
+ * @param mixed $raw Raw request value.
+ */
+function normalize_auditor_finding( $raw ): string {
+	if ( ! is_scalar( $raw ) ) {
+		return '';
+	}
+	$raw = (string) $raw;
+	if ( '' === $raw || strlen( $raw ) > 256 ) {
+		return '';
+	}
+	$id = substr( sanitize_key( $raw ), 0, AUDITOR_FINDING_MAX_LEN );
+	$aliases = auditor_finding_aliases();
+	if ( isset( $aliases[ $id ] ) ) {
+		$id = $aliases[ $id ];
+	}
+	return in_array( $id, auditor_known_findings(), true ) ? $id : '';
+}
+
+/**
  * Read and validate source/finding from the current request.
+ *
+ * Accepts `source=auditor` with the check id in `finding=` or
+ * `auditor_source=` (Auditor v1 sends both). Old and new check ids resolve
+ * to the same (new) id; unknown ids are dropped.
  *
  * @return array{source:string,finding:string}|null
  */
 function auditor_attribution_from_request(): ?array {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only attribution tag from an admin link, no state change.
-	$source = isset( $_REQUEST['source'] ) ? sanitize_key( wp_unslash( $_REQUEST['source'] ) ) : '';
+	$source = isset( $_REQUEST['source'] ) && is_scalar( $_REQUEST['source'] ) ? sanitize_key( wp_unslash( (string) $_REQUEST['source'] ) ) : '';
 	if ( 'auditor' !== $source ) {
 		return null;
 	}
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only attribution tag from an admin link, no state change.
-	$finding = isset( $_REQUEST['finding'] ) ? sanitize_key( wp_unslash( $_REQUEST['finding'] ) ) : '';
+	$finding = '';
+	foreach ( array( 'finding', 'auditor_source' ) as $param ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only attribution tag from an admin link, no state change.
+		if ( ! isset( $_REQUEST[ $param ] ) ) {
+			continue;
+		}
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only attribution tag from an admin link, no state change.
+		$raw = $_REQUEST[ $param ];
+		$finding = normalize_auditor_finding( is_scalar( $raw ) ? wp_unslash( (string) $raw ) : null );
+		if ( '' !== $finding ) {
+			break;
+		}
+	}
 	return array(
 		'source'  => 'auditor',
-		'finding' => substr( $finding, 0, 64 ),
+		'finding' => $finding,
 	);
 }
 
@@ -134,7 +219,8 @@ function with_auditor_args( string $url ): string {
 	}
 	$args = array( 'source' => 'auditor' );
 	if ( '' !== $attr['finding'] ) {
-		$args['finding'] = $attr['finding'];
+		$args['finding']        = $attr['finding'];
+		$args['auditor_source'] = $attr['finding'];
 	}
 	return add_query_arg( $args, $url );
 }
