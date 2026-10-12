@@ -919,12 +919,19 @@ JS,
 				'1.0.0'
 			);
 			$nai_dashboard_css = 'assets/css/nai-dashboard.css';
-			wp_enqueue_style(
-				'bbai-nai-dashboard',
-				$base_url . $nai_dashboard_css,
-				array( 'bbai-nai-geist' ),
-				$asset_version( $nai_dashboard_css, '1.0.0' )
-			);
+			if ( file_exists( $base_path . $nai_dashboard_css ) ) {
+				wp_enqueue_style(
+					'bbai-nai-dashboard',
+					$base_url . $nai_dashboard_css,
+					array( 'bbai-nai-geist' ),
+					$asset_version( $nai_dashboard_css, '1.0.0' )
+				);
+			} else {
+				// The file was removed in 20a8fc87; keep the handle so styles that
+				// depend on it still load, but request no URL (it 404'd).
+				wp_register_style( 'bbai-nai-dashboard', false, array( 'bbai-nai-geist' ), '1.0.0' );
+				wp_enqueue_style( 'bbai-nai-dashboard' );
+			}
 			if ( 'bbai-settings' === $current_admin_page ) {
 				$nai_settings_css = 'assets/css/nai/nai-settings.css';
 				if ( file_exists( $base_path . $nai_settings_css ) ) {
@@ -947,12 +954,14 @@ JS,
 			}
 			if ( 'bbai' === $current_admin_page ) {
 				$nai_home_css = 'assets/css/nai/nai-dashboard.css';
-				wp_enqueue_style(
-					'bbai-nai-home',
-					$base_url . $nai_home_css,
-					array( 'bbai-nai-dashboard' ),
-					$asset_version( $nai_home_css, '1.0.0' )
-				);
+				if ( file_exists( $base_path . $nai_home_css ) ) {
+					wp_enqueue_style(
+						'bbai-nai-home',
+						$base_url . $nai_home_css,
+						array( 'bbai-nai-dashboard' ),
+						$asset_version( $nai_home_css, '1.0.0' )
+					);
+				}
 			}
 			if ( ! wp_script_is( 'bbai-entitlements', 'registered' ) && ! wp_script_is( 'bbai-entitlements', 'enqueued' ) ) {
 				$bbai_entitlements_js = 'assets/js/bbai-entitlements.js';
