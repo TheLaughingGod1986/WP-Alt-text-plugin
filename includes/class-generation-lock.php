@@ -22,6 +22,15 @@ class Generation_Lock {
 	/** Prefix written to a queue job's last_error when a waiter gave up on a held image. */
 	const QUEUE_IN_PROGRESS_MARK = 'generation_in_progress';
 
+	/**
+	 * Max times a queue job is parked for "in progress" without using up an
+	 * attempt. At the default 60 s retry delay, 10 deferrals is ~10 min, well
+	 * past the 3-minute lock TTL, so a crashed holder's lock has long expired
+	 * and normal takeover applies. Past the cap, in-progress retries count as
+	 * normal attempts, so a job can never loop forever.
+	 */
+	const QUEUE_MAX_DEFERRALS = 10;
+
 	/** Post meta holding the in-flight generation attempt: array{id:string,started_at:int}. */
 	const ATTEMPT_META = '_bbai_gen_attempt';
 
@@ -248,6 +257,32 @@ class Generation_Lock {
 			return false;
 		}
 		return 'complete' === self::queue_outcome_after_in_progress( $attachment_id, $current_alt );
+	}
+
+	/**
+	 * Queue: how many times this job was already parked for in-progress,
+	 * read from its last_error marker ("generation_in_progress#N: ...").
+	 */
+	public static function queue_deferral_count( string $last_error ): int {
+		if ( preg_match( '/^' . preg_quote( self::QUEUE_IN_PROGRESS_MARK, '/' ) . '#(\d+):/', $last_error, $m ) ) {
+			return (int) $m[1];
+		}
+		return 0 === strpos( $last_error, self::QUEUE_IN_PROGRESS_MARK ) ? 1 : 0;
+	}
+
+	/**
+	 * Queue: decide how to park a job after generation_in_progress.
+	 *
+	 * @return array{refund_attempt:bool,message:string,deferrals:int}
+	 */
+	public static function queue_defer_plan( string $previous_last_error, string $message ): array {
+		$count = self::queue_deferral_count( $previous_last_error ) + 1;
+		$capped = $count > (int) apply_filters( 'bbai_generation_lock_queue_max_deferrals', self::QUEUE_MAX_DEFERRALS );
+		return array(
+			'refund_attempt' => ! $capped,
+			'message'        => self::QUEUE_IN_PROGRESS_MARK . '#' . $count . ': ' . ( $capped ? 'deferral cap reached, counting as an attempt. ' : '' ) . $message,
+			'deferrals'      => $count,
+		);
 	}
 
 	/**

@@ -8839,13 +8839,23 @@ class Core {
 
                 if ($code === 'generation_in_progress') {
                     // Another worker holds this image. Done only if its alt text is
-                    // saved; otherwise keep the job pending (never failed) and retry.
+                    // saved; otherwise keep the job pending and retry (failed only past the deferral cap).
                     // A crashed holder's lock expires after its TTL, and the next
                     // retry then generates; a retry after the holder saved is skipped.
                     if ('complete' === Generation_Lock::queue_outcome_after_in_progress($attachment_id, $bbai_current_alt)) {
                         Queue::mark_complete($job->id);
                     } else {
-                        Queue::mark_retry($job->id, Generation_Lock::QUEUE_IN_PROGRESS_MARK . ': ' . $message);
+                        // Doesn't use up an attempt (up to a cap), so a later real
+                        // failure still gets its normal retries.
+                        $bbai_defer = Generation_Lock::queue_defer_plan((string) ($job->last_error ?? ''), (string) $message);
+                        if ($bbai_defer['refund_attempt']) {
+                            Queue::mark_deferred($job->id, $bbai_defer['message']);
+                        } elseif (intval($job->attempts) >= $max_attempts) {
+                            Queue::mark_failed($job->id, $bbai_defer['message']);
+                            continue;
+                        } else {
+                            Queue::mark_retry($job->id, $bbai_defer['message']);
+                        }
                         Queue::schedule_processing(Generation_Lock::queue_retry_delay());
                     }
                     continue;

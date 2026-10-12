@@ -293,6 +293,25 @@ class Queue {
     }
 
     /**
+     * Put a job back to pending without using up an attempt (claim_batch
+     * already added one). Used when another run holds the image.
+     */
+    public static function mark_deferred($job_id, $message = '') {
+        global $wpdb;
+        $table = esc_sql( self::table() );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $wpdb->query(
+            $wpdb->prepare(
+                "UPDATE `{$table}` SET status = %s, locked_at = NULL, attempts = GREATEST(attempts - 1, 0), last_error = %s WHERE id = %d",
+                'pending',
+                wp_trim_words(wp_strip_all_tags((string) $message), 120, '…'),
+                intval($job_id)
+            )
+        );
+        BBAI_Cache::bump( 'queue' );
+    }
+
+    /**
      * Mark job as failed.
      */
     public static function mark_failed($job_id, $message) {
