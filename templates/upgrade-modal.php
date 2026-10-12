@@ -10,8 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 $bbai_current_plan = 'free';
 $bbai_usage_data = [];
 try {
-    if (isset($this->api_client) && is_object($this->api_client) && method_exists($this->api_client, 'get_usage')) {
-        $bbai_usage_data = $this->api_client->get_usage();
+    if (class_exists('\\BeepBeepAI\\AltTextGenerator\\Usage_Tracker')) {
+        // Cached + backoff-gated; never a direct /api/usage call on screen load.
+        $bbai_usage_data = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
         if (!is_wp_error($bbai_usage_data) && is_array($bbai_usage_data) && isset($bbai_usage_data['plan'])) {
             $bbai_current_plan = strtolower($bbai_usage_data['plan']);
         }
