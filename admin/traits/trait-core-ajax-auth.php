@@ -122,12 +122,14 @@ trait Core_Ajax_Auth {
             \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
 
             if ( function_exists( 'bbai_telemetry_emit' ) ) {
-                bbai_telemetry_emit( 'account_created', [ 'source' => 'ajax_register' ] );
+                bbai_telemetry_emit( 'account_created', array_merge( [ 'source' => 'ajax_register' ], \BeepBeepAI\AltTextGenerator\auditor_signup_properties() ) );
             }
 
             wp_send_json_success([
                 'message' => __('Account created successfully', 'beepbeep-ai-alt-text-generator'),
-	                'user' => $result['user'] ?? null
+	                'user' => $result['user'] ?? null,
+	                // Website Auditor attribution for the client-side signup_succeeded event.
+	                'auditor' => \BeepBeepAI\AltTextGenerator\auditor_signup_properties(),
 	            ]);
 		        } catch (\Throwable $e) {
 		            \bbai_debug_log(
@@ -219,7 +221,9 @@ trait Core_Ajax_Auth {
 
         wp_send_json_success([
             'message' => __('Logged in successfully', 'beepbeep-ai-alt-text-generator'),
-            'user' => $result['user'] ?? null
+            'user' => $result['user'] ?? null,
+            // Website Auditor attribution for the client-side login_succeeded event.
+            'auditor' => \BeepBeepAI\AltTextGenerator\auditor_signup_properties(),
         ]);
     }
 

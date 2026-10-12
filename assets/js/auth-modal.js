@@ -109,6 +109,23 @@ class BbAIAuthModal {
         return values;
     }
 
+    /**
+     * Website Auditor attribution returned by the login/register AJAX
+     * response. Only auditor_source / auditor_finding are copied, so the
+     * event's own source and signup_source are never overwritten.
+     */
+    auditorProps(data) {
+        const raw = (data && data.data && data.data.auditor) || {};
+        const out = {};
+        if (raw.auditor_source === 'auditor') {
+            out.auditor_source = 'auditor';
+            if (typeof raw.auditor_finding === 'string' && raw.auditor_finding !== '') {
+                out.auditor_finding = raw.auditor_finding.slice(0, 64);
+            }
+        }
+        return out;
+    }
+
     emitAnalyticsEvent(eventName, properties) {
         try {
             document.dispatchEvent(new CustomEvent('bbai:analytics', {
@@ -980,7 +997,8 @@ class BbAIAuthModal {
                     auth_state: 'authenticated',
                     account_state: 'connected_account',
                     plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
-                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free',
+                    ...this.auditorProps(data)
                 });
                 if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
                     window.bbaiTelemetry.flush();
@@ -1125,7 +1143,8 @@ class BbAIAuthModal {
                     plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
                     plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free',
                     // Enum value only; free text stays server-side.
-                    ...(signupSource.signup_source ? { signup_source: signupSource.signup_source } : {})
+                    ...(signupSource.signup_source ? { signup_source: signupSource.signup_source } : {}),
+                    ...this.auditorProps(data)
                 });
                 if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
                     window.bbaiTelemetry.flush();
