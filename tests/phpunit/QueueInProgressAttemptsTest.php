@@ -91,9 +91,30 @@ namespace {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
 			Queue::mark_deferred( 42, 'generation_in_progress#1: busy' );
 			$q = $GLOBALS['wpdb']->queries[0];
-			$this->assertStringContainsString( 'attempts = GREATEST(attempts - 1, 0)', $q );
+			$this->assertStringContainsString( 'attempts = IF(attempts > 0, attempts - 1, 0)', $q );
+			$this->assertStringNotContainsString( 'GREATEST(attempts - 1', $q );
 			$this->assertStringContainsString( "status = 'pending'", $q );
 			$this->assertStringContainsString( 'WHERE id = 42', $q );
+		}
+		/**
+		 * attempts is SMALLINT UNSIGNED: `attempts - 1` at 0 is out of range in MySQL
+		 * before GREATEST() can clamp it, so the refund must branch first.
+		 * Runs the real SET expression from mark_deferred() against SQLite with an
+		 * unsigned-style CHECK, for attempts 0, 1 and 3.
+		 */
+		public function test_mark_deferred_never_drops_attempts_below_zero(): void {
+			$this->test_mark_deferred_refunds_attempt_in_sql();
+			$q = $GLOBALS['wpdb']->queries[0];
+			$this->assertSame( 1, preg_match( '/attempts = (IF\(attempts > 0, attempts - 1, 0\))/', $q, $m ) );
+			$expr = 'IIF' . substr( $m[1], 2 ); // SQLite spells MySQL IF() as IIF().
+			$db   = new \PDO( 'sqlite::memory:' );
+			$db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
+			$db->exec( 'CREATE TABLE q (id INTEGER PRIMARY KEY, attempts INTEGER NOT NULL CHECK (attempts >= 0))' );
+			$db->exec( 'INSERT INTO q (id, attempts) VALUES (1, 0), (2, 1), (3, 3)' );
+			$db->exec( "UPDATE q SET attempts = {$expr}" );
+			$db->exec( "UPDATE q SET attempts = {$expr} WHERE id = 1" ); // Second refund on an already-zero row.
+			$rows = $db->query( 'SELECT id, attempts FROM q ORDER BY id' )->fetchAll( \PDO::FETCH_KEY_PAIR );
+			$this->assertSame( array( 1 => 0, 2 => 0, 3 => 2 ), array_map( 'intval', $rows ) );
 		}
 	}
 }

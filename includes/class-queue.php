@@ -302,7 +302,7 @@ class Queue {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $wpdb->query(
             $wpdb->prepare(
-                "UPDATE `{$table}` SET status = %s, locked_at = NULL, attempts = GREATEST(attempts - 1, 0), last_error = %s WHERE id = %d",
+                "UPDATE `{$table}` SET status = %s, locked_at = NULL, attempts = IF(attempts > 0, attempts - 1, 0), last_error = %s WHERE id = %d",
                 'pending',
                 wp_trim_words(wp_strip_all_tags((string) $message), 120, '…'),
                 intval($job_id)
