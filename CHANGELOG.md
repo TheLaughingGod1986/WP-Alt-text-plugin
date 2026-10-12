@@ -4,10 +4,15 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
-### 4.6.137 — 2026-10-06
+### 4.6.138 — 2026-10-12
 
-- **Fixed**: The "Create a free account" link in the trial-done notice opens the sign-up form; clearer sign-up errors (existing email goes to log in, password problems in plain words).
-- **Fixed**: SVG images (rejected by the generation backend) are skipped before any API call or credit use, excluded from the missing-ALT queue, return HTTP 400 over REST, and the bulk modal shows "SVG images can't be described yet, so they were skipped. No credit used." instead of "Generation failed".
+- **Added**: An optional "How did you find us?" question on the sign-up form. You can skip it.
+- **Fixed**: When you're signed in, the credit count now always matches your account.
+- **Fixed**: Upgrade and Buy credits buttons now open a secure Stripe checkout linked to your account, so your plan or credits are applied to the right site.
+- **Fixed**: After checkout you now see a confirmation message, or a note that nothing was charged if you cancelled.
+- **Changed**: Pricing links now go to https://oppti.dev/pricing.
+- **Security**: Security hardening.
+- **Fixed**: SVG images are skipped instead of being sent and failing on every Generate click (no credit used), and no longer show a misleading "Generation failed" headline.
 
 ### 4.6.136 — 2026-10-06
 

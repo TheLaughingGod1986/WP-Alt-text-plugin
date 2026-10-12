@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.137
+Stable tag: 4.6.138
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -154,8 +154,13 @@ Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
 
-= 4.6.137 =
-* Fix: the "Create a free account" link in the trial-done notice opens the sign-up form; clearer sign-up errors (existing email goes to log in, password problems in plain words).
+= 4.6.138 =
+* New: an optional "How did you find us?" question on the sign-up form. You can skip it.
+* Fix: when you're signed in, the credit count now always matches your account.
+* Fix: Upgrade and Buy credits buttons now open a secure Stripe checkout linked to your account, so your plan or credits are applied to the right site.
+* Fix: after checkout you now see a confirmation message, or a note that nothing was charged if you cancelled.
+* Fix: pricing links now go to https://oppti.dev/pricing.
+* Security hardening.
 * Fix: SVG images are skipped instead of being sent and failing on every Generate click (no credit used), and no longer show a misleading "Generation failed" headline.
 
 = 4.6.136 =
@@ -295,6 +300,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.138 =
+Credit counts now match your account, upgrades open a secure checkout linked to your account, and checkout confirmation messages now show. Recommended for all users.
 
 = 4.6.111 =
 Telemetry-only hotfix: restores NAI client generation and navigation feature_used events.
