@@ -11,6 +11,9 @@ namespace BeepBeepAI\AltTextGenerator {
 			public static function emit( string $event_name, array $properties = array() ): void {
 				$GLOBALS['bbai_test_events'][] = array( $event_name, $properties );
 			}
+			public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = array() ): void {
+				$GLOBALS['bbai_test_posthog'][] = array( $event_name, $distinct_id, $properties );
+			}
 		}
 	}
 }
@@ -49,6 +52,7 @@ namespace {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-auditor-attribution.php';
 			$GLOBALS['bbai_test_transients'] = array();
 			$GLOBALS['bbai_test_events']     = array();
+			$GLOBALS['bbai_test_posthog']    = array();
 			$GLOBALS['bbai_test_user_id']    = 7;
 			$_GET = $_REQUEST = array();
 		}
@@ -148,6 +152,32 @@ namespace {
 			mark_auditor_landing_pending();
 			consume_auditor_landing();
 			$this->assertSame( 'missing_alt', auditor_signup_properties()['auditor_finding'] ?? null );
+		}
+		public function test_deeplink_reaches_posthog_once_like_alt_generated(): void {
+			$this->visit( array( 'page' => 'bbai-library', 'source' => 'auditor', 'finding' => 'missing_alt' ) );
+			$this->visit( array( 'page' => 'bbai', 'source' => 'auditor', 'finding' => 'missing_alt', 'upgrade' => 'required' ) );
+			$this->visit( array( 'page' => 'bbai', 'source' => 'auditor', 'finding' => 'missing_alt' ) );
+			$ph = $GLOBALS['bbai_test_posthog'];
+			$this->assertCount( 1, $ph );
+			$this->assertSame( 'auditor_deeplink_opened', $ph[0][0] );
+			$this->assertNotSame( '', $ph[0][1], 'distinct_id is the site install ID' );
+			$this->assertSame( 'auditor', $ph[0][2]['source'] );
+			$this->assertSame( 'missing_alt', $ph[0][2]['finding'] );
+			$this->assertStringStartsWith( 'auditor_deeplink_opened:', $ph[0][2]['$insert_id'] );
+			// Local event and PostHog event carry the same properties.
+			$this->assertSame( $this->events()[0][1], $ph[0][2] );
+		}
+
+		public function test_new_finding_is_a_new_posthog_event(): void {
+			$this->visit( array( 'page' => 'bbai-library', 'source' => 'auditor', 'finding' => 'missing_alt' ) );
+			$this->visit( array( 'page' => 'bbai-library', 'source' => 'auditor', 'finding' => 'other' ) );
+			$this->assertCount( 2, $GLOBALS['bbai_test_posthog'] );
+			$this->assertNotSame( $GLOBALS['bbai_test_posthog'][0][2]['$insert_id'], $GLOBALS['bbai_test_posthog'][1][2]['$insert_id'] );
+		}
+
+		public function test_no_posthog_without_auditor_source(): void {
+			$this->visit( array( 'page' => 'bbai' ) );
+			$this->assertCount( 0, $GLOBALS['bbai_test_posthog'] );
 		}
 	}
 }

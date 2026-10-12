@@ -82,7 +82,8 @@ function remember_auditor_attribution(): void {
 	if ( null !== $stored && (string) ( $stored['finding'] ?? '' ) === $attr['finding'] ) {
 		return; // Same deep-link already recorded and tracked.
 	}
-	$attr['landing'] = '';
+	$attr['landing']   = '';
+	$attr['opened_at'] = time();
 	set_transient( auditor_attribution_key( $user_id ), $attr, AUDITOR_ATTRIBUTION_TTL );
 
 	$props = array( 'source' => 'auditor' );
@@ -90,9 +91,34 @@ function remember_auditor_attribution(): void {
 		$props['finding'] = $attr['finding'];
 	}
 	$props['page'] = $page;
+	// Same once-per-link guard as above; $insert_id also dedupes on PostHog's side.
+	$props['$insert_id'] = 'auditor_deeplink_opened:' . md5( $user_id . '|' . $attr['finding'] . '|' . $attr['opened_at'] );
 	if ( class_exists( __NAMESPACE__ . '\\BBAI_Telemetry' ) ) {
+		// Local ring buffer / bbai_telemetry_event hook.
 		BBAI_Telemetry::emit( 'auditor_deeplink_opened', $props );
+		// PostHog, by the same server-side capture alt_generated uses
+		// (consent and API-key checks live inside capture_posthog_event).
+		$distinct_id = auditor_posthog_distinct_id();
+		if ( '' !== $distinct_id ) {
+			BBAI_Telemetry::capture_posthog_event( 'auditor_deeplink_opened', $distinct_id, $props );
+		}
 	}
+}
+
+/**
+ * PostHog distinct_id for the deep-link event: this site's install ID (the
+ * user is usually signed out of OpptiAI at this point, so there is no
+ * account ID yet). Filterable.
+ */
+function auditor_posthog_distinct_id(): string {
+	$id = '';
+	if ( ! function_exists( __NAMESPACE__ . '\\get_site_identifier' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) && is_readable( BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php' ) ) {
+		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
+	}
+	if ( function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
+		$id = (string) get_site_identifier();
+	}
+	return (string) apply_filters( 'bbai_auditor_deeplink_distinct_id', $id );
 }
 add_action( 'admin_init', __NAMESPACE__ . '\\remember_auditor_attribution' );
 
