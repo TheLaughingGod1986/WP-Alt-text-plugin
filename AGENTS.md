@@ -14,6 +14,12 @@
 ./scripts/sync-to-wpenv-slug.bash
 ```
 
+- After syncing, run Plugin Check against the canonical folder entry in `wp-admin`:
+
+```text
+BeepBeep AI – Alt Text Generator (folder: beepbeep-ai-alt-text-generator)
+```
+
 - If the sync script cannot find a local `~/.wp-env/.../WordPress` directory, start `wp-env` first and then re-run the sync:
 
 ```bash
@@ -63,32 +69,35 @@ WPORG_DOWNLOAD_DAYS=14 \
 node scripts/import-wporg-stats-to-posthog.mjs
 ```
 
+- For a read-only check of the WordPress.org import payload before sending events, use the script's supported dry-run mode:
+
+```bash
+node scripts/import-wporg-stats-to-posthog.mjs --dry-run
+```
+
 ## E2E Smoke Tests
 
 - Playwright tests live in `tests/e2e/`.
-- Install dependencies from that directory:
+- Install dependencies from the repo root (the package and Playwright configuration live there):
 
 ```bash
-cd tests/e2e
 npm install
 npx playwright install chromium
 ```
 
-- Run smoke tests against a local WordPress instance after exporting the expected env vars:
+- Run smoke tests from the repo root against a local WordPress instance after exporting the expected env vars:
 
 ```bash
-cd tests/e2e
 export BBAI_E2E_BASE_URL=http://127.0.0.1:8888
 export BBAI_E2E_STORAGE_STATE=./storageState.json
-npm test
+npx playwright test tests/e2e
 ```
 
 - The checked-in example env file lives at `tests/e2e/env.e2e.example`; copy its values into your shell or a local `.env` before running Playwright.
 
-- Generate login storage state when needed:
+- Generate login storage state from the repo root when needed:
 
 ```bash
-cd tests/e2e
 npx playwright codegen "$BBAI_E2E_BASE_URL/wp-admin" --save-storage=storageState.json
 ```
 
@@ -107,6 +116,20 @@ npx playwright test tests/e2e/nai-entitlement-connected.spec.ts
 ```
 
 - The connected-entitlement spec and fixture checker also accept `WP_BASE_URL`, `WP_ADMIN_USER`, and `WP_ADMIN_PASS` as aliases for the corresponding `BBAI_E2E_*` env vars.
+
+## Unit Tests
+
+- Root JS contract tests use Node's built-in test runner; `npm test` in the repo root is still the default placeholder script:
+
+```bash
+node --test tests/*.test.js
+```
+
+- PHP unit tests run against the stub bootstrap in `tests/phpunit/`:
+
+```bash
+./vendor/bin/phpunit --configuration phpunit.xml.dist
+```
 
 ## Verification Notes
 

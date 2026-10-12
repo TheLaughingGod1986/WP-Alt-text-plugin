@@ -1,0 +1,1 @@
+2026-08-21: Updated AGENTS.md minimally with two evidenced operator notes: Plugin Check should target the canonical wp-env slug entry, and the WP.org stats importer supports a safe `--dry-run` preview. No repo tests were run; this was a docs-only change. Runtime: ~6 minutes.

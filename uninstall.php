@@ -56,6 +56,11 @@ $bbai_options = array(
 	'bbai_legacy_cache_cleaned',
 	'bbai_legacy_settings_cleaned',
 	'bbai_growth_installed_at',
+	// Image accessibility audit state.
+	'bbai_audit_run_state',
+	'bbai_audit_summary',
+	'bbai_audit_duplicate_map',
+	'bbai_audit_last_completed_at',
 );
 
 foreach ( $bbai_options as $bbai_option ) {
@@ -171,6 +176,10 @@ $bbai_meta_keys_to_delete = array(
 	'_ai_alt_last_prompt',
 	'_ai_alt_original',
 	'_ai_alt_usage',
+	// Image audit decorative decisions.
+	'_bbai_decorative',
+	'_bbai_decorative_set_at',
+	'_bbai_decorative_set_by',
 );
 
 // Delete post meta using prepared statements for security.
@@ -193,6 +202,7 @@ $bbai_usage_logs_table_safe          = esc_sql( $wpdb->prefix . 'bbai_usage_logs
 $bbai_contact_submissions_table_safe = esc_sql( $wpdb->prefix . 'bbai_contact_submissions' );
 $bbai_legacy_queue_table_safe        = esc_sql( $wpdb->prefix . 'beepbeepai_queue' );
 $bbai_legacy_logs_table_safe         = esc_sql( $wpdb->prefix . 'beepbeepai_logs' );
+$bbai_image_audit_table_safe         = esc_sql( $wpdb->prefix . 'bbai_image_audit' );
 
 $wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
 $wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
@@ -201,3 +211,4 @@ $wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_usage_logs_table_
 $wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_contact_submissions_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
 $wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_legacy_queue_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
 $wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_legacy_logs_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().
+$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS `' . $bbai_image_audit_table_safe . '` /* %d */', 1 ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.NotPrepared -- Table name is schema-controlled and escaped with esc_sql().

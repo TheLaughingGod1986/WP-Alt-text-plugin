@@ -26,6 +26,14 @@ if ( ! defined( 'BEEPBEEP_AI_PLUGIN_BASENAME' ) ) {
 if ( ! defined( 'DAY_IN_SECONDS' ) ) {
 	define( 'DAY_IN_SECONDS', 86400 );
 }
+if ( ! defined( 'BEEPBEEP_AI_DB_VERSION' ) ) {
+	// Kept in step with the plugin file by AuditMigrationTest.
+	define( 'BEEPBEEP_AI_DB_VERSION', '1.1.0' );
+}
+
+function esc_sql( $value ) {
+	return is_string( $value ) ? addslashes( $value ) : $value;
+}
 
 function get_option( $key, $default = false ) {
 	return $GLOBALS['bbai_test_options'][ $key ] ?? $default;
@@ -90,8 +98,32 @@ function update_user_meta( $uid, $key, $value ) {
 	return true;
 }
 
-function apply_filters( $tag, $value ) {
+$GLOBALS['bbai_test_filters'] = array();
+
+function apply_filters( $tag, $value, ...$args ) {
+	if ( empty( $GLOBALS['bbai_test_filters'][ $tag ] ) ) {
+		return $value;
+	}
+
+	foreach ( $GLOBALS['bbai_test_filters'][ $tag ] as $callback ) {
+		$value = $callback( $value, ...$args );
+	}
+
 	return $value;
+}
+
+function add_filter( $tag, $callback, $priority = 10, $accepted_args = 1 ) {
+	$GLOBALS['bbai_test_filters'][ $tag ][] = $callback;
+	return true;
+}
+
+function remove_all_filters( $tag = null ) {
+	if ( null === $tag ) {
+		$GLOBALS['bbai_test_filters'] = array();
+		return;
+	}
+
+	unset( $GLOBALS['bbai_test_filters'][ $tag ] );
 }
 
 function do_action( $tag, ...$args ) {
@@ -136,7 +168,153 @@ function bbai_is_authenticated() {
 	return ! empty( $GLOBALS['bbai_test_options']['beepbeepai_jwt_token'] );
 }
 
+if ( ! defined( 'ARRAY_A' ) ) {
+	define( 'ARRAY_A', 'ARRAY_A' );
+}
+if ( ! defined( 'OBJECT' ) ) {
+	define( 'OBJECT', 'OBJECT' );
+}
+if ( ! defined( 'MINUTE_IN_SECONDS' ) ) {
+	define( 'MINUTE_IN_SECONDS', 60 );
+}
+
+function add_option( $key, $value, $deprecated = '', $autoload = true ) {
+	// Mirrors core: fails when the option already exists. This is what makes the
+	// audit run lock atomic in production, so the double must behave the same.
+	if ( array_key_exists( $key, $GLOBALS['bbai_test_options'] ) ) {
+		return false;
+	}
+
+	$GLOBALS['bbai_test_options'][ $key ] = $value;
+
+	return true;
+}
+
+function current_time( $type = 'mysql', $gmt = 0 ) {
+	return 'mysql' === $type ? gmdate( 'Y-m-d H:i:s' ) : time();
+}
+
+function wp_generate_uuid4() {
+	return sprintf( '%08x-0000-4000-8000-%012x', wp_rand_seed(), wp_rand_seed() );
+}
+
+function wp_rand_seed() {
+	static $counter = 0;
+	return ++$counter + 1000;
+}
+
+function is_user_logged_in() {
+	return ! empty( $GLOBALS['bbai_test_current_user'] );
+}
+
+function current_user_can( $capability ) {
+	return ! empty( $GLOBALS['bbai_test_caps'][ $capability ] );
+}
+
+function absint( $value ) {
+	return abs( (int) $value );
+}
+
+function get_the_title( $post_id = 0 ) {
+	return $GLOBALS['bbai_test_post_titles'][ (int) $post_id ] ?? '';
+}
+
+$GLOBALS['bbai_test_post_meta'] = array();
+
+function get_post_meta( $post_id, $key = '', $single = false ) {
+	$bucket = $GLOBALS['bbai_test_post_meta'][ (int) $post_id ] ?? array();
+	$value  = $bucket[ $key ] ?? '';
+
+	return $single ? $value : ( '' === $value ? array() : array( $value ) );
+}
+
+function update_post_meta( $post_id, $key, $value ) {
+	$GLOBALS['bbai_test_post_meta'][ (int) $post_id ][ $key ] = $value;
+	return true;
+}
+
+function delete_post_meta( $post_id, $key ) {
+	unset( $GLOBALS['bbai_test_post_meta'][ (int) $post_id ][ $key ] );
+	return true;
+}
+
+function get_post_type( $post_id = 0 ) {
+	return $GLOBALS['bbai_test_post_types'][ (int) $post_id ] ?? 'attachment';
+}
+
+function is_wp_error( $thing ) {
+	return $thing instanceof WP_Error;
+}
+
+class WP_Error {
+
+	private $code;
+	private $message;
+	private $data;
+
+	public function __construct( $code = '', $message = '', $data = null ) {
+		$this->code    = $code;
+		$this->message = $message;
+		$this->data    = $data;
+	}
+
+	public function get_error_code() {
+		return $this->code;
+	}
+
+	public function get_error_message() {
+		return $this->message;
+	}
+
+	public function get_error_data() {
+		return $this->data;
+	}
+}
+
+function __( $text, $domain = 'default' ) {
+	return $text;
+}
+
+function esc_html__( $text, $domain = 'default' ) {
+	return $text;
+}
+
+function _n( $single, $plural, $number, $domain = 'default' ) {
+	return 1 === (int) $number ? $single : $plural;
+}
+
 $GLOBALS['bbai_test_options']['beepbeepai_site_id'] = 'test_site_install_id_0123456789ab';
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
+
+// Image accessibility audit engine — pure rule classes, testable without WordPress.
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-alt-quality-scorer.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-issue.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-vocabulary.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-audit-context.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-rule-interface.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-abstract-audit-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-missing-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-empty-alt-review-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-filename-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-generic-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-duplicate-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-alt-too-short-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-alt-too-long-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-keyword-stuffing-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-orphaned-attachment-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-no-usage-context-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-rule-registry.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-accessibility-score-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-filters.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-entitlement-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-telemetry-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-decorative-image-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-audit-repository.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-discovery-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-progress-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-batch-processor.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-audit-service.php';
+
+require_once __DIR__ . '/audit/helpers/class-bbai-fake-wpdb.php';

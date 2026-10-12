@@ -27,7 +27,7 @@ define( 'BEEPBEEP_AI_VERSION', '4.7.0' );
 define( 'BEEPBEEP_AI_PLUGIN_ID', 'alt_text' );
 define( 'BEEPBEEP_AI_PLUGIN_TITLE', 'OpptiAI Alt Text' );
 define( 'BBAI_VERSION', '4.7.0' ); // Legacy alias for compatibility
-define( 'BEEPBEEP_AI_DB_VERSION', '1.0.0' );
+define( 'BEEPBEEP_AI_DB_VERSION', '1.1.0' );
 define( 'BEEPBEEP_AI_PLUGIN_FILE', __FILE__ );
 define( 'BBAI_PLUGIN_FILE', __FILE__ ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -185,6 +185,35 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-privacy.php';
 if ( class_exists( '\BeepBeepAI\AltTextGenerator\Privacy' ) ) {
 	\BeepBeepAI\AltTextGenerator\Privacy::init();
 }
+
+// Image accessibility audit engine (deterministic rules + scoring + storage).
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-issue.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-vocabulary.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-audit-context.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-rule-interface.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-abstract-audit-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-missing-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-empty-alt-review-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-filename-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-generic-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-duplicate-alt-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-alt-too-short-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-alt-too-long-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-keyword-stuffing-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-orphaned-attachment-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/rules/class-no-usage-context-rule.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-rule-registry.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-accessibility-score-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-filters.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-entitlement-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-telemetry-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-decorative-image-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-audit-repository.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-discovery-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-progress-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-batch-processor.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-image-audit-service.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/audit/class-audit-ajax-controller.php';
 
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';

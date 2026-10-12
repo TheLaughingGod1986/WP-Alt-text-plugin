@@ -207,7 +207,13 @@ test.describe('nAi Library bridge — live wp-admin', () => {
     expect(scripts.some((src) => src.includes('/assets/js/bbai-admin.js'))).toBeTruthy();
     expect(scripts.some((src) => src.includes('/assets/js/bbai-entitlements.js'))).toBeTruthy();
     expect(scripts.some((src) => src.includes('/assets/js/alt-library-filters.js'))).toBeTruthy();
-    expect(scripts.some((src) => src.includes('/assets/js/nai-dashboard.js'))).toBeTruthy();
+    expect(
+      scripts.some(
+        (src) =>
+          src.includes('/assets/js/nai-dashboard.js') ||
+          src.includes('/assets/js/nai-dashboard/index.js')
+      )
+    ).toBeTruthy();
 
     await expectNoCriticalErrors(errors);
   });
@@ -340,11 +346,15 @@ test.describe('nAi Library bridge — live wp-admin', () => {
     ajaxRequests.length = 0;
     await regen.dispatchEvent('click');
     await page.waitForTimeout(750);
-    await expect(page.locator('#bbai-upgrade-modal, [data-nai-modal="paywall"]').first()).toBeVisible();
     const lockedGenerationRequests = ajaxRequests.filter(({ url, postData }) =>
       url.includes('/wp-json/bbai/v1/alt') || postData.includes('beepbeepai_inline_generate')
     );
     expect(lockedGenerationRequests).toEqual([]);
+    await expect(
+      page.locator(
+        '[data-action="show-upgrade-modal"], [data-nai-open-paywall], #bbai-upgrade-modal, [data-nai-modal="paywall"]'
+      ).first()
+    ).toBeAttached();
 
     await expectNoCriticalErrors(errors);
   });

@@ -1076,7 +1076,51 @@ class BBAI_Telemetry {
 		return '';
 	}
 
+	/**
+	 * Memoised plan type for the current request.
+	 *
+	 * @var string|null
+	 */
+	private static $plan_type_cache = null;
+
+	/**
+	 * Forget the memoised plan type.
+	 *
+	 * Call after anything that changes the account's plan within one request.
+	 *
+	 * @return void
+	 */
+	public static function flush_plan_type_cache(): void {
+		self::$plan_type_cache = null;
+	}
+
+	/**
+	 * Plan type for the telemetry envelope, resolved once per request.
+	 *
+	 * On a licensed site Usage_Tracker::get_stats_display() can reach the API,
+	 * which measured at roughly 400ms. Every emit() used to pay that, so any
+	 * loop that reports progress became dominated by telemetry rather than by
+	 * the work it was reporting on. A plan cannot meaningfully change part-way
+	 * through a request, so resolving it once is safe.
+	 *
+	 * @return string
+	 */
 	private static function resolve_plan_type(): string {
+		if ( null !== self::$plan_type_cache ) {
+			return self::$plan_type_cache;
+		}
+
+		self::$plan_type_cache = self::compute_plan_type();
+
+		return self::$plan_type_cache;
+	}
+
+	/**
+	 * Work out the plan type without consulting the cache.
+	 *
+	 * @return string
+	 */
+	private static function compute_plan_type(): string {
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && Trial_Quota::is_trial_user() ) {
 			return 'trial';
 		}
