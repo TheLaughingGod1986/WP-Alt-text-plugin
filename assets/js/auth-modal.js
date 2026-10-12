@@ -63,12 +63,11 @@ class BbAIAuthModal {
 
     getSignupSourceOptions() {
         return [
-            ['wporg_search', this.t('WordPress.org plugin search')],
-            ['google', this.t('Google or another search engine')],
-            ['ai_assistant', this.t('An AI assistant (ChatGPT, Claude, Gemini…)')],
-            ['oppti_site', this.t('The Oppti website or blog')],
-            ['friend_colleague', this.t('A friend or colleague')],
-            ['social', this.t('Social media')],
+            ['wporg', this.t('WordPress.org')],
+            ['search', this.t('Search engine')],
+            ['x', this.t('X (Twitter)')],
+            ['facebook_group', this.t('A Facebook group')],
+            ['friend', this.t('A friend or colleague')],
             ['other', this.t('Other')]
         ];
     }
