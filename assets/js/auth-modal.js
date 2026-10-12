@@ -46,6 +46,69 @@ class BbAIAuthModal {
         this.maybeShowPostSignupGuide();
     }
 
+    t(text) {
+        return (window.wp && window.wp.i18n && typeof window.wp.i18n.__ === 'function')
+            ? window.wp.i18n.__(text, 'beepbeep-ai-alt-text-generator')
+            : text;
+    }
+
+    escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    getSignupSourceOptions() {
+        return [
+            ['wporg_search', this.t('WordPress.org plugin search')],
+            ['google', this.t('Google or another search engine')],
+            ['ai_assistant', this.t('An AI assistant (ChatGPT, Claude, Gemini…)')],
+            ['oppti_site', this.t('The Oppti website or blog')],
+            ['friend_colleague', this.t('A friend or colleague')],
+            ['social', this.t('Social media')],
+            ['other', this.t('Other')]
+        ];
+    }
+
+    renderSignupSourceFields() {
+        const options = this.getSignupSourceOptions()
+            .map(([value, label]) => `<option value="${this.escapeHtml(value)}">${this.escapeHtml(label)}</option>`)
+            .join('');
+        return `
+                                    <div class="alttext-form-group">
+                                        <label for="register-signup-source">${this.escapeHtml(this.t('How did you find us? (optional)'))}</label>
+                                        <select id="register-signup-source" name="signup_source">
+                                            <option value="">${this.escapeHtml(this.t('Choose one (optional)'))}</option>
+                                            ${options}
+                                        </select>
+                                    </div>
+                                    <div class="alttext-form-group" id="register-signup-source-other-group" style="display: none;">
+                                        <label for="register-signup-source-other">${this.escapeHtml(this.t('Where did you hear about us?'))}</label>
+                                        <input type="text" id="register-signup-source-other" name="signup_source_other" maxlength="200" autocomplete="off">
+                                    </div>`;
+    }
+
+    getSignupSourceValues(formData) {
+        const allowed = this.getSignupSourceOptions().map(([value]) => value);
+        const source = String(formData.get('signup_source') || '').trim();
+        if (!allowed.includes(source)) {
+            return {};
+        }
+        const values = { signup_source: source };
+        if (source === 'other') {
+            const other = String(formData.get('signup_source_other') || '')
+                .replace(/<[^>]*>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .slice(0, 200);
+            if (other) values.signup_source_other = other;
+        }
+        return values;
+    }
+
     emitAnalyticsEvent(eventName, properties) {
         try {
             document.dispatchEvent(new CustomEvent('bbai:analytics', {
@@ -405,6 +468,7 @@ class BbAIAuthModal {
                                         <label for="register-confirm">Confirm Password</label>
                                         <input type="text" id="register-confirm" name="confirmPassword" data-password-field="true" data-password-autocomplete="new-password" autocomplete="off" inputmode="text" required aria-required="true">
                                     </div>
+                                    ${this.renderSignupSourceFields()}
                                     <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Create account">
                                         <span class="alttext-btn__text">Create Account</span>
                                         <span class="alttext-btn__spinner" style="display: none;" aria-hidden="true">⏳</span>
@@ -488,6 +552,19 @@ class BbAIAuthModal {
 
     bindEvents() {
         const self = this;
+
+        // Show the free-text box only when "Other" is picked.
+        document.addEventListener('change', function(e) {
+            if (!e.target || e.target.id !== 'register-signup-source') return;
+            const group = document.getElementById('register-signup-source-other-group');
+            if (!group) return;
+            const isOther = e.target.value === 'other';
+            group.style.display = isOther ? '' : 'none';
+            if (!isOther) {
+                const input = document.getElementById('register-signup-source-other');
+                if (input) input.value = '';
+            }
+        });
 
         // Use event delegation from document for all modal events
         document.addEventListener('click', function(e) {
@@ -903,7 +980,9 @@ class BbAIAuthModal {
                     auth_state: 'authenticated',
                     account_state: 'connected_account',
                     plan: userData.plan || userData.plan_type || userData.planSlug || 'free',
-                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free'
+                    plan_type: userData.plan_type || userData.plan || userData.planSlug || 'free',
+                    // Enum value only; free text stays server-side.
+                    ...(signupSource.signup_source ? { signup_source: signupSource.signup_source } : {})
                 });
                 if (window.bbaiTelemetry && typeof window.bbaiTelemetry.flush === 'function') {
                     window.bbaiTelemetry.flush();
@@ -972,6 +1051,7 @@ class BbAIAuthModal {
         const password = formData.get('password');
         const confirmPassword = formData.get('confirmPassword');
         const source = this.resolveSource(this.modalElement, 'modal');
+        const signupSource = this.getSignupSourceValues(formData);
 
         this.isAuthRedirecting = false;
         if (password !== confirmPassword) {
@@ -1015,7 +1095,8 @@ class BbAIAuthModal {
                     action: 'beepbeepai_register',
                     email: email,
                     password: password,
-                    nonce: window.bbai_ajax.nonce
+                    nonce: window.bbai_ajax.nonce,
+                    ...signupSource
                 })
             });
 
