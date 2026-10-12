@@ -2923,7 +2923,9 @@ class API_Client_V2 {
 				: 0;
 			$response_used = max( 0, (int) ( $usage['used'] ?? $usage['credits_used'] ?? $usage['creditsUsed'] ?? 0 ) );
 
-			if ( $has_alt_text && $response_used <= $current_used ) {
+			// Signed-in accounts: the generate response's usage is authoritative,
+			// even when it is lower than the local snapshot (e.g. trial rows excluded).
+			if ( $has_alt_text && $response_used <= $current_used && ! \BeepBeepAI\AltTextGenerator\Usage_Tracker::has_account_credentials() ) {
 				\BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success( 1 );
 				return;
 			}

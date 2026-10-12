@@ -1121,12 +1121,8 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     // this site already has AI-generated/reviewable work in the current dashboard.
     if ( ! $bbai_is_anonymous_trial && ! empty( $bbai_has_connected_account ) && $bbai_dashboard_root_credits_total > 0 ) {
         $bbai_usage_floor = 0;
-        if ( class_exists( Usage_Tracker::class ) ) {
-            $bbai_usage_floor = max( $bbai_usage_floor, Usage_Tracker::get_local_successful_generations_this_month() );
-        }
-        if ( $bbai_usage_floor <= 0 && $bbai_dashboard_root_weak_count > 0 ) {
-            $bbai_usage_floor = $bbai_dashboard_root_weak_count;
-        }
+        // Backend usage is authoritative for signed-in accounts (trial rows are
+        // excluded server-side), so no local floor is applied here any more.
         if ( $bbai_usage_floor > $bbai_dashboard_root_credits_used ) {
             $bbai_dashboard_root_credits_used  = min( $bbai_dashboard_root_credits_total, $bbai_usage_floor );
             $bbai_dashboard_root_credits_left  = max( 0, $bbai_dashboard_root_credits_total - $bbai_dashboard_root_credits_used );
