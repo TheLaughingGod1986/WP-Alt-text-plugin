@@ -60,6 +60,7 @@ if (!defined('BBAI_VERSION')) {
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-queue.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-generation-lock.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-debug-log.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-onboarding.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/services/class-auth-state.php';
@@ -6340,66 +6341,38 @@ class Core {
     }
 
     /**
-     * Option name for the per-attachment generation lock.
-     */
-    private static function generation_lock_key(int $attachment_id): string {
-        return 'bbai_gen_lock_' . $attachment_id;
-    }
-
-    /**
      * Atomically claim an attachment for generation so the WP-cron queue worker
      * and the browser/ajax worker never generate (and charge) the same image at
      * the same time. add_option() is atomic because option_name is UNIQUE.
      */
     public static function acquire_generation_lock(int $attachment_id, int $ttl = 0): bool {
-        if ($attachment_id <= 0) {
-            return true;
-        }
-        $ttl = $ttl > 0 ? $ttl : (int) apply_filters('bbai_generation_lock_ttl', 3 * MINUTE_IN_SECONDS);
-        $key = self::generation_lock_key($attachment_id);
-        $expires = time() + max(30, $ttl);
-
-        if (add_option($key, $expires, '', 'no')) {
-            return true;
-        }
-
-        // Lock exists: take it over only if it has expired (crashed worker).
-        wp_cache_delete($key, 'options');
-        $current = (int) get_option($key, 0);
-        if ($current > 0 && $current >= time()) {
-            return false;
-        }
-        delete_option($key);
-        return (bool) add_option($key, $expires, '', 'no');
+        return Generation_Lock::acquire($attachment_id, $ttl);
     }
 
     /**
      * Release a per-attachment generation lock.
      */
     public static function release_generation_lock(int $attachment_id): void {
-        if ($attachment_id > 0) {
-            delete_option(self::generation_lock_key($attachment_id));
-        }
+        Generation_Lock::release($attachment_id);
     }
 
     /**
      * Generate and save ALT text, holding a per-attachment lock for the duration.
+     * If another run holds the lock, wait briefly: return its alt text if it lands,
+     * or generate ourselves if it quit without generating. The backend dedupes the
+     * charge on Idempotency-Key, so the fallback cannot double-charge.
      */
     public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
         $lock_id = intval($attachment_id);
-        if (!self::acquire_generation_lock($lock_id)) {
-            return new \WP_Error(
-                'generation_in_progress',
-                __('This image is already being processed. Please wait a moment.', 'beepbeep-ai-alt-text-generator'),
-                ['attachment_id' => $lock_id]
-            );
-        }
-
-        try {
-            return $this->generate_and_save_unlocked($attachment_id, $source, $retry_count, $feedback, $regenerate, $skip_trial_gate);
-        } finally {
-            self::release_generation_lock($lock_id);
-        }
+        return Generation_Lock::run(
+            $lock_id,
+            function () use ($attachment_id, $source, $retry_count, $feedback, $regenerate, $skip_trial_gate) {
+                return $this->generate_and_save_unlocked($attachment_id, $source, $retry_count, $feedback, $regenerate, $skip_trial_gate);
+            },
+            static function () use ($lock_id) {
+                return $lock_id > 0 ? trim((string) get_post_meta($lock_id, '_wp_attachment_image_alt', true)) : '';
+            }
+        );
     }
 
     private function generate_and_save_unlocked($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
