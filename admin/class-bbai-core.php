@@ -6339,7 +6339,70 @@ class Core {
         $this->generate_and_save($attachment_id, 'auto');
     }
 
+    /**
+     * Option name for the per-attachment generation lock.
+     */
+    private static function generation_lock_key(int $attachment_id): string {
+        return 'bbai_gen_lock_' . $attachment_id;
+    }
+
+    /**
+     * Atomically claim an attachment for generation so the WP-cron queue worker
+     * and the browser/ajax worker never generate (and charge) the same image at
+     * the same time. add_option() is atomic because option_name is UNIQUE.
+     */
+    public static function acquire_generation_lock(int $attachment_id, int $ttl = 0): bool {
+        if ($attachment_id <= 0) {
+            return true;
+        }
+        $ttl = $ttl > 0 ? $ttl : (int) apply_filters('bbai_generation_lock_ttl', 3 * MINUTE_IN_SECONDS);
+        $key = self::generation_lock_key($attachment_id);
+        $expires = time() + max(30, $ttl);
+
+        if (add_option($key, $expires, '', 'no')) {
+            return true;
+        }
+
+        // Lock exists: take it over only if it has expired (crashed worker).
+        wp_cache_delete($key, 'options');
+        $current = (int) get_option($key, 0);
+        if ($current > 0 && $current >= time()) {
+            return false;
+        }
+        delete_option($key);
+        return (bool) add_option($key, $expires, '', 'no');
+    }
+
+    /**
+     * Release a per-attachment generation lock.
+     */
+    public static function release_generation_lock(int $attachment_id): void {
+        if ($attachment_id > 0) {
+            delete_option(self::generation_lock_key($attachment_id));
+        }
+    }
+
+    /**
+     * Generate and save ALT text, holding a per-attachment lock for the duration.
+     */
     public function generate_and_save($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
+        $lock_id = intval($attachment_id);
+        if (!self::acquire_generation_lock($lock_id)) {
+            return new \WP_Error(
+                'generation_in_progress',
+                __('This image is already being processed. Please wait a moment.', 'beepbeep-ai-alt-text-generator'),
+                ['attachment_id' => $lock_id]
+            );
+        }
+
+        try {
+            return $this->generate_and_save_unlocked($attachment_id, $source, $retry_count, $feedback, $regenerate, $skip_trial_gate);
+        } finally {
+            self::release_generation_lock($lock_id);
+        }
+    }
+
+    private function generate_and_save_unlocked($attachment_id, $source='manual', int $retry_count = 0, array $feedback = [], $regenerate = false, bool $skip_trial_gate = false){
         $opts = get_option(self::OPTION_KEY, []);
 
         // Skip formats the backend rejects (e.g. SVG) before any quota check or API call: no credit used.
@@ -8775,11 +8838,26 @@ class Core {
                 continue;
             }
 
+            // Skip work the browser worker already finished after this job was queued,
+            // so the same image is not generated (and charged) twice.
+            $generated_at = (string) get_post_meta($attachment_id, '_bbai_generated_at', true);
+            $enqueued_at  = isset($job->enqueued_at) ? (string) $job->enqueued_at : '';
+            if ($generated_at !== '' && $enqueued_at !== '' && strtotime($generated_at) >= strtotime($enqueued_at)) {
+                Queue::mark_complete($job->id);
+                continue;
+            }
+
             $result = $this->generate_and_save($attachment_id, $job->source ?? 'queue', max(0, intval($job->attempts) - 1));
 
             if (is_wp_error($result)) {
                 $code    = $result->get_error_code();
                 $message = $result->get_error_message();
+
+                if ($code === 'generation_in_progress') {
+                    // Another worker holds this image; it will finish it. Don't charge twice.
+                    Queue::mark_complete($job->id);
+                    continue;
+                }
 
                 if ($code === 'bbai_automation_unavailable') {
                     Queue::mark_complete($job->id);
