@@ -8837,6 +8837,16 @@ class Core {
                 continue;
             }
 
+            // Parked earlier because another run held this image: if that run
+            // has saved alt text since, finish without calling the backend.
+            $bbai_current_alt = static function () use ($attachment_id) {
+                return (string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
+            };
+            if (Generation_Lock::queue_should_skip_retry($attachment_id, (string) ($job->last_error ?? ''), $bbai_current_alt)) {
+                Queue::mark_complete($job->id);
+                continue;
+            }
+
             $result = $this->generate_and_save($attachment_id, $job->source ?? 'queue', max(0, intval($job->attempts) - 1));
 
             if (is_wp_error($result)) {
@@ -8844,8 +8854,26 @@ class Core {
                 $message = $result->get_error_message();
 
                 if ($code === 'generation_in_progress') {
-                    // Another worker holds this image; it will finish it. Don't charge twice.
-                    Queue::mark_complete($job->id);
+                    // Another worker holds this image. Done only if its alt text is
+                    // saved; otherwise keep the job pending and retry (failed only past the deferral cap).
+                    // A crashed holder's lock expires after its TTL, and the next
+                    // retry then generates; a retry after the holder saved is skipped.
+                    if ('complete' === Generation_Lock::queue_outcome_after_in_progress($attachment_id, $bbai_current_alt)) {
+                        Queue::mark_complete($job->id);
+                    } else {
+                        // Doesn't use up an attempt (up to a cap), so a later real
+                        // failure still gets its normal retries.
+                        $bbai_defer = Generation_Lock::queue_defer_plan((string) ($job->last_error ?? ''), (string) $message);
+                        if ($bbai_defer['refund_attempt']) {
+                            Queue::mark_deferred($job->id, $bbai_defer['message']);
+                        } elseif (intval($job->attempts) >= $max_attempts) {
+                            Queue::mark_failed($job->id, $bbai_defer['message']);
+                            continue;
+                        } else {
+                            Queue::mark_retry($job->id, $bbai_defer['message']);
+                        }
+                        Queue::schedule_processing(Generation_Lock::queue_retry_delay());
+                    }
                     continue;
                 }
 

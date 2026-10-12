@@ -122,15 +122,15 @@ namespace {
 			$this->assertTrue( Generation_Lock::is_held( 14 ) );
 		}
 
-		public function test_default_wait_is_15_seconds(): void {
-			$this->assertSame( 15000, Generation_Lock::DEFAULT_WAIT_MS );
+		public function test_default_wait_is_25_seconds(): void {
+			$this->assertSame( 25000, Generation_Lock::DEFAULT_WAIT_MS );
 			$this->hold_lock( 16 );
 			$pauses = 0;
 			Generation_Lock::$sleeper = static function () use ( &$pauses ) { $pauses++; };
 			$result = Generation_Lock::run( 16, static function () { return 'x'; }, $this->alt() );
 			$this->assertSame( 'generation_in_progress', $result->get_error_code() );
-			// 500 ms poll: 30 pauses = 15 s of waiting (8 s would be 16).
-			$this->assertSame( 30, $pauses );
+			// 500 ms poll: 50 pauses = 25 s of waiting.
+			$this->assertSame( 50, $pauses );
 		}
 
 		public function test_waiter_still_catches_holder_finishing_after_ten_seconds(): void {

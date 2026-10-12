@@ -16,6 +16,21 @@ class Generation_Lock {
 	/** @var callable|null Test seam for sleeping (receives microseconds). */
 	public static $sleeper = null;
 
+	/** @var callable|null Test seam for the wall clock (returns seconds as float). */
+	public static $clock = null;
+
+	/** Prefix written to a queue job's last_error when a waiter gave up on a held image. */
+	const QUEUE_IN_PROGRESS_MARK = 'generation_in_progress';
+
+	/**
+	 * Max times a queue job is parked for "in progress" without using up an
+	 * attempt. At the default 60 s retry delay, 10 deferrals is ~10 min, well
+	 * past the 3-minute lock TTL, so a crashed holder's lock has long expired
+	 * and normal takeover applies. Past the cap, in-progress retries count as
+	 * normal attempts, so a job can never loop forever.
+	 */
+	const QUEUE_MAX_DEFERRALS = 10;
+
 	/** Post meta holding the in-flight generation attempt: array{id:string,started_at:int}. */
 	const ATTEMPT_META = '_bbai_gen_attempt';
 
@@ -161,11 +176,23 @@ class Generation_Lock {
 	 * @return mixed
 	 */
 	/**
-	 * Default time a waiting request re-checks before giving up. The backend
-	 * generation call alone takes ~7-8 s, so this must comfortably exceed it.
-	 * Stays far below the 3-minute lock TTL.
+	 * Default time a waiting request re-checks before giving up.
+	 *
+	 * 25 s: the holder's backend call is ~7-8 s typically, and the backend
+	 * makes a duplicate request wait up to 20 s for the first one before it
+	 * replays or answers 409, so the waiter should outlast that 20 s plus
+	 * the holder's DB write. 25 s still leaves ~5 s of a common 30 s PHP
+	 * max_execution_time for the request's own work. The filter can lower it
+	 * but never raise it past MAX_WAIT_MS. The wait is bounded by wall-clock
+	 * time, not just by summed sleeps, so read overhead can't push it past
+	 * the limit (QA saw 15.04 s against the old 15 s counter).
 	 */
-	const DEFAULT_WAIT_MS = 15000;
+	const DEFAULT_WAIT_MS = 25000;
+	const MAX_WAIT_MS     = 25000;
+
+	private static function now(): float {
+		return is_callable( self::$clock ) ? (float) call_user_func( self::$clock ) : microtime( true );
+	}
 
 	public static function run( int $attachment_id, callable $generate, callable $current_alt, bool $fresh_attempt = false ) {
 		$read_alt   = static function () use ( $attachment_id, $current_alt ) {
@@ -173,9 +200,10 @@ class Generation_Lock {
 			return (string) call_user_func( $current_alt );
 		};
 		$alt_before = $read_alt();
-		$wait_ms    = max( 0, (int) apply_filters( 'bbai_generation_lock_wait_ms', self::DEFAULT_WAIT_MS ) );
+		$wait_ms    = min( self::MAX_WAIT_MS, max( 0, (int) apply_filters( 'bbai_generation_lock_wait_ms', self::DEFAULT_WAIT_MS ) ) );
 		$step_ms    = max( 50, (int) apply_filters( 'bbai_generation_lock_poll_ms', 500 ) );
 		$waited     = 0;
+		$started    = self::now();
 
 		while ( true ) {
 			if ( self::acquire( $attachment_id ) ) {
@@ -196,16 +224,74 @@ class Generation_Lock {
 				return $alt_now;
 			}
 
-			if ( $waited >= $wait_ms ) {
+			$elapsed_ms = (int) round( ( self::now() - $started ) * 1000 );
+			if ( $waited >= $wait_ms || $elapsed_ms >= $wait_ms ) {
 				return new \WP_Error(
 					'generation_in_progress',
 					__( 'This image is already being processed. Please wait a moment.', 'beepbeep-ai-alt-text-generator' ),
 					array( 'attachment_id' => $attachment_id )
 				);
 			}
-			self::pause( $step_ms * 1000 );
-			$waited += $step_ms;
+			$sleep_ms = min( $step_ms, max( 1, $wait_ms - max( $waited, $elapsed_ms ) ) );
+			self::pause( $sleep_ms * 1000 );
+			$waited += $sleep_ms;
 		}
+	}
+
+	/**
+	 * Queue: what to do with a job whose run returned generation_in_progress.
+	 * 'complete' only if alt text is actually saved now; otherwise 'retry' so
+	 * the job stays pending. It is never marked done without saved alt text.
+	 */
+	public static function queue_outcome_after_in_progress( int $attachment_id, callable $current_alt ): string {
+		self::flush_meta_cache( $attachment_id );
+		return '' !== trim( (string) call_user_func( $current_alt ) ) ? 'complete' : 'retry';
+	}
+
+	/**
+	 * Queue: before re-running a job that was parked because another run held
+	 * the image, skip it (no backend call) if the holder has since saved alt.
+	 */
+	public static function queue_should_skip_retry( int $attachment_id, string $last_error, callable $current_alt ): bool {
+		if ( 0 !== strpos( $last_error, self::QUEUE_IN_PROGRESS_MARK ) ) {
+			return false;
+		}
+		return 'complete' === self::queue_outcome_after_in_progress( $attachment_id, $current_alt );
+	}
+
+	/**
+	 * Queue: how many times this job was already parked for in-progress,
+	 * read from its last_error marker ("generation_in_progress#N: ...").
+	 */
+	public static function queue_deferral_count( string $last_error ): int {
+		if ( preg_match( '/^' . preg_quote( self::QUEUE_IN_PROGRESS_MARK, '/' ) . '#(\d+):/', $last_error, $m ) ) {
+			return (int) $m[1];
+		}
+		return 0 === strpos( $last_error, self::QUEUE_IN_PROGRESS_MARK ) ? 1 : 0;
+	}
+
+	/**
+	 * Queue: decide how to park a job after generation_in_progress.
+	 *
+	 * @return array{refund_attempt:bool,message:string,deferrals:int}
+	 */
+	public static function queue_defer_plan( string $previous_last_error, string $message ): array {
+		$count = self::queue_deferral_count( $previous_last_error ) + 1;
+		$capped = $count > (int) apply_filters( 'bbai_generation_lock_queue_max_deferrals', self::QUEUE_MAX_DEFERRALS );
+		return array(
+			'refund_attempt' => ! $capped,
+			'message'        => self::QUEUE_IN_PROGRESS_MARK . '#' . $count . ': ' . ( $capped ? 'deferral cap reached, counting as an attempt. ' : '' ) . $message,
+			'deferrals'      => $count,
+		);
+	}
+
+	/**
+	 * Queue: seconds before a parked job is retried. A crashed holder's lock
+	 * expires after the lock TTL (3 min); retries keep coming until then,
+	 * and the first retry after expiry takes the lock and generates.
+	 */
+	public static function queue_retry_delay(): int {
+		return max( 30, (int) apply_filters( 'bbai_generation_lock_queue_retry_delay', MINUTE_IN_SECONDS ) );
 	}
 
 	private static function generate_with_attempt( int $attachment_id, callable $generate, bool $may_reuse ) {
