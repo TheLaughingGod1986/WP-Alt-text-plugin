@@ -2197,6 +2197,9 @@ JS,
 			? BBAI_Telemetry::get_posthog_api_key()
 			: 'phc_6L7JzpjYRC8Gk4Br3YevTmjZnJsJPvoy9GK7RFdo72s';
 		$telemetry_consent       = class_exists( BBAI_Telemetry::class ) && BBAI_Telemetry::has_telemetry_consent();
+		// The PostHog browser SDK is never loaded: no replay, autocapture, pageview or
+		// identify from the browser. UI events go through admin-ajax and are only
+		// forwarded (anonymised) by the server after the site opts in.
 		$browser_capture_enabled = false;
 		$session_recording       = false;
 		$attribution_payload     = class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' )

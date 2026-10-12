@@ -2170,34 +2170,21 @@ class Core {
     }
 
     private function forward_client_telemetry_to_posthog( string $event_name, array $properties ): void {
-        if ( ! class_exists( BBAI_Telemetry::class ) || ! $this->is_posthog_forwarded_client_event( $event_name ) ) {
+        if ( ! class_exists( BBAI_Telemetry::class ) || ! BBAI_Telemetry::has_telemetry_consent() || ! $this->is_posthog_forwarded_client_event( $event_name ) ) {
             return;
         }
-
-        unset( $properties['_bbai_client_batched'] );
-
-        $distinct_id = '';
-        foreach ( [ 'account_id', 'user_id', 'license_id', 'site_install_id', 'site_id', 'site_hash' ] as $key ) {
-            if ( ! empty( $properties[ $key ] ) && is_scalar( $properties[ $key ] ) ) {
-                $distinct_id = sanitize_text_field( (string) $properties[ $key ] );
-                break;
-            }
-        }
-        if ( '' === $distinct_id ) {
-            $distinct_id = $this->get_posthog_site_hash();
-        }
+        // Browser properties: fixed allowlist, short token values only.
+        $properties = BBAI_Telemetry::filter_posthog_properties( $properties );
 
         BBAI_Telemetry::capture_posthog_event(
             $event_name,
-            $distinct_id,
+            '',
             array_merge(
+                $properties,
                 [
-                    'transport'      => 'wp_admin_server_bridge',
-                    'plugin_version' => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
-                    'site_install_id' => $this->get_posthog_site_install_id(),
-                    'site_hash'      => $this->get_posthog_site_hash(),
-                ],
-                $properties
+                    'transport'     => 'wp_admin_server_bridge',
+                    'client_origin' => 'admin_ui',
+                ]
             )
         );
     }

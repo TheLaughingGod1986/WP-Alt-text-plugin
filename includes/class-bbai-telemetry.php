@@ -25,7 +25,39 @@ class BBAI_Telemetry {
 
 	public const RING_MAX = 300;
 
+	/**
+	 * Legacy consent option. Older versions saved 'yes' here on activation without
+	 * asking, so it is never read as consent; it is deleted once on upgrade.
+	 */
 	public const CONSENT_OPTION = 'bbai_telemetry_consent';
+
+	/** Usage-stats opt-in. Only the Settings toggle writes it ('yes' / 'no'). */
+	public const OPTIN_OPTION = 'bbai_telemetry_optin';
+
+	/** Random per-install id used only as the PostHog distinct_id. */
+	public const ANON_ID_OPTION = 'bbai_telemetry_anon_id';
+
+	/** admin-post action + nonce action for the Settings toggle. */
+	public const OPTIN_ACTION = 'bbai_save_usage_stats';
+
+	/**
+	 * Properties that may reach PostHog (server events and browser events
+	 * forwarded through admin-ajax). Anything else is dropped. String values
+	 * must be short tokens, so URLs, hosts, emails, titles, search terms and
+	 * error text cannot pass.
+	 */
+	public const POSTHOG_PROPERTY_ALLOWLIST = array(
+		'plugin_slug', 'plugin_version', 'wp_version', 'wordpress_version', 'php_version',
+		'environment', 'telemetry_version', 'session_id', 'transport', 'client_origin',
+		'plan', 'plan_type', 'plugin_plan', 'current_plan', 'plan_selected', 'user_state',
+		'is_logged_in', 'is_returning_user', 'license_state', 'quota_state', 'is_trial',
+		'is_internal', 'is_first_generation', 'page', 'tab', 'feature_name', 'mode', 'source',
+		'trigger', 'generation_mode', 'generation_type', 'provider', 'model', 'success',
+		'image_context', 'generation_latency_ms', 'response_time', 'retry_attempt', 'error_code',
+		'lifecycle_event', 'lifecycle_delivery', 'previous_version', 'previous_plugin_version',
+		'signup_source', 'finding', 'auditor_source', 'auditor_finding', 'count', 'page_count',
+		'image_count', 'batch_size', 'ai_feature', '$ai_model', '$ai_provider', '$ai_latency',
+	);
 
 	public const LIFECYCLE_QUEUE_OPTION = 'bbai_telemetry_lifecycle_queue';
 
@@ -150,12 +182,8 @@ class BBAI_Telemetry {
 			return (bool) BBAI_TELEMETRY_CONSENT;
 		}
 
-		$stored = get_option( self::CONSENT_OPTION, false );
-		if ( false === $stored ) {
-			$granted = true;
-		} else {
-			$granted = in_array( $stored, array( 'yes', '1', 1, true ), true );
-		}
+		// Opt-in only: nothing saved, the legacy option, or anything but 'yes' means no.
+		$granted = 'yes' === get_option( self::OPTIN_OPTION, '' );
 
 		/**
 		 * Override external telemetry consent for managed environments.
@@ -229,12 +257,94 @@ class BBAI_Telemetry {
 	}
 
 	/**
+	 * One-time upgrade step: delete the legacy consent value older versions saved
+	 * on activation, and anything they queued for PostHog. Runs on admin_init and
+	 * activation; a no-op once the legacy option is gone.
+	 */
+	public static function maybe_clear_legacy_consent(): void {
+		if ( false === get_option( self::CONSENT_OPTION, false ) ) {
+			return;
+		}
+		delete_option( self::CONSENT_OPTION );
+		if ( ! self::has_telemetry_consent() ) {
+			delete_option( self::LIFECYCLE_QUEUE_OPTION );
+		}
+	}
+
+	/**
+	 * Store the Settings toggle value. Only an explicit '1' / 'yes' opts in;
+	 * a missing or junk value stores 'no'. Caller checks capability + nonce.
+	 *
+	 * @param mixed $raw Submitted toggle value.
+	 * @return string Stored value, 'yes' or 'no'.
+	 */
+	public static function save_optin( $raw ): string {
+		$value = ( is_string( $raw ) && in_array( $raw, array( '1', 'yes' ), true ) ) ? 'yes' : 'no';
+		update_option( self::OPTIN_OPTION, $value, false );
+		if ( 'yes' !== $value ) {
+			delete_option( self::LIFECYCLE_QUEUE_OPTION );
+		}
+		return $value;
+	}
+
+	/**
+	 * admin-post handler for the Settings usage-stats toggle.
+	 */
+	public static function handle_optin_save(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to change this setting.', 'beepbeep-ai-alt-text-generator' ), '', array( 'response' => 403 ) );
+		}
+		check_admin_referer( self::OPTIN_ACTION );
+		$raw = isset( $_POST['bbai_usage_stats'] ) && is_scalar( $_POST['bbai_usage_stats'] )
+			? sanitize_text_field( wp_unslash( (string) $_POST['bbai_usage_stats'] ) )
+			: '';
+		self::save_optin( $raw );
+		wp_safe_redirect( add_query_arg( 'bbai-usage-stats', 'saved', admin_url( 'admin.php?page=bbai-settings' ) ) );
+		exit;
+	}
+
+	/**
+	 * Anonymous PostHog distinct id: a random per-install UUID used only for
+	 * telemetry. Not the email, account, license, host or backend install id.
+	 */
+	public static function get_anonymous_id(): string {
+		$id = get_option( self::ANON_ID_OPTION, '' );
+		if ( ! is_string( $id ) || ! preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $id ) ) {
+			$id = strtolower( wp_generate_uuid4() );
+			update_option( self::ANON_ID_OPTION, $id, false );
+		}
+		return 'anon_' . $id;
+	}
+
+	/**
+	 * Keep only allowlisted, token-shaped properties for PostHog.
+	 *
+	 * @param array<string,mixed> $props Raw properties.
+	 * @return array<string,mixed>
+	 */
+	public static function filter_posthog_properties( array $props ): array {
+		$out = array();
+		foreach ( self::POSTHOG_PROPERTY_ALLOWLIST as $key ) {
+			if ( ! array_key_exists( $key, $props ) ) {
+				continue;
+			}
+			$v = $props[ $key ];
+			if ( is_bool( $v ) ) {
+				$out[ $key ] = $v;
+			} elseif ( is_int( $v ) || ( is_float( $v ) && is_finite( $v ) ) ) {
+				$out[ $key ] = max( 0, min( 1000000000, (int) $v ) );
+			} elseif ( is_string( $v ) && 1 === preg_match( '/^[A-Za-z0-9_.\-]{1,64}$/', $v ) ) {
+				$out[ $key ] = $v;
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * Capture activation/update/install semantics from the real WordPress lifecycle hook.
 	 */
 	public static function record_activation_lifecycle(): void {
-		if ( false === get_option( self::CONSENT_OPTION, false ) ) {
-			update_option( self::CONSENT_OPTION, 'yes', false );
-		}
+		self::maybe_clear_legacy_consent();
 
 		if ( ! get_option( self::INSTALLED_MARKER_OPTION, false ) && ! get_option( self::LEGACY_INSTALLED_MARKER_OPTION, false ) ) {
 			self::queue_lifecycle_event( 'plugin_installed' );
@@ -319,6 +429,12 @@ class BBAI_Telemetry {
 			return;
 		}
 
+		// Never store events for later delivery when the site has not opted in.
+		if ( ! self::has_telemetry_consent() ) {
+			self::emit( $event_name, array( 'lifecycle_delivery' => 'not_queued_no_consent' ) );
+			return;
+		}
+
 		$site_install_id = self::resolve_site_id();
 		$properties      = self::with_site_identity(
 			self::sanitize_properties(
@@ -372,6 +488,10 @@ class BBAI_Telemetry {
 	 */
 	public static function flush_queued_lifecycle_events(): void {
 		if ( ! self::has_telemetry_consent() ) {
+			// Drop anything queued before consent (e.g. by an older version).
+			if ( false !== get_option( self::LIFECYCLE_QUEUE_OPTION, false ) ) {
+				delete_option( self::LIFECYCLE_QUEUE_OPTION );
+			}
 			return;
 		}
 
@@ -386,14 +506,13 @@ class BBAI_Telemetry {
 				continue;
 			}
 			$event_name  = isset( $entry['event'] ) ? sanitize_key( (string) $entry['event'] ) : '';
-			$distinct_id = isset( $entry['distinct_id'] ) ? sanitize_text_field( (string) $entry['distinct_id'] ) : '';
 			$properties  = isset( $entry['properties'] ) && is_array( $entry['properties'] ) ? $entry['properties'] : array();
-			if ( '' === $event_name || '' === $distinct_id ) {
+			if ( '' === $event_name ) {
 				continue;
 			}
 			self::capture_posthog_event(
 				$event_name,
-				$distinct_id,
+				'',
 				array_merge(
 					$properties,
 					array(
@@ -409,20 +528,20 @@ class BBAI_Telemetry {
 	 * Non-blocking server-side PostHog capture for trustworthy value events.
 	 *
 	 * @param string $event_name  Event name.
-	 * @param string $distinct_id Stable PostHog distinct id.
-	 * @param array  $properties  Event properties.
+	 * @param string $distinct_id Ignored: the anonymous telemetry id is always used.
+	 * @param array  $properties  Event properties (filtered to the allowlist).
 	 */
 	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = array() ): void {
-		$event_name  = sanitize_key( $event_name );
-		$event_name  = self::normalize_event_name( $event_name, $properties );
-		$distinct_id = sanitize_text_field( $distinct_id );
-		if ( '' === $event_name || '' === $distinct_id ) {
-			return;
-		}
-
 		if ( ! self::has_telemetry_consent() ) {
 			return;
 		}
+
+		$event_name = sanitize_key( $event_name );
+		$event_name = self::normalize_event_name( $event_name, $properties );
+		if ( '' === $event_name ) {
+			return;
+		}
+		$distinct_id = self::get_anonymous_id();
 
 		if ( ! apply_filters( 'bbai_posthog_server_capture_enabled', true, $event_name, $distinct_id, $properties ) ) {
 			return;
@@ -434,7 +553,26 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$properties = self::with_site_identity( self::sanitize_properties( $properties ) );
+		$insert_id  = isset( $properties['$insert_id'] ) && is_scalar( $properties['$insert_id'] ) ? (string) $properties['$insert_id'] : '';
+		$properties = self::filter_posthog_properties(
+			array_merge(
+				array(
+					'plugin_slug'       => self::get_plugin_slug(),
+					'plugin_version'    => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
+					'wp_version'        => function_exists( 'get_bloginfo' ) ? (string) get_bloginfo( 'version' ) : '',
+					'php_version'       => PHP_VERSION,
+					'environment'       => self::resolve_environment(),
+					'telemetry_version' => self::TELEMETRY_SCHEMA_VERSION,
+				),
+				$properties
+			)
+		);
+		// Dedupe key: hashed with the anonymous id so it carries no ids of its own.
+		if ( '' !== $insert_id ) {
+			$properties['$insert_id'] = 'bbai_' . substr( hash( 'sha256', $distinct_id . '|' . $insert_id ), 0, 40 );
+		}
+		$properties['$process_person_profile'] = false;
+		$properties['$geoip_disable']          = true;
 
 		$payload = wp_json_encode(
 			array(

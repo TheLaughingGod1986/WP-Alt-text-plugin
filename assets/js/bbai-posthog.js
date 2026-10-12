@@ -2,6 +2,8 @@
     'use strict';
 
     var cfg = window.BBAI_POSTHOG || {};
+    // Opt-in only: anything other than an explicit `true` from PHP means disabled.
+    cfg.enabled = cfg.enabled === true;
     var runtimeContext = {};
     var instanceName = cfg.instanceName || 'bbaiPosthog';
     var loaderState = window.__BBAI_POSTHOG_STATE || {};
