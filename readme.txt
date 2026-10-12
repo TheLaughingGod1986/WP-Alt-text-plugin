@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.139
+Stable tag: 4.6.140
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -153,6 +153,10 @@ Purpose: If the site owner opts in, send anonymous plugin usage analytics such a
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.140 =
+* Improved: sign-up question options.
+* Fixed: a missing stylesheet request on admin pages.
 
 = 4.6.139 =
 * Fix: failed generations no longer use credits.
@@ -304,6 +308,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.140 =
+Clearer sign-up question options and a fix for a missing stylesheet request on admin pages.
 
 = 4.6.139 =
 Failed generations no longer use credits, and background generation is more reliable. Recommended for all users.
