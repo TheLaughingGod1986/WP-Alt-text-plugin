@@ -1842,14 +1842,14 @@ class Core {
             $checkout = isset($_GET['checkout']) ? sanitize_key(wp_unslash($_GET['checkout'])) : '';
             if ($checkout === 'success') {
                 ?>
-                <div class="notice notice-success is-dismissible">
+                <div class="notice notice-success is-dismissible bbai-preserve-notice">
                     <p><strong><?php esc_html_e('Thanks, your payment went through.', 'beepbeep-ai-alt-text-generator'); ?></strong>
                     <?php esc_html_e('Your plan and credits update on this site within a minute. Refresh this page if they have not changed yet.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php
             } elseif ($checkout === 'cancel') {
                 ?>
-                <div class="notice notice-warning is-dismissible">
+                <div class="notice notice-warning is-dismissible bbai-preserve-notice">
                     <p><?php esc_html_e('Checkout cancelled. You have not been charged and your plan is unchanged. You can upgrade or buy credits any time from the Upgrade button.', 'beepbeep-ai-alt-text-generator'); ?></p>
                 </div>
                 <?php

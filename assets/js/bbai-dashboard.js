@@ -2265,6 +2265,23 @@ bbaiRunWithJQuery(function($) {
         return payload;
     }
 
+    function dispatchCheckoutFallbackAnalytics(planName, errorCode, extra) {
+        try {
+            document.dispatchEvent(new CustomEvent('bbai:analytics', {
+                detail: Object.assign({
+                    event: 'checkout_fallback_payment_link',
+                    source: 'checkout',
+                    endpoint: 'beepbeepai_create_checkout',
+                    timestamp: Date.now(),
+                    plan: planName || '',
+                    error_code: errorCode
+                }, extra || {})
+            }));
+        } catch (error) {
+            // Ignore analytics failures.
+        }
+    }
+
     function initiateCheckout($button, priceId, planName) {
         if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Initiating checkout:', planName, priceId);
 
@@ -2276,6 +2293,11 @@ bbaiRunWithJQuery(function($) {
 
         if (!ajaxUrl || !nonce || !resolvedPriceId || !window.jQuery || typeof $.ajax !== 'function') {
             if (alttextaiDebug) window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Falling back to Stripe payment link:', fallbackUrl);
+            if (fallbackUrl) {
+                // eslint-disable-next-line no-console
+                window.console && window.console.warn && window.console.warn('[AltText AI] Checkout session unavailable (missing ajax config or price); using static payment link fallback', { plan: planName || '' });
+                dispatchCheckoutFallbackAnalytics(planName, 'checkout_unavailable');
+            }
             if (openCheckoutUrl(fallbackUrl, planName)) {
                 return;
             }
@@ -2319,6 +2341,9 @@ bbaiRunWithJQuery(function($) {
 
                 // eslint-disable-next-line no-console
                 window.console && window.console.warn && window.console.warn('[AltText AI] Checkout session missing URL, falling back to static payment link', { plan: planName || '' });
+                if (fallbackUrl) {
+                    dispatchCheckoutFallbackAnalytics(planName, 'missing_checkout_url');
+                }
                 if (openCheckoutUrl(fallbackUrl, planName)) {
                     return;
                 }
@@ -2335,6 +2360,10 @@ bbaiRunWithJQuery(function($) {
                         status: xhr && xhr.status,
                         response: xhr && xhr.responseJSON ? xhr.responseJSON : null
                     });
+                }
+
+                if (fallbackUrl) {
+                    dispatchCheckoutFallbackAnalytics(planName, 'checkout_session_failed', { status: xhr && xhr.status ? xhr.status : null });
                 }
 
                 if (openCheckoutUrl(fallbackUrl, planName)) {
