@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **Handover:** read `HANDOVER.md` first (standing rules, release state, Auditor param compat, what lives outside git). Updated 12 Oct 2026.
+
 ## Repo Workflows
 
 - Run once per clone to keep Git using the repo-root `gitignore` file that avoids WordPress Plugin Check `hidden_files` noise:
