@@ -3540,8 +3540,16 @@ class API_Client_V2 {
 			$payload['height'] = $metadata['height'];
 		}
 
-		// Validate image is not too small or invalid
+		// Reject invalid remote image schemes before a billable backend request.
+		// Local files may still be used for private sites, so do not require a public URL.
 		$file_path = get_attached_file( $image_id );
+		$has_local_image = is_string( $file_path ) && is_file( $file_path );
+		if ( ! $has_local_image && ( ! is_string( $image_url ) || ! wp_http_validate_url( $image_url ) ) ) {
+			$payload['_error'] = 'invalid_image_source';
+			$payload['_error_message'] = __( 'The image has no accessible local file or valid public HTTP(S) URL.', 'beepbeep-ai-alt-text-generator' );
+			return $payload;
+		}
+		// Validate image is not too small or invalid
 		if ( $file_path && file_exists( $file_path ) ) {
 			$file_size     = filesize( $file_path );
 			$min_file_size = 100; // Minimum 100 bytes for a valid image
