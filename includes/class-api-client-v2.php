@@ -2542,6 +2542,17 @@ class API_Client_V2 {
 
 		$image_payload = $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename );
 
+		// Reject all image preparation errors before any billable backend request.
+		// In particular, invalid_image_source must never fall through to /api/alt-text.
+		if ( ! empty( $image_payload['_error'] ) ) {
+			$error_code = sanitize_key( (string) $image_payload['_error'] );
+			return new \WP_Error(
+				$error_code,
+				$image_payload['_error_message'] ?? __( 'Could not prepare the image for generation.', 'beepbeep-ai-alt-text-generator' ),
+				array( 'image_id' => $image_id )
+			);
+		}
+
 		// Check if image preparation failed due to size (too large)
 		if ( isset( $image_payload['_error'] ) && 'image_too_large' === $image_payload['_error'] ) {
 			return new \WP_Error(
@@ -3540,8 +3551,16 @@ class API_Client_V2 {
 			$payload['height'] = $metadata['height'];
 		}
 
-		// Validate image is not too small or invalid
+		// Reject invalid remote image schemes before a billable backend request.
+		// Local files may still be used for private sites, so do not require a public URL.
 		$file_path = get_attached_file( $image_id );
+		$has_local_image = is_string( $file_path ) && is_file( $file_path );
+		if ( ! $has_local_image && ( ! is_string( $image_url ) || ! wp_http_validate_url( $image_url ) ) ) {
+			$payload['_error'] = 'invalid_image_source';
+			$payload['_error_message'] = __( 'The image has no accessible local file or valid public HTTP(S) URL.', 'beepbeep-ai-alt-text-generator' );
+			return $payload;
+		}
+		// Validate image is not too small or invalid
 		if ( $file_path && file_exists( $file_path ) ) {
 			$file_size     = filesize( $file_path );
 			$min_file_size = 100; // Minimum 100 bytes for a valid image
