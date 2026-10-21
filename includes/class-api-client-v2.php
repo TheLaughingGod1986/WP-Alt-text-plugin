@@ -2542,6 +2542,17 @@ class API_Client_V2 {
 
 		$image_payload = $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename );
 
+		// Reject all image preparation errors before any billable backend request.
+		// In particular, invalid_image_source must never fall through to /api/alt-text.
+		if ( ! empty( $image_payload['_error'] ) ) {
+			$error_code = sanitize_key( (string) $image_payload['_error'] );
+			return new \\WP_Error(
+				$error_code,
+				$image_payload['_error_message'] ?? __( 'Could not prepare the image for generation.', 'beepbeep-ai-alt-text-generator' ),
+				array( 'image_id' => $image_id )
+			);
+		}
+
 		// Check if image preparation failed due to size (too large)
 		if ( isset( $image_payload['_error'] ) && 'image_too_large' === $image_payload['_error'] ) {
 			return new \WP_Error(
