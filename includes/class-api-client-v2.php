@@ -2546,7 +2546,7 @@ class API_Client_V2 {
 		// In particular, invalid_image_source must never fall through to /api/alt-text.
 		if ( ! empty( $image_payload['_error'] ) ) {
 			$error_code = sanitize_key( (string) $image_payload['_error'] );
-			return new \\WP_Error(
+			return new \WP_Error(
 				$error_code,
 				$image_payload['_error_message'] ?? __( 'Could not prepare the image for generation.', 'beepbeep-ai-alt-text-generator' ),
 				array( 'image_id' => $image_id )
