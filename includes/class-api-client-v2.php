@@ -800,8 +800,17 @@ class API_Client_V2 {
 		if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
 		}
-		$decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $body ) : null;
-		$data    = is_array( $decoded ) ? $decoded : array();
+		// Keep URLs intact: sanitize_text_field() strips percent-encoded characters,
+		// which breaks Stripe checkout and billing portal links.
+		$url_keys = array(
+			'url'         => 'esc_url_raw',
+			'checkoutUrl' => 'esc_url_raw',
+			'checkout_url' => 'esc_url_raw',
+			'portalUrl'   => 'esc_url_raw',
+			'portal_url'  => 'esc_url_raw',
+		);
+		$decoded  = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $body, $url_keys ) : null;
+		$data     = is_array( $decoded ) ? $decoded : array();
 
 		$log_context = array(
 			'endpoint' => $endpoint,
