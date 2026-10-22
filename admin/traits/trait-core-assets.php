@@ -125,7 +125,7 @@ trait Core_Assets {
 			return defined( Usage_Tracker::class . '::STARTER_MONTHLY_LIMIT' ) ? Usage_Tracker::STARTER_MONTHLY_LIMIT : 100;
 		}
 		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
-			return Usage_Tracker::MIN_PAID_MONTHLY_LIMIT;
+			return defined( \BeepBeepAI\AltTextGenerator\API_Client_V2::class . '::MIN_PAID_MONTHLY_LIMIT' ) ? \BeepBeepAI\AltTextGenerator\API_Client_V2::MIN_PAID_MONTHLY_LIMIT : 1000;
 		}
 
 		return 0;
