@@ -133,7 +133,7 @@ class BBAI_Review_Prompt {
 			return;
 		}
 		?>
-		<div class="notice notice-info bbai-review-prompt" data-bbai-review-prompt="1">
+		<div class="notice notice-info bbai-review-prompt bbai-preserve-notice" data-bbai-review-prompt="1">
 			<p>
 				<strong><?php esc_html_e( 'Is OpptiAI Alt Text helping?', 'beepbeep-ai-alt-text-generator' ); ?></strong>
 				<?php esc_html_e( 'A quick review on WordPress.org helps other site owners find it.', 'beepbeep-ai-alt-text-generator' ); ?>

@@ -1116,20 +1116,31 @@ function bbai_credit_nudge_content(array $s): array
     $fixed   = bbai_credit_nudge_fixed_count();
     $missing = max(0, (int) ($s['missing_count'] ?? 0));
 
-    $fixed_line = sprintf(
-        /* translators: %s: number of images that now have ALT text. */
-        _n('You fixed %s image.', 'You fixed %s images.', $fixed, 'beepbeep-ai-alt-text-generator'),
-        number_format_i18n($fixed)
-    );
-    $missing_line = $missing > 0
+    // Never say "You fixed 0 images": lead with what is still missing instead.
+    $fixed_line = $fixed > 0
         ? sprintf(
-            /* translators: %s: number of images still missing ALT text. */
-            _n('%s still missing.', '%s still missing.', $missing, 'beepbeep-ai-alt-text-generator'),
-            number_format_i18n($missing)
+            /* translators: %s: number of images that now have ALT text. */
+            _n('You fixed %s image.', 'You fixed %s images.', $fixed, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($fixed)
         )
-        : __('Keep new uploads covered with Starter.', 'beepbeep-ai-alt-text-generator');
+        : '';
+    if ($fixed <= 0 && $missing > 0) {
+        $missing_line = sprintf(
+            /* translators: %s: number of images missing ALT text. */
+            _n('%s image is still missing ALT text.', '%s images are still missing ALT text.', $missing, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($missing)
+        );
+    } else {
+        $missing_line = $missing > 0
+            ? sprintf(
+                /* translators: %s: number of images still missing ALT text. */
+                _n('%s still missing.', '%s still missing.', $missing, 'beepbeep-ai-alt-text-generator'),
+                number_format_i18n($missing)
+            )
+            : __('Keep new uploads covered with Starter.', 'beepbeep-ai-alt-text-generator');
+    }
 
-    $body  = $fixed_line . ' ' . $missing_line;
+    $body  = trim($fixed_line . ' ' . $missing_line);
     $reset = bbai_credit_nudge_reset_label();
     if ('' !== $reset) {
         $body .= ' ' . sprintf(

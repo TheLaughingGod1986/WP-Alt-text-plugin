@@ -91,7 +91,8 @@ final class TelemetryPlanNormaliserTest extends TestCase {
 
 	public function test_non_checkout_events_keep_existing_bucket(): void {
 		$out = $this->enrich( array( 'plan' => 'starter' ), 'alt_generated' );
-		$this->assertSame( 'pro', $out['plan'] );
+		// A Starter account reports starter (QA 4.6.142: it used to be bucketed as pro).
+		$this->assertSame( 'starter', $out['plan'] );
 		$this->assertArrayNotHasKey( 'target_plan', $out );
 	}
 }

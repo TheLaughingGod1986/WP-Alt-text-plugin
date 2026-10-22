@@ -167,8 +167,11 @@ class BBAI_Telemetry {
 		}
 
 		$stored = get_option( self::CONSENT_OPTION, false );
-		// Opt-in only: nothing is sent unless the site owner has said yes.
-		$granted = in_array( $stored, array( 'yes', '1', 1, true ), true );
+		// Opt-in only: nothing is sent unless the site owner has said yes in
+		// Settings. A 'yes' written automatically by older builds on activation
+		// is not consent, even before the one-time reset has run.
+		$granted = in_array( $stored, array( 'yes', '1', 1, true ), true )
+			&& 'settings' === get_option( self::CONSENT_SOURCE_OPTION, '' );
 
 		/**
 		 * Override external telemetry consent for managed environments.
@@ -229,13 +232,14 @@ class BBAI_Telemetry {
 	 */
 	public static function normalize_plan_value( $plan ): string {
 		$plan = is_scalar( $plan ) ? sanitize_key( (string) $plan ) : '';
-		if ( in_array( $plan, array( 'free', 'trial', 'pro', 'agency' ), true ) ) {
+		// Starter is its own paid plan: report it as starter, not pro (Growth).
+		if ( in_array( $plan, array( 'free', 'trial', 'starter', 'pro', 'agency' ), true ) ) {
 			return $plan;
 		}
 		if ( 'anonymous_trial' === $plan ) {
 			return 'trial';
 		}
-		if ( in_array( $plan, array( 'starter', 'growth', 'enterprise' ), true ) ) {
+		if ( in_array( $plan, array( 'growth', 'enterprise' ), true ) ) {
 			return 'pro';
 		}
 		return 'unknown';

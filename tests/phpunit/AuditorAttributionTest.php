@@ -1,6 +1,6 @@
 <?php
 /**
- * Website Auditor deep-link: args survive the signed-out redirect, the
+ * OpptiAI tool deep-link: args survive the signed-out redirect, the
  * tracking event fires once, and sign-in lands once on the library view.
  */
 declare(strict_types=1);
@@ -88,6 +88,13 @@ namespace {
 			$events = $this->events();
 			$this->assertCount( 1, $events );
 			$this->assertSame( 'auditor', $events[0][1]['source'] );
+			$this->assertSame( 'missing_alt', $events[0][1]['finding'] );
+		}
+
+		public function test_generic_oppti_tool_source_is_attributed(): void {
+			$this->visit( array( 'page' => 'bbai', 'source' => 'oppti_tool', 'finding' => 'missing_alt' ) );
+			$events = $this->events();
+			$this->assertCount( 1, $events );
 			$this->assertSame( 'missing_alt', $events[0][1]['finding'] );
 		}
 

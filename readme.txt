@@ -166,6 +166,11 @@ Privacy policy: https://posthog.com/privacy
 * Fixed: the upgrade window no longer says you've used your free images while you still have some left.
 * Fixed: sign-in errors such as a wrong password, or an email that already has an account, stay on screen until you change a field.
 * Fixed: sign-up and log-in fallback links now open the plugin's own sign-in window instead of a dead address.
+* Fixed: the free trial counter matches your account right after you generate, and updates without a reload.
+* Fixed: after checkout or signing in, your plan and credits show straight away.
+* Fixed: the credit notice no longer says you fixed 0 images.
+* Fixed: if scripts on the page fail to load, upgrade buttons still open a real checkout in the same tab, or show the reason.
+* Changed: contact and help messages now go to the OpptiAI support team.
 
 = 4.6.141 =
 * Fixed: upgrade buttons now open a working checkout page.

@@ -109,7 +109,7 @@ class BbAIAuthModal {
     }
 
     /**
-     * Website Auditor attribution returned by the login/register AJAX
+     * OpptiAI tool deep-link attribution returned by the login/register AJAX
      * response. Only auditor_source / auditor_finding are copied, so the
      * event's own source and signup_source are never overwritten.
      */

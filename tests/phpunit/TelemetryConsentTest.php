@@ -88,4 +88,10 @@ final class TelemetryConsentTest extends TestCase {
 		$this->assertSame( 'yes', get_option( BBAI_Telemetry::CONSENT_OPTION ) );
 		$this->assertTrue( BBAI_Telemetry::has_telemetry_consent() );
 	}
+
+	public function test_auto_yes_is_not_consent_before_reset_runs(): void {
+		// e.g. a cron or front-end request on a 4.6.140 site before admin_init.
+		update_option( BBAI_Telemetry::CONSENT_OPTION, 'yes' );
+		$this->assertFalse( BBAI_Telemetry::has_telemetry_consent() );
+	}
 }

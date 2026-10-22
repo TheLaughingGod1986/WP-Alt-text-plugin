@@ -907,7 +907,7 @@ class Usage_Tracker {
      * Get upgrade URL
      */
     public static function get_upgrade_url() {
-        $default = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
+        $default = 'https://oppti.dev/pricing';
         $stored  = get_option('bbai_upgrade_url', $default);
         return apply_filters('bbai_upgrade_url', $stored ?: $default);
     }

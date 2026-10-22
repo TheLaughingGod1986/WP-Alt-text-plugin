@@ -1624,6 +1624,7 @@ JS,
 			array(
 				'wp_version'     => get_bloginfo( 'version' ),
 				'plugin_version' => BEEPBEEP_AI_VERSION,
+				'support_email'  => defined( 'BBAI_SUPPORT_EMAIL' ) ? BBAI_SUPPORT_EMAIL : 'support@oppti.dev',
 			)
 		);
 

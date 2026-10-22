@@ -661,6 +661,14 @@
             return variant;
         }
 
+        if (reason === 'limit_reached' && remaining > 0) {
+            // Stale trigger: credits are still available, so never say "used".
+            variant.eyebrow = __('Continue improving your library', 'beepbeep-ai-alt-text-generator');
+            variant.title = __('Choose your upgrade', 'beepbeep-ai-alt-text-generator');
+            variant.subtitle = __('Pick the plan that fits your site.', 'beepbeep-ai-alt-text-generator');
+            return variant;
+        }
+
         if (reason === 'limit_reached') {
             variant.eyebrow = __('Continue improving your library', 'beepbeep-ai-alt-text-generator');
             variant.title = __('You’ve used this month’s free allowance.', 'beepbeep-ai-alt-text-generator');

@@ -683,12 +683,74 @@ bbaiRunWithJQuery(function($) {
 
             if ($btn && $btn.length) {
                 initiateCheckout($btn, priceId, plan);
-            } else if (!openCheckoutUrl(resolveCheckoutFallbackUrl(null, plan), plan)) {
-                window.BBAI_LOG && window.BBAI_LOG.error('[AltText AI] No checkout URL available!');
-                showCheckoutContinuePanel({ message: __('Unable to start checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator'), plan: plan });
+            } else {
+                // No jQuery: still create a real session (same tab) instead of
+                // jumping to a static Payment Link that cannot be matched to this site.
+                checkoutWithoutJQuery(btn, priceId, plan);
             }
 
             return false;
+        }
+
+        function checkoutWithoutJQuery(btn, priceId, plan) {
+            var genericError = __('Unable to start checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
+            var ajaxUrl = window.bbai_ajax && (window.bbai_ajax.ajaxurl || window.bbai_ajax.ajax_url);
+            var nonce = window.bbai_ajax && window.bbai_ajax.nonce;
+            var fallbackUrl = (btn && btn.getAttribute('data-fallback-url')) || resolveCheckoutFallbackUrl(null, plan);
+            var retry = function() { checkoutWithoutJQuery(btn, priceId, plan); };
+            var showPanel = function(message, url) {
+                showCheckoutContinuePanel({ message: message || genericError, url: url || fallbackUrl, plan: plan || 'unknown', retry: retry });
+            };
+
+            if (bbaiCheckoutInFlight) {
+                return;
+            }
+            if (!ajaxUrl || !nonce || !priceId || !window.fetch || !window.URLSearchParams) {
+                trackCheckoutEvent('checkout_failed', { plan: plan || 'unknown', error_code: 'checkout_unavailable' });
+                showPanel(genericError);
+                return;
+            }
+
+            bbaiCheckoutInFlight = true;
+            if (btn) {
+                btn.disabled = true;
+                btn.setAttribute('aria-busy', 'true');
+            }
+            var release = function() {
+                bbaiCheckoutInFlight = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.setAttribute('aria-busy', 'false');
+                }
+            };
+
+            var body = new window.URLSearchParams();
+            body.append('action', 'beepbeepai_create_checkout');
+            body.append('nonce', nonce);
+            body.append('price_id', priceId);
+            body.append('plan_id', plan || '');
+            trackCheckoutEvent('checkout_clicked', { plan: plan || 'unknown', target_plan: plan || 'unknown', price_id: priceId });
+
+            window.fetch(ajaxUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                body: body.toString()
+            }).then(function(res) {
+                return res.json().catch(function() { return null; });
+            }).then(function(response) {
+                var data = response && response.data && typeof response.data === 'object' ? response.data : {};
+                if (response && response.success === true && data.url && openCheckoutUrl(String(data.url), plan, { reused: !!data.reused })) {
+                    return;
+                }
+                release();
+                trackCheckoutEvent('checkout_failed', { plan: plan || 'unknown', error_code: data.code || 'checkout_session_failed' });
+                showPanel(data.message, data.fallback_url);
+            }).catch(function() {
+                release();
+                trackCheckoutEvent('checkout_failed', { plan: plan || 'unknown', error_code: 'network_error' });
+                showPanel(genericError);
+            });
         }
         
         // Attach event listener

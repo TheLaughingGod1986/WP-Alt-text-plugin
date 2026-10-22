@@ -24,6 +24,12 @@ define( 'BBAI_ALREADY_LOADED', true );
 
 // Define plugin constants
 define( 'BEEPBEEP_AI_VERSION', '4.6.142' );
+// Support inbox shown to users and used as the contact-form recipient.
+// One place to change; a site can still override the recipient with the
+// bbai_contact_support_recipient filter.
+if ( ! defined( 'BBAI_SUPPORT_EMAIL' ) ) {
+	define( 'BBAI_SUPPORT_EMAIL', 'support@oppti.dev' );
+}
 define( 'BEEPBEEP_AI_PLUGIN_ID', 'alt_text' );
 define( 'BEEPBEEP_AI_PLUGIN_TITLE', 'OpptiAI Alt Text' );
 define( 'BBAI_VERSION', '4.6.115' ); // Legacy alias for compatibility

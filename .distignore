@@ -1,0 +1,17 @@
+# Never shipped in the plugin zip (scripts/build-plugin-zip.bash reads this too).
+.git
+/.github/
+/.claude/
+/.cursor/
+/.vscode/
+/node_modules/
+/docs/
+/tests/
+/scripts/
+/build/
+/dist/
+HANDOVER.md
+HANDOVER*.md
+AGENTS.md
+*BRIEF*.md
+*brief*.md
