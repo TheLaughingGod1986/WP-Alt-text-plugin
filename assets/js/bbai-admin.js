@@ -2882,7 +2882,14 @@
             window.showAuthModal('register', modalContext);
             return;
         }
-        window.location.href = 'https://app.beepbeep.ai/register';
+        window.location.href = bbaiPluginAuthUrl('register');
+    }
+
+    // Fallback when no auth modal is on the page: the plugin dashboard opens it
+    // (app.beepbeep.ai no longer resolves).
+    function bbaiPluginAuthUrl(tab) {
+        var base = (window.bbai_ajax && window.bbai_ajax.admin_url) || 'admin.php';
+        return base + '?page=bbai&bbai_open_auth=1&bbai_auth_tab=' + (tab === 'login' ? 'login' : 'register');
     }
 
     function openAuthLoginModal() {
@@ -2906,7 +2913,7 @@
             window.showAuthModal('login', 'login');
             return;
         }
-        window.location.href = 'https://app.beepbeep.ai/login';
+        window.location.href = bbaiPluginAuthUrl('login');
     }
 
     function normalizeLimitErrorData(errorData) {
@@ -9788,9 +9795,14 @@
             active++;
 
             generateAltTextForId(id)
-                .then(function() {
+                .then(function(result) {
                     processed++;
                     successes++;
+                    // Apply the fresh usage from this generation now, so the
+                    // "N generations left" line is not built from page-load data.
+                    if (result && result.usage) {
+                        applyLibraryUsageAfterGeneration(result.usage, 1);
+                    }
                 })
                 .catch(function(error) {
                     if (isLimitReachedError(error)) {

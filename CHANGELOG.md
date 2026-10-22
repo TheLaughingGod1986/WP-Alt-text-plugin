@@ -10,6 +10,7 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 - **Changed**: One-time reset of the `bbai_telemetry_consent = yes` that builds before 4.6.141 wrote on activation, unless an admin chose it in Settings.
 - **Fixed**: A checkout server error (5xx/timeout) no longer silently redirects to the GBP Payment Link; the panel shows the real error with Continue to payment / Copy link / Try again.
 - **Fixed**: Release zip excludes any `.git` file or directory and `HANDOVER.md`, and the build fails if either slips in.
+- **Fixed** (QA baseline): batch generation applies each response's usage before the summary, so "N generations left" is current; upgrade modal only says "used your free images" at 0 left; auth-modal errors persist until input; app.beepbeep.ai register/login fallbacks now go to admin.php?page=bbai&bbai_open_auth=1.
 - Includes 4.6.141 (checkout URLs kept intact; usage analytics opt-in only), the same-tab single-click checkout and item 9 outbound changes.
 
 ### 4.6.141 — 2026-10-22

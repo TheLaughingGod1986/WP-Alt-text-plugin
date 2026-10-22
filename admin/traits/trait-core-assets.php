@@ -1666,8 +1666,9 @@ JS,
 
 		// Inline CTA fallback handler — runs when the full modal JS bundle is absent.
 		// Handles show-dashboard-auth and show-upgrade-modal with graceful navigation fallbacks.
-		$bbai_signup_url  = esc_url_raw( 'https://app.beepbeep.ai/register' );
-		$bbai_login_url   = esc_url_raw( 'https://app.beepbeep.ai/login' );
+		// app.beepbeep.ai no longer resolves: the plugin dashboard opens the auth modal.
+		$bbai_signup_url  = esc_url_raw( add_query_arg( array( 'page' => 'bbai', 'bbai_open_auth' => '1', 'bbai_auth_tab' => 'register' ), admin_url( 'admin.php' ) ) );
+		$bbai_login_url   = esc_url_raw( add_query_arg( array( 'page' => 'bbai', 'bbai_open_auth' => '1', 'bbai_auth_tab' => 'login' ), admin_url( 'admin.php' ) ) );
 		$bbai_upgrade_url = esc_url_raw( \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_upgrade_url() );
 		$bbai_cta_inline  = implode(
 			"\n",

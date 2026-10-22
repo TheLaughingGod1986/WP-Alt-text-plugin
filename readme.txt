@@ -162,6 +162,10 @@ Privacy policy: https://posthog.com/privacy
 * Improved: sites in the US see US dollar prices; everywhere else sees pounds.
 * New: a short review request after your first ALT text is generated, shown once.
 * New: a notice when you run out of free credits, with your refill date.
+* Fixed: the "generations left" message updates right after you generate, without a reload.
+* Fixed: the upgrade window no longer says you've used your free images while you still have some left.
+* Fixed: sign-in errors such as a wrong password, or an email that already has an account, stay on screen until you change a field.
+* Fixed: sign-up and log-in fallback links now open the plugin's own sign-in window instead of a dead address.
 
 = 4.6.141 =
 * Fixed: upgrade buttons now open a working checkout page.
