@@ -151,11 +151,8 @@ class BBAI_Telemetry {
 		}
 
 		$stored = get_option( self::CONSENT_OPTION, false );
-		if ( false === $stored ) {
-			$granted = true;
-		} else {
-			$granted = in_array( $stored, array( 'yes', '1', 1, true ), true );
-		}
+		// Opt-in only: nothing is sent unless the site owner has said yes.
+		$granted = in_array( $stored, array( 'yes', '1', 1, true ), true );
 
 		/**
 		 * Override external telemetry consent for managed environments.
@@ -232,10 +229,6 @@ class BBAI_Telemetry {
 	 * Capture activation/update/install semantics from the real WordPress lifecycle hook.
 	 */
 	public static function record_activation_lifecycle(): void {
-		if ( false === get_option( self::CONSENT_OPTION, false ) ) {
-			update_option( self::CONSENT_OPTION, 'yes', false );
-		}
-
 		if ( ! get_option( self::INSTALLED_MARKER_OPTION, false ) && ! get_option( self::LEGACY_INSTALLED_MARKER_OPTION, false ) ) {
 			self::queue_lifecycle_event( 'plugin_installed' );
 			update_option( self::INSTALLED_MARKER_OPTION, gmdate( 'c' ), false );
