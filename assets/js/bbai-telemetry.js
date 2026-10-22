@@ -110,6 +110,11 @@
         documentation_opened: true,
         upgrade_clicked: true,
         checkout_started: true,
+        // Checkout funnel diagnostics (alt-checkout-single-click).
+        checkout_clicked: true,
+        checkout_session_returned: true,
+        checkout_redirected: true,
+        checkout_failed: true,
         upgrade_modal_opened: true,
         upgrade_modal_closed: true,
         upgrade_started: true,

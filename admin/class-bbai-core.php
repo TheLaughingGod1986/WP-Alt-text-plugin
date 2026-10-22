@@ -1391,7 +1391,7 @@ class Core {
             }
         }
 
-        if (empty($price_id)) {
+        if (empty($price_id) || !in_array($price_id, $this->get_allowed_checkout_price_ids(), true)) {
             wp_safe_redirect($fallback);
             exit;
         }
@@ -1403,7 +1403,8 @@ class Core {
         $resolved_checkout_url = $this->resolve_checkout_url_from_result($result, $plan_param, $price_id);
 
         if (is_wp_error($result) || $resolved_checkout_url === '') {
-            $fallback_checkout_url = $this->get_checkout_fallback_url($plan_param, $price_id);
+            $is_rejection = is_wp_error($result) && $result->get_error_code() === 'checkout_rejected';
+            $fallback_checkout_url = $is_rejection ? '' : $this->get_checkout_fallback_url($plan_param, $price_id);
             if ($fallback_checkout_url !== '') {
                 $this->redirect_to_checkout_url($fallback_checkout_url);
             }
@@ -1455,40 +1456,9 @@ class Core {
      * @return string Uppercase ISO 3166-1 alpha-2 country code, or '' if unknown.
      */
     private function get_request_country_code(): string {
-        $header_keys = [
-            'HTTP_CF_IPCOUNTRY', // Cloudflare
-            'CF-IPCountry',
-            'HTTP_CLOUDFRONT_VIEWER_COUNTRY', // CloudFront
-            'HTTP_X_COUNTRY_CODE',
-            'HTTP_X_APPENGINE_COUNTRY', // App Engine
-            'HTTP_X_VERCEL_IP_COUNTRY', // Vercel
-        ];
-
-        $server = isset( $_SERVER ) && is_array( $_SERVER ) ? $_SERVER : [];
-
-        foreach ( $header_keys as $key ) {
-            if ( empty( $server[ $key ] ) || ! is_string( $server[ $key ] ) ) {
-                continue;
-            }
-            $raw = strtoupper( trim( sanitize_text_field( wp_unslash( $server[ $key ] ) ) ) );
-            // Cloudflare uses XX for unknown; T1 for Tor — treat as unknown.
-            if ( $raw === '' || $raw === 'XX' || $raw === 'T1' || $raw === 'ZZ' ) {
-                continue;
-            }
-            if ( preg_match( '/^[A-Z]{2}$/', $raw ) ) {
-                /**
-                 * Filter resolved request country code for upgrade checkout currency.
-                 *
-                 * @param string $raw Resolved ISO country code.
-                 * @param string $key Header key that supplied the value.
-                 */
-                $filtered = apply_filters( 'bbai_request_country_code', $raw, $key );
-                return is_string( $filtered ) ? strtoupper( trim( $filtered ) ) : $raw;
-            }
-        }
-
-        $filtered = apply_filters( 'bbai_request_country_code', '', '' );
-        return is_string( $filtered ) ? strtoupper( trim( $filtered ) ) : '';
+        // Edge geo on the admin's own request, then site timezone, then admin
+        // locale region. See includes/class-bbai-admin-country.php.
+        return \BeepBeepAI\AltTextGenerator\BBAI_Admin_Country::country();
     }
 
     /**
@@ -1571,9 +1541,16 @@ class Core {
             }
 
             if (is_array($cached)) {
+                // Never let a USD Price ID into the GBP grid: /billing/plans used to
+                // geolocate the *hosting server*, so non-US sites on US hosts were
+                // served USD prices that then overlaid the GBP buttons.
+                $usd_price_ids = array_values(self::DEFAULT_CHECKOUT_PRICE_IDS_USD);
                 foreach ($cached as $plan_id => $price_id) {
                     $plan_id = is_string($plan_id) ? sanitize_key($plan_id) : '';
                     $price_id = is_string($price_id) ? sanitize_text_field($price_id) : '';
+                    if ($price_id !== '' && in_array($price_id, $usd_price_ids, true)) {
+                        continue;
+                    }
                     if ($plan_id && $price_id) {
                         $prices[$plan_id] = $price_id;
                     }
@@ -1754,6 +1731,15 @@ class Core {
      * Normalize checkout failures into a user-safe message.
      */
     private function get_checkout_error_message($result): string {
+        if (is_wp_error($result) && $result->get_error_code() === 'checkout_rejected') {
+            // Backend 4xx messages are written for end users; pass them through as
+            // plain text (the modal escapes on render).
+            $raw = $result->get_error_message();
+            $clean = is_string($raw) ? trim(preg_replace('/\s+/', ' ', wp_strip_all_tags($raw))) : '';
+            if ($clean !== '') {
+                return function_exists('mb_substr') ? mb_substr($clean, 0, 300) : substr($clean, 0, 300);
+            }
+        }
         if (!is_wp_error($result)) {
             return __('Unable to create checkout session. Please try again or contact support.', 'beepbeep-ai-alt-text-generator');
         }
@@ -2142,6 +2128,8 @@ class Core {
                     'checkout_redirected',
                     'checkout_failed',
                     'checkout_fallback_payment_link',
+                    'checkout_clicked',
+                    'checkout_session_returned',
                     'upgrade_cta_clicked',
                     'first_run_completed',
                     'settings_saved',
@@ -9650,7 +9638,17 @@ class Core {
         }
 
         if (empty($price_id)) {
-            wp_send_json_error(['message' => __('Price ID is required', 'beepbeep-ai-alt-text-generator')]);
+            wp_send_json_error(['message' => __('Price ID is required', 'beepbeep-ai-alt-text-generator'), 'code' => 'MISSING_PRICE_ID']);
+            return;
+        }
+
+        // Only this plugin's own catalogue (GBP + USD + any backend-provided ids)
+        // may be checked out; never forward an arbitrary browser-supplied price.
+        if (!in_array($price_id, $this->get_allowed_checkout_price_ids(), true)) {
+            wp_send_json_error([
+                'message' => __('That plan is not available. Please refresh the page and choose a plan again.', 'beepbeep-ai-alt-text-generator'),
+                'code'    => 'INVALID_PRICE_ID',
+            ]);
             return;
         }
 
@@ -9659,8 +9657,21 @@ class Core {
 
         // Create checkout session - works for both authenticated and unauthenticated users
         // If token is invalid, it will retry without token for guest checkout
-        $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url);
+        $result = $this->api_client->create_checkout_session($price_id, $success_url, $cancel_url, $this->get_checkout_request_attribution());
         $plan_hint = isset($_POST['plan_id']) ? sanitize_key(wp_unslash($_POST['plan_id'])) : '';
+
+        // A deliberate backend rejection (rate limit, active subscription, invalid
+        // price, currency…) is shown to the user as-is. Falling back to a static
+        // Payment Link here would hide the reason and can create duplicate,
+        // unattributed subscriptions.
+        if (is_wp_error($result) && $result->get_error_code() === 'checkout_rejected') {
+            $rejected_data = $result->get_error_data();
+            wp_send_json_error([
+                'message' => $this->get_checkout_error_message($result),
+                'code'    => is_array($rejected_data) && !empty($rejected_data['backend_code']) ? (string) $rejected_data['backend_code'] : 'checkout_rejected',
+            ]);
+            return;
+        }
         $resolved_checkout_url = $this->resolve_checkout_url_from_result($result, $plan_hint, $price_id);
         $raw_checkout_url = (!is_wp_error($result) && is_array($result) && isset($result['url']) && is_string($result['url']))
             ? esc_url_raw($result['url'])
@@ -9681,7 +9692,13 @@ class Core {
                 return;
             }
 
-            wp_send_json_error(['message' => $this->get_checkout_error_message($result)]);
+            $failure_data = is_wp_error($result) ? $result->get_error_data() : null;
+            wp_send_json_error([
+                'message' => $this->get_checkout_error_message($result),
+                'code'    => is_wp_error($result)
+                    ? (is_array($failure_data) && !empty($failure_data['backend_code']) ? (string) $failure_data['backend_code'] : (string) $result->get_error_code())
+                    : 'missing_checkout_url',
+            ]);
             return;
         }
 
@@ -9689,7 +9706,85 @@ class Core {
             'url' => $resolved_checkout_url,
             'session_id' => $fallback_used ? '' : ($result['sessionId'] ?? $result['session_id'] ?? ''),
             'fallback' => $fallback_used,
+            // Same params within 24h return the existing open session (Stripe
+            // idempotency). That is a success: redirect to it.
+            'reused' => !$fallback_used && !empty($result['reused']),
+            'currency' => isset($result['currency']) && is_string($result['currency']) ? sanitize_key($result['currency']) : '',
         ]);
+    }
+
+    /**
+     * Every Stripe Price ID this plugin may start a checkout for.
+     *
+     * @return string[]
+     */
+    private function get_allowed_checkout_price_ids(): array {
+        $ids = array_merge(
+            array_values(self::DEFAULT_CHECKOUT_PRICE_IDS),
+            array_values(self::DEFAULT_CHECKOUT_PRICE_IDS_USD),
+            array_values((array) $this->get_checkout_price_ids())
+        );
+        return array_values(array_unique(array_filter(array_map(
+            static function ($id) { return is_string($id) ? trim($id) : ''; },
+            $ids
+        ))));
+    }
+
+    /**
+     * Checkout context the dashboard sends with the click (which CTA, which
+     * plan, from where). Identity fields (email, license key, ids) are dropped:
+     * the backend derives identity from the authenticated request.
+     *
+     * @return array<string,string>
+     */
+    private function get_checkout_request_attribution(): array {
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified in ajax_create_checkout().
+        $raw = wp_unslash($_POST);
+        $keys = [ 'trigger_feature', 'trigger_location', 'source_page', 'target_plan', 'current_plan', 'source',
+                  'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term' ];
+        $out = [];
+        foreach ($keys as $key) {
+            if (isset($raw[$key]) && is_scalar($raw[$key])) {
+                $value = sanitize_text_field((string) $raw[$key]);
+                if ($value !== '') {
+                    $out[$key] = function_exists('mb_substr') ? mb_substr($value, 0, 120) : substr($value, 0, 120);
+                }
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * AJAX handler: email the open checkout link to the account's own email on file.
+     * The backend picks the recipient; the browser never supplies one.
+     */
+    public function ajax_email_checkout_link() {
+        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) ), 'beepbeepai_nonce' ) ) {
+            wp_send_json_error(['message' => __('Invalid nonce.', 'beepbeep-ai-alt-text-generator')], 403);
+            return;
+        }
+        if (!$this->user_can_manage()) {
+            wp_send_json_error(['message' => __('Unauthorized', 'beepbeep-ai-alt-text-generator')]);
+            return;
+        }
+        $session_id = isset($_POST['session_id']) ? sanitize_text_field(wp_unslash($_POST['session_id'])) : '';
+        if (!preg_match('/^cs_(live|test)_[A-Za-z0-9]+$/', $session_id)) {
+            wp_send_json_error(['message' => __('This checkout link is not valid. Please start checkout again.', 'beepbeep-ai-alt-text-generator'), 'code' => 'INVALID_SESSION_ID']);
+            return;
+        }
+        $result = $this->api_client->email_checkout_link($session_id);
+        if (is_wp_error($result)) {
+            $data = $result->get_error_data();
+            $message = $result->get_error_code() === 'checkout_rejected'
+                ? $this->get_checkout_error_message($result)
+                : __('We could not send the email. Please copy the link instead.', 'beepbeep-ai-alt-text-generator');
+            wp_send_json_error([
+                'message' => $message,
+                'code' => is_array($data) && !empty($data['backend_code']) ? (string) $data['backend_code'] : (string) $result->get_error_code(),
+            ]);
+            return;
+        }
+        wp_send_json_success(['sent' => true]);
     }
 
     /**
