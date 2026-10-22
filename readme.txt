@@ -160,7 +160,7 @@ Privacy policy: https://posthog.com/privacy
 
 = 4.6.143 =
 * Fixed: Starter accounts now see their own plan details instead of the Free plan limits.
-* Fixed: every paid plan (Starter, Growth and Agency) is recognised as paid on the dashboard, library and usage pages.
+* Fixed: every paid plan (Starter, Growth and Agency) is recognised as paid on the dashboard and usage pages.
 * Fixed: the "Usage this month" counter updates right after you generate, using the number from your account.
 * Fixed: upgrade buttons carry the right plan price, so checkout starts on the first click.
 * Fixed: the Continue with Starter button in the out-of-credits notice opens checkout even if page scripts don't load.
