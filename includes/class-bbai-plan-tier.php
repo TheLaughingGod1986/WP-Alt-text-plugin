@@ -28,6 +28,12 @@ if ( ! class_exists( __NAMESPACE__ . '\\Plan_Tier', false ) ) {
 		public const KNOWN_PLANS = array( 'free', 'trial', 'starter', 'growth', 'pro', 'agency', 'enterprise' );
 
 		/**
+		 * Plans that include upload generation (auto-generate on upload and the
+		 * enable_on_upload setting). Same list as 4.6.142; Starter is excluded.
+		 */
+		public const UPLOAD_GENERATION_PLANS = array( 'pro', 'growth', 'agency', 'enterprise' );
+
+		/**
 		 * Plans that skip the out-of-credits lock on the Library tab. Unchanged from
 		 * 4.6.142. Starter has a monthly limit and must hit the lock (CoS, 4.6.143).
 		 */
@@ -63,6 +69,15 @@ if ( ! class_exists( __NAMESPACE__ . '\\Plan_Tier', false ) ) {
 		 */
 		public static function is_paid( $plan ): bool {
 			return in_array( self::slug( $plan ), self::PAID_PLANS, true );
+		}
+
+		/**
+		 * Whether the plan includes upload generation (its own gate, not is_paid()).
+		 *
+		 * @param mixed $plan Plan value.
+		 */
+		public static function can_use_upload_generation( $plan ): bool {
+			return in_array( self::slug( $plan ), self::UPLOAD_GENERATION_PLANS, true );
 		}
 
 		/**

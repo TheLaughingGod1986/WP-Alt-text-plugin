@@ -897,9 +897,13 @@ class Core {
         ];
     }
 
-    private function is_paid_plan_slug($plan): bool {
+    /**
+     * Upload-generation (on-upload auto-generate) gate only. Not "is paid":
+     * Starter is paid but does not include it. Same plan list as 4.6.142.
+     */
+    private function is_upload_generation_plan_slug($plan): bool {
         $plan = is_scalar($plan) ? sanitize_key((string) $plan) : '';
-        return Plan_Tier::is_paid($plan);
+        return Plan_Tier::can_use_upload_generation($plan);
     }
 
     private function current_account_can_use_upload_generation(): bool {
@@ -909,7 +913,7 @@ class Core {
 
         if (is_array($license_data) && isset($license_data['organization']) && is_array($license_data['organization'])) {
             $license_plan = $license_data['organization']['plan'] ?? $license_data['organization']['plan_type'] ?? '';
-            if ($this->is_paid_plan_slug($license_plan)) {
+            if ($this->is_upload_generation_plan_slug($license_plan)) {
                 return true;
             }
         }
@@ -919,13 +923,13 @@ class Core {
         }
 
         $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
-        if (is_array($usage) && $this->is_paid_plan_slug($usage['plan_type'] ?? ($usage['plan'] ?? ''))) {
+        if (is_array($usage) && $this->is_upload_generation_plan_slug($usage['plan_type'] ?? ($usage['plan'] ?? ''))) {
             return true;
         }
 
         if (is_object($this->api_client) && method_exists($this->api_client, 'is_authenticated') && $this->api_client->is_authenticated()) {
             $live_usage = method_exists($this->api_client, 'get_usage') ? $this->api_client->get_usage() : null;
-            if (is_array($live_usage) && $this->is_paid_plan_slug($live_usage['plan_type'] ?? ($live_usage['plan'] ?? ''))) {
+            if (is_array($live_usage) && $this->is_upload_generation_plan_slug($live_usage['plan_type'] ?? ($live_usage['plan'] ?? ''))) {
                 \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($live_usage);
                 return true;
             }

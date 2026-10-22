@@ -28,7 +28,7 @@ Good alt text does two jobs at once. It tells Google Images and product search w
 
 * **Free alt text coverage scan** of the Media Library and WooCommerce product images, with missing, needs review and optimised counts on one dashboard.
 * **Next recommended action** so you know which images to fix first.
-* **AI alt text you review:** edit, regenerate or approve each suggestion. Nothing overwrites your existing alt text on its own.
+* **AI alt text you review:** edit or regenerate any result. Nothing overwrites your existing alt text on its own.
 * **No OpenAI API key required.** Generation runs through the OpptiAI service, so there is no separate AI key to manage or pay for.
 * **WooCommerce ready** for product featured images and gallery images, without touching your theme or catalogue.
 * **Bulk generation:** select many images, generate them in one run, then review and edit the results. Bulk works within your free allowance, and paid plans add more volume.
