@@ -52,6 +52,33 @@ if ( ! function_exists( 'is_plugin_active' ) ) {
 $bbai_titles_plugin_file = 'opptiai-titles/beepbeep-titles.php';
 $bbai_titles_is_active   = function_exists( 'is_plugin_active' ) && is_plugin_active( $bbai_titles_plugin_file );
 
+// "Done" state: every image has ALT text and at least one was fixed. Point to the
+// next free audit (Titles) as a card, but only while Titles is not active.
+$bbai_titles_xsell_state = isset( $bbai_dashboard_state ) && is_array( $bbai_dashboard_state ) ? $bbai_dashboard_state : array();
+$bbai_titles_xsell_done  = ! empty( $bbai_titles_xsell_state )
+	&& 0 === max( 0, (int) ( $bbai_titles_xsell_state['missingCount'] ?? 1 ) )
+	&& (
+		max( 0, (int) ( $bbai_titles_xsell_state['optimizedCount'] ?? 0 ) ) > 0
+		|| ! empty( $bbai_titles_xsell_state['hasEverGeneratedAlt'] )
+	);
+
+if ( $bbai_titles_xsell_done && ! $bbai_titles_is_active ) {
+	?>
+	<section class="bbai-next-audit-card bbai-daily-card" data-bbai-next-audit="opptiai-titles" aria-labelledby="bbai-next-audit-title">
+		<p class="bbai-daily-eyebrow"><?php esc_html_e( 'Next free audit', 'beepbeep-ai-alt-text-generator' ); ?></p>
+		<h3 id="bbai-next-audit-title"><?php esc_html_e( 'Your images are done. Check your titles and meta next.', 'beepbeep-ai-alt-text-generator' ); ?></h3>
+		<p><?php esc_html_e( 'OpptiAI Titles scans every page title and meta description for free and shows what to fix first.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+		<a
+			class="bbai-daily-btn bbai-daily-btn--secondary"
+			href="<?php echo esc_url( 'https://wordpress.org/plugins/opptiai-titles/' ); ?>"
+			target="_blank"
+			rel="noopener noreferrer"
+		><?php esc_html_e( 'Get the free Titles audit', 'beepbeep-ai-alt-text-generator' ); ?></a>
+	</section>
+	<?php
+	return;
+}
+
 if ( $bbai_titles_is_active ) {
 	$bbai_titles_xsell_copy = __( 'Your OpptiAI credits also write titles and meta.', 'beepbeep-ai-alt-text-generator' );
 	$bbai_titles_xsell_cta  = __( 'Open Titles', 'beepbeep-ai-alt-text-generator' );

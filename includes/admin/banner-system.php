@@ -1036,6 +1036,138 @@ function bbai_banner_upgrade_credit_actions(string $page_context, array $s): arr
 }
 
 /**
+ * Whether the out-of-credits banner should use the Free credit-limit nudge.
+ *
+ * Signed-in Free accounts only. Guests (trial), paid plans and Agency keep the
+ * existing banner.
+ *
+ * @param array<string, mixed> $s Snapshot.
+ */
+function bbai_credit_nudge_is_eligible(array $s, bool $is_anonymous_trial): bool
+{
+    if ($is_anonymous_trial || !empty($s['is_trial']) || !empty($s['is_pro_plan'])) {
+        return false;
+    }
+    if (array_key_exists('has_connected_account', $s) && empty($s['has_connected_account'])) {
+        return false;
+    }
+    $plan = strtolower((string) ($s['plan_slug'] ?? 'free'));
+
+    return in_array($plan, ['', 'free'], true);
+}
+
+/**
+ * Number of images this plugin has written ALT text for on this site (cached).
+ */
+function bbai_credit_nudge_fixed_count(): int
+{
+    $cached = get_transient('bbai_nudge_fixed_count');
+    if (false !== $cached) {
+        return max(0, (int) $cached);
+    }
+
+    global $wpdb;
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Single cached aggregate count.
+    $count = (int) $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(DISTINCT pm.post_id) FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s",
+            '_bbai_generated_at',
+            'attachment'
+        )
+    );
+    set_transient('bbai_nudge_fixed_count', $count, 10 * MINUTE_IN_SECONDS);
+
+    return max(0, $count);
+}
+
+/**
+ * Locale-formatted date the monthly allowance refills, from the account quota.
+ * Returns '' when no usable future date is known (the line is then omitted).
+ */
+function bbai_credit_nudge_reset_label(): string
+{
+    if (!class_exists('\\BeepBeepAI\\AltTextGenerator\\Usage_Tracker')) {
+        return '';
+    }
+    $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
+    if (!is_array($usage)) {
+        return '';
+    }
+    $ts = isset($usage['reset_timestamp']) ? (int) $usage['reset_timestamp'] : 0;
+    if ($ts <= 0 && !empty($usage['resetDate'])) {
+        $ts = (int) strtotime((string) $usage['resetDate']);
+    }
+    $now = time();
+    if ($ts <= $now || $ts > $now + 62 * DAY_IN_SECONDS) {
+        return '';
+    }
+
+    return (string) wp_date((string) get_option('date_format', 'F j, Y'), $ts);
+}
+
+/**
+ * Copy for the Free credit-limit nudge. No credit numbers; image counts only.
+ *
+ * @param array<string, mixed> $s Snapshot.
+ * @return array{body:string, note:string}
+ */
+function bbai_credit_nudge_content(array $s): array
+{
+    $fixed   = bbai_credit_nudge_fixed_count();
+    $missing = max(0, (int) ($s['missing_count'] ?? 0));
+
+    $fixed_line = sprintf(
+        /* translators: %s: number of images that now have ALT text. */
+        _n('You fixed %s image.', 'You fixed %s images.', $fixed, 'beepbeep-ai-alt-text-generator'),
+        number_format_i18n($fixed)
+    );
+    $missing_line = $missing > 0
+        ? sprintf(
+            /* translators: %s: number of images still missing ALT text. */
+            _n('%s still missing.', '%s still missing.', $missing, 'beepbeep-ai-alt-text-generator'),
+            number_format_i18n($missing)
+        )
+        : __('Keep new uploads covered with Starter.', 'beepbeep-ai-alt-text-generator');
+
+    $body  = $fixed_line . ' ' . $missing_line;
+    $reset = bbai_credit_nudge_reset_label();
+    if ('' !== $reset) {
+        $body .= ' ' . sprintf(
+            /* translators: %s: date the monthly allowance refills. */
+            __('Your credits refill on %s.', 'beepbeep-ai-alt-text-generator'),
+            $reset
+        );
+    }
+
+    return [
+        'body' => $body,
+        'note' => __('Bulk fixes for your whole library are included with paid plans.', 'beepbeep-ai-alt-text-generator'),
+    ];
+}
+
+/**
+ * One-click monthly Starter checkout action. Uses the existing checkout-plan
+ * handler; the Price ID is resolved client-side per geo (GBP, or USD for US).
+ */
+function bbai_credit_nudge_starter_action(string $page_context): array
+{
+    $action = [
+        'label'      => __('Continue with Starter', 'beepbeep-ai-alt-text-generator'),
+        'attributes' => [
+            'data-action'           => 'checkout-plan',
+            'data-plan'             => 'starter',
+            'data-bbai-nudge'       => 'credit_limit',
+            'data-bbai-lock-reason' => 'out_of_credits',
+        ],
+    ];
+    if (BBAI_BANNER_CTX_LIBRARY === $page_context) {
+        $action['attributes'] = bbai_banner_merge_library_attrs($action['attributes']);
+    }
+
+    return $action;
+}
+
+/**
  * Single source of truth for banner content, CTAs, progress visibility, and tone.
  * Copy comes only from bbai_banner_get_banner_state_from_snapshot() — no page overrides.
  *
@@ -1258,13 +1390,24 @@ function bbai_banner_get_config(string $page_context, array $s, array $opts = []
 
         case BBAI_BANNER_STATE_OUT_OF_CREDITS:
             [$out_primary, $out_secondary] = bbai_banner_upgrade_credit_actions($page_context, $s);
+            $out_body = (string) $bs['body'];
+            $out_note = '';
+
+            // Signed-in Free: progress + one-click Starter checkout + soft refill line.
+            if (bbai_credit_nudge_is_eligible($s, $is_anonymous_trial)) {
+                $nudge       = bbai_credit_nudge_content($s);
+                $out_body    = $nudge['body'];
+                $out_note    = $nudge['note'];
+                $out_primary = bbai_credit_nudge_starter_action($page_context);
+            }
 
             return array_merge($base, [
                 'semantic_state'   => 'out_of_credits',
                 'tone'             => 'paused',
                 'banner_variant'   => 'warning',
                 'title'            => (string) $bs['title'],
-                'body'             => (string) $bs['body'],
+                'body'             => $out_body,
+                'note'             => $out_note,
                 'status_line'      => (string) $bs['status_line'],
                 'show_progress'    => false,
                 'primary_action'   => $out_primary,
