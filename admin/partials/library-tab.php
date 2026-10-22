@@ -288,7 +288,7 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
             $bbai_has_quota = intval($bbai_usage_stats['credits_remaining']) > 0;
         }
     }
-    $bbai_is_premium = in_array($bbai_plan, ['pro', 'growth', 'agency'], true);
+    $bbai_is_premium = \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($bbai_plan);
     $bbai_out_of_credits = !$bbai_has_quota && !$bbai_is_premium;
     $bbai_product_state_model = Dashboard_State::resolve(
         [
@@ -493,7 +493,7 @@ if ($bbai_use_library_workspace && is_array($bbai_table_filter_counts)) {
                 $bbai_has_quota = intval($bbai_usage_stats['credits_remaining']) > 0;
             }
         }
-        $bbai_is_premium = in_array($bbai_plan, ['pro', 'growth', 'agency'], true);
+        $bbai_is_premium = \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($bbai_plan);
         $bbai_can_generate = $bbai_has_quota || $bbai_is_premium;
         $bbai_remaining_credits = 0;
         $bbai_used_credits      = 0;

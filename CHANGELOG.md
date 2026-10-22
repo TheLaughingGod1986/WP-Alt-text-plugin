@@ -4,6 +4,13 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.143 - 2026-10-22
+
+- **Fixed**: Paid-plan checks are plan-agnostic through one helper (`Plan_Tier::is_paid`): starter, growth, pro, agency and enterprise. Starter no longer gets the Free daily-limit copy, and Usage_Tracker no longer normalises a stored `starter` plan to `free`.
+- **Fixed**: Signed-in usage panel ("N / M used", remaining, meter, credit box) re-reads `/usage` after every successful generate and shows the server number. Nested generate-response usage is read correctly.
+- **Fixed**: The upgrade modal now renders real `data-price-id` values (it read an unset variable). The no-jQuery checkout path resolves the price from the localized map when the attribute is empty.
+- **Fixed**: The no-JS checkout pages are reachable. The Starter nudge links to a nonce-signed `page=bbai-checkout` URL, the admin_init handler accepts the direct and legacy nonces, and the checkout error notice has `bbai-preserve-notice`.
+
 ### 4.6.142 - 2026-10-22
 
 - **Fixed**: Guest trial counter no longer double counts (showed 2 of 10 used after 1); it settles on the server's count after each run.

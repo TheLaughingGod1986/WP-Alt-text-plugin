@@ -25,7 +25,11 @@ if ($bbai_current_plan === 'pro') {
     $bbai_current_plan = 'growth';
 }
 
-// Get price IDs from backend API
+// Get price IDs from backend API. Callers set $bbai_checkout_prices; the old
+// $checkout_prices name was never set, so every data-price-id rendered empty.
+$checkout_prices = isset($bbai_checkout_prices) && is_array($bbai_checkout_prices)
+    ? $bbai_checkout_prices
+    : (isset($checkout_prices) && is_array($checkout_prices) ? $checkout_prices : []);
 $bbai_starter_price_id = $checkout_prices['starter'] ?? '';
 $bbai_pro_price_id = $checkout_prices['pro'] ?? '';
 $bbai_agency_price_id = $checkout_prices['agency'] ?? '';

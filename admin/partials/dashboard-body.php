@@ -247,7 +247,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     }
     $bbai_is_agency = !$bbai_is_guest_trial && !empty($bbai_plan_data['is_agency']);
     $bbai_usage_can_autopilot = ! empty( $bbai_usage_stats['can_autopilot'] );
-    $bbai_is_premium = !$bbai_is_guest_trial && (!empty($bbai_plan_data['is_pro']) || $bbai_is_agency || in_array($bbai_plan_slug_ladder, ['pro', 'agency'], true) || $bbai_usage_can_autopilot);
+    $bbai_is_premium = !$bbai_is_guest_trial && (!empty($bbai_plan_data['is_pro']) || $bbai_is_agency || \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($bbai_plan_slug_ladder) || $bbai_usage_can_autopilot);
     $bbai_auth_state = isset($bbai_usage_stats['auth_state']) && is_string($bbai_usage_stats['auth_state']) && '' !== trim($bbai_usage_stats['auth_state'])
         ? sanitize_key($bbai_usage_stats['auth_state'])
         : ($bbai_is_guest_trial ? 'anonymous' : 'authenticated');

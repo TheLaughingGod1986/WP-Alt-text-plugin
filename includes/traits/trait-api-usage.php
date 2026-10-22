@@ -126,7 +126,7 @@ trait Api_Usage {
         }
 
         $plan = strtolower($usage['plan'] ?? 'free');
-        if ($plan === 'pro' || $plan === 'agency') {
+        if (\BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($plan)) {
             return false;
         }
 

@@ -70,7 +70,7 @@ class Usage_Helper {
 			return true;
 		}
 
-		if ( in_array( $plan, [ 'pro', 'growth', 'agency', 'enterprise' ], true ) || 'paid' === $quota_type ) {
+		if ( \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid( $plan ) || 'paid' === $quota_type ) {
 			return false;
 		}
 
@@ -436,11 +436,11 @@ class Usage_Helper {
             ? $live_usage['plan_label']
             : ('trial' === $plan ? __('Free trial', 'beepbeep-ai-alt-text-generator') : ucfirst($plan));
         $usage_stats['is_free'] = in_array($plan, ['free', 'trial'], true);
-        $usage_stats['is_pro'] = in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true);
+        $usage_stats['is_pro'] = \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($plan);
         if ('' === $quota_type) {
             $quota_type = 'trial' === $plan
                 ? 'trial'
-                : (in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'paid' : 'monthly_account');
+                : (\BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($plan) ? 'paid' : 'monthly_account');
         }
         $usage_stats['auth_state'] = $auth_state;
         $usage_stats['quota_type'] = $quota_type;

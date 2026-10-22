@@ -134,7 +134,7 @@ function bbaiNormalizeUsageObject(rawUsage) {
         var normalizedQuota = bbaiString(quotaValue).toLowerCase();
         var source = bbaiString(usage.source).toLowerCase();
         var isTrialFlag = usage.is_trial !== undefined ? !!usage.is_trial : !!quota.is_trial;
-        var isPaidPlan = normalizedPlan === 'growth' || normalizedPlan === 'pro' || normalizedPlan === 'agency' || normalizedPlan === 'enterprise';
+        var isPaidPlan = ['starter', 'growth', 'pro', 'agency', 'enterprise'].indexOf(normalizedPlan) !== -1;
         var upgradeRequired = usage.upgrade_required !== undefined ? !!usage.upgrade_required : !!quota.upgrade_required;
 
         if (normalizedAuth === 'anonymous' || normalizedQuota === 'trial' || normalizedPlan === 'trial' || normalizedPlan === 'anonymous_trial') {
@@ -213,7 +213,7 @@ function bbaiNormalizeUsageObject(rawUsage) {
     if (!quotaType) {
         quotaType = planType === 'trial'
             ? 'trial'
-            : (planType === 'growth' || planType === 'pro' || planType === 'agency' || planType === 'enterprise'
+            : (['starter', 'growth', 'pro', 'agency', 'enterprise'].indexOf(planType) !== -1
                 ? 'paid'
                 : 'monthly_account');
     }
@@ -678,7 +678,9 @@ bbaiRunWithJQuery(function($) {
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Checkout button clicked (vanilla JS handler)!');
 
             const plan = btn.getAttribute('data-plan') || btn.dataset.plan;
-            const priceId = btn.getAttribute('data-price-id') || btn.dataset.priceId;
+            // An empty data-price-id must not block checkout: resolve it from the
+            // localized geo price map, the same way resolveCheckoutPriceId() does.
+            const priceId = btn.getAttribute('data-price-id') || resolveCheckoutPriceIdForPlan(plan);
             const $btn = window.jQuery ? window.jQuery(btn) : null;
 
             if ($btn && $btn.length) {
@@ -2207,6 +2209,13 @@ bbaiRunWithJQuery(function($) {
      * Initiate Stripe Checkout
      * Creates checkout session and opens in new tab
      */
+    function resolveCheckoutPriceIdForPlan(planName) {
+        const upgradePriceIds = (window.BBAI_UPGRADE && window.BBAI_UPGRADE.priceIds) || {};
+        const dashboardPriceIds = (window.BBAI_DASH && window.BBAI_DASH.checkoutPrices) || {};
+        const ajaxPriceIds = (window.bbai_ajax && window.bbai_ajax.checkoutPrices) || {};
+        return (planName && (upgradePriceIds[planName] || dashboardPriceIds[planName] || ajaxPriceIds[planName])) || '';
+    }
+
     function resolveCheckoutPriceId($button, priceId, planName) {
         const upgradePriceIds = (window.BBAI_UPGRADE && window.BBAI_UPGRADE.priceIds) || {};
         const dashboardPriceIds = (window.BBAI_DASH && window.BBAI_DASH.checkoutPrices) || {};

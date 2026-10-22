@@ -2465,7 +2465,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var plan = String( firstDefined( credits.plan, credits.plan_slug, credits.planSlug, credits.plan_type, credits.planType, '' ) ).toLowerCase();
 		var isPro = !! ( credits.is_pro || credits.isPro );
 
-		if ( ! isPro && [ 'pro', 'growth', 'agency', 'enterprise' ].indexOf( plan ) !== -1 ) {
+		if ( ! isPro && [ 'starter', 'growth', 'pro', 'agency', 'enterprise' ].indexOf( plan ) !== -1 ) {
 			isPro = true;
 		}
 

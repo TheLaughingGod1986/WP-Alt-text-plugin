@@ -1171,6 +1171,16 @@ function bbai_credit_nudge_starter_action(string $page_context): array
             'data-bbai-lock-reason' => 'out_of_credits',
         ],
     ];
+    // Real Price ID (same geo map as the upgrade modal) and a no-JS same-tab URL.
+    if (class_exists(\BeepBeepAI\AltTextGenerator\Core::class)) {
+        $price_id = \BeepBeepAI\AltTextGenerator\Core::get_resolved_checkout_price_id('starter');
+        if ('' !== $price_id) {
+            $action['attributes']['data-price-id'] = $price_id;
+        }
+        if (function_exists('wp_nonce_url')) {
+            $action['href'] = \BeepBeepAI\AltTextGenerator\Core::get_direct_checkout_url('starter');
+        }
+    }
     if (BBAI_BANNER_CTX_LIBRARY === $page_context) {
         $action['attributes'] = bbai_banner_merge_library_attrs($action['attributes']);
     }

@@ -80,7 +80,7 @@ class Plan_Helpers {
         $is_free = ($plan_slug === 'free');
         $is_growth = ($plan_slug === 'pro' || $plan_slug === 'growth');
         $is_agency = ($plan_slug === 'agency');
-        $is_pro = ($plan_slug === 'pro' || $plan_slug === 'agency'); // Any paid plan
+        $is_pro = \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($plan_slug); // Any paid plan
 
         self::$cached_plan_data = [
             'plan_slug' => $plan_slug,

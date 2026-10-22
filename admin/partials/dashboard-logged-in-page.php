@@ -116,7 +116,7 @@ $bbai_daily_is_pro_plan = ! empty( $bbai_state_is_pro_plan )
 	|| ! empty( $bbai_is_premium )
 	|| $bbai_daily_live_can_autopilot
 	|| $bbai_daily_live_quota_limit >= 1000
-	|| in_array( strtolower( (string) ( $bbai_plan_slug_ladder ?? '' ) ), [ 'pro', 'agency' ], true );
+	|| \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid( $bbai_plan_slug_ladder ?? '' );
 $bbai_daily_autopilot_action = $bbai_daily_is_pro_plan
 	? [
 		'label'  => __( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ),

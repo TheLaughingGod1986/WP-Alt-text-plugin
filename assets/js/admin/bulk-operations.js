@@ -26,7 +26,7 @@
 
         var remaining = usageStats && (usageStats.remaining !== undefined) ? parseInt(usageStats.remaining, 10) : null;
         var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
-        var isPremium = plan === 'pro' || plan === 'agency';
+        var isPremium = ['starter', 'growth', 'pro', 'agency', 'enterprise'].indexOf(plan) !== -1;
         var domShowsRemaining = typeof window.bbaiGuestTrialShowsRemainingCredits === 'function' &&
             window.bbaiGuestTrialShowsRemainingCredits();
         var hasCredits = (remaining !== null && remaining !== undefined && !isNaN(remaining) && remaining > 0) ||

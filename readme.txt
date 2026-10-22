@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.142.1
+Stable tag: 4.6.143
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -18,7 +18,7 @@ See how many of your images have no alt text, free to try, before you sign up. T
 
 **See how many of your images have no alt text, free to try, before you sign up.**
 
-OpptiAI Alt Text scans your WordPress Media Library and WooCommerce product images and shows your alt text coverage: how many images are missing alt text, how many need review, and which ones to fix first. Then it writes clear, descriptive AI alt text that you review and approve before anything is saved.
+OpptiAI Alt Text scans your WordPress Media Library and WooCommerce product images and shows your alt text coverage: how many images are missing alt text, how many need review, and which ones to fix first. Then it writes clear, descriptive AI alt text that you can review, edit or regenerate at any time.
 
 Good alt text does two jobs at once. It tells Google Images and product search what each picture shows, and it gives screen-reader users the description they rely on. There is no OpenAI key to set up, and nothing goes live without your approval.
 
@@ -31,7 +31,7 @@ Good alt text does two jobs at once. It tells Google Images and product search w
 * **AI alt text you review:** edit, regenerate or approve each suggestion. Nothing overwrites your existing alt text on its own.
 * **No OpenAI API key required.** Generation runs through the OpptiAI service, so there is no separate AI key to manage or pay for.
 * **WooCommerce ready** for product featured images and gallery images, without touching your theme or catalogue.
-* **Bulk generation:** select many images, generate them in one run, then review before saving. Bulk works within your free allowance, and paid plans add more volume.
+* **Bulk generation:** select many images, generate them in one run, then review and edit the results. Bulk works within your free allowance, and paid plans add more volume.
 * **Automatic alt text on new uploads** (Autopilot, with Growth or Agency) so coverage does not slip again.
 * **Usage and coverage tracking** so you can see progress over time.
 * **Native wp-admin workflow**, not an external tool bolted on.
@@ -95,7 +95,7 @@ No. Generation runs through the OpptiAI service, so you don't have to create, ma
 
 = Can I bulk generate alt text in WordPress? =
 
-Yes. Select the images that need work, generate alt text in one run and review it before saving. Bulk generation works within your free allowance; paid plans add more volume for larger libraries.
+Yes. Select the images that need work, generate alt text in one run, then review and edit the results. Bulk generation works within your free allowance; paid plans add more volume for larger libraries.
 
 = What happens when I run out of credits? =
 
@@ -158,8 +158,13 @@ Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
 
-= 4.6.142.1 =
-* Fixed: plugin admin pages not loading for some paid plans.
+= 4.6.143 =
+* Fixed: Starter accounts now see their own plan details instead of the Free plan limits.
+* Fixed: every paid plan (Starter, Growth and Agency) is recognised as paid on the dashboard, library and usage pages.
+* Fixed: the "Usage this month" counter updates right after you generate, using the number from your account.
+* Fixed: upgrade buttons carry the right plan price, so checkout starts on the first click.
+* Fixed: the Continue with Starter button in the out-of-credits notice opens checkout even if page scripts don't load.
+* Fixed: if checkout can't start on a page without scripts, the error message now stays on screen.
 
 = 4.6.142 =
 * New: a "Usage analytics" switch in Settings. It is off unless you turn it on, and you can turn it off at any time.
@@ -338,8 +343,8 @@ Privacy policy: https://posthog.com/privacy
 
 == Upgrade Notice ==
 
-= 4.6.142.1 =
-Fixes plugin admin pages not loading for some paid plans.
+= 4.6.143 =
+Starter accounts now see their own plan, and the usage counter updates right after you generate.
 
 = 4.6.142 =
 Usage analytics are now a Settings switch that is off by default, and checkout problems now show a clear message with ways to continue.
