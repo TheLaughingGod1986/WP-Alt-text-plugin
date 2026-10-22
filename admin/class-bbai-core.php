@@ -9679,25 +9679,23 @@ class Core {
         $fallback_used = $resolved_checkout_url !== '' && $resolved_checkout_url !== $raw_checkout_url;
 
         if (is_wp_error($result) || $resolved_checkout_url === '') {
+            // Backend error (5xx, timeout, missing URL): never redirect silently.
+            // Return the real error plus the static Payment Link (when one exists
+            // for this plan and country) so the dashboard can show it in the
+            // Continue to payment / Copy link panel and the user decides.
             $fallback_checkout_url = $this->get_checkout_fallback_url($plan_hint, $price_id);
-            if ($fallback_checkout_url !== '') {
-                // Last resort: unattributed static Payment Link. Log so it is visible.
-                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-                error_log('[BBAI] Checkout session unavailable; falling back to static payment link for plan ' . sanitize_key($plan_hint) . ( is_wp_error($result) ? ' (' . $result->get_error_code() . ')' : '' ));
-                wp_send_json_success([
-                    'url' => $fallback_checkout_url,
-                    'session_id' => '',
-                    'fallback' => true,
-                ]);
-                return;
-            }
-
             $failure_data = is_wp_error($result) ? $result->get_error_data() : null;
+            if ($fallback_checkout_url !== '') {
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+                error_log('[BBAI] Checkout session unavailable; offering static payment link for plan ' . sanitize_key($plan_hint) . ( is_wp_error($result) ? ' (' . $result->get_error_code() . ')' : '' ));
+            }
             wp_send_json_error([
-                'message' => $this->get_checkout_error_message($result),
-                'code'    => is_wp_error($result)
+                'message'      => $this->get_checkout_error_message($result),
+                'code'         => is_wp_error($result)
                     ? (is_array($failure_data) && !empty($failure_data['backend_code']) ? (string) $failure_data['backend_code'] : (string) $result->get_error_code())
                     : 'missing_checkout_url',
+                'status'       => is_array($failure_data) && isset($failure_data['status']) ? (int) $failure_data['status'] : 0,
+                'fallback_url' => $fallback_checkout_url,
             ]);
             return;
         }

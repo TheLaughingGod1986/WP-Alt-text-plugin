@@ -249,6 +249,12 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
 
                     </div><!-- /.bbai-sg-grid -->
 
+                    <?php
+$bbai_usage_analytics_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-usage-analytics.php';
+if (file_exists($bbai_usage_analytics_partial)) {
+    include $bbai_usage_analytics_partial;
+}
+?>
                     <div class="bbai-card bbai-settings-upgrade-block">
                         <h3 class="bbai-settings-card-title"><?php esc_html_e('Unlock synced settings across sites', 'beepbeep-ai-alt-text-generator'); ?></h3>
                         <ul>
@@ -740,6 +746,12 @@ if (!$bbai_is_authenticated && !$bbai_has_license) :
                     </div>
                     <?php endif; ?>
                 </form>
+                <?php
+$bbai_usage_analytics_partial = BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-usage-analytics.php';
+if (file_exists($bbai_usage_analytics_partial)) {
+    include $bbai_usage_analytics_partial;
+}
+?>
                 <?php else : ?>
                 <?php
                 $bbai_debug_embedded = true;

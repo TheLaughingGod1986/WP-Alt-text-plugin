@@ -68,6 +68,8 @@ mkdir -p "${WORK_DIR}/trunk"
 
 rsync -av --delete \
   --exclude=".git" \
+  --exclude="HANDOVER.md" \
+  --exclude="AGENTS.md" \
   --exclude=".wp-env.json" \
   --exclude="node_modules" \
   --exclude=".playwright-cli" \

@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.141
+Stable tag: 4.6.142
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -149,10 +149,19 @@ Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
 Service: PostHog (optional product analytics)
-Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. BeepBeep AI does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
+Purpose: Off by default. If the site owner turns on "Share anonymous usage analytics" in Settings, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. BeepBeep AI does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.142 =
+* New: a "Usage analytics" switch in Settings. It is off unless you turn it on, and you can turn it off at any time.
+* Changed: sites that never chose are treated as opted out.
+* Improved: upgrade buttons open checkout in the same tab, and one click starts one checkout.
+* Improved: if checkout can't start, you see the reason with Continue to payment, Copy link and Try again, instead of being sent to a different page.
+* Improved: sites in the US see US dollar prices; everywhere else sees pounds.
+* New: a short review request after your first ALT text is generated, shown once.
+* New: a notice when you run out of free credits, with your refill date.
 
 = 4.6.141 =
 * Fixed: upgrade buttons now open a working checkout page.
@@ -312,6 +321,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.142 =
+Usage analytics are now a Settings switch that is off by default, and checkout problems now show a clear message with ways to continue.
 
 = 4.6.141 =
 Fixes upgrade buttons that opened an incomplete checkout page. Recommended for all users.

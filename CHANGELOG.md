@@ -4,6 +4,19 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.142 — 2026-10-22
+
+- **Added**: Settings → Usage analytics opt-in switch (off by default). Saved via admin-post with a nonce and manage_options.
+- **Changed**: One-time reset of the `bbai_telemetry_consent = yes` that builds before 4.6.141 wrote on activation, unless an admin chose it in Settings.
+- **Fixed**: A checkout server error (5xx/timeout) no longer silently redirects to the GBP Payment Link; the panel shows the real error with Continue to payment / Copy link / Try again.
+- **Fixed**: Release zip excludes any `.git` file or directory and `HANDOVER.md`, and the build fails if either slips in.
+- Includes 4.6.141 (checkout URLs kept intact; usage analytics opt-in only), the same-tab single-click checkout and item 9 outbound changes.
+
+### 4.6.141 — 2026-10-22
+
+- **Fixed**: Upgrade buttons open a working checkout page (Stripe URLs were losing %2F/%3F in JSON decoding).
+- **Changed**: Usage analytics are off unless you opt in.
+
 ### 4.6.139 — 2026-10-12
 
 - **Fixed**: Failed generations no longer use credits.

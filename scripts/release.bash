@@ -203,6 +203,8 @@ mkdir -p "${slug_dir}"
 
 rsync -av --delete \
   --exclude=".git" \
+  --exclude="HANDOVER.md" \
+  --exclude="AGENTS.md" \
   --exclude="node_modules" \
   --exclude=".playwright-cli" \
   --exclude="output" \

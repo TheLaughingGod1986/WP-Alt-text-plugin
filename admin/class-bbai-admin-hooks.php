@@ -61,6 +61,8 @@ class Admin_Hooks {
 		add_action( 'admin_post_bbai_usage_export', array( $this->core, 'handle_usage_export' ) );
 		add_action( 'admin_post_bbai_debug_export', array( $this->core, 'handle_debug_log_export' ) );
 		add_action( 'admin_post_bbai_logout', array( $this->core, 'handle_logout' ) );
+		add_action( 'admin_post_' . BBAI_Telemetry::CONSENT_FORM_ACTION, array( BBAI_Telemetry::class, 'handle_consent_form' ) );
+		add_action( 'admin_init', array( BBAI_Telemetry::class, 'maybe_reset_implied_consent' ) );
 		add_action( 'init', array( $this->core, 'ensure_capability' ) );
 		add_action( 'admin_notices', array( $this->core, 'maybe_render_queue_notice' ) );
 		add_action( 'admin_notices', array( $this->core, 'maybe_render_trial_exhausted_notice' ) );

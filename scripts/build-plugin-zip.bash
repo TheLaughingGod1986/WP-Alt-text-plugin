@@ -6,6 +6,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_SLUG="beepbeep-ai-alt-text-generator"
 BUILD_DIR="$ROOT_DIR/build"
 OUTPUT_ZIP="${1:-$BUILD_DIR/$PLUGIN_SLUG.zip}"
+# zip runs from a temp dir, so make the output path absolute.
+case "$OUTPUT_ZIP" in
+    /*) ;;
+    *) OUTPUT_ZIP="$PWD/$OUTPUT_ZIP" ;;
+esac
 TMP_DIR="$(mktemp -d)"
 STAGE_DIR="$TMP_DIR/$PLUGIN_SLUG"
 
@@ -18,8 +23,11 @@ trap cleanup EXIT
 mkdir -p "$BUILD_DIR"
 rm -f "$OUTPUT_ZIP"
 
+# '.git' (no trailing slash) matches both a .git directory and the .git *file*
+# a git worktree has, at any depth.
 rsync -a \
-    --exclude '.git/' \
+    --exclude '.git' \
+    --exclude 'HANDOVER.md' \
     --exclude '.github/' \
     --exclude '.editorconfig' \
     --exclude '.distignore' \
@@ -72,5 +80,12 @@ rsync -a \
     "$ROOT_DIR/" "$STAGE_DIR/"
 
 (cd "$TMP_DIR" && zip -qr "$OUTPUT_ZIP" "$PLUGIN_SLUG")
+
+# Guard: never ship git metadata or internal agent notes.
+if unzip -Z1 "$OUTPUT_ZIP" | grep -E '(^|/)\.git(/|$)|(^|/)HANDOVER\.md$'; then
+    echo "ERROR: $OUTPUT_ZIP contains .git or HANDOVER.md (listed above)" >&2
+    rm -f "$OUTPUT_ZIP"
+    exit 1
+fi
 
 echo "Created $OUTPUT_ZIP"

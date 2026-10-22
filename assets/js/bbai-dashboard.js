@@ -2347,12 +2347,13 @@ bbaiRunWithJQuery(function($) {
             }
         }
 
-        if (!url && typeof opts.retry === 'function') {
-            // No Payment Link exists for this case (e.g. US/USD checkout, which
-            // must never fall back to the GBP links): offer a clean retry.
+        if (typeof opts.retry === 'function') {
+            // A clean retry is always offered on errors. It is the primary action
+            // when no Payment Link exists (e.g. US/USD checkout, which must never
+            // fall back to the GBP links).
             var retry = document.createElement('button');
             retry.type = 'button';
-            retry.className = 'bbai-btn bbai-btn-primary';
+            retry.className = url ? 'bbai-btn bbai-btn-secondary' : 'bbai-btn bbai-btn-primary';
             retry.textContent = __('Try again', 'beepbeep-ai-alt-text-generator');
             retry.addEventListener('click', function() {
                 removeCheckoutContinuePanel();
@@ -2452,9 +2453,13 @@ bbaiRunWithJQuery(function($) {
         var data = source && source.data ? source.data : {};
         var message = data && typeof data.message === 'string' ? data.message : '';
         var code = data && typeof data.code === 'string' ? data.code : '';
+        var fallback = data && typeof data.fallback_url === 'string' && isAllowedCheckoutUrl(data.fallback_url)
+            ? data.fallback_url
+            : '';
         return {
             message: message.replace(/\s+/g, ' ').trim().slice(0, 300),
-            code: code ? code.replace(/[^A-Za-z0-9_]/g, '').slice(0, 64) : ''
+            code: code ? code.replace(/[^A-Za-z0-9_]/g, '').slice(0, 64) : '',
+            fallbackUrl: fallback
         };
     }
 
@@ -2482,11 +2487,10 @@ bbaiRunWithJQuery(function($) {
             trackCheckoutEvent('checkout_failed', { plan: plan, error_code: 'checkout_unavailable', error_message: 'Checkout session request could not be started.' });
             if (fallbackUrl) {
                 dispatchCheckoutFallbackAnalytics(planName, 'checkout_unavailable');
-                showCheckoutContinuePanel({ url: fallbackUrl, plan: plan });
-                openCheckoutUrl(fallbackUrl, planName, { fallback: true });
-                return;
             }
-            showCheckoutContinuePanel({ message: genericError, plan: plan, retry: retryCheckout });
+            // Never redirect silently to a static Payment Link: show the
+            // error and let the user choose Continue to payment / Copy link.
+            showCheckoutContinuePanel({ message: genericError, url: fallbackUrl, plan: plan, retry: retryCheckout });
             return;
         }
 
@@ -2515,10 +2519,16 @@ bbaiRunWithJQuery(function($) {
                 // Deliberate backend/plugin rejection (rate limit, active
                 // subscription, invalid price…): show the real reason, never
                 // silently fall through to an unattributed Payment Link.
+                // Server errors (5xx/timeout) come back the same way with a
+                // fallback_url; it is only ever offered in the panel, never
+                // navigated to automatically.
                 const err = readCheckoutError(response);
                 release();
-                trackCheckoutEvent('checkout_failed', { plan: plan, error_code: err.code || 'checkout_rejected', error_message: err.message });
-                showCheckoutContinuePanel({ message: err.message || genericError, plan: plan, retry: retryCheckout });
+                trackCheckoutEvent('checkout_failed', { plan: plan, error_code: err.code || 'checkout_rejected', error_message: err.message, has_fallback: !!err.fallbackUrl });
+                if (err.fallbackUrl) {
+                    dispatchCheckoutFallbackAnalytics(planName, err.code || 'checkout_session_failed', { offered: true });
+                }
+                showCheckoutContinuePanel({ message: err.message || genericError, url: err.fallbackUrl, plan: plan, retry: retryCheckout });
                 return;
             }
 
@@ -2538,6 +2548,21 @@ bbaiRunWithJQuery(function($) {
                 showCheckoutContinuePanel({
                     message: __('We could not create your checkout link automatically.', 'beepbeep-ai-alt-text-generator'),
                     url: fallbackUrl,
+                    plan: plan,
+                    retry: retryCheckout
+                });
+                return;
+            }
+
+            if (checkoutData.fallback === true) {
+                // The plugin swapped in a static Payment Link: offer it, do not
+                // navigate silently.
+                release();
+                trackCheckoutEvent('checkout_failed', { plan: plan, error_code: 'static_link_fallback', has_fallback: true });
+                dispatchCheckoutFallbackAnalytics(planName, 'static_link_fallback', { offered: true });
+                showCheckoutContinuePanel({
+                    message: __('We could not create your checkout link automatically.', 'beepbeep-ai-alt-text-generator'),
+                    url: checkoutUrl,
                     plan: plan,
                     retry: retryCheckout
                 });
@@ -2576,7 +2601,7 @@ bbaiRunWithJQuery(function($) {
             }
             showCheckoutContinuePanel({
                 message: err.message || genericError,
-                url: fallbackUrl,
+                url: err.fallbackUrl || fallbackUrl,
                 plan: plan,
                 retry: retryCheckout
             });

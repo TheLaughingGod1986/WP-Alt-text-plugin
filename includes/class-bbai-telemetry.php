@@ -27,6 +27,22 @@ class BBAI_Telemetry {
 
 	public const CONSENT_OPTION = 'bbai_telemetry_consent';
 
+	/**
+	 * Set when a site admin saves the usage analytics choice in Settings.
+	 * Distinguishes a real opt-in from the 'yes' older builds wrote on activation.
+	 */
+	public const CONSENT_SOURCE_OPTION = 'bbai_telemetry_consent_source';
+
+	/**
+	 * Marks that the one-time reset of activation-implied consent has run.
+	 */
+	public const CONSENT_RESET_MARKER_OPTION = 'bbai_telemetry_consent_reset_4_6_142';
+
+	/**
+	 * admin-post action for the Settings usage analytics toggle.
+	 */
+	public const CONSENT_FORM_ACTION = 'bbai_save_usage_analytics';
+
 	public const LIFECYCLE_QUEUE_OPTION = 'bbai_telemetry_lifecycle_queue';
 
 	public const INSTALLED_MARKER_OPTION = 'bbai_telemetry_plugin_installed';
@@ -237,6 +253,60 @@ class BBAI_Telemetry {
 			return true;
 		}
 		return '' !== $event_name && ( 0 === strpos( $event_name, 'checkout_' ) || 0 === strpos( $event_name, 'upgrade_' ) );
+	}
+
+	/**
+	 * Whether the site admin has turned usage analytics on (stored choice only,
+	 * ignoring constant/filter overrides). Used to render the Settings toggle.
+	 */
+	public static function stored_consent_is_yes(): bool {
+		return in_array( get_option( self::CONSENT_OPTION, false ), array( 'yes', '1', 1, true ), true );
+	}
+
+	/**
+	 * Save the site admin's usage analytics choice.
+	 *
+	 * @param bool $opt_in True to opt in, false to opt out.
+	 */
+	public static function set_consent( bool $opt_in ): void {
+		update_option( self::CONSENT_OPTION, $opt_in ? 'yes' : 'no', false );
+		update_option( self::CONSENT_SOURCE_OPTION, 'settings', false );
+	}
+
+	/**
+	 * One-time reset: builds before 4.6.141 wrote consent = 'yes' on activation
+	 * without asking. That is not an opt-in, so clear it unless an admin chose it
+	 * in Settings. Runs once per site on admin_init.
+	 */
+	public static function maybe_reset_implied_consent(): void {
+		if ( get_option( self::CONSENT_RESET_MARKER_OPTION, false ) ) {
+			return;
+		}
+		if ( 'settings' !== get_option( self::CONSENT_SOURCE_OPTION, '' ) && false !== get_option( self::CONSENT_OPTION, false ) ) {
+			delete_option( self::CONSENT_OPTION );
+		}
+		update_option( self::CONSENT_RESET_MARKER_OPTION, gmdate( 'c' ), false );
+	}
+
+	/**
+	 * admin-post handler for the Settings usage analytics form.
+	 */
+	public static function handle_consent_form(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to change this setting.', 'beepbeep-ai-alt-text-generator' ), 403 );
+		}
+		check_admin_referer( self::CONSENT_FORM_ACTION );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above.
+		$opt_in = isset( $_POST['bbai_usage_analytics'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['bbai_usage_analytics'] ) );
+		self::set_consent( $opt_in );
+
+		$redirect = wp_get_referer();
+		if ( ! $redirect ) {
+			$redirect = admin_url( 'admin.php?page=bbai-settings' );
+		}
+		wp_safe_redirect( add_query_arg( 'bbai_usage_analytics_saved', $opt_in ? 'on' : 'off', remove_query_arg( 'bbai_usage_analytics_saved', $redirect ) ) );
+		exit;
 	}
 
 	/**
