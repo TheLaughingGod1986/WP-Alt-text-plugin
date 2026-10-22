@@ -4,6 +4,26 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.142 - 2026-10-22
+
+- **Fixed**: Guest trial counter no longer double counts (showed 2 of 10 used after 1); it settles on the server's count after each run.
+- **Fixed**: Plan and credits are re-read after returning from checkout and after signing in.
+- **Fixed**: The credit notice never says "You fixed 0 images".
+- **Fixed**: Checkout without jQuery, and the no-JavaScript checkout links, create a real checkout session or show the error, never a static payment link.
+- **Changed**: Support and contact messages go to one support address.
+- **Changed**: Starter is reported as Starter in usage analytics.
+- **Added**: Settings → Usage analytics opt-in switch (off by default). Saved via admin-post with a nonce and manage_options.
+- **Changed**: One-time reset of the `bbai_telemetry_consent = yes` that builds before 4.6.141 wrote on activation, unless an admin chose it in Settings.
+- **Fixed**: A checkout server error (5xx/timeout) no longer silently redirects to the GBP Payment Link; the panel shows the real error with Continue to payment / Copy link / Try again.
+- **Fixed**: Release zip excludes any `.git` file or directory and `HANDOVER.md`, and the build fails if either slips in.
+- **Fixed** (QA baseline): batch generation applies each response's usage before the summary, so "N generations left" is current; upgrade modal only says "used your free images" at 0 left; auth-modal errors persist until input; app.beepbeep.ai register/login fallbacks now go to admin.php?page=bbai&bbai_open_auth=1.
+- Includes 4.6.141 (checkout URLs kept intact; usage analytics opt-in only), the same-tab single-click checkout and item 9 outbound changes.
+
+### 4.6.141 — 2026-10-22
+
+- **Fixed**: Upgrade buttons open a working checkout page (Stripe URLs were losing %2F/%3F in JSON decoding).
+- **Changed**: Usage analytics are off unless you opt in.
+
 ### 4.6.139 — 2026-10-12
 
 - **Fixed**: Failed generations no longer use credits.

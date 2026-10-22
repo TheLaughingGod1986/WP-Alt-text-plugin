@@ -474,6 +474,10 @@ class Usage_Tracker {
      * @return array<string,mixed>|null Updated usage payload or null when not applicable.
      */
     public static function record_generation_success(int $count = 1): ?array {
+        if ($count > 0 && class_exists('\\BeepBeepAI\\AltTextGenerator\\BBAI_Review_Prompt')) {
+            \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::mark_first_success();
+            \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::clear_fixed_count_cache();
+        }
         $count = max(1, (int) $count);
 
         $usage = self::get_local_usage_snapshot();
@@ -903,7 +907,7 @@ class Usage_Tracker {
      * Get upgrade URL
      */
     public static function get_upgrade_url() {
-        $default = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
+        $default = 'https://oppti.dev/pricing';
         $stored  = get_option('bbai_upgrade_url', $default);
         return apply_filters('bbai_upgrade_url', $stored ?: $default);
     }

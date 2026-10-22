@@ -1354,6 +1354,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
 
         <div class="bbai-dashboard-command" hidden>
 
+            <?php if ( ! ( class_exists( \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::class ) && \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::owns_review_ask() ) ) : ?>
             <div
                 class="bbai-dashboard-review-overlay"
                 data-bbai-dashboard-review-prompt
@@ -1398,6 +1399,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
                     ><?php esc_html_e( 'I already left a review', 'beepbeep-ai-alt-text-generator' ); ?></button>
                 </div>
             </div>
+            <?php endif; ?>
 
         </div>
     </div>

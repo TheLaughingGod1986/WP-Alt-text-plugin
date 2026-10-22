@@ -313,7 +313,8 @@
                             ? response.data.message 
                             : __('Failed to send message. Please try again.', 'beepbeep-ai-alt-text-generator');
                         if (self.isSavedMailDeliveryError(errorMessage)) {
-                            self.showSubmittedState(__('Your message has been saved. This WordPress site could not send email automatically, so please email benoats86@gmail.com if the issue is urgent.', 'beepbeep-ai-alt-text-generator'));
+                            const supportEmail = (window.bbaiContactData && window.bbaiContactData.support_email) || 'support@oppti.dev';
+                            self.showSubmittedState(__('Your message has been saved. This WordPress site could not send email automatically, so please email %s if the issue is urgent.', 'beepbeep-ai-alt-text-generator').replace('%s', supportEmail));
                             submitButton.prop('disabled', false).text(__('Send Message', 'beepbeep-ai-alt-text-generator'));
                             return;
                         }

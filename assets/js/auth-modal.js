@@ -109,7 +109,7 @@ class BbAIAuthModal {
     }
 
     /**
-     * Website Auditor attribution returned by the login/register AJAX
+     * OpptiAI tool deep-link attribution returned by the login/register AJAX
      * response. Only auditor_source / auditor_finding are copied, so the
      * event's own source and signup_source are never overwritten.
      */
@@ -1176,7 +1176,9 @@ class BbAIAuthModal {
                     }
                 }
 
-                if (errorCode === 'invite_required' && inviteUrl) {
+                if (errorCode === 'site_has_license' || errorCode === 'free_plan_exists' || errorCode === 'user_exists') {
+                    this.showError(window.wp?.i18n?.__('An account with this email already exists. Enter your password to sign in.', 'beepbeep-ai-alt-text-generator') || 'An account with this email already exists. Enter your password to sign in.');
+                } else if (errorCode === 'invite_required' && inviteUrl) {
                     this.showError(`${errorMessage} ${inviteUrl}`);
                 } else if (['weak_password', 'password_too_weak', 'password_too_short', 'invalid_request'].some(code => code === String(rawErrorCode || '').toLowerCase() || code === errorCode)) {
                     this.showError('Please choose a stronger password (at least 8 characters) and check your email address.');
@@ -1729,10 +1731,21 @@ class BbAIAuthModal {
             alert.appendChild(link);
         }
 
+        alert.setAttribute('role', 'alert');
+
         const modalBody = document.querySelector('.alttext-auth-modal__body');
         modalBody.insertBefore(alert, modalBody.firstChild);
 
-        setTimeout(() => alert.remove(), 5000);
+        // Errors stay until the user changes a field or submits again (the next
+        // showError/showSuccess replaces them). A timed removal made "wrong
+        // password" and "account already exists" vanish before people read them.
+        const clearOnInput = (event) => {
+            if (event.target && event.target.matches && event.target.matches('input, select, textarea')) {
+                alert.remove();
+                modalBody.removeEventListener('input', clearOnInput);
+            }
+        };
+        modalBody.addEventListener('input', clearOnInput);
     }
 
     showSuccess(message) {

@@ -249,7 +249,7 @@ $bbai_bottom_upsell_class = !empty($bbai_bottom_upsell_compact) ? ' bbai-bottom-
                     </svg>
                     <?php esc_html_e('Priority Support', 'beepbeep-ai-alt-text-generator'); ?>
                 </a>
-                <a href="https://beepbeepai.com/docs" class="bbai-agency-link" target="_blank" rel="noopener">
+                <a href="https://oppti.dev/docs" class="bbai-agency-link" target="_blank" rel="noopener">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M4 2h8a2 2 0 012 2v10l-3-2H4a2 2 0 01-2-2V4a2 2 0 012-2z"/>
                         <path d="M5 6h6M5 9h4"/>

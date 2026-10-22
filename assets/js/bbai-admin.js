@@ -884,6 +884,10 @@
                     root.setAttribute('data-bbai-trial-limit', String(Math.max(0, parseInt(update.trial.limit, 10) || 0)));
                 }
                 if (update.trial.used !== undefined) {
+                    if (!root.hasAttribute('data-bbai-trial-used-initial')) {
+                        // Keep the page-load count as the baseline for the guest hero.
+                        root.setAttribute('data-bbai-trial-used-initial', String(Math.max(0, parseInt(root.getAttribute('data-bbai-trial-used'), 10) || 0)));
+                    }
                     root.setAttribute('data-bbai-trial-used', String(Math.max(0, parseInt(update.trial.used, 10) || 0)));
                 }
                 if (update.trial.remaining !== undefined) {
@@ -2882,7 +2886,14 @@
             window.showAuthModal('register', modalContext);
             return;
         }
-        window.location.href = 'https://app.beepbeep.ai/register';
+        window.location.href = bbaiPluginAuthUrl('register');
+    }
+
+    // Fallback when no auth modal is on the page: the plugin dashboard opens it
+    // (app.beepbeep.ai no longer resolves).
+    function bbaiPluginAuthUrl(tab) {
+        var base = (window.bbai_ajax && window.bbai_ajax.admin_url) || 'admin.php';
+        return base + '?page=bbai&bbai_open_auth=1&bbai_auth_tab=' + (tab === 'login' ? 'login' : 'register');
     }
 
     function openAuthLoginModal() {
@@ -2906,7 +2917,7 @@
             window.showAuthModal('login', 'login');
             return;
         }
-        window.location.href = 'https://app.beepbeep.ai/login';
+        window.location.href = bbaiPluginAuthUrl('login');
     }
 
     function normalizeLimitErrorData(errorData) {
@@ -6622,33 +6633,53 @@
         updateLibraryBannerInlineChips();
     }
 
-    function updateGuestDashboardAfterGeneration(successCount, generationSource) {
+    function updateGuestDashboardAfterGeneration(successCount, generationSource, serverTrial) {
         var hero = document.querySelector('[data-bbai-guest-hero-static="1"]');
         var root = document.querySelector('[data-bbai-dashboard-state-root="1"], [data-bbai-dashboard-root="1"]');
         var successes = Math.max(0, parseInt(successCount, 10) || 0);
         var runId = String(window.bbaiCurrentGenerationRunId || '');
         var source = String(generationSource || '');
+        var hasServerTrial = !!(serverTrial && typeof serverTrial === 'object' &&
+            serverTrial.used !== undefined && serverTrial.used !== null && !isNaN(parseInt(serverTrial.used, 10)));
 
-        if (!hero || !root || successes <= 0) {
+        if (!hero || !root || (successes <= 0 && !hasServerTrial)) {
             return;
         }
 
-        window.bbaiGuestDashboardAppliedRuns = window.bbaiGuestDashboardAppliedRuns || {};
-        if (runId && window.bbaiGuestDashboardAppliedRuns[runId]) {
-            return;
-        }
-        if (runId) {
-            window.bbaiGuestDashboardAppliedRuns[runId] = true;
+        if (!hasServerTrial) {
+            window.bbaiGuestDashboardAppliedRuns = window.bbaiGuestDashboardAppliedRuns || {};
+            if (runId && window.bbaiGuestDashboardAppliedRuns[runId]) {
+                return;
+            }
+            if (runId) {
+                window.bbaiGuestDashboardAppliedRuns[runId] = true;
+            }
         }
 
         var limit = Math.max(1, parseInt(root.getAttribute('data-bbai-trial-limit'), 10) || 10);
         var used = Math.max(0, parseInt(root.getAttribute('data-bbai-trial-used'), 10) || 0);
-        var remaining = parseInt(root.getAttribute('data-bbai-trial-remaining'), 10);
-        if (isNaN(remaining)) {
+        var remaining;
+
+        // The page-load count is the baseline. The root data-* can already hold the server's
+        // post-generation count (syncDashboardStateFromUsage writes it), so adding this run's
+        // successes on top of it double counted (UI 2 / 10 while the server had 1 / 10).
+        if (!root.hasAttribute('data-bbai-trial-used-initial')) {
+            root.setAttribute('data-bbai-trial-used-initial', String(used));
+        }
+        if (hasServerTrial) {
+            if (serverTrial.limit !== undefined && !isNaN(parseInt(serverTrial.limit, 10))) {
+                limit = Math.max(1, parseInt(serverTrial.limit, 10));
+            }
+            used = Math.max(0, Math.min(limit, parseInt(serverTrial.used, 10)));
+            remaining = serverTrial.remaining !== undefined && !isNaN(parseInt(serverTrial.remaining, 10))
+                ? Math.max(0, Math.min(limit, parseInt(serverTrial.remaining, 10)))
+                : Math.max(0, limit - used);
+        } else {
+            window.bbaiGuestTrialSuccessTotal = (window.bbaiGuestTrialSuccessTotal || 0) + successes;
+            var initialUsed = Math.max(0, parseInt(root.getAttribute('data-bbai-trial-used-initial'), 10) || 0);
+            used = Math.min(limit, Math.max(used, initialUsed + window.bbaiGuestTrialSuccessTotal));
             remaining = Math.max(0, limit - used);
         }
-        used = Math.min(limit, used + successes);
-        remaining = Math.max(0, Math.min(limit, remaining - successes));
 
         var total = Math.max(0, parseInt(root.getAttribute('data-bbai-total-count'), 10) || 0);
         var missing = Math.max(0, parseInt(root.getAttribute('data-bbai-missing-count'), 10) || 0);
@@ -9735,11 +9766,19 @@
                 settings.onBeforeComplete(summary);
             }
 
-            if (typeof refreshUsageStats === 'function') {
-                refreshUsageStats();
+            var usageRefresh = null;
+            if (typeof window.alttextai_refresh_usage === 'function') {
+                usageRefresh = window.alttextai_refresh_usage();
+            } else if (typeof refreshUsageStats === 'function') {
+                usageRefresh = refreshUsageStats();
             }
 
+            var finishFeedbackOnce = false;
             var finishFeedback = function() {
+                if (finishFeedbackOnce) {
+                    return;
+                }
+                finishFeedbackOnce = true;
                 var feedbackPayload = buildGenerationFeedbackPayload(source, successes, failures);
                 dispatchDashboardFeedback(
                     feedbackPayload.type,
@@ -9762,11 +9801,26 @@
                 }
             };
 
+            // Build the "N generations left" line only after fresh usage has arrived (max 4 s wait),
+            // so the toast never repeats the pre-generation count.
+            var coverageRefresh = null;
             if (typeof window.bbaiRefreshDashboardCoverage === 'function') {
-                window.bbaiRefreshDashboardCoverage().always(finishFeedback);
+                coverageRefresh = window.bbaiRefreshDashboardCoverage();
             } else {
                 applyLibraryReviewFilters();
+            }
+            var waitFor = [usageRefresh, coverageRefresh].filter(function(p) {
+                return p && typeof p.always === 'function';
+            });
+            if (!waitFor.length) {
                 finishFeedback();
+            } else {
+                window.setTimeout(finishFeedback, 4000);
+                $.when.apply($, waitFor.map(function(p) {
+                    var d = $.Deferred();
+                    p.always(function() { d.resolve(); });
+                    return d.promise();
+                })).always(finishFeedback);
             }
         }
 
@@ -9788,9 +9842,14 @@
             active++;
 
             generateAltTextForId(id)
-                .then(function() {
+                .then(function(result) {
                     processed++;
                     successes++;
+                    // Apply the fresh usage from this generation now, so the
+                    // "N generations left" line is not built from page-load data.
+                    if (result && result.usage) {
+                        applyLibraryUsageAfterGeneration(result.usage, 1);
+                    }
                 })
                 .catch(function(error) {
                     if (isLimitReachedError(error)) {
@@ -19674,6 +19733,18 @@
 
         if (!quotaError && successes > 0) {
             updateGuestDashboardAfterGeneration(successes, source);
+            // Then settle on the server's number, whatever the optimistic update showed.
+            if (typeof window.alttextai_refresh_usage === 'function') {
+                var guestUsageRefresh = window.alttextai_refresh_usage();
+                if (guestUsageRefresh && typeof guestUsageRefresh.done === 'function') {
+                    guestUsageRefresh.done(function(serverUsage) {
+                        var u = normalizeUsagePayload(serverUsage);
+                        if (u && isAnonymousTrialUsage(u)) {
+                            updateGuestDashboardAfterGeneration(0, source, u);
+                        }
+                    });
+                }
+            }
             showGuestTrialCompletionSignupModal();
             dispatchAnalyticsEvent('generation_completed', {
                 source: getAnalyticsPageSource(),
@@ -23033,7 +23104,7 @@
         if (usageData && typeof usageData === 'object') {
             window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Using provided usage data:', usageData);
             updateUsageDisplayGlobally(usageData);
-            return;
+            return $.Deferred().resolve(usageData).promise();
         }
 
         var config = window.BBAI_DASH || window.BBAI || {};
@@ -23042,12 +23113,12 @@
 
         if (!usageUrl) {
             window.BBAI_LOG && window.BBAI_LOG.warn('[AltText AI] Cannot refresh usage: REST endpoint not available', config);
-            return;
+            return $.Deferred().reject().promise();
         }
 
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Refreshing usage from:', usageUrl);
 
-        $.ajax({
+        return $.ajax({
             url: usageUrl,
             method: 'GET',
             headers: {
@@ -23280,6 +23351,11 @@
 
         }
 
+        // Keep the server-rendered data-* quota attributes in step with the fresh numbers,
+        // otherwise getUsageSnapshot() prefers the stale higher remaining count from page load.
+        if (typeof applyLibraryWorkspaceUsageAttributes === 'function') {
+            applyLibraryWorkspaceUsageAttributes(usagePayload);
+        }
         updateLibraryUsageSurface(usagePayload);
         syncSharedUsageBanner(usagePayload);
         applyDashboardState(false);
@@ -23302,6 +23378,35 @@
     if (typeof window.refreshUsageStats === 'undefined') {
         window.refreshUsageStats = window.alttextai_refresh_usage;
     }
+
+    // Record the server-rendered guest trial count before anything updates it.
+    $(function() {
+        var roots = document.querySelectorAll('[data-bbai-dashboard-state-root="1"], [data-bbai-dashboard-root="1"]');
+        Array.prototype.forEach.call(roots, function(root) {
+            if (root.hasAttribute('data-bbai-trial-used') && !root.hasAttribute('data-bbai-trial-used-initial')) {
+                root.setAttribute('data-bbai-trial-used-initial', String(Math.max(0, parseInt(root.getAttribute('data-bbai-trial-used'), 10) || 0)));
+            }
+        });
+    });
+
+    // Back from Stripe: the plan can land a few seconds after the redirect (webhook),
+    // so re-read usage a few times instead of asking the user to reload.
+    $(function() {
+        var params;
+        try {
+            params = new URLSearchParams(window.location.search || '');
+        } catch (e) {
+            return;
+        }
+        if (params.get('checkout') !== 'success' || typeof window.alttextai_refresh_usage !== 'function') {
+            return;
+        }
+        [1500, 6000, 15000].forEach(function(delay) {
+            window.setTimeout(function() {
+                window.alttextai_refresh_usage();
+            }, delay);
+        });
+    });
 
 })(jQuery);
 

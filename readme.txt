@@ -7,69 +7,59 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.141
+Stable tag: 4.6.142
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
 
-Bulk-generate AI alt text for WordPress & WooCommerce images. Fix missing alt text, boost image SEO and accessibility — with full review control.
+See how many of your images have no alt text, free to try, before you sign up. Then add AI alt text you review, for WordPress and WooCommerce.
 
 == Description ==
 
-**OpptiAI Alt Text is an AI alt text generator for WordPress that fixes missing image alt text in bulk** — so your Media Library and WooCommerce products get the descriptions search engines and screen readers need, without you editing images one at a time.
+**See how many of your images have no alt text, free to try, before you sign up.**
 
-Point it at your site and it scans the WordPress Media Library and WooCommerce product images, flags the ones with missing, generic, or weak alt text, and generates clear, descriptive alt text you review and approve. Scan, bulk-generate, review the handful that need a human touch, and save — a job that used to take an afternoon takes minutes.
+OpptiAI Alt Text scans your WordPress Media Library and WooCommerce product images and shows your alt text coverage: how many images are missing alt text, how many need review, and which ones to fix first. Then it writes clear, descriptive AI alt text that you review and approve before anything is saved.
 
-Good alt text does two jobs at once: it tells Google Images and product search what each picture shows (real image-search traffic, especially for stores), and it gives screen-reader users the description they rely on. OpptiAI Alt Text is built for bloggers, publishers, WooCommerce stores, agencies, SEO teams, and accessibility-focused site owners who want that handled properly inside wp-admin.
+Good alt text does two jobs at once. It tells Google Images and product search what each picture shows, and it gives screen-reader users the description they rely on. There is no OpenAI key to set up, and nothing goes live without your approval.
 
-**No separate OpenAI key to set up, no per-image busywork, and nothing published without your approval.**
-
-= Why site owners choose OpptiAI Alt Text =
-
-* **Bulk-generate WordPress alt text** so large media libraries get cleaned up in minutes, not image by image.
-* **No OpenAI API key required** — generation runs through OpptiAI's backend, so you don't manage or pay for a separate AI key.
-* **Fix missing image alt attributes** across posts, pages, WooCommerce products, and media attachments.
-* **Improve image SEO with clearer descriptions** that help search engines understand posts, products, and category images.
-* **Support accessibility and WCAG workflows** by finding missing alt text fast and reviewing AI suggestions before they go live.
-* **Keep humans in control** with edit, review, regenerate, and approve actions built into the workflow — nothing overwrites your work automatically.
-* **Optimise WooCommerce product images** across featured images and galleries without touching your theme or catalog.
-* **Automate future uploads** with optional AI alt text for new media, so coverage never slips again.
+**Two more free audits from OpptiAI:** [OpptiAI Titles](https://wordpress.org/plugins/opptiai-titles/) checks your site for missing and duplicate SEO titles and meta descriptions, and [OpptiAI Internal Linking](https://wordpress.org/plugins/opptiai-internal-linking/) finds orphan pages that no other page links to. Both scans run in WordPress without an account.
 
 = Features =
 
-* **Bulk AI alt text generation for WordPress** — update many images in one action instead of editing the Media Library file by file.
-* **One-click scan for missing alt text** to surface the images most likely to hurt accessibility and image SEO.
-* **Alt tag and alt attribute cleanup** for images that are empty, generic, or ready for a better description.
-* **Review, edit, and regenerate workflow** that keeps quality high when AI suggestions need extra context.
-* **Image SEO-focused output** designed to help Google Images and product search understand what each image shows.
-* **WooCommerce-ready optimisation** for product featured images, gallery images, and broader store content.
-* **Automatic alt text for new uploads** so future media stays covered without repeating the cleanup.
-* **Clear dashboard, usage, and coverage views** so you can track progress and prioritise the next fixes.
-* **Native WordPress admin experience** that feels like a real wp-admin workflow, not an external tool bolted on.
+* **Free alt text coverage scan** of the Media Library and WooCommerce product images, with missing, needs review and optimised counts on one dashboard.
+* **Next recommended action** so you know which images to fix first.
+* **AI alt text you review:** edit, regenerate or approve each suggestion. Nothing overwrites your existing alt text on its own.
+* **No OpenAI API key required.** Generation runs through the OpptiAI service, so there is no separate AI key to manage or pay for.
+* **WooCommerce ready** for product featured images and gallery images, without touching your theme or catalogue.
+* **Bulk generation:** select many images, generate them in one run, then review before saving. Bulk works within your free allowance, and paid plans add more volume.
+* **Automatic alt text on new uploads** (Autopilot, with Growth or Agency) so coverage does not slip again.
+* **Usage and coverage tracking** so you can see progress over time.
+* **Native wp-admin workflow**, not an external tool bolted on.
+* **One OpptiAI credit wallet** shared with OpptiAI Titles and OpptiAI Internal Linking.
 
 = How it works =
 
-1. **Scan your WordPress media library** to find missing alt text, weak descriptions, and optimisation opportunities.
-2. **Generate AI alt text in bulk** for the images you want to improve.
-3. **Review and edit suggestions** so the final text matches your content, products, and brand voice.
-4. **Save approved alt text** back to WordPress and move your library toward full coverage.
-5. **Turn on automatic optimisation** if you want new uploads to get AI alt text going forward.
+1. **Install and activate**, then open OpptiAI Alt Text.
+2. **Run the free scan** to see your alt text coverage and the images that need work.
+3. **Generate alt text** for the images that matter most and review each suggestion.
+4. **Save approved alt text** back to WordPress.
+5. **Use bulk generation** to clear more of the library in one run, within your allowance.
 
-= Use cases =
+= Who it is for =
 
-* **Bloggers and publishers** wanting faster image SEO across existing posts and future uploads.
-* **WooCommerce stores** needing bulk alt text for product images, galleries, and category visuals.
-* **Agencies and freelancers** managing multiple WordPress sites and large client media libraries.
-* **SEO teams** improving image discoverability and consistency across content and commerce pages.
-* **Accessibility-focused site owners** improving image descriptions as part of WCAG and content-quality work.
+* **Bloggers and publishers** fixing image SEO across existing posts and future uploads.
+* **WooCommerce stores** with product images and galleries that have no alt text.
+* **Agencies and freelancers** managing large client media libraries.
+* **SEO teams** improving image discoverability across content and commerce pages.
+* **Accessibility-focused site owners** improving image descriptions as part of WCAG work.
 
-= Free plan and paid options =
+= Free to try, then paid plans =
 
-Try 10 generations before you even create an account. The free plan then includes 25 AI alt text generations per month — enough to fix your highest-value images and see the workflow on your own site. Paid plans unlock more volume, faster processing, and higher-capacity workflows for growing sites and stores.
+OpptiAI Alt Text is free to try. Run the coverage scan and generate alt text for your first images before you create an account, and a free account adds a monthly allowance after that. Bulk generation works within the free allowance too. Paid plans add more volume and higher-capacity workflows for larger sites and stores. See [pricing](https://oppti.dev/pricing).
 
 = A quick favour =
 
-OpptiAI Alt Text is built and supported by an independent developer. If it saves you time, a short review genuinely helps other site owners find it — thank you.
+OpptiAI Alt Text is built and supported by an independent developer. If it saves you time, a short review helps other site owners find it. Thank you.
 
 = Learn more =
 
@@ -81,66 +71,80 @@ https://www.youtube.com/watch?v=VLP302GcMBs
 
 == Installation ==
 
-1. Go to WordPress Admin → Plugins → Add New.
+1. Go to WordPress Admin > Plugins > Add New.
 2. Search for "OpptiAI Alt Text" (or "alt text generator").
 3. Click Install Now, then Activate.
-4. Open OpptiAI Alt Text → Dashboard (or ALT Library) and generate your first descriptions — no API key setup required.
-5. Optional: enable auto-generation in Settings to process new uploads automatically.
-6. Running a store? Run bulk generation to fix existing WooCommerce product images and galleries.
+4. Open OpptiAI Alt Text > Dashboard and run the free scan to see your alt text coverage. No API key setup required.
+5. Generate and review alt text for the images you want to fix first.
+6. Optional, with Growth or Agency: turn on Autopilot in Settings to cover new uploads automatically.
+7. Running a store? Use bulk generation for existing WooCommerce product images and galleries.
 
 == Frequently Asked Questions ==
 
-= Is there a free AI alt text generator for WordPress? =
+= Is OpptiAI Alt Text free? =
 
-Yes. OpptiAI Alt Text has a free plan: 10 generations to try before signing up, then 25 AI alt text generations per month. That's enough to fix your most important images and judge the quality on your own content before deciding on a paid plan.
+Yes, it is free to try. The coverage scan is free, and you can generate alt text for your first images before you sign up. A free account adds a monthly allowance, which you can use one image at a time or in bulk. Paid plans add more volume.
+
+= Can I see how many images are missing alt text before I sign up? =
+
+Yes. The scan shows how many images in your Media Library and WooCommerce catalogue are missing alt text, how many need review and how many are already optimised. No account is needed to see the result.
 
 = Do I need my own OpenAI API key? =
 
-No. Generation runs through OpptiAI's backend, so you don't have to create, manage, or pay for a separate OpenAI key. Install, activate, and start generating.
+No. Generation runs through the OpptiAI service, so you don't have to create, manage or pay for a separate OpenAI key. Install, activate and start generating.
 
 = Can I bulk generate alt text in WordPress? =
 
-Yes. Bulk generation is the core of the plugin. Scan large libraries, select the images that need work, generate AI suggestions in bulk, and review them before saving.
+Yes. Select the images that need work, generate alt text in one run and review it before saving. Bulk generation works within your free allowance; paid plans add more volume for larger libraries.
+
+= What happens when I run out of credits? =
+
+Your saved alt text stays exactly as it is. You can wait for your monthly allowance to refresh, or upgrade to a paid plan for more volume. Failed generations do not use credits.
 
 = Is this a good AltText.ai alternative? =
 
-If you want bulk AI alt text with review control, WooCommerce support, and a free plan that doesn't require your own AI key, yes — OpptiAI Alt Text is a practical alternative. See a full [comparison of AI alt text tools for WordPress](https://oppti.dev/alttext-ai-alternative).
+If you want AI alt text with review control, WooCommerce support and no separate AI key, and you want to try it free first, OpptiAI Alt Text is a practical alternative. See a full [comparison of AI alt text tools for WordPress](https://oppti.dev/alttext-ai-alternative).
 
 = Can it fix missing alt tags and image alt attributes? =
 
-Yes. WordPress stores image descriptions as alt attributes (often called alt tags). OpptiAI Alt Text finds images with missing alt text and helps you generate clearer descriptions for media attachments, posts, pages, and WooCommerce products.
+Yes. WordPress stores image descriptions as alt attributes (often called alt tags). OpptiAI Alt Text finds images with missing alt text and helps you write clearer descriptions for media attachments, posts, pages and WooCommerce products.
 
 = Does this plugin help with accessibility and WCAG? =
 
-Yes. It helps you add and review alt text at scale, which supports accessibility and WCAG-oriented workflows. It assists your judgment rather than replacing it.
+Yes. It helps you find, add and review alt text at scale, which supports accessibility and WCAG-oriented workflows. It assists your judgement rather than replacing it.
 
 = Does OpptiAI Alt Text work with WooCommerce product images? =
 
-Yes. It supports WooCommerce featured images, gallery images, and standard WordPress media attachments used across product pages and shop content.
+Yes. It supports WooCommerce featured images, gallery images and standard WordPress media attachments used across product pages and shop content.
 
 = Can it generate alt text automatically for new uploads? =
 
-Yes. Turn on automatic optimisation so future WordPress media gets AI-generated alt text without repeating the manual cleanup.
+Yes, with Growth or Agency. Turn on Autopilot in Settings so new uploads get AI alt text automatically. On the free and Starter plans, generation is manual.
 
 = Will it overwrite my existing alt text? =
 
-No — it's built around review and approval. You inspect, edit, regenerate, and approve suggested alt text before anything is saved back to WordPress.
+No. It is built around review and approval. You inspect, edit, regenerate and approve suggested alt text before anything is saved back to WordPress.
+
+= Are there other OpptiAI plugins? =
+
+Yes, two more free audits. [OpptiAI Titles](https://wordpress.org/plugins/opptiai-titles/) runs a free SEO health check for missing, duplicate and wrong-length titles and meta descriptions, next to Yoast, Rank Math or AIOSEO. [OpptiAI Internal Linking](https://wordpress.org/plugins/opptiai-internal-linking/) finds every orphan page in one scan, in WordPress, with no account and no credits. All three can share one OpptiAI account.
 
 == Screenshots ==
-1. Dashboard overview showing missing ALT text, monthly usage, and the next best action for WordPress image SEO and accessibility.
-2. Scan your WordPress media library to find missing ALT text and images that need review.
-3. Generate AI alt text in bulk for WordPress and WooCommerce images from one review workspace.
-4. Review, edit, and score AI alt text before saving it live.
-5. Before and after example showing an image with missing ALT text transformed into descriptive AI-generated ALT text.
-6. BeepBeep AI works inside WordPress so you can scan, review, and optimise images without leaving wp-admin.
-7. WooCommerce image workflow for product featured images and gallery images.
-8. Settings screen for automatic AI alt text on new uploads.
+
+1. Free scan result: alt text coverage for your Media Library and WooCommerce images, with missing, needs review and optimised counts, shown before you sign up.
+2. Dashboard overview showing alt text coverage, monthly usage and the next best action for image SEO and accessibility.
+3. Scan your WordPress media library to find missing alt text and images that need review.
+4. Generate AI alt text in bulk for WordPress and WooCommerce images from one review workspace.
+5. Review, edit and score AI alt text before saving it live.
+6. Before and after example: an image with missing alt text gets a descriptive AI-generated alt text.
+7. OpptiAI Alt Text works inside WordPress so you can scan, review and optimise images without leaving wp-admin.
+8. WooCommerce image workflow for product featured images and gallery images.
+9. Autopilot settings for automatic AI alt text on new uploads (Growth or Agency).
 
 == External Services ==
-
 This plugin connects to external APIs to generate image alt text and provide account/billing features.
 
-Service: AltText AI Backend API (https://alttext-ai-backend.onrender.com)
+Service: OpptiAI API (https://alttext-ai-backend.onrender.com)
 Purpose: Generate alt text descriptions, perform alt text review checks, and handle authentication, license, usage, billing, and contact requests.
 Privacy policy: https://oppti.dev/privacy
 
@@ -149,10 +153,28 @@ Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
 Service: PostHog (optional product analytics)
-Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. BeepBeep AI does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
+Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. OpptiAI Alt Text does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.142 =
+* New: a "Usage analytics" switch in Settings. It is off unless you turn it on, and you can turn it off at any time.
+* Changed: sites that never chose are treated as opted out.
+* Improved: upgrade buttons open checkout in the same tab, and one click starts one checkout.
+* Improved: if checkout can't start, you see the reason with Continue to payment, Copy link and Try again, instead of being sent to a different page.
+* Improved: sites in the US see US dollar prices; everywhere else sees pounds.
+* New: a short review request after your first ALT text is generated, shown once.
+* New: a notice when you run out of free credits, with your refill date.
+* Fixed: the "generations left" message updates right after you generate, without a reload.
+* Fixed: the upgrade window no longer says you've used your free images while you still have some left.
+* Fixed: sign-in errors such as a wrong password, or an email that already has an account, stay on screen until you change a field.
+* Fixed: sign-up and log-in fallback links now open the plugin's own sign-in window instead of a dead address.
+* Fixed: the free trial counter matches your account right after you generate, and updates without a reload.
+* Fixed: after checkout or signing in, your plan and credits show straight away.
+* Fixed: the credit notice no longer says you fixed 0 images.
+* Fixed: if scripts on the page fail to load, upgrade buttons still open a real checkout in the same tab, or show the reason.
+* Changed: contact and help messages now go to the OpptiAI support team.
 
 = 4.6.141 =
 * Fixed: upgrade buttons now open a working checkout page.
@@ -312,6 +334,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.142 =
+Usage analytics are now a Settings switch that is off by default, and checkout problems now show a clear message with ways to continue.
 
 = 4.6.141 =
 Fixes upgrade buttons that opened an incomplete checkout page. Recommended for all users.

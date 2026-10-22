@@ -120,6 +120,8 @@ trait Core_Ajax_Auth {
 
             require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
             \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
+            Usage_Tracker::clear_cache();
+            delete_transient('bbai_usage_cache');
 
             if ( function_exists( 'bbai_telemetry_emit' ) ) {
                 bbai_telemetry_emit( 'account_created', array_merge( [ 'source' => 'ajax_register' ], \BeepBeepAI\AltTextGenerator\auditor_signup_properties() ) );
@@ -128,7 +130,7 @@ trait Core_Ajax_Auth {
             wp_send_json_success([
                 'message' => __('Account created successfully', 'beepbeep-ai-alt-text-generator'),
 	                'user' => $result['user'] ?? null,
-	                // Website Auditor attribution for the client-side signup_succeeded event.
+	                // OpptiAI tool deep-link attribution for the client-side signup_succeeded event.
 	                'auditor' => \BeepBeepAI\AltTextGenerator\auditor_signup_properties(),
 	            ]);
 		        } catch (\Throwable $e) {
@@ -219,10 +221,16 @@ trait Core_Ajax_Auth {
 	            return;
 	        }
 
+        // Show this account's real quota straight after sign-in, not the cached guest numbers.
+        Usage_Tracker::clear_cache();
+        delete_transient('bbai_usage_cache');
+        require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-token-quota-service.php';
+        \BeepBeepAI\AltTextGenerator\Token_Quota_Service::clear_cache();
+
         wp_send_json_success([
             'message' => __('Logged in successfully', 'beepbeep-ai-alt-text-generator'),
             'user' => $result['user'] ?? null,
-            // Website Auditor attribution for the client-side login_succeeded event.
+            // OpptiAI tool deep-link attribution for the client-side login_succeeded event.
             'auditor' => \BeepBeepAI\AltTextGenerator\auditor_signup_properties(),
         ]);
     }

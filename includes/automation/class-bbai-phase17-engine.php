@@ -65,7 +65,8 @@ class Phase17_Engine {
 			update_user_meta( $uid, 'bbai_phase17_mark_reviewed_count', $rcount );
 
 			$threshold = (int) apply_filters( 'bbai_phase17_review_prompt_review_threshold', 5 );
-			if ( $threshold > 0 && $rcount >= $threshold && ! get_user_meta( $uid, 'bbai_phase17_review_prompt_dismissed', true ) ) {
+			$inline_owns = class_exists( \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::class ) && \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::owns_review_ask();
+			if ( ! $inline_owns && $threshold > 0 && $rcount >= $threshold && ! get_user_meta( $uid, 'bbai_phase17_review_prompt_dismissed', true ) ) {
 				$review_key = 'bbai_phase17_review_prompt_' . $uid;
 				if ( false === get_transient( $review_key ) ) {
 					set_transient(
@@ -223,7 +224,9 @@ class Phase17_Engine {
 		if ( $uid <= 0 ) {
 			return;
 		}
-		self::render_notice_from_transient( 'bbai_phase17_review_prompt_' . $uid, 'review' );
+		if ( ! ( class_exists( BBAI_Review_Prompt::class ) && BBAI_Review_Prompt::owns_review_ask() ) ) {
+			self::render_notice_from_transient( 'bbai_phase17_review_prompt_' . $uid, 'review' );
+		}
 		self::render_notice_from_transient( 'bbai_phase17_admin_tip_' . $uid, 'tip' );
 	}
 

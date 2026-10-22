@@ -61,6 +61,9 @@ class Admin_Hooks {
 		add_action( 'admin_post_bbai_usage_export', array( $this->core, 'handle_usage_export' ) );
 		add_action( 'admin_post_bbai_debug_export', array( $this->core, 'handle_debug_log_export' ) );
 		add_action( 'admin_post_bbai_logout', array( $this->core, 'handle_logout' ) );
+		add_action( 'admin_post_' . BBAI_Telemetry::CONSENT_FORM_ACTION, array( BBAI_Telemetry::class, 'handle_consent_form' ) );
+		add_action( 'admin_init', array( BBAI_Telemetry::class, 'maybe_reset_implied_consent' ) );
+		add_action( 'admin_init', array( $this->core, 'maybe_refresh_usage_after_checkout' ), 1 );
 		add_action( 'init', array( $this->core, 'ensure_capability' ) );
 		add_action( 'admin_notices', array( $this->core, 'maybe_render_queue_notice' ) );
 		add_action( 'admin_notices', array( $this->core, 'maybe_render_trial_exhausted_notice' ) );
@@ -110,6 +113,7 @@ class Admin_Hooks {
 			'beepbeepai_disconnect_account'         => 'ajax_disconnect_account',
 			'beepbeepai_get_user_info'              => 'ajax_get_user_info',
 			'beepbeepai_create_checkout'            => 'ajax_create_checkout',
+			'beepbeepai_email_checkout_link'        => 'ajax_email_checkout_link',
 			'beepbeepai_capture_attribution'        => 'ajax_capture_attribution',
 			'beepbeepai_create_portal'              => 'ajax_create_portal',
 			'beepbeepai_forgot_password'            => 'ajax_forgot_password',

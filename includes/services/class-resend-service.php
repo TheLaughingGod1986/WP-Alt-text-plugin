@@ -87,7 +87,7 @@ class Resend_Service {
         }
 
         // 4. Fallback to the plugin support recipient.
-        $support_email = apply_filters('bbai_contact_support_recipient', 'benoats86@gmail.com');
+        $support_email = apply_filters('bbai_contact_support_recipient', defined('BBAI_SUPPORT_EMAIL') ? BBAI_SUPPORT_EMAIL : 'support@oppti.dev');
         if (!empty($support_email) && is_email($support_email)) {
             return $support_email;
         }

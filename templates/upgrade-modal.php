@@ -144,9 +144,22 @@ $bbai_modal_title = $bbai_on_authenticated_free
     ? __('Choose your upgrade', 'beepbeep-ai-alt-text-generator')
     : __('Manage your OpptiAI Alt Text plan', 'beepbeep-ai-alt-text-generator');
 
-$bbai_modal_subtitle = $bbai_on_authenticated_free
-    ? __('You’ve used your free images. Pick the plan that fits your site.', 'beepbeep-ai-alt-text-generator')
-    : __('Compare plans, manage billing, or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator');
+if ($bbai_on_authenticated_free && (int) $bbai_usage_remaining > 0) {
+    $bbai_modal_subtitle = sprintf(
+        /* translators: %s: free credits left this month */
+        _n(
+            'You have %s free image left this month. Upgrade for more images and bulk tools.',
+            'You have %s free images left this month. Upgrade for more images and bulk tools.',
+            (int) $bbai_usage_remaining,
+            'beepbeep-ai-alt-text-generator'
+        ),
+        number_format_i18n((int) $bbai_usage_remaining)
+    );
+} elseif ($bbai_on_authenticated_free) {
+    $bbai_modal_subtitle = __('You’ve used your free images for this month. Pick the plan that fits your site.', 'beepbeep-ai-alt-text-generator');
+} else {
+    $bbai_modal_subtitle = __('Compare plans, manage billing, or add one-time credits for smaller batches.', 'beepbeep-ai-alt-text-generator');
+}
 
 $bbai_locked_modal_title = $bbai_on_authenticated_free
     ? __('You’ve used this month’s free allowance', 'beepbeep-ai-alt-text-generator')
