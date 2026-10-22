@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, accessibility, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.142
+Stable tag: 4.6.142.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -157,6 +157,9 @@ Purpose: If the site owner opts in, send anonymous plugin usage analytics such a
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.142.1 =
+* Fixed: plugin admin pages not loading for some paid plans.
 
 = 4.6.142 =
 * New: a "Usage analytics" switch in Settings. It is off unless you turn it on, and you can turn it off at any time.
@@ -334,6 +337,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.142.1 =
+Fixes plugin admin pages not loading for some paid plans.
 
 = 4.6.142 =
 Usage analytics are now a Settings switch that is off by default, and checkout problems now show a clear message with ways to continue.
