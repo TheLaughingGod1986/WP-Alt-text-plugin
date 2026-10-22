@@ -388,7 +388,7 @@ trait Core_Admin_UI {
             }
             
             $bbai_is_agency = ($bbai_plan_slug === 'agency');
-            $bbai_is_pro = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency');
+            $bbai_is_pro = \BeepBeepAI\AltTextGenerator\Plan_Tier::can_see_admin_tab($bbai_plan_slug);
 
             // Visible primary navigation only includes the main product workflow areas.
             $bbai_tabs = [

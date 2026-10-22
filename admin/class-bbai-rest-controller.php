@@ -2128,7 +2128,7 @@ class REST_Controller {
 		$plan_slug             = strtolower(
 			(string) ( $usage_stats['plan_type'] ?? $usage_stats['plan'] ?? $auth_state['plan_slug'] ?? 'free' )
 		);
-		$is_pro                = in_array( $plan_slug, [ 'pro', 'growth', 'agency' ], true )
+		$is_pro                = Plan_Tier::skips_library_credit_lock( $plan_slug )
 			|| ! empty( $usage_stats['is_pro'] )
 			|| ! empty( $auth_state['is_pro'] );
 
@@ -2225,7 +2225,7 @@ class REST_Controller {
 			: max( 0, $limit - $used );
 
 		$plan_slug = strtolower( (string) ( $usage_stats['plan_type'] ?? $usage_stats['plan'] ?? 'free' ) );
-		$is_pro    = in_array( $plan_slug, [ 'pro', 'growth', 'agency', 'enterprise' ], true )
+		$is_pro    = Plan_Tier::skips_credit_lock( $plan_slug )
 			|| ! empty( $usage_stats['is_pro'] );
 
 		$credits_block = [

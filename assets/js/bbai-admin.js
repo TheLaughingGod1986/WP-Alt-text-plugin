@@ -431,6 +431,21 @@
             return rawUsage.data;
         }
 
+        // Generation responses nest the counters: { entitlement_state: {...}, usage: { used, limit, ... } }
+        // (and data.usage.usage on wp_send_json_success). Read the inner block.
+        var nested = rawUsage && typeof rawUsage === 'object' ? rawUsage : null;
+        if (nested && nested.data && typeof nested.data === 'object' && nested.data.usage && typeof nested.data.usage === 'object') {
+            nested = nested.data;
+        }
+        if (
+            nested &&
+            nested.used === undefined && nested.credits_used === undefined && nested.limit === undefined &&
+            nested.usage && typeof nested.usage === 'object' &&
+            (nested.usage.used !== undefined || nested.usage.credits_used !== undefined || nested.usage.limit !== undefined)
+        ) {
+            return nested.usage;
+        }
+
         return rawUsage;
     }
 
@@ -544,7 +559,7 @@
         if (!quotaType) {
             quotaType = planType === 'trial'
                 ? 'trial'
-                : (planType === 'growth' || planType === 'pro' || planType === 'agency' || planType === 'enterprise'
+                : (['starter', 'growth', 'pro', 'agency', 'enterprise'].indexOf(planType) !== -1
                     ? 'paid'
                     : 'monthly_account');
         }
@@ -23356,6 +23371,7 @@
         if (typeof applyLibraryWorkspaceUsageAttributes === 'function') {
             applyLibraryWorkspaceUsageAttributes(usagePayload);
         }
+        applyDailyUsagePanel(usagePayload);
         updateLibraryUsageSurface(usagePayload);
         syncSharedUsageBanner(usagePayload);
         applyDashboardState(false);
@@ -23363,6 +23379,123 @@
         $(document).trigger('bbai:usage-updated');
         window.BBAI_LOG && window.BBAI_LOG.log('[AltText AI] Usage display update complete');
     }
+
+    /**
+     * Signed-in dashboard "Usage this month" panel ("N / M used", remaining, meter,
+     * credit box). Server-rendered only before 4.6.143, so it kept the page-load count.
+     */
+    function applyDailyUsagePanel(usagePayload) {
+        if (!usagePayload || typeof usagePayload !== 'object' || isAnonymousTrialUsage(usagePayload)) {
+            return;
+        }
+        var used = parseInt(usagePayload.used, 10);
+        var limit = parseInt(usagePayload.limit, 10);
+        if (isNaN(used) || isNaN(limit) || limit <= 0) {
+            return;
+        }
+        used = Math.max(0, used);
+        var remaining = parseInt(usagePayload.remaining, 10);
+        remaining = isNaN(remaining) ? Math.max(0, limit - used) : Math.max(0, remaining);
+        var fmt = function(n) { return Number(n).toLocaleString(); };
+
+        var usedEl = document.querySelector('[data-bbai-daily-usage-used="1"]');
+        if (usedEl) {
+            usedEl.textContent = sprintf(__('%1$s / %2$s used', 'beepbeep-ai-alt-text-generator'), fmt(used), fmt(limit));
+        }
+        var remainingEl = document.querySelector('[data-bbai-daily-usage-remaining="1"]');
+        if (remainingEl) {
+            remainingEl.textContent = sprintf(__('%s remaining', 'beepbeep-ai-alt-text-generator'), fmt(remaining));
+        }
+        var meterEl = document.querySelector('[data-bbai-daily-usage-meter="1"]');
+        if (meterEl && meterEl.style) {
+            meterEl.style.width = Math.min(100, Math.max(0, Math.round((Math.min(used, limit) / limit) * 100))) + '%';
+        }
+        var creditEl = document.querySelector('[data-bbai-daily-credit-copy="1"]');
+        if (creditEl) {
+            if (remaining <= 0) {
+                creditEl.textContent = __('No credits remaining this month', 'beepbeep-ai-alt-text-generator');
+            } else if (remaining <= 5) {
+                creditEl.textContent = sprintf(
+                    _n('Only %s credit left this month', 'Only %s credits left this month', remaining, 'beepbeep-ai-alt-text-generator'),
+                    fmt(remaining)
+                );
+            } else {
+                creditEl.textContent = sprintf(__('%1$s / %2$s', 'beepbeep-ai-alt-text-generator'), fmt(used), fmt(limit));
+            }
+        }
+        var noteEl = document.querySelector('[data-bbai-daily-limit-note="1"]');
+        if (noteEl) {
+            noteEl.setAttribute('data-bbai-monthly-remaining', String(remaining));
+        }
+        var dashRoot = document.querySelector('[data-bbai-dashboard-root="1"]');
+        if (dashRoot && dashRoot.getAttribute('data-bbai-is-guest-trial') !== '1') {
+            dashRoot.setAttribute('data-bbai-credits-used', String(used));
+            dashRoot.setAttribute('data-bbai-credits-total', String(limit));
+            dashRoot.setAttribute('data-bbai-credits-remaining', String(remaining));
+        }
+    }
+    window.bbaiApplyDailyUsagePanel = applyDailyUsagePanel;
+
+    /**
+     * After every successful signed-in generate, re-read /usage from the server and
+     * apply that number (the same rule as the guest counter fix). Runs for every
+     * generation path (dashboard, library, single regenerate, REST queue) because it
+     * hooks the request itself rather than one runner.
+     */
+    var bbaiPostGenerateUsageTimer = null;
+    function isGenerationRequest(settings) {
+        if (!settings) {
+            return false;
+        }
+        var data = settings.data;
+        var dataStr = '';
+        if (typeof data === 'string') {
+            dataStr = data;
+        } else if (data && typeof data === 'object' && typeof data.action === 'string') {
+            dataStr = 'action=' + data.action;
+        }
+        if (/(^|&)action=beepbeepai_(inline_generate|regenerate_single)(&|$)/.test(dataStr)) {
+            return true;
+        }
+        return /\/bbai\/v1\/generate(\b|\/|\?|$)/.test(String(settings.url || ''));
+    }
+    function isSignedInDashboardContext() {
+        var dashRoot = document.querySelector('[data-bbai-dashboard-root="1"]');
+        if (dashRoot && dashRoot.getAttribute('data-bbai-is-guest-trial') === '1') {
+            return false;
+        }
+        var ajaxCfg = window.bbai_ajax || {};
+        if (ajaxCfg.is_authenticated === true) {
+            return true;
+        }
+        if (ajaxCfg.is_guest_trial) {
+            return false;
+        }
+        var current = typeof getUsageForQuotaChecks === 'function' ? getUsageForQuotaChecks() : null;
+        return !isAnonymousTrialUsage(current);
+    }
+    function schedulePostGenerateUsageRefresh() {
+        if (bbaiPostGenerateUsageTimer) {
+            window.clearTimeout(bbaiPostGenerateUsageTimer);
+        }
+        bbaiPostGenerateUsageTimer = window.setTimeout(function() {
+            bbaiPostGenerateUsageTimer = null;
+            if (typeof window.alttextai_refresh_usage === 'function') {
+                window.alttextai_refresh_usage();
+            }
+        }, 400);
+    }
+    window.bbaiIsGenerationRequest = isGenerationRequest;
+    $(document).ajaxSuccess(function(event, xhr, settings) {
+        if (!isGenerationRequest(settings) || !isSignedInDashboardContext()) {
+            return;
+        }
+        var json = xhr && xhr.responseJSON;
+        if (json && json.success === false) {
+            return;
+        }
+        schedulePostGenerateUsageRefresh();
+    });
 
     window.bbaiUpdateTrialUsage = function(usageData) {
         var usagePayload = normalizeUsagePayload(usageData) || getUsageForQuotaChecks();

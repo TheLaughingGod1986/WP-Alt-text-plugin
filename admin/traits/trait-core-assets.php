@@ -122,7 +122,7 @@ trait Core_Assets {
 	private function minimum_monthly_limit_for_plan( string $plan ): int {
 		$plan = sanitize_key( $plan );
 		if ( 'starter' === $plan ) {
-			return defined( Usage_Tracker::class . '::STARTER_MONTHLY_LIMIT' ) ? Usage_Tracker::STARTER_MONTHLY_LIMIT : 100;
+			return defined( \BeepBeepAI\AltTextGenerator\API_Client_V2::class . '::STARTER_MONTHLY_LIMIT' ) ? \BeepBeepAI\AltTextGenerator\API_Client_V2::STARTER_MONTHLY_LIMIT : 100;
 		}
 		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
 			return defined( \BeepBeepAI\AltTextGenerator\API_Client_V2::class . '::MIN_PAID_MONTHLY_LIMIT' ) ? \BeepBeepAI\AltTextGenerator\API_Client_V2::MIN_PAID_MONTHLY_LIMIT : 1000;

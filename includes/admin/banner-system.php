@@ -243,6 +243,8 @@ function bbai_banner_snapshot_from_dashboard_state(array $d): array
         'credits_remaining' => max(0, (int) ($d['creditsRemaining'] ?? 0)),
         'usage_percent'     => min(100, max(0, (int) ($d['usagePercent'] ?? 0))),
         'is_pro_plan'       => !empty($d['isProPlan']),
+        'can_use_automation' => array_key_exists('canUseAutomation', $d) ? !empty($d['canUseAutomation']) : !empty($d['isProPlan']),
+        'skips_credit_lock' => array_key_exists('skipsCreditLock', $d) ? !empty($d['skipsCreditLock']) : !empty($d['isProPlan']),
         'is_first_run'      => !empty($d['isFirstRun']),
         'is_low_credits'    => !empty($d['isLowCredits']),
         'is_out_of_credits' => !empty($d['isOutOfCredits']),
@@ -288,6 +290,8 @@ function bbai_banner_snapshot_merge(array $overrides): array
         'credits_remaining'   => 0,
         'usage_percent'       => 0,
         'is_pro_plan'         => false,
+        'can_use_automation'  => false,
+        'skips_credit_lock'   => false,
         'is_first_run'        => false,
         'is_low_credits'      => false,
         'is_out_of_credits'   => false,
@@ -956,7 +960,7 @@ function bbai_banner_action_upgrade_modal(string $label): array
 function bbai_banner_action_automation(array $s, string $page_context): array
 {
     $settings = (string) ($s['settings_url'] ?? admin_url('admin.php?page=bbai-settings')) . '#bbai-enable-on-upload';
-    if (!empty($s['is_pro_plan'])) {
+    if (!empty($s['can_use_automation'] ?? $s['is_pro_plan'] ?? false)) {
         $a = [
             'label' => bbai_copy_cta_enable_auto_optimization(),
             'href'  => $settings,
@@ -1045,7 +1049,7 @@ function bbai_banner_upgrade_credit_actions(string $page_context, array $s): arr
  */
 function bbai_credit_nudge_is_eligible(array $s, bool $is_anonymous_trial): bool
 {
-    if ($is_anonymous_trial || !empty($s['is_trial']) || !empty($s['is_pro_plan'])) {
+    if ($is_anonymous_trial || !empty($s['is_trial']) || !empty($s['skips_credit_lock'] ?? $s['is_pro_plan'] ?? false)) {
         return false;
     }
     if (array_key_exists('has_connected_account', $s) && empty($s['has_connected_account'])) {
@@ -1171,6 +1175,16 @@ function bbai_credit_nudge_starter_action(string $page_context): array
             'data-bbai-lock-reason' => 'out_of_credits',
         ],
     ];
+    // Real Price ID (same geo map as the upgrade modal) and a no-JS same-tab URL.
+    if (class_exists(\BeepBeepAI\AltTextGenerator\Core::class)) {
+        $price_id = \BeepBeepAI\AltTextGenerator\Core::get_resolved_checkout_price_id('starter');
+        if ('' !== $price_id) {
+            $action['attributes']['data-price-id'] = $price_id;
+        }
+        if (function_exists('wp_nonce_url')) {
+            $action['href'] = \BeepBeepAI\AltTextGenerator\Core::get_direct_checkout_url('starter');
+        }
+    }
     if (BBAI_BANNER_CTX_LIBRARY === $page_context) {
         $action['attributes'] = bbai_banner_merge_library_attrs($action['attributes']);
     }

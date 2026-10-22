@@ -154,6 +154,14 @@ class Core {
     private $token_notice = null;
     private $api_client = null;
     private $checkout_price_cache = null;
+
+    /**
+     * Last resolved checkout price map for this request (shared across Core instances,
+     * so server-rendered CTAs outside Core can carry a real data-price-id).
+     *
+     * @var array<string,string>
+     */
+    private static $last_checkout_prices = [];
     private $debug_bootstrap = null;
     private $account_summary = null;
 
@@ -746,7 +754,7 @@ class Core {
             if ('trial' === $connected_plan || '' === $connected_plan) {
                 $connected_plan = 'free';
             }
-            $connected_quota_type = in_array($connected_plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'paid' : 'monthly_account';
+            $connected_quota_type = Plan_Tier::is_paid($connected_plan) ? 'paid' : 'monthly_account';
 
             $status['credits_total'] = $connected_limit;
             $status['limit'] = $connected_limit;
@@ -889,9 +897,13 @@ class Core {
         ];
     }
 
-    private function is_paid_plan_slug($plan): bool {
+    /**
+     * Upload-generation (on-upload auto-generate) gate only. Not "is paid":
+     * Starter is paid but does not include it. Same plan list as 4.6.142.
+     */
+    private function is_upload_generation_plan_slug($plan): bool {
         $plan = is_scalar($plan) ? sanitize_key((string) $plan) : '';
-        return in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true);
+        return Plan_Tier::can_use_upload_generation($plan);
     }
 
     private function current_account_can_use_upload_generation(): bool {
@@ -901,7 +913,7 @@ class Core {
 
         if (is_array($license_data) && isset($license_data['organization']) && is_array($license_data['organization'])) {
             $license_plan = $license_data['organization']['plan'] ?? $license_data['organization']['plan_type'] ?? '';
-            if ($this->is_paid_plan_slug($license_plan)) {
+            if ($this->is_upload_generation_plan_slug($license_plan)) {
                 return true;
             }
         }
@@ -911,13 +923,13 @@ class Core {
         }
 
         $usage = \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_cached_usage(false);
-        if (is_array($usage) && $this->is_paid_plan_slug($usage['plan_type'] ?? ($usage['plan'] ?? ''))) {
+        if (is_array($usage) && $this->is_upload_generation_plan_slug($usage['plan_type'] ?? ($usage['plan'] ?? ''))) {
             return true;
         }
 
         if (is_object($this->api_client) && method_exists($this->api_client, 'is_authenticated') && $this->api_client->is_authenticated()) {
             $live_usage = method_exists($this->api_client, 'get_usage') ? $this->api_client->get_usage() : null;
-            if (is_array($live_usage) && $this->is_paid_plan_slug($live_usage['plan_type'] ?? ($live_usage['plan'] ?? ''))) {
+            if (is_array($live_usage) && $this->is_upload_generation_plan_slug($live_usage['plan_type'] ?? ($live_usage['plan'] ?? ''))) {
                 \BeepBeepAI\AltTextGenerator\Usage_Tracker::update_usage($live_usage);
                 return true;
             }
@@ -1368,7 +1380,15 @@ class Core {
 	        $page = $bbai_page_input;
 	        if ($page !== 'bbai-checkout') { return; }
 
-	        $action = 'bbai_direct_checkout';	        if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ?? '' ) ), $action ) ) {
+	        // Accept the direct-checkout nonce (get_direct_checkout_url) and the legacy
+	        // _wpnonce link; this runs on admin_init, before the page callback, so a
+	        // legacy link used to die here with "Security check failed".
+	        $direct_nonce = sanitize_text_field( wp_unslash( $_GET['_bbai_nonce'] ?? '' ) );
+	        $legacy_nonce = sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) );
+	        if (
+	            ! wp_verify_nonce( $direct_nonce, 'bbai_direct_checkout' ) &&
+	            ! wp_verify_nonce( $legacy_nonce, 'bbai_checkout_redirect' )
+	        ) {
 	            wp_die(esc_html__('Security check failed. Please try again from the dashboard.', 'beepbeep-ai-alt-text-generator'));
 	        }
 
@@ -1571,7 +1591,30 @@ class Core {
 
         $prices = apply_filters('bbai_checkout_price_ids', $prices);
         $this->checkout_price_cache = $prices;
+        self::$last_checkout_prices = is_array($prices) ? $prices : [];
         return $prices;
+    }
+
+    /**
+     * Price ID for a plan from the map resolved earlier in this request ('' when unknown).
+     */
+    public static function get_resolved_checkout_price_id(string $plan): string {
+        $plan = sanitize_key($plan);
+        $price = self::$last_checkout_prices[$plan] ?? '';
+        return is_string($price) ? $price : '';
+    }
+
+    /**
+     * Same-tab checkout URL that works without JavaScript (nonce included).
+     * maybe_handle_direct_checkout() creates the Stripe session on admin_init.
+     */
+    public static function get_direct_checkout_url(string $plan): string {
+        $plan = sanitize_key($plan);
+        return wp_nonce_url(
+            add_query_arg(['page' => 'bbai-checkout', 'plan' => $plan], admin_url('admin.php')),
+            'bbai_direct_checkout',
+            '_bbai_nonce'
+        );
     }
 
     /**
@@ -1843,7 +1886,7 @@ class Core {
             $valid_plan_ids = array_keys($this->get_checkout_price_ids());
             $bbai_plan = in_array($plan_input, $valid_plan_ids, true) ? $plan_input : '';
             ?>
-            <div class="notice notice-error">
+            <div class="notice notice-error bbai-preserve-notice">
                 <p>
                     <strong><?php esc_html_e('Unable to start checkout', 'beepbeep-ai-alt-text-generator'); ?>:</strong>
                     <?php echo esc_html($message); ?>
@@ -3175,7 +3218,7 @@ class Core {
             }
             
             $bbai_is_agency = ($bbai_plan_slug === 'agency');
-            $bbai_is_pro = ($bbai_plan_slug === 'pro' || $bbai_plan_slug === 'agency');
+            $bbai_is_pro = \BeepBeepAI\AltTextGenerator\Plan_Tier::can_see_admin_tab($bbai_plan_slug);
 
             // Visible primary navigation only includes the main product workflow areas.
             $bbai_tabs = [

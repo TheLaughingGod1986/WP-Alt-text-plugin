@@ -25,11 +25,15 @@ if ($bbai_current_plan === 'pro') {
     $bbai_current_plan = 'growth';
 }
 
-// Get price IDs from backend API
-$bbai_starter_price_id = $checkout_prices['starter'] ?? '';
-$bbai_pro_price_id = $checkout_prices['pro'] ?? '';
-$bbai_agency_price_id = $checkout_prices['agency'] ?? '';
-$bbai_credits_price_id = $checkout_prices['credits'] ?? '';
+// Get price IDs from backend API. Callers set $bbai_checkout_prices; the old
+// $checkout_prices name was never set, so every data-price-id rendered empty.
+$bbai_upgrade_checkout_prices = isset($bbai_checkout_prices) && is_array($bbai_checkout_prices)
+    ? $bbai_checkout_prices
+    : (isset($checkout_prices) && is_array($checkout_prices) ? $checkout_prices : []);
+$bbai_starter_price_id = $bbai_upgrade_checkout_prices['starter'] ?? '';
+$bbai_pro_price_id = $bbai_upgrade_checkout_prices['pro'] ?? '';
+$bbai_agency_price_id = $bbai_upgrade_checkout_prices['agency'] ?? '';
+$bbai_credits_price_id = $bbai_upgrade_checkout_prices['credits'] ?? '';
 
 // Currency - Default to GBP; US request-country sets USD via get_checkout_currency().
 $bbai_currency = $bbai_currency ?? ['symbol' => '£', 'code' => 'GBP', 'free' => 0, 'starter' => 4.99, 'growth' => 12.99, 'pro' => 12.99, 'agency' => 49.99, 'credits' => 9.99];
