@@ -20,7 +20,7 @@ See how many of your images have no alt text, free to try, before you sign up. T
 
 OpptiAI Alt Text scans your WordPress Media Library and WooCommerce product images and shows your alt text coverage: how many images are missing alt text, how many need review, and which ones to fix first. Then it writes clear, descriptive AI alt text that you can review, edit or regenerate at any time.
 
-Good alt text does two jobs at once. It tells Google Images and product search what each picture shows, and it gives screen-reader users the description they rely on. There is no OpenAI key to set up, and nothing goes live without your approval.
+Good alt text does two jobs at once. It tells Google Images and product search what each picture shows, and it gives screen-reader users the description they rely on. There is no OpenAI key to set up, and you can review and edit the results at any time.
 
 **Two more free audits from OpptiAI:** [OpptiAI Titles](https://wordpress.org/plugins/opptiai-titles/) checks your site for missing and duplicate SEO titles and meta descriptions, and [OpptiAI Internal Linking](https://wordpress.org/plugins/opptiai-internal-linking/) finds orphan pages that no other page links to. Both scans run in WordPress without an account.
 
@@ -123,11 +123,11 @@ Yes, with Growth or Agency. Turn on Autopilot in Settings so new uploads get AI 
 
 = Will it overwrite my existing alt text? =
 
-No. It is built around review and approval. You inspect, edit, regenerate and approve suggested alt text before anything is saved back to WordPress.
+No. Generate, bulk generate and upload automation only fill images that have no alt text. Existing alt text changes only when you choose to regenerate or re-optimise, and you can review and edit any result.
 
 = Are there other OpptiAI plugins? =
 
-Yes, two more free audits. [OpptiAI Titles](https://wordpress.org/plugins/opptiai-titles/) runs a free SEO health check for missing, duplicate and wrong-length titles and meta descriptions, next to Yoast, Rank Math or AIOSEO. [OpptiAI Internal Linking](https://wordpress.org/plugins/opptiai-internal-linking/) finds every orphan page in one scan, in WordPress, with no account and no credits. All three can share one OpptiAI account.
+Yes, two more free audits. [OpptiAI Titles](https://wordpress.org/plugins/opptiai-titles/) runs a free SEO health check for missing, duplicate and wrong-length titles and meta descriptions, next to Yoast, Rank Math or AIOSEO. [OpptiAI Internal Linking](https://wordpress.org/plugins/opptiai-internal-linking/) finds orphan pages in one scan, in WordPress, with no account and no credits. All three can share one OpptiAI account.
 
 == Screenshots ==
 
@@ -231,24 +231,23 @@ Privacy policy: https://posthog.com/privacy
 * Fixed: When OpptiAI Titles is installed first, Alt Text now adopts that site's `beepti_site_id` so both plugins share one credit wallet (Titles-first install order). Adoption only runs when Alt Text has no site id yet.
 
 = 4.6.129 =
-* Unified leftover Free/guest copy and shipped defaults to Free 25 / guest 10 (exhausted-guest messaging, local free-credit allocation, Free plan positioning).
+* Unified leftover Free and guest copy (exhausted-guest messaging, local allowance defaults, Free plan positioning).
 
 = 4.6.128 =
 * Rebranded visible wp-admin plugin name and sidebar menu label to OpptiAI Alt Text.
 
 = 4.6.127 =
-* Increased the free monthly AI allowance from 15 to 25 generations.
-* Increased the guest/anonymous trial from 5 to 10 generations.
-* Updated FAQ, dashboard upsell, trial meter, and Free pricing copy to match Free 25 / guest 10.
+* Increased the free monthly allowance and the guest trial.
+* Updated FAQ, dashboard upsell, trial meter and Free pricing copy to match.
 
 = 4.6.126 =
 * Improved: Remove duplicate usage progress bars and keep limit notices text-only so daily/monthly status is easier to scan.
 
 = 4.6.125 =
-* Improved: Free-plan limit copy now matches the active blocker (daily vs monthly) so 15/15 no longer shows the daily-limit explanation.
+* Improved: Free-plan limit copy now matches the active blocker (daily vs monthly).
 
 = 4.6.124 =
-* Fixed: Clarify free-plan daily (5/day) vs monthly (15/month) limits when today’s daily allowance is used.
+* Fixed: Clarify free-plan daily vs monthly limits when today’s daily allowance is used.
 
 = 4.6.123 =
 * Fixed: Prevent PHP warning when billing info response omits the nested billing key on free accounts.
@@ -262,8 +261,8 @@ Privacy policy: https://posthog.com/privacy
 * Kept the current dashboard layout and styling while showing processed images, total images, and completion percentage during background generation.
 
 = 4.6.120 =
-* Clarified that guests can generate up to five ALT texts free without signing up or entering card details.
-* Added an impact-led signup modal after the fifth free generation, showing images improved and ALT coverage gained.
+* Clarified that guests can try generation without signing up or entering card details.
+* Added an impact-led signup modal at the end of the guest trial, showing images improved and ALT coverage gained.
 * Added explicit anonymous-generation properties and complete guest-trial conversion events for PostHog funnels.
 
 = 4.6.119 =
@@ -271,7 +270,7 @@ Privacy policy: https://posthog.com/privacy
 
 = 4.6.118 =
 * Updated the guest trial dashboard immediately after successful generation, without requiring a page refresh.
-* Strengthened the exhausted-trial prompt so guests can clearly create a free account and unlock 15 free generations each month.
+* Strengthened the exhausted-trial prompt so guests can clearly create a free account and keep going.
 
 = 4.6.117 =
 * Fixed an activation fatal by restoring the required marketing attribution class to the release package.

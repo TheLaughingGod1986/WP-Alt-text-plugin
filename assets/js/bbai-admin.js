@@ -7823,7 +7823,7 @@
         var limit = usageStats && usageStats.limit !== undefined ? parseInt(usageStats.limit, 10) : null;
         var plan = usageStats && usageStats.plan ? String(usageStats.plan).toLowerCase() : 'free';
 
-        var isPremium = ['starter', 'growth', 'pro', 'agency', 'enterprise'].indexOf(plan) !== -1;
+        var isPremium = plan === 'pro' || plan === 'agency';
         var isOutOfCredits = remaining !== null && remaining !== undefined && !isNaN(remaining) && remaining === 0;
 
         if (guestTrialClientShowsRemainingCredits() || (remaining !== null && remaining !== undefined && !isNaN(remaining) && remaining > 0)) {
@@ -8295,9 +8295,9 @@
         }
         var plan = usageStats && usageStats.plan ? usageStats.plan.toLowerCase() : 'free';
 
-        // Check if user has quota OR is on any paid plan
+        // Check if user has quota OR is on premium plan (pro/agency)
         // Also trust server-rendered locked state: button has bbai-optimization-cta--locked or .disabled when no credits
-        var isPremium = ['starter', 'growth', 'pro', 'agency', 'enterprise'].indexOf(plan) !== -1;
+        var isPremium = plan === 'pro' || plan === 'agency';
         var isOutOfCredits = usageStats && remaining !== null && remaining === 0;
         var isButtonLocked = $btn.hasClass('bbai-optimization-cta--locked') || $btn.hasClass('disabled');
 

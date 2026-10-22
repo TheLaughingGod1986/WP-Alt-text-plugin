@@ -7,6 +7,7 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 ### 4.6.143 - 2026-10-22
 
 - **Fixed**: Paid-plan checks are plan-agnostic through one helper (`Plan_Tier::is_paid`): starter, growth, pro, agency and enterprise. Starter no longer gets the Free daily-limit copy, and Usage_Tracker no longer normalises a stored `starter` plan to `free`.
+- **Changed** (CoS): Starter is paid for copy and counters but is NOT exempt from the out-of-credits lock. The Library tab lock (`Plan_Tier::skips_library_credit_lock`: pro, growth, agency) and `has_reached_limit` (`Plan_Tier::skips_limit_check`: pro, agency) keep their 4.6.142 sets, as do the JS generate gates (pro, agency).
 - **Fixed**: Signed-in usage panel ("N / M used", remaining, meter, credit box) re-reads `/usage` after every successful generate and shows the server number. Nested generate-response usage is read correctly.
 - **Fixed**: The upgrade modal now renders real `data-price-id` values (it read an unset variable). The no-jQuery checkout path resolves the price from the localized map when the attribute is empty.
 - **Fixed**: The no-JS checkout pages are reachable. The Starter nudge links to a nonce-signed `page=bbai-checkout` URL, the admin_init handler accepts the direct and legacy nonces, and the checkout error notice has `bbai-preserve-notice`.

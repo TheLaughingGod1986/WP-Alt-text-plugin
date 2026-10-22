@@ -126,7 +126,7 @@ trait Api_Usage {
         }
 
         $plan = strtolower($usage['plan'] ?? 'free');
-        if (\BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($plan)) {
+        if (\BeepBeepAI\AltTextGenerator\Plan_Tier::skips_limit_check($plan)) {
             return false;
         }
 

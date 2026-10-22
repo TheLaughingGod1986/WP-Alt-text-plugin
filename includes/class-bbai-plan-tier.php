@@ -28,6 +28,18 @@ if ( ! class_exists( __NAMESPACE__ . '\\Plan_Tier', false ) ) {
 		public const KNOWN_PLANS = array( 'free', 'trial', 'starter', 'growth', 'pro', 'agency', 'enterprise' );
 
 		/**
+		 * Plans that skip the out-of-credits lock on the Library tab. Unchanged from
+		 * 4.6.142. Starter has a monthly limit and must hit the lock (CoS, 4.6.143).
+		 */
+		public const LIBRARY_CREDIT_LOCK_EXEMPT = array( 'pro', 'growth', 'agency' );
+
+		/**
+		 * Plans for which has_reached_limit() never reports the limit. Unchanged
+		 * from 4.6.142; Starter is not exempt.
+		 */
+		public const LIMIT_CHECK_EXEMPT = array( 'pro', 'agency' );
+
+		/**
 		 * Normalise a plan value to a lowercase slug ('' when not a scalar).
 		 *
 		 * @param mixed $plan Plan value.
@@ -51,6 +63,24 @@ if ( ! class_exists( __NAMESPACE__ . '\\Plan_Tier', false ) ) {
 		 */
 		public static function is_paid( $plan ): bool {
 			return in_array( self::slug( $plan ), self::PAID_PLANS, true );
+		}
+
+		/**
+		 * Whether the plan skips the Library tab out-of-credits lock.
+		 *
+		 * @param mixed $plan Plan value.
+		 */
+		public static function skips_library_credit_lock( $plan ): bool {
+			return in_array( self::slug( $plan ), self::LIBRARY_CREDIT_LOCK_EXEMPT, true );
+		}
+
+		/**
+		 * Whether has_reached_limit() skips the limit check for this plan.
+		 *
+		 * @param mixed $plan Plan value.
+		 */
+		public static function skips_limit_check( $plan ): bool {
+			return in_array( self::slug( $plan ), self::LIMIT_CHECK_EXEMPT, true );
 		}
 	}
 }
