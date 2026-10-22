@@ -70,7 +70,7 @@ class BBAI_Telemetry {
 		}
 
 		$site_install_id = self::resolve_site_id();
-		$properties      = self::with_site_identity( self::sanitize_properties( $properties ), $site_install_id );
+		$properties      = self::with_site_identity( self::sanitize_properties( $properties ), $site_install_id, $event_name );
 
 		$envelope = array(
 			'event'           => $event_name,
@@ -226,6 +226,20 @@ class BBAI_Telemetry {
 			return 'pro';
 		}
 		return 'unknown';
+	}
+
+	/**
+	 * Whether props describe a checkout / upgrade intent (the plan in `plan` or
+	 * `target_plan` is the plan being bought, not the account's plan).
+	 *
+	 * @param array<string,mixed> $props      Event properties.
+	 * @param string              $event_name Normalized event name, when known.
+	 */
+	private static function is_purchase_intent_event( array $props, string $event_name = '' ): bool {
+		if ( ! empty( $props['target_plan'] ) ) {
+			return true;
+		}
+		return '' !== $event_name && ( 0 === strpos( $event_name, 'checkout_' ) || 0 === strpos( $event_name, 'upgrade_' ) );
 	}
 
 	/**
@@ -434,7 +448,7 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$properties = self::with_site_identity( self::sanitize_properties( $properties ) );
+		$properties = self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name );
 
 		$payload = wp_json_encode(
 			array(
@@ -541,7 +555,7 @@ class BBAI_Telemetry {
 	 * @param string|null         $site_install_id Optional pre-resolved install id.
 	 * @return array<string,mixed>
 	 */
-	private static function with_site_identity( array $props, ?string $site_install_id = null ): array {
+	private static function with_site_identity( array $props, ?string $site_install_id = null, string $event_name = '' ): array {
 		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
 		if ( '' === $site_install_id && function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
 			$site_install_id = sanitize_text_field( (string) get_site_identifier() );
@@ -609,7 +623,19 @@ class BBAI_Telemetry {
 			$props['php_version'] = PHP_VERSION;
 		}
 
-		$plan = self::normalize_plan_value( $props['plan'] ?? $props['plan_type'] ?? $props['current_plan'] ?? self::resolve_plan_type() );
+		// Checkout / upgrade events carry the plan being bought. Keep it in target_plan and
+		// keep `plan` as the account's current plan (a Free user buying Starter is not `pro`).
+		$plan_input = $props['plan'] ?? $props['plan_type'] ?? $props['current_plan'] ?? self::resolve_plan_type();
+		if ( self::is_purchase_intent_event( $props, $event_name ) ) {
+			if ( empty( $props['target_plan'] ) && ! empty( $props['plan'] ) && is_scalar( $props['plan'] ) ) {
+				$props['target_plan'] = sanitize_key( (string) $props['plan'] );
+			}
+			$current_input = $props['current_plan'] ?? '';
+			$plan_input    = ( is_scalar( $current_input ) && '' !== (string) $current_input && 'unknown' !== (string) $current_input )
+				? $current_input
+				: self::resolve_plan_type();
+		}
+		$plan = self::normalize_plan_value( $plan_input );
 		if ( 'unknown' === $plan && self::is_plugin_account_logged_in() ) {
 			$plan = 'free';
 		}

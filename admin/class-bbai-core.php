@@ -2140,6 +2140,8 @@ class Core {
                     'checkout_started',
                     'checkout_completed',
                     'checkout_redirected',
+                    'checkout_failed',
+                    'checkout_fallback_payment_link',
                     'upgrade_cta_clicked',
                     'first_run_completed',
                     'settings_saved',
