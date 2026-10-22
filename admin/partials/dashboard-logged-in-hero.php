@@ -2465,9 +2465,11 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var plan = String( firstDefined( credits.plan, credits.plan_slug, credits.planSlug, credits.plan_type, credits.planType, '' ) ).toLowerCase();
 		var isPro = !! ( credits.is_pro || credits.isPro );
 
-		if ( ! isPro && [ 'starter', 'growth', 'pro', 'agency', 'enterprise' ].indexOf( plan ) !== -1 ) {
+		// isPro is the out-of-credits lock and upsell flag (4.6.142 list); isPaid only drives paid-status copy.
+		if ( ! isPro && [ 'pro', 'growth', 'agency', 'enterprise' ].indexOf( plan ) !== -1 ) {
 			isPro = true;
 		}
+		var isPaid = isPro || !! ( credits.is_paid || credits.isPaid ) || [ 'starter', 'growth', 'pro', 'agency', 'enterprise' ].indexOf( plan ) !== -1;
 
 		fallbackRoot = getDashboardRoot();
 		if ( fallbackRoot ) {
@@ -2492,6 +2494,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 			total: total,
 			remaining: remaining,
 			isPro: isPro,
+			isPaid: isPaid,
 			plan: plan,
 		};
 	}
@@ -3680,7 +3683,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var counts = getTruthCounts( truth );
 		var job = getTruthJob( truth );
 		var dashboardMissingCap = getDashboardRootMissingCount();
-		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 25 && counts.missing > 0;
+		var isFirstFreeGeneration = credits && ! credits.isPaid && credits.used === 0 && credits.total >= 25 && counts.missing > 0;
 		var queuedTotal = job && ( job.queue_count > 0 || job.total > 0 )
 			? Math.max( job.queue_count || 0, Math.max( 0, ( job.total || 0 ) - ( job.done || 0 ) ), job.total || 0 )
 			: counts.missing;
@@ -3839,7 +3842,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var variant = reuseCurrentState && current.variant ? current.variant : ( 'ALL_CLEAR' === state ? 'success' : 'default' );
 		var primaryCta = reuseCurrentState ? current.primaryCta : null;
 		var secondaryCta = reuseCurrentState ? current.secondaryCta : null;
-		var isFirstFreeGeneration = credits && ! credits.isPro && credits.used === 0 && credits.total >= 25 && counts.missing > 0;
+		var isFirstFreeGeneration = credits && ! credits.isPaid && credits.used === 0 && credits.total >= 25 && counts.missing > 0;
 
 		switch ( state ) {
 			case 'MIXED_ATTENTION':
@@ -3912,7 +3915,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 				headline = formatSingularPlural( counts.missing, TEXT.quotaHeadlineSingular, TEXT.quotaHeadlinePlural );
 				support = reuseCurrentState && current.support
 					? current.support
-					: ( credits.isPro && counts.complete > 0
+					: ( credits.isPaid && counts.complete > 0
 						? replaceTokens( TEXT.quotaSupportProgress, {
 							'%1$s': formatCount( counts.complete ),
 							'%2$s': formatCount( counts.missing ),
@@ -3982,7 +3985,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		var remaining = Math.max( 0, total - done );
 		var eta = formatEta( job ? job.etaSeconds : null );
 
-		if ( credits.isPro && done > 0 ) {
+		if ( credits.isPaid && done > 0 ) {
 			return replaceTokens( TEXT.processingSupportDone, {
 				'%1$s': formatCount( done ),
 				'%2$s': eta,
@@ -4108,7 +4111,7 @@ $bbai_hero_credit_bar_aria = sprintf(
 		}
 
 		var state = getStateTruthState( truth );
-		var isFreePlan = ! credits.isPro;
+		var isFreePlan = ! credits.isPaid;
 		var counts = normalizeCounts( truth && truth.counts ? truth.counts : {} );
 
 		if ( wrap.getAttribute( 'data-bbai-hero-credits-used' ) !== String( used ) ) {

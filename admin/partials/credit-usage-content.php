@@ -23,6 +23,7 @@ $bbai_reset_date        = $current_usage['reset_date'] ?? '';
 $bbai_has_usage_activity    = !empty($bbai_usage_surface['hasUsageActivity']);
 $bbai_has_filtered_results  = !empty($bbai_usage_surface['hasFilteredResults']);
 $bbai_is_pro_plan           = !empty($bbai_usage_surface['isProPlan']);
+$bbai_can_use_automation    = array_key_exists('canUseAutomation', $bbai_usage_surface) ? !empty($bbai_usage_surface['canUseAutomation']) : $bbai_is_pro_plan;
 $bbai_has_active_usage_filters = !empty($date_from) || !empty($date_to) || !empty($source) || $user_id > 0;
 $bbai_usage_activity_items  = isset($usage_activity['items']) && is_array($usage_activity['items']) ? $usage_activity['items'] : [];
 $bbai_activity_total    = (int) ($usage_activity['total']    ?? 0);
@@ -142,6 +143,8 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
             'credits_remaining'   => $bbai_remaining,
             'usage_percent'       => $bbai_progress_pct,
             'is_pro_plan'         => $bbai_is_pro_plan,
+            'can_use_automation'  => $bbai_can_use_automation,
+            'skips_credit_lock'   => array_key_exists('skipsCreditLock', $bbai_usage_surface) ? !empty($bbai_usage_surface['skipsCreditLock']) : $bbai_is_pro_plan,
             'is_low_credits'      => $bbai_remaining > 0 && $bbai_remaining <= BBAI_BANNER_LOW_CREDITS_THRESHOLD,
             'is_out_of_credits'   => $bbai_remaining <= 0,
             'is_first_run'        => false,
@@ -261,7 +264,7 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
                     ob_start();
                     ?>
                     <button type="button" class="bbai-btn bbai-btn-primary bbai-btn-sm" data-bbai-action="scan-opportunity"><?php echo esc_html(bbai_copy_cta_scan_media_library()); ?></button>
-                    <?php if ($bbai_is_pro_plan) : ?>
+                    <?php if ($bbai_can_use_automation) : ?>
                         <a href="<?php echo esc_url($bbai_automation_url); ?>" class="bbai-btn bbai-btn-secondary bbai-btn-sm"><?php esc_html_e('Automation settings', 'beepbeep-ai-alt-text-generator'); ?></a>
                     <?php else : ?>
                         <button type="button" class="bbai-btn bbai-btn-secondary bbai-btn-sm" data-action="show-upgrade-modal"><?php esc_html_e('Enable auto-optimisation', 'beepbeep-ai-alt-text-generator'); ?></button>

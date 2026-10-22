@@ -30,7 +30,7 @@ final class CheckoutNoJsReachableTest extends TestCase {
 
 	public function test_upgrade_modal_reads_the_price_map_callers_pass(): void {
 		$tpl = $this->src( 'templates/upgrade-modal.php' );
-		$this->assertStringContainsString( '$checkout_prices = isset($bbai_checkout_prices) && is_array($bbai_checkout_prices)', $tpl );
+		$this->assertStringContainsString( '$bbai_upgrade_checkout_prices = isset($bbai_checkout_prices) && is_array($bbai_checkout_prices)', $tpl );
 		foreach ( array( 'admin/class-bbai-core.php', 'admin/traits/trait-core-admin-ui.php' ) as $caller ) {
 			$this->assertStringContainsString( '$bbai_checkout_prices = $this->get_checkout_price_ids();', $this->src( $caller ), $caller );
 		}

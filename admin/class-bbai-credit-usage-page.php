@@ -328,6 +328,9 @@ class Credit_Usage_Page {
 		$plan_slug = sanitize_key( (string) ( $current_usage['plan'] ?? 'free' ) );
 		$plan_label = sanitize_text_field( (string) ( $current_usage['plan_label'] ?? ucfirst( $plan_slug ?: 'free' ) ) );
 		$is_pro_plan = Plan_Tier::is_paid( $plan_slug );
+		// Automation copy has its own gate: a paid plan without upload generation (Starter) never gets it.
+		$can_use_automation = Plan_Tier::can_use_upload_generation( $plan_slug );
+		$skips_credit_lock  = Plan_Tier::skips_credit_lock( $plan_slug );
 		$is_low_credits = $credits_remaining < 10 && $credits_remaining > 0;
 		$is_out_of_credits = 0 === $credits_remaining;
 
@@ -417,11 +420,11 @@ class Credit_Usage_Page {
 			$insight_tone = 'healthy';
 		}
 
-		$automation_copy = $is_pro_plan
+		$automation_copy = $can_use_automation
 			? __( 'On-upload automation is available in Settings and can keep new uploads covered between manual cleanup passes.', 'beepbeep-ai-alt-text-generator' )
 			: __( 'Growth can keep new uploads optimized automatically, reducing manual work each month.', 'beepbeep-ai-alt-text-generator' );
 
-		if ( $is_pro_plan ) {
+		if ( $can_use_automation ) {
 			$upgrade_context = __( 'Your current plan supports automation for future uploads.', 'beepbeep-ai-alt-text-generator' );
 			$upgrade_eyebrow = __( 'Current plan', 'beepbeep-ai-alt-text-generator' );
 			$upgrade_title = __( 'Keep future uploads covered', 'beepbeep-ai-alt-text-generator' );
@@ -482,6 +485,8 @@ class Credit_Usage_Page {
 			'isLowCredits'           => $is_low_credits,
 			'isOutOfCredits'         => $is_out_of_credits,
 			'isProPlan'              => $is_pro_plan,
+			'canUseAutomation'       => $can_use_automation,
+			'skipsCreditLock'        => $skips_credit_lock,
 			'hasUsageActivity'       => (bool) $has_usage_activity,
 			'hasFilteredResults'     => (bool) $has_filtered_results,
 			'planLabel'              => $plan_label,
@@ -642,6 +647,7 @@ class Credit_Usage_Page {
 		$days_until_reset  = max( 0, (int) ( $current_usage['days_until_reset'] ?? 0 ) );
 		$usage_percent     = min( 100, max( 0, (int) ( $surface['usagePercent'] ?? 0 ) ) );
 		$is_pro            = ! empty( $surface['isProPlan'] );
+		$can_automate      = array_key_exists( 'canUseAutomation', $surface ) ? ! empty( $surface['canUseAutomation'] ) : $is_pro;
 		$is_out            = 0 === $credits_remaining;
 		$is_low            = ! empty( $surface['isLowCredits'] );
 
@@ -736,7 +742,7 @@ class Credit_Usage_Page {
 			$recommend = __( 'Review usage activity below, then upgrade or wait for reset to continue without limits.', 'beepbeep-ai-alt-text-generator' );
 		} elseif ( $runs_out_before_reset ) {
 			$recommend = __( 'If this pace continues, upgrading before reset may avoid interruption.', 'beepbeep-ai-alt-text-generator' );
-		} elseif ( ! $is_pro && ( $is_low || $usage_percent >= 75 ) ) {
+		} elseif ( ! $can_automate && ( $is_low || $usage_percent >= 75 ) ) {
 			$recommend = __( 'Upgrade to Growth if you want automatic coverage without monitoring credits closely.', 'beepbeep-ai-alt-text-generator' );
 		} else {
 			$recommend = __( 'Review usage activity below to see which actions are consuming credits fastest.', 'beepbeep-ai-alt-text-generator' );

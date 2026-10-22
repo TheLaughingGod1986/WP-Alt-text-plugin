@@ -46,6 +46,16 @@ if ( ! class_exists( __NAMESPACE__ . '\\Plan_Tier', false ) ) {
 		public const LIMIT_CHECK_EXEMPT = array( 'pro', 'agency' );
 
 		/**
+		 * Plans that see the Admin tab (unchanged from 4.6.142).
+		 */
+		public const ADMIN_TAB_PLANS = array( 'pro', 'agency' );
+
+		/**
+		 * Plans that skip the out-of-credits lock in usage and state truth (unchanged from 4.6.142).
+		 */
+		public const CREDIT_LOCK_EXEMPT = array( 'pro', 'growth', 'agency', 'enterprise' );
+
+		/**
 		 * Normalise a plan value to a lowercase slug ('' when not a scalar).
 		 *
 		 * @param mixed $plan Plan value.
@@ -78,6 +88,25 @@ if ( ! class_exists( __NAMESPACE__ . '\\Plan_Tier', false ) ) {
 		 */
 		public static function can_use_upload_generation( $plan ): bool {
 			return in_array( self::slug( $plan ), self::UPLOAD_GENERATION_PLANS, true );
+		}
+
+		/**
+		 * Whether the plan sees the Admin tab (its own gate, not is_paid()).
+		 *
+		 * @param mixed $plan Plan value.
+		 */
+		public static function can_see_admin_tab( $plan ): bool {
+			return in_array( self::slug( $plan ), self::ADMIN_TAB_PLANS, true );
+		}
+
+		/**
+		 * Whether the plan skips the out-of-credits lock in usage and state truth
+		 * (its own gate, not is_paid(): Starter at 0 credits stays locked).
+		 *
+		 * @param mixed $plan Plan value.
+		 */
+		public static function skips_credit_lock( $plan ): bool {
+			return in_array( self::slug( $plan ), self::CREDIT_LOCK_EXEMPT, true );
 		}
 
 		/**

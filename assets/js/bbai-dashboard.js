@@ -4131,9 +4131,12 @@ bbaiRunWithJQuery(function($) {
         if (data && data.planLabel) {
             return String(data.planLabel);
         }
-        return data && data.isPremium
-            ? __('Growth plan', 'beepbeep-ai-alt-text-generator')
-            : __('Free plan', 'beepbeep-ai-alt-text-generator');
+        if (!data || !data.isPremium) {
+            return __('Free plan', 'beepbeep-ai-alt-text-generator');
+        }
+        return data.canAutomate === false
+            ? __('Starter plan', 'beepbeep-ai-alt-text-generator')
+            : __('Growth plan', 'beepbeep-ai-alt-text-generator');
     }
 
     function getRemainingPlanLine(data) {
@@ -4480,6 +4483,9 @@ bbaiRunWithJQuery(function($) {
                 : Math.max(0, parseCount(root.getAttribute('data-bbai-low-credit-threshold'))),
             planLabel: (usage && usage.plan_label) || getPlanLabel({
                 isPremium: root.getAttribute('data-bbai-is-premium') === '1',
+                canAutomate: root.hasAttribute('data-bbai-can-automate')
+                    ? root.getAttribute('data-bbai-can-automate') === '1'
+                    : root.getAttribute('data-bbai-is-premium') === '1',
                 authState: root.getAttribute('data-bbai-auth-state') || '',
                 quotaType: root.getAttribute('data-bbai-quota-type') || ''
             }),
@@ -4487,6 +4493,9 @@ bbaiRunWithJQuery(function($) {
                 ? bbaiIsAnonymousTrialUsage(usage)
                 : root.getAttribute('data-bbai-auth-state') === 'anonymous' || root.getAttribute('data-bbai-quota-type') === 'trial'),
             isPremium: root.getAttribute('data-bbai-is-premium') === '1',
+            canAutomate: root.hasAttribute('data-bbai-can-automate')
+                ? root.getAttribute('data-bbai-can-automate') === '1'
+                : root.getAttribute('data-bbai-is-premium') === '1',
             hasScanResults: hasScanResultsAttr === null
                 ? (total > 0 || missing > 0 || weak > 0 || optimized > 0)
                 : hasScanResultsAttr === '1',
@@ -4975,6 +4984,7 @@ bbaiRunWithJQuery(function($) {
                 creditsRemaining: creditsRemaining,
                 creditsLimit: parseCount(data && data.creditsTotal),
                 isPro: !!(data && data.isPremium),
+                canAutomate: !!(data && (data.canAutomate != null ? data.canAutomate : data.isPremium)),
                 lowCreditThreshold: thresh,
                 libraryUrl: libraryUrl,
                 usageUrl: usageUrl,

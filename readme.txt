@@ -166,6 +166,9 @@ Privacy policy: https://posthog.com/privacy
 * Fixed: the Continue with Starter button in the out-of-credits notice opens checkout even if page scripts don't load.
 * Fixed: if checkout can't start on a page without scripts, the error message now stays on screen.
 
+= 4.6.142.1 =
+* Fixed: plugin admin pages not loading for some paid plans.
+
 = 4.6.142 =
 * New: a "Usage analytics" switch in Settings. It is off unless you turn it on, and you can turn it off at any time.
 * Changed: sites that never chose are treated as opted out.
@@ -344,6 +347,9 @@ Privacy policy: https://posthog.com/privacy
 
 = 4.6.143 =
 Starter accounts now see their own plan, and the usage counter updates right after you generate.
+
+= 4.6.142.1 =
+Fixes plugin admin pages not loading for some paid plans.
 
 = 4.6.142 =
 Usage analytics are now a Settings switch that is off by default, and checkout problems now show a clear message with ways to continue.

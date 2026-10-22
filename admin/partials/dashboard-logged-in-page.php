@@ -117,7 +117,18 @@ $bbai_daily_is_pro_plan = ! empty( $bbai_state_is_pro_plan )
 	|| $bbai_daily_live_can_autopilot
 	|| $bbai_daily_live_quota_limit >= 1000
 	|| \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid( $bbai_plan_slug_ladder ?? '' );
-$bbai_daily_autopilot_action = $bbai_daily_is_pro_plan
+// Autopilot CTAs have their own gate: a paid plan without upload generation (Starter) never gets them.
+$bbai_daily_plan_slug_ladder = (string) ( $bbai_plan_slug_ladder ?? '' );
+$bbai_daily_plan_lacks_autopilot = \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid( $bbai_daily_plan_slug_ladder )
+	&& ! \BeepBeepAI\AltTextGenerator\Plan_Tier::can_use_upload_generation( $bbai_daily_plan_slug_ladder );
+$bbai_daily_can_autopilot = ! $bbai_daily_plan_lacks_autopilot
+	&& (
+		! empty( $bbai_has_upload_generation )
+		|| \BeepBeepAI\AltTextGenerator\Plan_Tier::can_use_upload_generation( $bbai_daily_plan_slug_ladder )
+		|| $bbai_daily_live_can_autopilot
+		|| $bbai_daily_live_quota_limit >= 1000
+	);
+$bbai_daily_autopilot_action = $bbai_daily_can_autopilot
 	? [
 		'label'  => __( 'Enable Autopilot', 'beepbeep-ai-alt-text-generator' ),
 		'href'   => $bbai_daily_settings_autopilot_url,
@@ -212,9 +223,9 @@ $bbai_daily_rescan = [
 ];
 
 $bbai_daily_upgrade = [
-	'label'  => $bbai_daily_is_pro_plan ? __( 'Manage Autopilot', 'beepbeep-ai-alt-text-generator' ) : __( 'Upgrade plan', 'beepbeep-ai-alt-text-generator' ),
-	'href'   => $bbai_daily_is_pro_plan ? $bbai_daily_settings_autopilot_url : '#',
-	'action' => $bbai_daily_is_pro_plan ? 'navigate' : 'show-upgrade-modal',
+	'label'  => $bbai_daily_can_autopilot ? __( 'Manage Autopilot', 'beepbeep-ai-alt-text-generator' ) : __( 'Upgrade plan', 'beepbeep-ai-alt-text-generator' ),
+	'href'   => $bbai_daily_can_autopilot ? $bbai_daily_settings_autopilot_url : '#',
+	'action' => $bbai_daily_can_autopilot ? 'navigate' : 'show-upgrade-modal',
 ];
 
 $bbai_daily_button_attrs = static function ( array $action ): string {
@@ -416,7 +427,7 @@ $bbai_daily_button_attrs = static function ( array $action ): string {
 						) );
 					}
 					?></strong>
-				<a <?php echo $bbai_daily_button_attrs( $bbai_daily_autopilot_action ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html( $bbai_daily_autopilot_label ); ?><br><?php echo esc_html( $bbai_daily_is_pro_plan ? __( 'Manage automatic generation', 'beepbeep-ai-alt-text-generator' ) : __( '(up to 1,000 images/month)', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
+				<a <?php echo $bbai_daily_button_attrs( $bbai_daily_autopilot_action ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>><?php echo esc_html( $bbai_daily_autopilot_label ); ?><br><?php echo esc_html( $bbai_daily_can_autopilot ? __( 'Manage automatic generation', 'beepbeep-ai-alt-text-generator' ) : __( '(up to 1,000 images/month)', 'beepbeep-ai-alt-text-generator' ) ); ?></a>
 			</div>
 		</section>
 	</div>

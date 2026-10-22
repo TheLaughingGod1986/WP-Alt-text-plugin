@@ -11,6 +11,14 @@ The format is loosely based on Keep a Changelog, but optimized for internal rele
 - **Fixed**: Signed-in usage panel ("N / M used", remaining, meter, credit box) re-reads `/usage` after every successful generate and shows the server number. Nested generate-response usage is read correctly.
 - **Fixed**: The upgrade modal now renders real `data-price-id` values (it read an unset variable). The no-jQuery checkout path resolves the price from the localized map when the attribute is empty.
 - **Fixed**: The no-JS checkout pages are reachable. The Starter nudge links to a nonce-signed `page=bbai-checkout` URL, the admin_init handler accepts the direct and legacy nonces, and the checkout error notice has `bbai-preserve-notice`.
+- **Fixed** (QA): `is_paid()` now only feeds paid-status copy and counters. Feature and lock gates have their own helpers with the 4.6.142 lists: Admin tab (`can_see_admin_tab`: pro, agency), Autopilot CTAs and automation / Growth capacity copy (`can_use_upload_generation`), the Dashboard out-of-credits lock and REST/usage lock flags (`skips_limit_check`, `skips_library_credit_lock`, `skips_credit_lock`), so Starter at 0 credits is locked, gets the upsell and `upgrade_required`.
+- **Fixed** (QA): With no backend plan label, Starter is labelled with its own plan name, not "Growth plan".
+- **Fixed**: The Starter monthly minimum is read from API_Client_V2 behind a defined() guard (fallback 100), like the 4.6.142.1 paid minimum.
+- **Changed**: The upgrade modal's price map variable is prefixed (`$bbai_upgrade_checkout_prices`).
+
+### 4.6.142.1 - 2026-10-22
+
+- **Fixed**: Plugin admin pages fataled for Pro, Growth, Agency and Enterprise accounts (`MIN_PAID_MONTHLY_LIMIT` read from the wrong class). It is now read from API_Client_V2 behind a defined() guard, fallback 1000.
 
 ### 4.6.142 - 2026-10-22
 

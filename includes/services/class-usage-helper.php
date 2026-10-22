@@ -436,7 +436,8 @@ class Usage_Helper {
             ? $live_usage['plan_label']
             : ('trial' === $plan ? __('Free trial', 'beepbeep-ai-alt-text-generator') : ucfirst($plan));
         $usage_stats['is_free'] = in_array($plan, ['free', 'trial'], true);
-        $usage_stats['is_pro'] = \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($plan);
+        // Lock flag (feeds upgrade_required): 4.6.142 list, so Starter at 0 credits still needs an upgrade.
+        $usage_stats['is_pro'] = \BeepBeepAI\AltTextGenerator\Plan_Tier::skips_credit_lock($plan);
         if ('' === $quota_type) {
             $quota_type = 'trial' === $plan
                 ? 'trial'

@@ -278,6 +278,8 @@
             parseInt(args.creditsLimit != null ? args.creditsLimit : args.credits_limit, 10) || 25
         );
         var isPro = !!(args.isPro != null ? args.isPro : args.is_pro);
+        // Automation CTAs have their own gate: a paid plan without upload generation (Starter) never gets them.
+        var canAutomate = args.canAutomate != null ? !!args.canAutomate : (args.can_automate != null ? !!args.can_automate : isPro);
         var authState = String(args.authState != null ? args.authState : args.auth_state || '').toLowerCase();
         var quotaType = String(args.quotaType != null ? args.quotaType : args.quota_type || '').toLowerCase();
         var freePlanOffer = Math.max(0, parseInt(args.freePlanOffer != null ? args.freePlanOffer : args.free_plan_offer, 10) || 25);
@@ -483,7 +485,7 @@
                                   'data-auth-tab': 'register'
                               }
                           })
-                    : isPro
+                    : canAutomate
                     ? {
                           label: __('Enable auto-optimization'),
                           href: settingsUrl
