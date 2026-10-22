@@ -186,6 +186,7 @@ if ( class_exists( '\BeepBeepAI\AltTextGenerator\Privacy' ) ) {
 	\BeepBeepAI\AltTextGenerator\Privacy::init();
 }
 
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-admin-country.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
