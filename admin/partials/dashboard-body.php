@@ -250,6 +250,8 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
     $bbai_is_premium = !$bbai_is_guest_trial && (!empty($bbai_plan_data['is_pro']) || $bbai_is_agency || \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($bbai_plan_slug_ladder) || $bbai_usage_can_autopilot);
     // Out-of-credits lock has its own gate (4.6.142 list): Starter at 0 credits is locked and gets the upsell.
     $bbai_skips_credit_lock = !$bbai_is_guest_trial && (!empty($bbai_plan_data['is_pro']) || $bbai_is_agency || \BeepBeepAI\AltTextGenerator\Plan_Tier::skips_limit_check($bbai_plan_slug_ladder) || $bbai_usage_can_autopilot);
+    // data-bbai-is-premium is the JS lock flag: exactly the 4.6.142.1 value (strict pro/agency match), never is_paid().
+    $bbai_is_premium_attr = !$bbai_is_guest_trial && (in_array((string) ($bbai_plan_data['plan_slug'] ?? ''), \BeepBeepAI\AltTextGenerator\Plan_Tier::LIMIT_CHECK_EXEMPT, true) || $bbai_is_agency || in_array($bbai_plan_slug_ladder, \BeepBeepAI\AltTextGenerator\Plan_Tier::LIMIT_CHECK_EXEMPT, true) || $bbai_usage_can_autopilot);
     // Automation and Growth copy have their own gate: a paid plan without upload generation (Starter) never gets them.
     $bbai_plan_lacks_upload_generation = \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid($bbai_plan_slug_ladder)
         && ! \BeepBeepAI\AltTextGenerator\Plan_Tier::can_use_upload_generation($bbai_plan_slug_ladder);
@@ -1234,7 +1236,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         data-bbai-free-plan-offer="<?php echo esc_attr( $bbai_free_plan_offer ); ?>"
         data-bbai-low-credit-threshold="<?php echo esc_attr( $bbai_low_credit_threshold ); ?>"
         data-bbai-plan-label="<?php echo esc_attr( $bbai_plan_label ); ?>"
-        data-bbai-is-premium="<?php echo esc_attr( $bbai_state_is_pro_plan ? '1' : '0' ); ?>"
+        data-bbai-is-premium="<?php echo esc_attr( $bbai_is_premium_attr ? '1' : '0' ); ?>"
         data-bbai-can-automate="<?php echo esc_attr( $bbai_has_upload_generation ? '1' : '0' ); ?>"
         data-bbai-has-scan-results="<?php echo esc_attr( $bbai_has_scan_results ? '1' : '0' ); ?>"
         data-bbai-has-scan-history="<?php echo esc_attr( $bbai_has_scan_history ? '1' : '0' ); ?>"
@@ -1312,7 +1314,7 @@ if ($bbai_has_connected_account || $bbai_is_guest_trial) :
         data-bbai-free-plan-offer="<?php echo esc_attr($bbai_free_plan_offer); ?>"
         data-bbai-low-credit-threshold="<?php echo esc_attr($bbai_low_credit_threshold); ?>"
         data-bbai-plan-label="<?php echo esc_attr($bbai_plan_label); ?>"
-        data-bbai-is-premium="<?php echo esc_attr($bbai_state_is_pro_plan ? '1' : '0'); ?>"
+        data-bbai-is-premium="<?php echo esc_attr($bbai_is_premium_attr ? '1' : '0'); ?>"
         data-bbai-can-automate="<?php echo esc_attr( $bbai_has_upload_generation ? '1' : '0' ); ?>"
         data-bbai-has-scan-results="<?php echo esc_attr($bbai_has_scan_results ? '1' : '0'); ?>"
         data-bbai-has-scan-history="<?php echo esc_attr($bbai_has_scan_history ? '1' : '0'); ?>"
