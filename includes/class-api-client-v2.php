@@ -814,6 +814,14 @@ class API_Client_V2 {
 			$endpoint_str        = is_string( $endpoint ) ? $endpoint : '';
 			$is_billing_endpoint = $endpoint_str && strpos( $endpoint_str, '/billing/' ) !== false;
 
+			if ( 'JWT_EXPIRED' === ( $data_array['code'] ?? $data_array['error'] ?? '' ) ) {
+				return new \WP_Error(
+					'session_expired',
+					__( 'Your session has expired. Please log in again.', 'beepbeep-ai-alt-text-generator' ),
+					array( 'status_code' => 401, 'requires_auth' => true, 'retryable' => false )
+				);
+			}
+
 			// Check if response indicates license key is required
 			$error_message_lower = '';
 			if ( isset( $data_array['message'] ) ) {
@@ -3098,9 +3106,19 @@ class API_Client_V2 {
 		$caption   = wp_get_attachment_caption( $image_id );
 		$filename  = $image_url ? wp_basename( wp_parse_url( $image_url, PHP_URL_PATH ) ) : '';
 
+		$image_payload = $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename );
+
+		if ( ! empty( $image_payload['_error'] ) ) {
+			return new \WP_Error(
+				sanitize_key( (string) $image_payload['_error'] ),
+				$image_payload['_error_message'] ?? __( 'Could not prepare the image for generation.', 'beepbeep-ai-alt-text-generator' ),
+				array( 'image_id' => $image_id )
+			);
+		}
+
 		$body = array(
 			'alt_text'   => $alt_text,
-			'image_data' => $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename ),
+			'image_data' => $image_payload,
 			'context'    => $context,
 		);
 
@@ -3920,6 +3938,14 @@ class API_Client_V2 {
 		$filename  = $image_url ? wp_basename( wp_parse_url( $image_url, PHP_URL_PATH ) ) : '';
 
 		$image_payload = $this->prepare_image_payload( $image_id, $image_url, $title, $caption, $filename );
+
+		if ( ! empty( $image_payload['_error'] ) ) {
+			return new \WP_Error(
+				sanitize_key( (string) $image_payload['_error'] ),
+				$image_payload['_error_message'] ?? __( 'Could not prepare the image for generation.', 'beepbeep-ai-alt-text-generator' ),
+				array( 'image_id' => $image_id )
+			);
+		}
 
 		if ( isset( $image_payload['_error'] ) && 'image_too_large' === $image_payload['_error'] ) {
 			return new \WP_Error(

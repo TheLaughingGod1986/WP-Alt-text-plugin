@@ -100,6 +100,15 @@ final class AuthApiErrorsTest extends TestCase {
 		unset($GLOBALS['bbai_test_http_response']);
 	}
 
+	public function test_expired_jwt_requires_signin_without_claiming_invalid_license(): void {
+		$GLOBALS['bbai_test_http_response'] = ['status' => 401, 'body' => ['code' => 'JWT_EXPIRED', 'retryable' => false]];
+		$method = new ReflectionMethod(API_Client_V2::class, 'make_request');
+		$error = $method->invoke($this->api, '/api/usage');
+		$this->assertSame('session_expired', $error->get_error_code());
+		$this->assertFalse($error->get_error_data()['retryable']);
+		$this->assertTrue($error->get_error_data()['requires_auth']);
+	}
+
 	public function test_unknown_email_and_wrong_password_have_the_same_message(): void {
 		$GLOBALS['bbai_test_http_response'] = ['status' => 401, 'body' => ['code' => 'INVALID_CREDENTIALS', 'message' => 'Invalid credentials']];
 		foreach (['unknown@example.test', 'known@example.test'] as $email) {
