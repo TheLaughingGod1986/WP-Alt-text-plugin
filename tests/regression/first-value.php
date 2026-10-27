@@ -14,6 +14,7 @@ check( [] === BBAI_Telemetry::first_value_properties() && [] === $GLOBALS['optio
 $GLOBALS['options'][BBAI_Telemetry::CONSENT_OPTION] = 'no';
 check( [] === BBAI_Telemetry::first_value_properties(), 'opt-out does not claim first value' );
 $GLOBALS['options'][BBAI_Telemetry::CONSENT_OPTION] = 'yes';
+$GLOBALS['options'][BBAI_Telemetry::CONSENT_SOURCE_OPTION] = 'settings';
 $GLOBALS['options'][BBAI_Telemetry::ACTIVATION_MARKER_OPTION] = gmdate( 'c', time() - 60 );
 $first = BBAI_Telemetry::first_value_properties();
 $repeat = BBAI_Telemetry::first_value_properties();

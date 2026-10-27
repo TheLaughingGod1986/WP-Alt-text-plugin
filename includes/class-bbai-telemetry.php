@@ -168,7 +168,7 @@ class BBAI_Telemetry {
 		$props = array( 'is_first_generation' => $first );
 		$activated = get_option( self::ACTIVATION_MARKER_OPTION, '' );
 		$started = is_numeric( $activated ) ? (int) $activated : strtotime( (string) $activated );
-		if ( $first && $started > 0 ) {
+		if ( $first && $started > 0 && $now >= $started ) {
 			$props['time_to_first_value_seconds'] = max( 0, $now - $started );
 		}
 		return $props;
@@ -678,6 +678,11 @@ class BBAI_Telemetry {
 		if ( empty( $props['plugin_slug'] ) ) {
 			$props['plugin_slug'] = self::get_plugin_slug();
 		}
+		$props['product'] = 'alt_text';
+		$props['telemetry_consent'] = self::has_telemetry_consent();
+		$props['telemetry_source'] = 'wordpress';
+		$props['telemetry_schema'] = 'opptiai_usage_v2';
+		$props['is_test'] = self::is_test_site();
 		if ( empty( $props['telemetry_version'] ) ) {
 			$props['telemetry_version'] = self::TELEMETRY_SCHEMA_VERSION;
 		}
@@ -800,6 +805,26 @@ class BBAI_Telemetry {
 		);
 
 		return hash( 'sha256', implode( '|', $parts ) );
+	}
+
+	/** Consent-aware API context; credentials never stand in for telemetry identity. */
+	public static function request_telemetry_headers(): array {
+		if ( ! self::has_telemetry_consent() ) {
+			return array( 'X-Telemetry-Consent' => 'no' );
+		}
+		return array(
+			'X-Telemetry-Consent'    => 'yes',
+			'X-Telemetry-Install-ID' => self::resolve_site_id(),
+			'X-Environment'         => self::resolve_environment(),
+			'X-Telemetry-Test'      => self::is_test_site() ? 'yes' : 'no',
+		);
+	}
+
+	private static function is_test_site(): bool {
+		$host = function_exists( 'home_url' ) ? (string) wp_parse_url( home_url(), PHP_URL_HOST ) : '';
+		return 'production' !== self::resolve_environment()
+			|| (bool) preg_match( '/localhost|127\.0\.0\.1|wpsandbox|tastewp|playground|wp-env|\.local$|\.test$|trycloudflare|instawp|example\.com/i', $host )
+			|| ( defined( 'BBAI_TELEMETRY_TEST' ) && BBAI_TELEMETRY_TEST );
 	}
 
 	private static function resolve_environment(): string {
