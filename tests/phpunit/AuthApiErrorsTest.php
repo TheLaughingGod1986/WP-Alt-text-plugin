@@ -100,6 +100,27 @@ final class AuthApiErrorsTest extends TestCase {
 		unset($GLOBALS['bbai_test_http_response']);
 	}
 
+	public function test_bulk_job_create_preserves_the_backend_identifier_contract(): void {
+		$GLOBALS['bbai_test_http_response'] = ['status' => 202, 'body' => ['jobId' => 'bulk-fixture-123', 'pollUrl' => '/api/jobs/bulk-fixture-123']];
+		$result = $this->api->create_alt_text_bulk_job([['attachment_id' => 42]]);
+		$this->assertIsArray($result);
+		$this->assertSame('bulk-fixture-123', $result['jobId']);
+		$this->assertSame('/api/jobs/bulk-fixture-123', $result['pollUrl']);
+	}
+
+	public function test_bulk_poll_restores_nested_attachment_and_result_fields(): void {
+		$GLOBALS['bbai_test_http_response'] = ['status' => 200, 'body' => [
+			'jobId' => 'bulk-fixture-123', 'status' => 'completed', 'percentComplete' => 100,
+			'items' => [['attachmentId' => 42, 'status' => 'completed', 'result' => ['altText' => 'A garden path', 'meta' => ['modelUsed' => 'fixture-model']]]],
+		]];
+		$result = $this->api->get_alt_text_job_status('bulk-fixture-123');
+		$this->assertSame('bulk-fixture-123', $result['jobId']);
+		$this->assertSame(100, $result['percentComplete']);
+		$this->assertSame(42, $result['items'][0]['attachmentId']);
+		$this->assertSame('A garden path', $result['items'][0]['result']['altText']);
+		$this->assertSame('fixture-model', $result['items'][0]['result']['meta']['modelUsed']);
+	}
+
 	public function test_expired_jwt_requires_signin_without_claiming_invalid_license(): void {
 		$GLOBALS['bbai_test_http_response'] = ['status' => 401, 'body' => ['code' => 'JWT_EXPIRED', 'retryable' => false]];
 		$method = new ReflectionMethod(API_Client_V2::class, 'make_request');

@@ -4079,6 +4079,35 @@ class API_Client_V2 {
 	}
 
 	/**
+	 * Restore the job API's case-sensitive contract after JSON value sanitization.
+	 *
+	 * Keep existing aliases for compatibility; only these fixed API field names
+	 * gain canonical aliases. Values have already passed response sanitization.
+	 *
+	 * @param array $data Sanitized job response or nested item.
+	 * @return array
+	 */
+	private function normalize_alt_text_job_response( array $data ): array {
+		$aliases = array(
+			'jobid' => 'jobId', 'job_id' => 'jobId', 'pollurl' => 'pollUrl',
+			'attachmentid' => 'attachmentId', 'imageid' => 'imageId',
+			'alttext' => 'altText', 'percentcomplete' => 'percentComplete',
+			'createdat' => 'createdAt', 'completedat' => 'completedAt',
+			'usedfallback' => 'usedFallback', 'modelused' => 'modelUsed',
+		);
+		foreach ( $data as $key => $value ) {
+			if ( is_array( $value ) ) {
+				$value = $this->normalize_alt_text_job_response( $value );
+				$data[ $key ] = $value;
+			}
+			if ( isset( $aliases[ $key ] ) && ! array_key_exists( $aliases[ $key ], $data ) ) {
+				$data[ $aliases[ $key ] ] = $value;
+			}
+		}
+		return $data;
+	}
+
+	/**
 	 * Create a licensed bulk alt-text job (POST /api/jobs).
 	 *
 	 * @param array<int, array<string, mixed>> $job_items Items from build_alt_text_job_item().
@@ -4120,7 +4149,7 @@ class API_Client_V2 {
 		}
 
 		$data = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
-		return $data;
+		return $this->normalize_alt_text_job_response( $data );
 	}
 
 	/**
@@ -4159,7 +4188,7 @@ class API_Client_V2 {
 		}
 
 		$data = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
-		return $data;
+		return $this->normalize_alt_text_job_response( $data );
 	}
 }
 
