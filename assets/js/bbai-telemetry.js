@@ -110,6 +110,11 @@
         documentation_opened: true,
         upgrade_clicked: true,
         checkout_started: true,
+        // Checkout funnel diagnostics (alt-checkout-single-click).
+        checkout_clicked: true,
+        checkout_session_returned: true,
+        checkout_redirected: true,
+        checkout_failed: true,
         upgrade_modal_opened: true,
         upgrade_modal_closed: true,
         upgrade_started: true,
@@ -198,13 +203,13 @@
     function normalizePlanValue(value, fallbackForConnected) {
         var plan = readString(value).toLowerCase().replace(/[^a-z0-9_:-]+/g, '_');
 
-        if (plan === 'free' || plan === 'trial' || plan === 'pro' || plan === 'agency') {
+        if (plan === 'free' || plan === 'trial' || plan === 'starter' || plan === 'pro' || plan === 'agency') {
             return plan;
         }
         if (plan === 'anonymous_trial') {
             return 'trial';
         }
-        if (plan === 'starter' || plan === 'growth' || plan === 'enterprise') {
+        if (plan === 'growth' || plan === 'enterprise') {
             return 'pro';
         }
         return fallbackForConnected ? 'free' : 'unknown';

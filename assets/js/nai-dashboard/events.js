@@ -419,10 +419,16 @@
 				var checkoutHref = paywallCta.getAttribute('href');
 				if (checkoutHref) {
 					// Real Stripe checkout via the server-side direct-checkout
-					// handler — open in a new tab so the admin stays put.
+					// handler. Same tab: window.open after a click is popup-blocked
+					// in some browsers and a second click created a second session.
 					event.preventDefault();
-					notices.toast(root, 'Opening secure checkout…', 'Stripe will open in a new tab.');
-					window.open(checkoutHref, '_blank', 'noopener,noreferrer');
+					if (paywallCta.getAttribute('data-nai-checkout-pending') === '1') {
+						return;
+					}
+					paywallCta.setAttribute('data-nai-checkout-pending', '1');
+					paywallCta.setAttribute('aria-disabled', 'true');
+					notices.toast(root, 'Opening secure checkout…', 'Taking you to Stripe.');
+					window.location.assign(checkoutHref);
 				}
 				// No href configured — let the link/default action proceed.
 				return;

@@ -616,6 +616,14 @@ class API_Client_V2 {
 		$url     = trailingslashit( $this->api_url ) . ltrim( $endpoint, '/' );
 		$headers = $this->get_auth_headers( $include_user_id, $extra_headers );
 
+		// Billing currency must follow the WP admin, not the hosting server's IP.
+		if ( is_string( $endpoint ) && strpos( $endpoint, '/billing/' ) !== false && class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Admin_Country' ) ) {
+			$admin_country = \BeepBeepAI\AltTextGenerator\BBAI_Admin_Country::country();
+			if ( '' !== $admin_country && empty( $headers['X-Admin-Country'] ) ) {
+				$headers['X-Admin-Country'] = $admin_country;
+			}
+		}
+
 		// Use longer timeout for generation requests (OpenAI can take time) and for cold-start-sensitive endpoints (Render free tier)
 		if ( null === $timeout ) {
 			$endpoint_str           = is_string( $endpoint ) ? $endpoint : '';
@@ -792,8 +800,17 @@ class API_Client_V2 {
 		if ( ! function_exists( 'bbai_json_decode_array' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-json.php';
 		}
-		$decoded = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $body ) : null;
-		$data    = is_array( $decoded ) ? $decoded : array();
+		// Keep URLs intact: sanitize_text_field() strips percent-encoded characters,
+		// which breaks Stripe checkout and billing portal links.
+		$url_keys = array(
+			'url'         => 'esc_url_raw',
+			'checkoutUrl' => 'esc_url_raw',
+			'checkout_url' => 'esc_url_raw',
+			'portalUrl'   => 'esc_url_raw',
+			'portal_url'  => 'esc_url_raw',
+		);
+		$decoded  = function_exists( 'bbai_json_decode_array' ) ? bbai_json_decode_array( $body, $url_keys ) : null;
+		$data     = is_array( $decoded ) ? $decoded : array();
 
 		$log_context = array(
 			'endpoint' => $endpoint,
@@ -3243,6 +3260,14 @@ class API_Client_V2 {
 			'cancelUrl'  => $cancel_url,
 		);
 
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Admin_Country' ) ) {
+			$admin_country = \BeepBeepAI\AltTextGenerator\BBAI_Admin_Country::resolve();
+			if ( '' !== $admin_country['country'] ) {
+				$payload['admin_country']        = $admin_country['country'];
+				$payload['admin_country_source'] = $admin_country['source'];
+			}
+		}
+
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
 			$payload = array_merge( $payload, \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload(), $attribution );
 		} elseif ( ! empty( $attribution ) ) {
@@ -3347,24 +3372,58 @@ class API_Client_V2 {
 			return $response['data'];
 		}
 
-		$error_message = '';
-		if ( isset( $response['data']['error'] ) && is_string( $response['data']['error'] ) ) {
-			$error_message = $response['data']['error'];
-		} elseif ( isset( $response['data']['message'] ) && is_string( $response['data']['message'] ) ) {
-			$error_message = $response['data']['message'];
-		} elseif ( ! empty( $response['data'] ) && is_array( $response['data'] ) ) {
-			$error_message = wp_json_encode( $response['data'] );
-		}
+		return $this->build_checkout_rejection( $response );
+	}
 
-		if ( ! $error_message ) {
-			$error_message = __( 'Failed to create checkout session', 'beepbeep-ai-alt-text-generator' );
+	/**
+	 * Turn a non-2xx billing response into a user-facing WP_Error.
+	 * Prefers the backend's human `message`, keeps its machine `code`.
+	 */
+	private function build_checkout_rejection( $response ) {
+		$data          = isset( $response['data'] ) && is_array( $response['data'] ) ? $response['data'] : array();
+		$error_message = '';
+		if ( isset( $data['message'] ) && is_string( $data['message'] ) && '' !== trim( $data['message'] ) ) {
+			$error_message = $data['message'];
+		} elseif ( isset( $data['error'] ) && is_string( $data['error'] ) ) {
+			$error_message = $data['error'];
+		}
+		if ( '' === $error_message ) {
+			$error_message = __( 'Unable to start checkout. Please try again or contact support.', 'beepbeep-ai-alt-text-generator' );
+		}
+		$backend_code = '';
+		if ( isset( $data['code'] ) && is_string( $data['code'] ) ) {
+			$backend_code = preg_replace( '/[^A-Za-z0-9_]/', '', $data['code'] );
+		} elseif ( isset( $data['error'] ) && is_string( $data['error'] ) && preg_match( '/^[A-Z0-9_]+$/', $data['error'] ) ) {
+			$backend_code = $data['error'];
 		}
 
 		return new \WP_Error(
-			'checkout_failed',
+			'checkout_rejected',
 			$error_message,
-			array( 'response' => $response )
+			array(
+				'status_code'  => isset( $response['status_code'] ) ? (int) $response['status_code'] : 0,
+				'backend_code' => $backend_code,
+			)
 		);
+	}
+
+	/**
+	 * Ask the backend to email the account's own open checkout link.
+	 * The recipient is always the email on file; none is sent from here.
+	 */
+	public function email_checkout_link( $session_id ) {
+		$response = $this->make_request(
+			'/billing/checkout/email-link',
+			'POST',
+			array( 'session_id' => (string) $session_id )
+		);
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		if ( ! empty( $response['success'] ) ) {
+			return $response['data'];
+		}
+		return $this->build_checkout_rejection( $response );
 	}
 
 	/**

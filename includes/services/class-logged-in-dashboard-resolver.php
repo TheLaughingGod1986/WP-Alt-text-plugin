@@ -90,7 +90,7 @@ class Logged_In_Dashboard_Resolver {
 		$truth = self::normalize_state_truth_payload( $truth );
 		$truth_plan_slug = sanitize_key( (string) ( $truth['credits']['plan_slug'] ?? '' ) );
 		$truth_is_pro    = ! empty( $truth['credits']['is_pro'] )
-			|| in_array( $truth_plan_slug, [ 'pro', 'growth', 'agency', 'enterprise' ], true );
+			|| \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid( $truth_plan_slug );
 		if ( '' !== $truth_plan_slug ) {
 			$plan['plan_slug'] = $truth_plan_slug;
 		}
@@ -179,7 +179,7 @@ class Logged_In_Dashboard_Resolver {
 			self::read_truth_string( $credits, [ 'plan_slug', 'planSlug', 'plan_type', 'planType', 'plan' ], '' )
 		);
 		$is_pro = self::read_truth_bool( $credits, [ 'is_pro', 'isPro' ], false )
-			|| in_array( $plan_slug, [ 'pro', 'growth', 'agency', 'enterprise' ], true );
+			|| \BeepBeepAI\AltTextGenerator\Plan_Tier::is_paid( $plan_slug );
 
 		$job_state = self::normalize_state_truth_state( (string) ( $payload['state'] ?? '' ) );
 		$job_data  = self::normalize_truth_job_payload( $job, $job_state );

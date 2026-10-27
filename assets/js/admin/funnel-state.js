@@ -498,9 +498,10 @@
     function openAuthModal(tab, modalContext) {
         var mode = tab === 'register' ? 'register' : 'login';
         var context = modalContext || (mode === 'login' ? 'login' : 'fix');
-        var fallbackUrl = mode === 'login'
-            ? 'https://app.beepbeep.ai/login'
-            : 'https://app.beepbeep.ai/register';
+        // app.beepbeep.ai no longer resolves: fall back to the plugin dashboard,
+        // which opens the auth modal from these query args.
+        var fallbackUrl = ((window.bbai_ajax && window.bbai_ajax.admin_url) || 'admin.php') +
+            '?page=bbai&bbai_open_auth=1&bbai_auth_tab=' + (mode === 'login' ? 'login' : 'register');
 
         if (window.authModal && typeof window.authModal.show === 'function') {
             try {

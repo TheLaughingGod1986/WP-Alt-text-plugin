@@ -57,11 +57,18 @@ $bbai_options = [
 	'bbai_legacy_cache_cleaned',
 	'bbai_legacy_settings_cleaned',
 	'bbai_growth_installed_at',
+	'bbai_first_success_at',
+	'bbai_telemetry_consent',
+	'bbai_telemetry_consent_source',
+	'bbai_telemetry_consent_reset_4_6_142',
 ];
 
 foreach ( $bbai_options as $bbai_option ) {
 	delete_option( $bbai_option );
 }
+
+// One-time review prompt state (per user).
+delete_metadata( 'user', 0, 'bbai_review_prompt_done', '', true );
 
 // Delete all legacy options
 $bbai_legacy_options = [

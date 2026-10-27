@@ -88,10 +88,10 @@ $bbai_lo_fallback_url = admin_url( 'admin.php?page=' . $bbai_lo_page );
 					$bbai_lo_trial_count = max( 1, $bbai_lo_trial_limit );
 					echo esc_html(
 						sprintf(
-							/* translators: %s: number of free images. */
+							/* translators: %s: number of images. */
 							_n(
-								'Generate alt text for %s image (free)',
-								'Generate alt text for %s images (free)',
+								'Generate alt text for %s image',
+								'Generate alt text for %s images',
 								$bbai_lo_trial_count,
 								'beepbeep-ai-alt-text-generator'
 							),

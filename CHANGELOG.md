@@ -4,6 +4,42 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.143 - 2026-10-22
+
+- **Fixed**: Paid-plan checks are plan-agnostic through one helper (`Plan_Tier::is_paid`): starter, growth, pro, agency and enterprise. Starter no longer gets the Free daily-limit copy, and Usage_Tracker no longer normalises a stored `starter` plan to `free`.
+- **Changed** (CoS): Starter is paid for copy and counters but is NOT exempt from the out-of-credits lock. The Library tab lock (`Plan_Tier::skips_library_credit_lock`: pro, growth, agency) and `has_reached_limit` (`Plan_Tier::skips_limit_check`: pro, agency) keep their 4.6.142 sets, as do the JS generate gates (pro, agency).
+- **Fixed**: Signed-in usage panel ("N / M used", remaining, meter, credit box) re-reads `/usage` after every successful generate and shows the server number. Nested generate-response usage is read correctly.
+- **Fixed**: The upgrade modal now renders real `data-price-id` values (it read an unset variable). The no-jQuery checkout path resolves the price from the localized map when the attribute is empty.
+- **Fixed**: The no-JS checkout pages are reachable. The Starter nudge links to a nonce-signed `page=bbai-checkout` URL, the admin_init handler accepts the direct and legacy nonces, and the checkout error notice has `bbai-preserve-notice`.
+- **Fixed** (QA): `is_paid()` now only feeds paid-status copy and counters. Feature and lock gates have their own helpers with the 4.6.142 lists: Admin tab (`can_see_admin_tab`: pro, agency), Autopilot CTAs and automation / Growth capacity copy (`can_use_upload_generation`), the Dashboard out-of-credits lock and REST/usage lock flags (`skips_limit_check`, `skips_library_credit_lock`, `skips_credit_lock`), so Starter at 0 credits is locked, gets the upsell and `upgrade_required`.
+- **Fixed** (QA): With no backend plan label, Starter is labelled with its own plan name, not "Growth plan".
+- **Fixed**: The Starter monthly minimum is read from API_Client_V2 behind a defined() guard (fallback 100), like the 4.6.142.1 paid minimum.
+- **Changed**: The upgrade modal's price map variable is prefixed (`$bbai_upgrade_checkout_prices`).
+
+### 4.6.142.1 - 2026-10-22
+
+- **Fixed**: Plugin admin pages fataled for Pro, Growth, Agency and Enterprise accounts (`MIN_PAID_MONTHLY_LIMIT` read from the wrong class). It is now read from API_Client_V2 behind a defined() guard, fallback 1000.
+
+### 4.6.142 - 2026-10-22
+
+- **Fixed**: Guest trial counter no longer double counts (showed 2 of 10 used after 1); it settles on the server's count after each run.
+- **Fixed**: Plan and credits are re-read after returning from checkout and after signing in.
+- **Fixed**: The credit notice never says "You fixed 0 images".
+- **Fixed**: Checkout without jQuery, and the no-JavaScript checkout links, create a real checkout session or show the error, never a static payment link.
+- **Changed**: Support and contact messages go to one support address.
+- **Changed**: Starter is reported as Starter in usage analytics.
+- **Added**: Settings → Usage analytics opt-in switch (off by default). Saved via admin-post with a nonce and manage_options.
+- **Changed**: One-time reset of the `bbai_telemetry_consent = yes` that builds before 4.6.141 wrote on activation, unless an admin chose it in Settings.
+- **Fixed**: A checkout server error (5xx/timeout) no longer silently redirects to the GBP Payment Link; the panel shows the real error with Continue to payment / Copy link / Try again.
+- **Fixed**: Release zip excludes any `.git` file or directory and `HANDOVER.md`, and the build fails if either slips in.
+- **Fixed** (QA baseline): batch generation applies each response's usage before the summary, so "N generations left" is current; upgrade modal only says "used your free images" at 0 left; auth-modal errors persist until input; app.beepbeep.ai register/login fallbacks now go to admin.php?page=bbai&bbai_open_auth=1.
+- Includes 4.6.141 (checkout URLs kept intact; usage analytics opt-in only), the same-tab single-click checkout and item 9 outbound changes.
+
+### 4.6.141 — 2026-10-22
+
+- **Fixed**: Upgrade buttons open a working checkout page (Stripe URLs were losing %2F/%3F in JSON decoding).
+- **Changed**: Usage analytics are off unless you opt in.
+
 ### 4.6.139 — 2026-10-12
 
 - **Fixed**: Failed generations no longer use credits.

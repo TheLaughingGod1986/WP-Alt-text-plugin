@@ -8,6 +8,8 @@ namespace BeepBeepAI\AltTextGenerator;
 
 if (!defined('ABSPATH')) { exit; }
 
+require_once __DIR__ . '/class-bbai-plan-tier.php';
+
 class Usage_Tracker {
     
     const CACHE_KEY = 'bbai_usage_cache';
@@ -73,7 +75,7 @@ class Usage_Tracker {
 		if ('anonymous_trial' === $plan_key) {
 			return 'trial';
 		}
-		$allowed  = ['free', 'trial', 'pro', 'growth', 'agency', 'enterprise'];
+		$allowed  = Plan_Tier::KNOWN_PLANS;
 		return in_array($plan_key, $allowed, true) ? $plan_key : 'free';
 	}
 
@@ -229,7 +231,7 @@ class Usage_Tracker {
             $auth_state = $is_trial ? 'anonymous' : 'authenticated';
         }
         if ('' === $quota_type) {
-            $quota_type = $is_trial ? 'trial' : (in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) ? 'paid' : 'monthly_account');
+            $quota_type = $is_trial ? 'trial' : (Plan_Tier::is_paid($plan) ? 'paid' : 'monthly_account');
         }
 
         $reset_input = $usage_data['resetDate'] ?? $usage_data['reset_date'] ?? '';
@@ -474,6 +476,10 @@ class Usage_Tracker {
      * @return array<string,mixed>|null Updated usage payload or null when not applicable.
      */
     public static function record_generation_success(int $count = 1): ?array {
+        if ($count > 0 && class_exists('\\BeepBeepAI\\AltTextGenerator\\BBAI_Review_Prompt')) {
+            \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::mark_first_success();
+            \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::clear_fixed_count_cache();
+        }
         $count = max(1, (int) $count);
 
         $usage = self::get_local_usage_snapshot();
@@ -492,7 +498,7 @@ class Usage_Tracker {
         ) {
             return null;
         }
-        if ( in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true) && empty($usage['limit']) ) {
+        if ( Plan_Tier::is_paid($plan) && empty($usage['limit']) ) {
             return null;
         }
 
@@ -824,7 +830,7 @@ class Usage_Tracker {
             $auth_state = $is_trial ? 'anonymous' : 'authenticated';
         }
         if ('' === $quota_type) {
-            $quota_type = $is_trial ? 'trial' : (in_array(self::normalize_plan_slug($plan), ['pro', 'growth', 'agency', 'enterprise'], true) ? 'paid' : 'monthly_account');
+            $quota_type = $is_trial ? 'trial' : (Plan_Tier::is_paid(self::normalize_plan_slug($plan)) ? 'paid' : 'monthly_account');
         }
 
         // Get reset date with fallback - format: "February 1, 2026"
@@ -867,7 +873,7 @@ class Usage_Tracker {
                 'quota_type' => $quota_type,
             ],
             'is_free' => in_array($plan, ['free', 'trial'], true),
-            'is_pro' => in_array($plan, ['pro', 'growth', 'agency', 'enterprise'], true),
+            'is_pro' => Plan_Tier::is_paid($plan),
             'auth_state' => $auth_state,
             'quota_type' => $quota_type,
             'source' => $source,
@@ -903,7 +909,7 @@ class Usage_Tracker {
      * Get upgrade URL
      */
     public static function get_upgrade_url() {
-        $default = 'https://github.com/beepbeepv2/beepbeep-ai-alt-text-generator';
+        $default = 'https://oppti.dev/pricing';
         $stored  = get_option('bbai_upgrade_url', $default);
         return apply_filters('bbai_upgrade_url', $stored ?: $default);
     }

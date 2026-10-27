@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpptiAI Alt Text – Alt Text Generator
  * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
- * Version: 4.6.140
+ * Version: 4.6.143
  * Requires at least: 6.2
  * Author: OpptiAI
  * Author URI: https://oppti.dev
@@ -23,7 +23,13 @@ if ( defined( 'BBAI_ALREADY_LOADED' ) ) {
 define( 'BBAI_ALREADY_LOADED', true );
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.6.140' );
+define( 'BEEPBEEP_AI_VERSION', '4.6.143' );
+// Support inbox shown to users and used as the contact-form recipient.
+// One place to change; a site can still override the recipient with the
+// bbai_contact_support_recipient filter.
+if ( ! defined( 'BBAI_SUPPORT_EMAIL' ) ) {
+	define( 'BBAI_SUPPORT_EMAIL', 'support@oppti.dev' );
+}
 define( 'BEEPBEEP_AI_PLUGIN_ID', 'alt_text' );
 define( 'BEEPBEEP_AI_PLUGIN_TITLE', 'OpptiAI Alt Text' );
 define( 'BBAI_VERSION', '4.6.115' ); // Legacy alias for compatibility
@@ -171,6 +177,7 @@ if ( ! function_exists( 'bbai_enable_wp_json_fallback_route' ) ) {
 add_action( 'parse_request', 'bbai_enable_wp_json_fallback_route', 5 );
 
 // Load cache and DB schema helpers.
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-plan-tier.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-cache.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-db.php';
 
@@ -186,12 +193,15 @@ if ( class_exists( '\BeepBeepAI\AltTextGenerator\Privacy' ) ) {
 	\BeepBeepAI\AltTextGenerator\Privacy::init();
 }
 
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-admin-country.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-api-client-v2.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-input-validator.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-usage-tracker.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-attribution.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-auditor-attribution.php';
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-review-prompt.php';
+\BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::init();
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'flush_queued_lifecycle_events' ), 5 );
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'maybe_record_plugin_update' ), 6 );
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/phase17-content-pipeline.php';

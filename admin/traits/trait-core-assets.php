@@ -122,10 +122,10 @@ trait Core_Assets {
 	private function minimum_monthly_limit_for_plan( string $plan ): int {
 		$plan = sanitize_key( $plan );
 		if ( 'starter' === $plan ) {
-			return defined( Usage_Tracker::class . '::STARTER_MONTHLY_LIMIT' ) ? Usage_Tracker::STARTER_MONTHLY_LIMIT : 100;
+			return defined( \BeepBeepAI\AltTextGenerator\API_Client_V2::class . '::STARTER_MONTHLY_LIMIT' ) ? \BeepBeepAI\AltTextGenerator\API_Client_V2::STARTER_MONTHLY_LIMIT : 100;
 		}
 		if ( in_array( $plan, array( 'pro', 'growth', 'agency', 'enterprise' ), true ) ) {
-			return Usage_Tracker::MIN_PAID_MONTHLY_LIMIT;
+			return defined( \BeepBeepAI\AltTextGenerator\API_Client_V2::class . '::MIN_PAID_MONTHLY_LIMIT' ) ? \BeepBeepAI\AltTextGenerator\API_Client_V2::MIN_PAID_MONTHLY_LIMIT : 1000;
 		}
 
 		return 0;
@@ -1624,6 +1624,7 @@ JS,
 			array(
 				'wp_version'     => get_bloginfo( 'version' ),
 				'plugin_version' => BEEPBEEP_AI_VERSION,
+				'support_email'  => defined( 'BBAI_SUPPORT_EMAIL' ) ? BBAI_SUPPORT_EMAIL : 'support@oppti.dev',
 			)
 		);
 
@@ -1666,8 +1667,9 @@ JS,
 
 		// Inline CTA fallback handler — runs when the full modal JS bundle is absent.
 		// Handles show-dashboard-auth and show-upgrade-modal with graceful navigation fallbacks.
-		$bbai_signup_url  = esc_url_raw( 'https://app.beepbeep.ai/register' );
-		$bbai_login_url   = esc_url_raw( 'https://app.beepbeep.ai/login' );
+		// app.beepbeep.ai no longer resolves: the plugin dashboard opens the auth modal.
+		$bbai_signup_url  = esc_url_raw( add_query_arg( array( 'page' => 'bbai', 'bbai_open_auth' => '1', 'bbai_auth_tab' => 'register' ), admin_url( 'admin.php' ) ) );
+		$bbai_login_url   = esc_url_raw( add_query_arg( array( 'page' => 'bbai', 'bbai_open_auth' => '1', 'bbai_auth_tab' => 'login' ), admin_url( 'admin.php' ) ) );
 		$bbai_upgrade_url = esc_url_raw( \BeepBeepAI\AltTextGenerator\Usage_Tracker::get_upgrade_url() );
 		$bbai_cta_inline  = implode(
 			"\n",

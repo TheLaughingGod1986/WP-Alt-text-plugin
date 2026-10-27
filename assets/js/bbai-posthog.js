@@ -206,13 +206,13 @@
     function normalizePlanValue(value, fallbackForConnected) {
         var plan = value === undefined || value === null ? '' : String(value).toLowerCase().replace(/[^a-z0-9_:-]+/g, '_');
 
-        if (plan === 'free' || plan === 'trial' || plan === 'pro' || plan === 'agency') {
+        if (plan === 'free' || plan === 'trial' || plan === 'starter' || plan === 'pro' || plan === 'agency') {
             return plan;
         }
         if (plan === 'anonymous_trial') {
             return 'trial';
         }
-        if (plan === 'starter' || plan === 'growth' || plan === 'enterprise') {
+        if (plan === 'growth' || plan === 'enterprise') {
             return 'pro';
         }
         return fallbackForConnected ? 'free' : 'unknown';

@@ -1,9 +1,10 @@
 <?php
 /**
- * Website Auditor attribution.
+ * Deep-link attribution for OpptiAI tools.
  *
- * The OpptiAI Website Auditor's Fix buttons open Alt Text admin pages with
- * `source=auditor&finding=<type>`. Generation itself runs later in an AJAX or
+ * Fix buttons in other OpptiAI tools open Alt Text admin pages with
+ * `source=oppti_tool&finding=<type>` (the older `source=auditor` is still
+ * accepted). Internally both are stored under one source id. Generation itself runs later in an AJAX or
  * REST request that does not carry those args, so the page load stores them
  * for the current user for a short window and the generate event reads them
  * back (or reads them straight from the request when they are present).
@@ -25,7 +26,7 @@ const AUDITOR_ATTRIBUTION_TTL = 30 * MINUTE_IN_SECONDS;
 function auditor_attribution_from_request(): ?array {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only attribution tag from an admin link, no state change.
 	$source = isset( $_REQUEST['source'] ) ? sanitize_key( wp_unslash( $_REQUEST['source'] ) ) : '';
-	if ( 'auditor' !== $source ) {
+	if ( ! in_array( $source, array( 'oppti_tool', 'auditor' ), true ) ) {
 		return null;
 	}
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only attribution tag from an admin link, no state change.
