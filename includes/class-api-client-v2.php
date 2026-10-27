@@ -551,6 +551,14 @@ class API_Client_V2 {
 			$headers = array_merge( $headers, $extra_headers );
 		}
 
+		// Apply last so an ad-hoc caller cannot override an opt-out.
+		unset( $headers['X-Telemetry-Install-ID'], $headers['X-Telemetry-Test'] );
+		if ( is_callable( array( BBAI_Telemetry::class, 'request_telemetry_headers' ) ) ) {
+			$headers = array_merge( $headers, BBAI_Telemetry::request_telemetry_headers() );
+		} else {
+			$headers['X-Telemetry-Consent'] = 'no';
+		}
+
 		return $headers;
 	}
 

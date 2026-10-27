@@ -373,6 +373,7 @@ class Core {
             'is_internal'         => $this->is_posthog_internal_environment(),
             'is_first_generation' => $first_value['is_first_generation'] ?? false,
             '$insert_id'          => 'alt_generated:' . $fingerprint,
+            'operation_id'        => 'alt_generated:' . $fingerprint,
         ];
 
         $properties = array_merge($properties, $first_value);
