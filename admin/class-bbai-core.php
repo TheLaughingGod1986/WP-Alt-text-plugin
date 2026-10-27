@@ -323,6 +323,12 @@ class Core {
      * @param array<string,mixed> $response_meta Backend response meta.
      */
     private function maybe_emit_alt_generated_event(int $attachment_id, string $alt_text, string $source, string $model, array $context = [], array $response_meta = []): void {
+        // Confirm local delivery and consent before persisting telemetry markers.
+        if ( ! class_exists(BBAI_Telemetry::class) || '' === trim($alt_text) || (string) get_post_meta($attachment_id, '_wp_attachment_image_alt', true) !== $alt_text
+            || ! BBAI_Telemetry::has_telemetry_consent()
+            || ! in_array(get_option(BBAI_Telemetry::CONSENT_OPTION, false), ['yes', '1', 1, true], true) ) {
+            return;
+        }
         $identity_context = $this->build_generation_posthog_identity_context();
         $distinct_id = $this->resolve_posthog_identify_id($identity_context);
         if ('' === $distinct_id) {
@@ -343,12 +349,7 @@ class Core {
         }
         set_transient($transient_key, 1, DAY_IN_SECONDS);
 
-        $wordpress_user_id = get_current_user_id();
-        $is_first_generation = false;
-        if ($wordpress_user_id > 0 && !get_user_meta($wordpress_user_id, 'bbai_telemetry_first_alt_at', true)) {
-            update_user_meta($wordpress_user_id, 'bbai_telemetry_first_alt_at', time());
-            $is_first_generation = true;
-        }
+        $first_value = BBAI_Telemetry::first_value_properties();
 
         $properties = [
             'account_id'          => $identity_context['account_id'] ?? '',
@@ -370,9 +371,11 @@ class Core {
             'site_url'            => home_url('/'),
             'is_trial'            => ! $this->is_bbai_account_authenticated(),
             'is_internal'         => $this->is_posthog_internal_environment(),
-            'is_first_generation' => $is_first_generation,
+            'is_first_generation' => $first_value['is_first_generation'] ?? false,
             '$insert_id'          => 'alt_generated:' . $fingerprint,
         ];
+
+        $properties = array_merge($properties, $first_value);
 
         // OpptiAI tool deep-link attribution (source=oppti_tool&finding=<type>).
         if (function_exists('\\BeepBeepAI\\AltTextGenerator\\get_auditor_attribution')) {

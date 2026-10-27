@@ -158,6 +158,22 @@ class BBAI_Telemetry {
 		return self::days_since_last_active();
 	}
 
+	/** First saved generation per consenting installation, including cron/bulk. */
+	public static function first_value_properties(): array {
+		if ( ! self::has_telemetry_consent() || ! in_array( get_option( self::CONSENT_OPTION, false ), array( 'yes', '1', 1, true ), true ) ) {
+			return array();
+		}
+		$now = time();
+		$first = add_option( 'bbai_telemetry_first_generation_at', $now, '', false );
+		$props = array( 'is_first_generation' => $first );
+		$activated = get_option( self::ACTIVATION_MARKER_OPTION, '' );
+		$started = is_numeric( $activated ) ? (int) $activated : strtotime( (string) $activated );
+		if ( $first && $started > 0 ) {
+			$props['time_to_first_value_seconds'] = max( 0, $now - $started );
+		}
+		return $props;
+	}
+
 	/**
 	 * Whether this site has opted in to external product analytics.
 	 */

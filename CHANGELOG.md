@@ -4,6 +4,11 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.144 - 2026-10-27
+
+- Reject invalid image inputs before generation and handle expired sessions clearly.
+- Record first successful saved generation only with explicit telemetry consent.
+
 ### 4.6.143 - 2026-10-22
 
 - **Fixed**: Paid-plan checks are plan-agnostic through one helper (`Plan_Tier::is_paid`): starter, growth, pro, agency and enterprise. Starter no longer gets the Free daily-limit copy, and Usage_Tracker no longer normalises a stored `starter` plan to `free`.
