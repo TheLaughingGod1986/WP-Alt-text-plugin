@@ -145,7 +145,7 @@ Service: OpptiAI API (https://alttext-ai-backend.onrender.com)
 Purpose: Generate alt text descriptions, perform alt text review checks, and handle authentication, license, usage, billing, and contact requests.
 Data sent: every request includes your site URL and a site fingerprint (a one-way hash created on your site). We need these to provide the service and licensing, including sign-in, free trial checks and stopping misuse of free credits. They are not usage analytics.
 
-Billing requests also send your country, worked out from your browser's location header, your site timezone or your admin language, so prices show in the right currency. Checkout also sends how you first found the plugin, if it was recorded: UTM source, medium, campaign, content and term, the referring page and the landing page.
+Billing requests also send your country, worked out from your browser's location header, your site timezone or your admin language, so prices show in the right currency. Checkout also sends how you first found the plugin, if it was recorded: UTM source, medium, campaign, content and term, the referring site and the landing page path.
 Privacy policy: https://oppti.dev/privacy
 
 Service: OpenAI API (used by the backend service)
