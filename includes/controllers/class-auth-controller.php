@@ -66,6 +66,7 @@ class Auth_Controller {
 		$password       = is_string( $password_input ) ? $password_input : '';
 
 		$signup = \BeepBeepAI\AltTextGenerator\API_Client_V2::get_signup_source_from_request();
+		$signup += \BeepBeepAI\AltTextGenerator\API_Client_V2::get_product_emails_opt_out_from_request();
 
 		return $this->auth_service->register( $email, $password, $signup );
 	}

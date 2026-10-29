@@ -90,6 +90,21 @@ class BbAIAuthModal {
                                     </div>`;
     }
 
+    renderProductEmailOptOutField() {
+        // Unticked by default: product emails stay on unless the user opts out.
+        return `
+                                    <div class="alttext-form-group alttext-form-group--checkbox">
+                                        <label for="register-product-emails-opt-out">
+                                            <input type="checkbox" id="register-product-emails-opt-out" name="product_emails_opt_out" value="1">
+                                            <span>${this.escapeHtml(this.t("Don't send me product tips and plan emails"))}</span>
+                                        </label>
+                                    </div>`;
+    }
+
+    getProductEmailOptOutValue(formData) {
+        return formData.get('product_emails_opt_out') === '1' ? '1' : '0';
+    }
+
     getSignupSourceValues(formData) {
         const allowed = this.getSignupSourceOptions().map(([value]) => value);
         const source = String(formData.get('signup_source') || '').trim();
@@ -485,6 +500,7 @@ class BbAIAuthModal {
                                         <input type="text" id="register-confirm" name="confirmPassword" data-password-field="true" data-password-autocomplete="new-password" autocomplete="off" inputmode="text" required aria-required="true">
                                     </div>
                                     ${this.renderSignupSourceFields()}
+                                    ${this.renderProductEmailOptOutField()}
                                     <button type="submit" class="alttext-btn alttext-btn--primary" aria-label="Create account">
                                         <span class="alttext-btn__text">Create Account</span>
                                         <span class="alttext-btn__spinner" style="display: none;" aria-hidden="true">⏳</span>
@@ -1111,7 +1127,8 @@ class BbAIAuthModal {
                     email: email,
                     password: password,
                     nonce: window.bbai_ajax.nonce,
-                    ...signupSource
+                    ...signupSource,
+                    product_emails_opt_out: this.getProductEmailOptOutValue(formData)
                 })
             });
 

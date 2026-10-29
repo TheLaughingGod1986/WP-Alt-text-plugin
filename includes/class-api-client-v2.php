@@ -1161,14 +1161,61 @@ class API_Client_V2 {
 	}
 
 	/**
+	 * Normalise the sign-up "Don't send me product tips and plan emails" checkbox.
+	 * Returns null when the field was not sent, so nothing is forwarded.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool|null
+	 */
+	public static function sanitize_product_emails_opt_out( $value ) {
+		if ( null === $value ) {
+			return null;
+		}
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+		if ( ! is_scalar( $value ) ) {
+			return null;
+		}
+		$value = strtolower( trim( (string) $value ) );
+		if ( in_array( $value, array( '1', 'true', 'on', 'yes' ), true ) ) {
+			return true;
+		}
+		if ( in_array( $value, array( '0', 'false', 'off', 'no', '' ), true ) ) {
+			return false;
+		}
+		return null;
+	}
+
+	/**
+	 * Read the sign-up product email opt-out checkbox from the current POST request.
+	 * Callers must already have verified the nonce.
+	 *
+	 * @return array<string,bool> Empty when the field was not sent.
+	 */
+	public static function get_product_emails_opt_out_from_request() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified by the calling AJAX handler.
+		$raw = isset( $_POST['product_emails_opt_out'] ) ? sanitize_text_field( wp_unslash( $_POST['product_emails_opt_out'] ) ) : null;
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		$opt_out = self::sanitize_product_emails_opt_out( $raw );
+		return null === $opt_out ? array() : array( 'product_emails_opt_out' => $opt_out );
+	}
+
+	/**
 	 * Register new user
 	 * Includes site_id so backend can link this account to the current site context
 	 */
 	public function register( $email, $password, $signup = array() ) {
-		$signup = self::sanitize_signup_source(
+		$opt_out = self::sanitize_product_emails_opt_out(
+			is_array( $signup ) && array_key_exists( 'product_emails_opt_out', $signup ) ? $signup['product_emails_opt_out'] : null
+		);
+		$signup  = self::sanitize_signup_source(
 			is_array( $signup ) && isset( $signup['signup_source'] ) ? $signup['signup_source'] : '',
 			is_array( $signup ) && isset( $signup['signup_source_other'] ) ? $signup['signup_source_other'] : ''
 		);
+		if ( null !== $opt_out ) {
+			$signup['product_emails_opt_out'] = $opt_out;
+		}
 		// Get site identifier
 		$site_id = $this->get_site_id();
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';

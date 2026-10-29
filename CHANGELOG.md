@@ -4,6 +4,10 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### Unreleased (suggested 4.6.145, or fold into 4.6.144)
+
+- **Added**: Sign-up form has an unticked "Don't send me product tips and plan emails" checkbox. The choice is sent to `/auth/register` as `product_emails_opt_out` (true/false; omitted by older callers) via `API_Client_V2::get_product_emails_opt_out_from_request()` and `register()`.
+
 ### 4.6.143 - 2026-10-22
 
 - **Fixed**: Paid-plan checks are plan-agnostic through one helper (`Plan_Tier::is_paid`): starter, growth, pro, agency and enterprise. Starter no longer gets the Free daily-limit copy, and Usage_Tracker no longer normalises a stored `starter` plan to `free`.

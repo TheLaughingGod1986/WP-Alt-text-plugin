@@ -158,6 +158,9 @@ Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
 
+= Unreleased =
+* New: you can choose not to get product tips and plan emails when you create your account.
+
 = 4.6.143 =
 * Fixed: Starter accounts now see their own plan details instead of the Free plan limits.
 * Fixed: every paid plan (Starter, Growth and Agency) is recognised as paid on the dashboard and usage pages.

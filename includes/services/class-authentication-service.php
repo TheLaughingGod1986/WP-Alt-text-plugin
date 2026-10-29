@@ -53,7 +53,7 @@ class Authentication_Service {
 	 *
 	 * @param string $email    User email.
 	 * @param string $password User password.
-	 * @param array  $signup   Optional sanitized signup_source / signup_source_other.
+	 * @param array  $signup   Optional sanitized signup_source / signup_source_other / product_emails_opt_out.
 	 * @return array{success: bool, message: string, user?: array, code?: string, existing_email?: string} Registration result.
 	 */
 	public function register( string $email, string $password, array $signup = array() ): array {

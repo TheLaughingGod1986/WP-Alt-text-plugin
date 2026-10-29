@@ -65,6 +65,7 @@ function get_bloginfo($key) {
 }
 
 function wp_remote_request($url, $args) {
+	$GLOBALS['bbai_test_http_last_request'] = ['url' => $url, 'args' => $args];
 	return $GLOBALS['bbai_test_http_response'];
 }
 
@@ -131,6 +132,28 @@ final class AuthApiErrorsTest extends TestCase {
 		$this->assertSame($raw_code, $error->get_error_data()['backend_code']);
 		$this->assertSame($status, $error->get_error_data()['status_code']);
 		$this->assertNotEmpty($error->get_error_message());
+	}
+
+	private function last_register_body(): array {
+		$body = $GLOBALS['bbai_test_http_last_request']['args']['body'] ?? '{}';
+		return is_array($body) ? $body : (array) json_decode((string) $body, true);
+	}
+
+	public function test_register_forwards_ticked_product_email_opt_out(): void {
+		$GLOBALS['bbai_test_http_response'] = ['status' => 409, 'body' => ['code' => 'EMAIL_EXISTS']];
+		$this->api->register('known@example.test', 'password', ['product_emails_opt_out' => true]);
+		$this->assertSame(true, $this->last_register_body()['product_emails_opt_out'] ?? null);
+	}
+
+	public function test_register_forwards_unticked_and_omits_absent_opt_out(): void {
+		$GLOBALS['bbai_test_http_response'] = ['status' => 409, 'body' => ['code' => 'EMAIL_EXISTS']];
+		$this->api->register('known@example.test', 'password', ['product_emails_opt_out' => '0', 'signup_source' => 'wporg']);
+		$body = $this->last_register_body();
+		$this->assertSame(false, $body['product_emails_opt_out'] ?? null);
+		$this->assertSame('wporg', $body['signup_source'] ?? null);
+
+		$this->api->register('known@example.test', 'password');
+		$this->assertArrayNotHasKey('product_emails_opt_out', $this->last_register_body());
 	}
 
 	public function test_register_maps_http_200_backend_failures(): void {
