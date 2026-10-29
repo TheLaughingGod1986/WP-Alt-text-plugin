@@ -51,6 +51,12 @@ class BBAI_Telemetry {
 
 	public const ACTIVATION_MARKER_OPTION = 'bbai_telemetry_plugin_activated';
 
+	/** Set once the opt-in lifecycle snapshot has been sent for this site. */
+	public const OPT_IN_LIFECYCLE_SENT_OPTION = 'bbai_telemetry_opt_in_lifecycle_sent';
+
+	/** Property keys that identify the site and are never sent to PostHog. */
+	public const SITE_IDENTIFIER_KEYS = array( 'site_url', 'site_host', 'host', 'home_url', 'domain', 'siteurl', 'website' );
+
 	public const CURRENT_VERSION_OPTION = 'bbai_telemetry_current_plugin_version';
 
 	public const PREVIOUS_VERSION_OPTION = 'bbai_telemetry_previous_plugin_version';
@@ -291,6 +297,70 @@ class BBAI_Telemetry {
 	public static function set_consent( bool $opt_in ): void {
 		update_option( self::CONSENT_OPTION, $opt_in ? 'yes' : 'no', false );
 		update_option( self::CONSENT_SOURCE_OPTION, 'settings', false );
+		if ( ! $opt_in ) {
+			// Nothing raised before or after revocation may be sent later.
+			delete_option( self::LIFECYCLE_QUEUE_OPTION );
+			return;
+		}
+		self::record_opt_in_lifecycle();
+	}
+
+	/**
+	 * Send plugin_installed / plugin_activated once, at the moment of opt-in.
+	 *
+	 * Lifecycle events raised before consent are discarded, never replayed. This
+	 * snapshot is a new event timestamped at opt-in (its own true time). The
+	 * locally recorded install/activation time travels only as first_seen_at /
+	 * activated_at, and lifecycle_delivery=opt_in_snapshot marks it honestly so
+	 * reports never treat it as a live activation.
+	 */
+	public static function record_opt_in_lifecycle(): void {
+		if ( ! self::has_telemetry_consent() || get_option( self::OPT_IN_LIFECYCLE_SENT_OPTION, false ) ) {
+			return;
+		}
+		$site_install_id = self::resolve_site_id();
+		if ( '' === $site_install_id ) {
+			return;
+		}
+		update_option( self::OPT_IN_LIFECYCLE_SENT_OPTION, gmdate( 'c' ), false );
+
+		$opted_in_at  = gmdate( 'c' );
+		$first_seen   = self::marker_time( get_option( self::INSTALLED_MARKER_OPTION, '' ) );
+		$activated_at = self::marker_time( get_option( self::ACTIVATION_MARKER_OPTION, '' ) );
+		$events       = array(
+			'plugin_installed' => array( 'first_seen_at' => $first_seen ),
+			'plugin_activated' => array( 'activated_at' => $activated_at ),
+		);
+		foreach ( $events as $event_name => $extra ) {
+			$properties = array_merge(
+				array(
+					'lifecycle_event'    => $event_name,
+					'lifecycle_delivery' => 'opt_in_snapshot',
+					'recorded_at_opt_in' => true,
+					'opted_in_at'        => $opted_in_at,
+					'occurred_at'        => $opted_in_at,
+					'$insert_id'         => 'bbai_opt_in_lifecycle:' . hash( 'sha256', $event_name . '|' . $site_install_id ),
+				),
+				array_filter( $extra )
+			);
+			self::capture_posthog_event( $event_name, $site_install_id, $properties, $opted_in_at );
+		}
+	}
+
+	/**
+	 * Normalise a stored marker (ISO string or unix time) to ISO 8601, or ''.
+	 *
+	 * @param mixed $value Stored marker value.
+	 */
+	private static function marker_time( $value ): string {
+		if ( is_numeric( $value ) && (int) $value > 1000000000 ) {
+			return gmdate( 'c', (int) $value );
+		}
+		if ( is_string( $value ) && '' !== $value && '1' !== $value ) {
+			$ts = strtotime( $value );
+			return false !== $ts ? gmdate( 'c', $ts ) : '';
+		}
+		return '';
 	}
 
 	/**
@@ -405,7 +475,11 @@ class BBAI_Telemetry {
 	}
 
 	/**
-	 * Queue lifecycle telemetry so activation does not depend on admin JavaScript.
+	 * Record a lifecycle event raised by a WordPress hook.
+	 *
+	 * Without consent at the moment the event happens it is discarded: nothing is
+	 * stored for later delivery. With consent it is queued with its own
+	 * occurred_at and flushed straight away (or on the next admin request).
 	 *
 	 * @param string $event_name Lifecycle event name.
 	 * @param array  $properties Event properties.
@@ -416,12 +490,18 @@ class BBAI_Telemetry {
 			return;
 		}
 
+		if ( ! self::has_telemetry_consent() ) {
+			return;
+		}
+
+		$occurred_at     = gmdate( 'c' );
 		$site_install_id = self::resolve_site_id();
 		$properties      = self::with_site_identity(
 			self::sanitize_properties(
 				array_merge(
 					array(
 						'lifecycle_event' => $event_name,
+						'occurred_at'     => $occurred_at,
 					),
 					$properties
 				)
@@ -442,11 +522,13 @@ class BBAI_Telemetry {
 		}
 
 		$queue[] = array(
-			'event'         => $event_name,
-			'distinct_id'   => '' !== $site_install_id ? $site_install_id : (string) ( $properties['site_hash'] ?? '' ),
-			'properties'    => $properties,
-			'queued_at'     => gmdate( 'c' ),
-			'lifecycle_key' => $lifecycle_key,
+			'event'              => $event_name,
+			'distinct_id'        => '' !== $site_install_id ? $site_install_id : (string) ( $properties['site_hash'] ?? '' ),
+			'properties'         => $properties,
+			'queued_at'          => $occurred_at,
+			'occurred_at'        => $occurred_at,
+			'consented_at_raise' => true,
+			'lifecycle_key'      => $lifecycle_key,
 		);
 		$queue   = array_slice( $queue, -20 );
 		update_option( self::LIFECYCLE_QUEUE_OPTION, $queue, false );
@@ -466,26 +548,32 @@ class BBAI_Telemetry {
 
 	/**
 	 * Flush queued lifecycle events through the server-side PostHog bridge.
+	 *
+	 * Only entries that had consent when they were raised are sent, each with its
+	 * original occurred_at as the PostHog timestamp. Anything else (including
+	 * entries queued by older builds without consent) is dropped.
 	 */
 	public static function flush_queued_lifecycle_events(): void {
-		if ( ! self::has_telemetry_consent() ) {
-			return;
-		}
-
 		$queue = get_option( self::LIFECYCLE_QUEUE_OPTION, array() );
 		if ( ! is_array( $queue ) || empty( $queue ) ) {
 			return;
 		}
 
+		if ( ! self::has_telemetry_consent() ) {
+			delete_option( self::LIFECYCLE_QUEUE_OPTION );
+			return;
+		}
+
 		delete_option( self::LIFECYCLE_QUEUE_OPTION );
 		foreach ( $queue as $entry ) {
-			if ( ! is_array( $entry ) ) {
+			if ( ! is_array( $entry ) || true !== ( $entry['consented_at_raise'] ?? false ) ) {
 				continue;
 			}
 			$event_name  = isset( $entry['event'] ) ? sanitize_key( (string) $entry['event'] ) : '';
 			$distinct_id = isset( $entry['distinct_id'] ) ? sanitize_text_field( (string) $entry['distinct_id'] ) : '';
 			$properties  = isset( $entry['properties'] ) && is_array( $entry['properties'] ) ? $entry['properties'] : array();
-			if ( '' === $event_name || '' === $distinct_id ) {
+			$occurred_at = isset( $entry['occurred_at'] ) ? (string) $entry['occurred_at'] : '';
+			if ( '' === $event_name || '' === $distinct_id || '' === $occurred_at ) {
 				continue;
 			}
 			self::capture_posthog_event(
@@ -496,8 +584,10 @@ class BBAI_Telemetry {
 					array(
 						'transport'          => 'wp_lifecycle_server_bridge',
 						'lifecycle_delivery' => 'queued_flush',
+						'occurred_at'        => $occurred_at,
 					)
-				)
+				),
+				$occurred_at
 			);
 		}
 	}
@@ -508,8 +598,9 @@ class BBAI_Telemetry {
 	 * @param string $event_name  Event name.
 	 * @param string $distinct_id Stable PostHog distinct id.
 	 * @param array  $properties  Event properties.
+	 * @param string $timestamp   Optional ISO 8601 time the event happened (defaults to now).
 	 */
-	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = array() ): void {
+	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = array(), string $timestamp = '' ): void {
 		$event_name  = sanitize_key( $event_name );
 		$event_name  = self::normalize_event_name( $event_name, $properties );
 		$distinct_id = sanitize_text_field( $distinct_id );
@@ -533,14 +624,16 @@ class BBAI_Telemetry {
 
 		$properties = self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name );
 
-		$payload = wp_json_encode(
-			array(
-				'api_key'     => $api_key,
-				'event'       => $event_name,
-				'distinct_id' => $distinct_id,
-				'properties'  => $properties,
-			)
+		$body = array(
+			'api_key'     => $api_key,
+			'event'       => $event_name,
+			'distinct_id' => $distinct_id,
+			'properties'  => $properties,
 		);
+		if ( '' !== $timestamp && false !== strtotime( $timestamp ) ) {
+			$body['timestamp'] = gmdate( 'c', (int) strtotime( $timestamp ) );
+		}
+		$payload = wp_json_encode( $body );
 
 		if ( ! is_string( $payload ) || '' === $payload ) {
 			return;
@@ -656,33 +749,18 @@ class BBAI_Telemetry {
 		if ( empty( $props['site_hash'] ) ) {
 			$props['site_hash'] = hash( 'sha256', $site_install_id );
 		}
-		if ( empty( $props['site_url'] ) && function_exists( 'home_url' ) ) {
-			$props['site_url'] = esc_url_raw( home_url( '/' ) );
-		}
-		$resolved_host = self::normalize_host_value( $props['host'] ?? $props['site_host'] ?? '' );
-		if ( '' === $resolved_host && ! empty( $props['site_url'] ) && function_exists( 'wp_parse_url' ) ) {
-			$parsed_host = wp_parse_url( (string) $props['site_url'], PHP_URL_HOST );
-			$resolved_host = self::normalize_host_value( is_string( $parsed_host ) ? $parsed_host : '' );
-		}
-		if ( '' !== $resolved_host ) {
-			$props['host'] = $resolved_host;
-			if ( empty( $props['site_host'] ) ) {
-				$props['site_host'] = $resolved_host;
-			} else {
-				$normalized_site_host = self::normalize_host_value( $props['site_host'] );
-				if ( '' !== $normalized_site_host ) {
-					$props['site_host'] = $normalized_site_host;
-				}
-			}
+		// The site URL and hostname never leave the site; the install id is the only identity.
+		foreach ( self::SITE_IDENTIFIER_KEYS as $site_key ) {
+			unset( $props[ $site_key ] );
 		}
 		if ( empty( $props['plugin_slug'] ) ) {
 			$props['plugin_slug'] = self::get_plugin_slug();
 		}
-		$props['product'] = 'alt_text';
+		$props['product']           = 'alt_text';
 		$props['telemetry_consent'] = self::has_telemetry_consent();
-		$props['telemetry_source'] = 'wordpress';
-		$props['telemetry_schema'] = 'opptiai_usage_v2';
-		$props['is_test'] = self::is_test_site();
+		$props['telemetry_source']  = 'wordpress';
+		$props['telemetry_schema']  = 'opptiai_usage_v2';
+		$props['is_test']           = self::is_test_site();
 		if ( empty( $props['telemetry_version'] ) ) {
 			$props['telemetry_version'] = self::TELEMETRY_SCHEMA_VERSION;
 		}
@@ -770,24 +848,6 @@ class BBAI_Telemetry {
 		}
 
 		return $props;
-	}
-
-	/**
-	 * Normalize host values to bare hostname (no scheme/path).
-	 *
-	 * @param mixed $value Raw host or URL value.
-	 */
-	private static function normalize_host_value( $value ): string {
-		$host = is_scalar( $value ) ? trim( (string) $value ) : '';
-		if ( '' === $host ) {
-			return '';
-		}
-		if ( preg_match( '#^https?://#i', $host ) && function_exists( 'wp_parse_url' ) ) {
-			$parsed = wp_parse_url( $host, PHP_URL_HOST );
-			$host   = is_string( $parsed ) ? $parsed : '';
-		}
-		$host = strtolower( preg_replace( '#/.*$#', '', $host ) );
-		return '' !== $host ? sanitize_text_field( $host ) : '';
 	}
 
 	/**
