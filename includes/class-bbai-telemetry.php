@@ -641,7 +641,8 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$properties = self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name );
+		$properties  = self::scrub_raw_site_identifier( self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name ) );
+		$distinct_id = (string) self::scrub_raw_site_identifier( $distinct_id );
 
 		$body = array(
 			'api_key'     => $api_key,
@@ -775,9 +776,6 @@ class BBAI_Telemetry {
 		$props = self::strip_site_identifiers( $props );
 
 		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
-		if ( '' === $site_install_id && function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
-			$site_install_id = sanitize_text_field( (string) get_site_identifier() );
-		}
 		if ( '' === $site_install_id ) {
 			return $props;
 		}
@@ -789,7 +787,7 @@ class BBAI_Telemetry {
 			$props['site_id'] = $site_install_id;
 		}
 		if ( empty( $props['site_hash'] ) ) {
-			$props['site_hash'] = hash( 'sha256', $site_install_id );
+			$props['site_hash'] = self::resolve_site_hash();
 		}
 		if ( empty( $props['plugin_slug'] ) ) {
 			$props['plugin_slug'] = self::get_plugin_slug();
@@ -912,7 +910,8 @@ class BBAI_Telemetry {
 		}
 		return array(
 			'X-Telemetry-Consent'    => 'yes',
-			'X-Telemetry-Install-ID' => self::resolve_site_id(),
+			// Our own API only (like X-Site-Key); the backend hashes it before analytics.
+			'X-Telemetry-Install-ID' => self::resolve_raw_site_identifier(),
 			'X-Environment'          => self::resolve_environment(),
 			'X-Telemetry-Test'       => self::is_test_site() ? 'yes' : 'no',
 		);
@@ -1170,17 +1169,60 @@ class BBAI_Telemetry {
 		return null;
 	}
 
+	/**
+	 * Telemetry install id: the hashed id from bbai_get_site_install_id(), never the site identifier.
+	 */
 	private static function resolve_site_id(): string {
-		if ( ! function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
+		self::load_site_id_helpers();
+		if ( function_exists( __NAMESPACE__ . '\\bbai_get_site_install_id' ) ) {
+			return (string) bbai_get_site_install_id();
+		}
+		return '';
+	}
+
+	/**
+	 * Existing site_hash join key: sha256 of the site identifier (unchanged contract).
+	 */
+	private static function resolve_site_hash(): string {
+		$raw = self::resolve_raw_site_identifier();
+		return '' === $raw ? '' : hash( 'sha256', $raw );
+	}
+
+	private static function resolve_raw_site_identifier(): string {
+		self::load_site_id_helpers();
+		return function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ? (string) get_site_identifier() : '';
+	}
+
+	private static function load_site_id_helpers(): void {
+		if ( ! function_exists( __NAMESPACE__ . '\\bbai_get_site_install_id' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
 			$file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 			if ( is_readable( $file ) ) {
 				require_once $file;
 			}
 		}
-		if ( function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
-			return (string) get_site_identifier();
+	}
+
+	/**
+	 * Replace the site identifier with the install id in any string, at any depth,
+	 * so a stale queue entry or client payload can never carry it to PostHog.
+	 *
+	 * @param mixed $value Value to scrub.
+	 * @return mixed
+	 */
+	public static function scrub_raw_site_identifier( $value ) {
+		$raw = self::resolve_raw_site_identifier();
+		if ( '' === $raw ) {
+			return $value;
 		}
-		return '';
+		if ( is_string( $value ) ) {
+			return false === strpos( $value, $raw ) ? $value : str_replace( $raw, self::resolve_site_id(), $value );
+		}
+		if ( is_array( $value ) ) {
+			foreach ( $value as $key => $item ) {
+				$value[ $key ] = self::scrub_raw_site_identifier( $item );
+			}
+		}
+		return $value;
 	}
 
 	private static function resolve_plan_type(): string {

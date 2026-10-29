@@ -112,7 +112,7 @@ namespace {
 		public function test_enrich_properties_strips_nested_identifiers(): void {
 			$props = BBAI_Telemetry::enrich_properties( $this->crafted() );
 			$this->assert_clean( $props );
-			$this->assertSame( 'test_site_install_id_0123456789ab', $props['site_install_id'] );
+			$this->assertSame( '61cf62dcdec8b141d4415c712d64be5953f8f35b0ec8ed67137508be91c9592e', $props['site_install_id'] );
 		}
 
 		public function test_strip_runs_when_no_install_id_resolves(): void {

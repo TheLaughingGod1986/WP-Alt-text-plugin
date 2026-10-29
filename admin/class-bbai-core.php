@@ -2229,7 +2229,8 @@ class Core {
         $distinct_id = '';
         foreach ( [ 'account_id', 'user_id', 'license_id', 'site_install_id', 'site_id', 'site_hash' ] as $key ) {
             if ( ! empty( $properties[ $key ] ) && is_scalar( $properties[ $key ] ) ) {
-                $distinct_id = sanitize_text_field( (string) $properties[ $key ] );
+                // A stale page context may still carry the site identifier: use the install id instead.
+                $distinct_id = (string) BBAI_Telemetry::scrub_raw_site_identifier( sanitize_text_field( (string) $properties[ $key ] ) );
                 break;
             }
         }

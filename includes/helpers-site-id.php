@@ -114,13 +114,20 @@ function beepbeepai_get_site_identifier() {
 /**
  * Canonical telemetry install identifier.
  *
- * Kept separate from `site_hash` so analytics dashboards can use a stable
- * install key without changing the existing backend/site_hash contract.
+ * A one-way, versioned hash of the site identifier. PostHog payloads, the
+ * analytics browser context and the checkout body use this value; the site
+ * identifier itself is only sent to the OpptiAI API in its request headers
+ * (X-Site-Key, X-Site-Hash, X-Telemetry-Install-ID).
  *
- * @return string
+ * @param string|null $site_id Site identifier to hash; defaults to this site's.
+ * @return string Lowercase hex sha256, or '' when the site has no identifier.
  */
-function bbai_get_site_install_id() {
-	return get_site_identifier();
+function bbai_get_site_install_id( $site_id = null ) {
+	$site_id = null === $site_id ? (string) get_site_identifier() : (string) $site_id;
+	if ( '' === trim( $site_id ) ) {
+		return '';
+	}
+	return hash( 'sha256', 'oppti-install-v1:' . $site_id );
 }
 
 /**

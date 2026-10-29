@@ -2004,23 +2004,33 @@ JS,
 	 * Stable site hash for client analytics.
 	 */
 	private function get_posthog_site_hash(): string {
-		return hash( 'sha256', $this->get_posthog_site_install_id() );
+		$this->load_posthog_site_id_helpers();
+		return hash(
+			'sha256',
+			function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' )
+				? (string) \BeepBeepAI\AltTextGenerator\get_site_identifier()
+				: (string) home_url( '/' )
+		);
 	}
 
 	/**
-	 * Stable install id used as the canonical analytics join key.
+	 * Stable install id used as the canonical analytics join key (hashed, never the site identifier).
 	 */
 	private function get_posthog_site_install_id(): string {
-		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
+		$this->load_posthog_site_id_helpers();
+
+		return function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' )
+			? (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id()
+			: '';
+	}
+
+	private function load_posthog_site_id_helpers(): void {
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' ) ) {
 			$site_id_helper = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 			if ( is_readable( $site_id_helper ) ) {
 				require_once $site_id_helper;
 			}
 		}
-
-		return function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' )
-			? (string) \BeepBeepAI\AltTextGenerator\get_site_identifier()
-			: (string) home_url( '/' );
 	}
 
 	/**

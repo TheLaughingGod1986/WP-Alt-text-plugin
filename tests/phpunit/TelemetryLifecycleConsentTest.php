@@ -156,7 +156,7 @@ namespace {
 				$this->assertStringNotContainsString( 'private.example.org', wp_json_encode( $event ) );
 				$this->assertStringNotContainsString( 'staging.oppti-qa.invalid', wp_json_encode( $event ) );
 				$this->assertSame( 'opptiai_usage_v2', $event['properties']['telemetry_schema'] );
-				$this->assertSame( 'test_site_install_id_0123456789ab', $event['properties']['site_install_id'] );
+				$this->assertSame( '61cf62dcdec8b141d4415c712d64be5953f8f35b0ec8ed67137508be91c9592e', $event['properties']['site_install_id'] );
 			}
 		}
 	}

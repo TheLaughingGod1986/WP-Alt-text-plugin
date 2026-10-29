@@ -164,4 +164,20 @@ final class CheckoutAttributionAllowlistTest extends TestCase {
 			$this->assertStringNotContainsString( $needle, str_replace( 'https://example.test/api', '', $raw ) );
 		}
 	}
+
+	public function test_checkout_body_site_install_id_is_the_hashed_install_id(): void {
+		$ref = new ReflectionClass( API_Client_V2::class );
+		$api = $ref->newInstanceWithoutConstructor();
+		$ref->getProperty( 'api_url' )->setValue( $api, 'https://example.test/api' );
+
+		$api->create_checkout_session( 'price_test_1', 'https://example.com/ok', 'https://example.com/cancel', array() );
+
+		$request = $GLOBALS['bbai_test_http_requests'][0];
+		$body    = json_decode( (string) $request['args']['body'], true );
+		// sha256( 'oppti-install-v1:' . site identifier from tests/phpunit/bootstrap.php ).
+		$this->assertSame( '61cf62dcdec8b141d4415c712d64be5953f8f35b0ec8ed67137508be91c9592e', $body['site_install_id'] );
+		$this->assertStringNotContainsString( 'test_site_install_id_0123456789ab', (string) $request['args']['body'] );
+		// The API auth headers keep the site identifier.
+		$this->assertSame( 'test_site_install_id_0123456789ab', $request['args']['headers']['X-Site-Key'] );
+	}
 }

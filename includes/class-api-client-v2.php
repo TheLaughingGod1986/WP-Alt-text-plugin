@@ -3288,8 +3288,8 @@ class API_Client_V2 {
 		if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
 			$payload['plugin_version'] = (string) BEEPBEEP_AI_VERSION;
 		}
-		if ( function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
-			$payload['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\get_site_identifier() );
+		if ( function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' ) ) {
+			$payload['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id() );
 		}
 
 		// First attempt: with token if available

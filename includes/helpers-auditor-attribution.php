@@ -113,11 +113,11 @@ function remember_auditor_attribution(): void {
  */
 function auditor_posthog_distinct_id(): string {
 	$id = '';
-	if ( ! function_exists( __NAMESPACE__ . '\\get_site_identifier' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) && is_readable( BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php' ) ) {
+	if ( ! function_exists( __NAMESPACE__ . '\\bbai_get_site_install_id' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) && is_readable( BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php' ) ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 	}
-	if ( function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
-		$id = (string) get_site_identifier();
+	if ( function_exists( __NAMESPACE__ . '\\bbai_get_site_install_id' ) ) {
+		$id = (string) bbai_get_site_install_id();
 	}
 	return (string) apply_filters( 'bbai_auditor_deeplink_distinct_id', $id );
 }
