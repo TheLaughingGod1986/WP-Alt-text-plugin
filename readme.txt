@@ -352,7 +352,7 @@ Privacy policy: https://posthog.com/privacy
 == Upgrade Notice ==
 
 = 4.6.144 =
-Background processing now skips images that already have alt text, and usage analytics are only sent after you opt in.
+The background queue skips images that already have alt text, and usage analytics are only sent after you opt in.
 
 = 4.6.143 =
 Starter accounts now see their own plan, and the usage counter updates right after you generate.
