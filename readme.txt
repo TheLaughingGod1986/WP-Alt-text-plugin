@@ -159,7 +159,7 @@ Privacy policy: https://posthog.com/privacy
 == Changelog ==
 
 = 4.6.144 =
-* Background processing now skips images that already have alt text. Use Regenerate when you want new alt text for those images.
+* The background queue skips images that already have alt text, unless you choose Regenerate.
 * Usage analytics are only sent after you opt in.
 * Security hardening.
 * Reject invalid image inputs before generation and handle expired sessions clearly.
