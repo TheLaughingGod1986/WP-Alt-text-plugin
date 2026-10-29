@@ -6387,7 +6387,7 @@ class Core {
         if (!$this->is_image($attachment_id)) return;
         $this->invalidate_stats_cache();
         $existing = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
-        if ($existing && empty($opts['force_overwrite'])) return;
+        if ($existing && ! self::force_overwrite_enabled($opts)) return;
         // Respect monthly limit and surface upgrade prompt as admin notice
         if (
             ( ! defined( 'WP_LOCAL_DEV' ) || ! WP_LOCAL_DEV )
@@ -7316,7 +7316,7 @@ class Core {
         }
 
         $existing = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
-        if ($existing && empty($opts['force_overwrite'])) {
+        if ($existing && ! self::force_overwrite_enabled($opts)) {
             return false;
         }
 
@@ -8868,11 +8868,21 @@ class Core {
         if ( false !== strpos( sanitize_key( $source ), 'regenerate' ) ) {
             return false;
         }
-        $opts = is_array( $opts ) ? $opts : array();
-        if ( array_key_exists( 'force_overwrite', $opts ) && true === $opts['force_overwrite'] ) {
+        if ( self::force_overwrite_enabled( $opts ) ) {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Whether the "overwrite existing alt text" setting is on. Only exactly true
+     * counts, so queueing, upload generation and the queue worker agree.
+     * Explicit regenerate jobs do not depend on this setting.
+     *
+     * @param mixed $opts Plugin settings array.
+     */
+    public static function force_overwrite_enabled( $opts ): bool {
+        return is_array( $opts ) && array_key_exists( 'force_overwrite', $opts ) && true === $opts['force_overwrite'];
     }
 
     public function process_queue() {

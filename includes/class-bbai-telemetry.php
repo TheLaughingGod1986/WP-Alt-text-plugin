@@ -54,8 +54,26 @@ class BBAI_Telemetry {
 	/** Set once the opt-in lifecycle snapshot has been sent for this site. */
 	public const OPT_IN_LIFECYCLE_SENT_OPTION = 'bbai_telemetry_opt_in_lifecycle_sent';
 
-	/** Property keys that identify the site and are never sent to PostHog. */
-	public const SITE_IDENTIFIER_KEYS = array( 'site_url', 'site_host', 'host', 'home_url', 'domain', 'siteurl', 'website' );
+	/**
+	 * Property keys that identify the site or a page on it and are never sent to
+	 * PostHog. Matched at any depth (including $set / $set_once), case-insensitive,
+	 * with any leading "$" ignored, so $current_url and $referrer match too.
+	 */
+	public const SITE_IDENTIFIER_KEYS = array(
+		'site_url',
+		'site_host',
+		'host',
+		'home_url',
+		'domain',
+		'siteurl',
+		'website',
+		'referrer',
+		'initial_referrer',
+		'page_url',
+		'current_url',
+		'initial_current_url',
+		'url',
+	);
 
 	public const CURRENT_VERSION_OPTION = 'bbai_telemetry_current_plugin_version';
 
@@ -726,6 +744,25 @@ class BBAI_Telemetry {
 	}
 
 	/**
+	 * Remove site-identifying keys (SITE_IDENTIFIER_KEYS) at every depth.
+	 *
+	 * @param array<mixed> $props Properties, possibly nested ($set, $set_once, context arrays).
+	 * @return array<mixed>
+	 */
+	public static function strip_site_identifiers( array $props ): array {
+		foreach ( $props as $key => $value ) {
+			if ( is_string( $key ) && in_array( strtolower( ltrim( $key, '$' ) ), self::SITE_IDENTIFIER_KEYS, true ) ) {
+				unset( $props[ $key ] );
+				continue;
+			}
+			if ( is_array( $value ) ) {
+				$props[ $key ] = self::strip_site_identifiers( $value );
+			}
+		}
+		return $props;
+	}
+
+	/**
 	 * Add the canonical install identity used to join logged-out, logged-in, and lifecycle events.
 	 *
 	 * @param array<string,mixed> $props           Sanitized properties.
@@ -733,6 +770,10 @@ class BBAI_Telemetry {
 	 * @return array<string,mixed>
 	 */
 	private static function with_site_identity( array $props, ?string $site_install_id = null, string $event_name = '' ): array {
+		// The site URL, hostname and page URLs never leave the site; the install id is
+		// the only identity. Strip first so no return path below can skip it.
+		$props = self::strip_site_identifiers( $props );
+
 		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
 		if ( '' === $site_install_id && function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
 			$site_install_id = sanitize_text_field( (string) get_site_identifier() );
@@ -749,10 +790,6 @@ class BBAI_Telemetry {
 		}
 		if ( empty( $props['site_hash'] ) ) {
 			$props['site_hash'] = hash( 'sha256', $site_install_id );
-		}
-		// The site URL and hostname never leave the site; the install id is the only identity.
-		foreach ( self::SITE_IDENTIFIER_KEYS as $site_key ) {
-			unset( $props[ $site_key ] );
 		}
 		if ( empty( $props['plugin_slug'] ) ) {
 			$props['plugin_slug'] = self::get_plugin_slug();
