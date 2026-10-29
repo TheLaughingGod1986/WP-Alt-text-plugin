@@ -178,7 +178,7 @@
     }
 
     function getContext() {
-        var context = extend({}, sanitizeProperties(cfg.context || {}), runtimeContext);
+        var context = applyLocalSiteIdentity(extend({}, sanitizeProperties(cfg.context || {}), runtimeContext));
         var host = normalizeHostValue(context.host || context.site_host || '');
         if (!host && context.site_url) {
             host = normalizeHostValue(context.site_url);
@@ -201,6 +201,45 @@
     function resolveSiteInstallId(context) {
         var source = isObject(context) ? context : {};
         return source.site_install_id || source.siteInstallId || source.install_id || source.installId || source.site_hash || source.site_id || '';
+    }
+
+    // Site identity always comes from the values this site printed into the page
+    // (the local install id and the plugin's own site hash), never from an API
+    // response or a caller-supplied property.
+    function getLocalSiteIdentity() {
+        var base = isObject(cfg.context) ? cfg.context : {};
+        var installId = typeof base.site_install_id === 'string' ? base.site_install_id : '';
+        var siteHash = typeof base.site_hash === 'string' ? base.site_hash : '';
+
+        return {
+            site_install_id: installId,
+            site_id: installId,
+            site_hash: siteHash
+        };
+    }
+
+    function applyLocalSiteIdentity(target) {
+        var output = isObject(target) ? target : {};
+        var local = getLocalSiteIdentity();
+        var keys = ['site_install_id', 'site_id', 'site_hash'];
+        var i;
+
+        delete output.siteInstallId;
+        delete output.install_id;
+        delete output.installId;
+        delete output.siteId;
+        delete output.siteHash;
+        delete output.site;
+
+        for (i = 0; i < keys.length; i++) {
+            if (local[keys[i]]) {
+                output[keys[i]] = local[keys[i]];
+            } else {
+                delete output[keys[i]];
+            }
+        }
+
+        return output;
     }
 
     function normalizePlanValue(value, fallbackForConnected) {
@@ -631,7 +670,7 @@
             return;
         }
 
-        payload = extend({}, getContext(), sanitizeProperties(properties || {}));
+        payload = applyLocalSiteIdentity(extend({}, getContext(), sanitizeProperties(properties || {})));
         whenPosthogReady(function(client) {
             logToConsole('debug', 'bbaiTrack send', safeName, payload);
             if (safeName === 'checkout_started' && isDebugEnabled()) {
@@ -686,7 +725,7 @@
 
     function identify(distinctId, properties) {
         var safeId = distinctId === undefined || distinctId === null ? '' : String(distinctId);
-        var safeProperties = sanitizeProperties(properties || {});
+        var safeProperties = applyLocalSiteIdentity(sanitizeProperties(properties || {}));
 
         if (!cfg.enabled) {
             return;
@@ -747,7 +786,7 @@
     }
 
     function updateContext(properties) {
-        runtimeContext = extend({}, runtimeContext, sanitizeProperties(properties || {}));
+        runtimeContext = applyLocalSiteIdentity(extend({}, runtimeContext, sanitizeProperties(properties || {})));
         registerContext();
     }
 
@@ -807,7 +846,7 @@
     function buildIdentityContext(user) {
         var baseContext = sanitizeProperties(cfg.context || {});
         var source = isObject(user) ? sanitizeProperties(user) : {};
-        var sourceSite = isObject(source.site) ? source.site : {};
+        var localSite = getLocalSiteIdentity();
         var accountId = source.account_id || source.id || source._id || baseContext.account_id || '';
         var userId = source.user_id || source.id || source._id || baseContext.user_id || baseContext.account_id || '';
         var hasLicenseKey = !!(source.license_key_present || baseContext.license_key_present || source.license_key || baseContext.license_key);
@@ -818,9 +857,9 @@
             account_id: accountId,
             user_id: userId,
             license_key_present: hasLicenseKey,
-            site_install_id: resolveSiteInstallId(extend({}, baseContext, source)),
-            site_id: source.site_id || sourceSite.id || sourceSite._id || baseContext.site_id || '',
-            site_hash: source.site_hash || baseContext.site_hash || '',
+            site_install_id: localSite.site_install_id,
+            site_id: localSite.site_id,
+            site_hash: localSite.site_hash,
             plan: plan,
             plan_type: plan,
             wordpress_user_id: source.wordpress_user_id || baseContext.wordpress_user_id || '',

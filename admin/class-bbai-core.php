@@ -2227,12 +2227,16 @@ class Core {
         unset( $properties['_bbai_client_batched'] );
 
         $distinct_id = '';
-        foreach ( [ 'account_id', 'user_id', 'license_id', 'site_install_id', 'site_id', 'site_hash' ] as $key ) {
+        foreach ( [ 'account_id', 'user_id', 'license_id' ] as $key ) {
             if ( ! empty( $properties[ $key ] ) && is_scalar( $properties[ $key ] ) ) {
                 // A stale page context may still carry the site identifier: use the install id instead.
                 $distinct_id = (string) BBAI_Telemetry::scrub_raw_site_identifier( sanitize_text_field( (string) $properties[ $key ] ) );
                 break;
             }
+        }
+        // Site-level ids from the browser payload are never used: fall back to this site's own install id.
+        if ( '' === $distinct_id ) {
+            $distinct_id = $this->get_posthog_site_install_id();
         }
         if ( '' === $distinct_id ) {
             $distinct_id = $this->get_posthog_site_hash();

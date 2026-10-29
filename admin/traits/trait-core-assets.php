@@ -2051,12 +2051,10 @@ JS,
 			$license_key = sanitize_text_field( (string) $this->api_client->get_license_key() );
 		}
 
-		$site_id = '';
-		if ( isset( $license_data['site'] ) && is_array( $license_data['site'] ) ) {
-			$site_id = sanitize_text_field( (string) ( $license_data['site']['id'] ?? $license_data['site']['_id'] ?? '' ) );
-		}
-
+		// site_id is the local install id. The site object an API response stored in
+		// $license_data is never used for analytics identity.
 		$site_install_id = $this->get_posthog_site_install_id();
+		$site_id         = sanitize_text_field( $site_install_id );
 
 		$plan_type = class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::normalize_plan_value( $plan_type ) : sanitize_key( $plan_type );
 		if ( 'unknown' === $plan_type && ( '' !== $account_id || '' !== $user_id || '' !== $license_key ) ) {

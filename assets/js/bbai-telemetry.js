@@ -437,6 +437,53 @@
         return (cfg.context && (cfg.context.page_variant || cfg.context.page)) || 'dashboard';
     }
 
+    // Site identity always comes from the values this site printed into the page
+    // (local install id and the plugin's own site hash), never from an API
+    // response or a caller-supplied property.
+    function getLocalSiteIdentity() {
+        var sources = [
+            cfg && cfg.context ? cfg.context : null,
+            window.BBAI_POSTHOG && window.BBAI_POSTHOG.context ? window.BBAI_POSTHOG.context : null
+        ];
+        var installId = '';
+        var siteHash = '';
+        var i;
+
+        for (i = 0; i < sources.length; i++) {
+            if (!sources[i]) {
+                continue;
+            }
+            if (!installId && typeof sources[i].site_install_id === 'string') {
+                installId = sources[i].site_install_id;
+            }
+            if (!siteHash && typeof sources[i].site_hash === 'string') {
+                siteHash = sources[i].site_hash;
+            }
+        }
+
+        return {
+            site_install_id: installId,
+            site_id: installId,
+            site_hash: siteHash
+        };
+    }
+
+    function applyLocalSiteIdentity(target) {
+        var output = target && typeof target === 'object' ? target : {};
+        var local = getLocalSiteIdentity();
+        ['siteInstallId', 'install_id', 'installId', 'siteId', 'siteHash', 'site'].forEach(function(key) {
+            delete output[key];
+        });
+        ['site_install_id', 'site_id', 'site_hash'].forEach(function(key) {
+            if (local[key]) {
+                output[key] = local[key];
+            } else {
+                delete output[key];
+            }
+        });
+        return output;
+    }
+
     function buildPostHogProps(props) {
         var payload = $.extend({}, props || {});
         delete payload.client_page;
@@ -1208,6 +1255,7 @@
             upgradeEventDedup.key = dedupeKey;
             upgradeEventDedup.at = now;
         }
+        applyLocalSiteIdentity(props);
         if (eventName === 'checkout_started' && isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
             window.console.debug('[BBAI] checkout_started identity context', {
                 account_id: props.account_id || '',

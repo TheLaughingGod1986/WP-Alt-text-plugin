@@ -763,6 +763,55 @@ class BBAI_Telemetry {
 		return $props;
 	}
 
+	/** Other spellings of a site id a payload may carry (sanitize_key lowercases keys). */
+	private const SITE_ID_ALIAS_KEYS = array( 'siteInstallId', 'siteinstallid', 'install_id', 'installId', 'installid', 'siteId', 'siteid', 'siteHash', 'sitehash', 'site' );
+
+	/**
+	 * Set site_install_id, site_id and site_hash from this site's own values,
+	 * replacing whatever a caller, a browser payload or an API response put there.
+	 * Also applied inside $set / $set_once person properties.
+	 *
+	 * @param array<string,mixed> $props           Properties.
+	 * @param string              $site_install_id Local install id ('' drops the keys).
+	 * @return array<string,mixed>
+	 */
+	private static function with_local_site_identity( array $props, string $site_install_id ): array {
+		$local = array(
+			'site_install_id' => $site_install_id,
+			'site_id'         => $site_install_id,
+			'site_hash'       => '' === $site_install_id ? '' : self::resolve_site_hash(),
+		);
+		foreach ( self::SITE_ID_ALIAS_KEYS as $alias ) {
+			unset( $props[ $alias ] );
+		}
+		foreach ( $local as $key => $value ) {
+			if ( '' === $value ) {
+				unset( $props[ $key ] );
+			} else {
+				$props[ $key ] = $value;
+			}
+		}
+		foreach ( array( '$set', '$set_once' ) as $person_key ) {
+			if ( ! isset( $props[ $person_key ] ) || ! is_array( $props[ $person_key ] ) ) {
+				continue;
+			}
+			foreach ( self::SITE_ID_ALIAS_KEYS as $alias ) {
+				unset( $props[ $person_key ][ $alias ] );
+			}
+			foreach ( $local as $key => $value ) {
+				if ( ! array_key_exists( $key, $props[ $person_key ] ) ) {
+					continue;
+				}
+				if ( '' === $value ) {
+					unset( $props[ $person_key ][ $key ] );
+				} else {
+					$props[ $person_key ][ $key ] = $value;
+				}
+			}
+		}
+		return $props;
+	}
+
 	/**
 	 * Add the canonical install identity used to join logged-out, logged-in, and lifecycle events.
 	 *
@@ -776,18 +825,9 @@ class BBAI_Telemetry {
 		$props = self::strip_site_identifiers( $props );
 
 		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
+		$props           = self::with_local_site_identity( $props, $site_install_id );
 		if ( '' === $site_install_id ) {
 			return $props;
-		}
-
-		if ( empty( $props['site_install_id'] ) ) {
-			$props['site_install_id'] = $site_install_id;
-		}
-		if ( empty( $props['site_id'] ) ) {
-			$props['site_id'] = $site_install_id;
-		}
-		if ( empty( $props['site_hash'] ) ) {
-			$props['site_hash'] = self::resolve_site_hash();
 		}
 		if ( empty( $props['plugin_slug'] ) ) {
 			$props['plugin_slug'] = self::get_plugin_slug();
