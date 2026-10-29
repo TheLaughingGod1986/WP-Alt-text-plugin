@@ -171,9 +171,9 @@ class BBAI_Telemetry {
 		}
 		$now = time();
 		$first = add_option( 'bbai_telemetry_first_generation_at', $now, '', false );
-		$props = array( 'is_first_generation' => $first );
+		$props     = array( 'is_first_generation' => $first );
 		$activated = get_option( self::ACTIVATION_MARKER_OPTION, '' );
-		$started = is_numeric( $activated ) ? (int) $activated : strtotime( (string) $activated );
+		$started   = is_numeric( $activated ) ? (int) $activated : strtotime( (string) $activated );
 		if ( $first && $started > 0 && $now >= $started ) {
 			$props['time_to_first_value_seconds'] = max( 0, $now - $started );
 		}
@@ -496,7 +496,8 @@ class BBAI_Telemetry {
 
 		$occurred_at     = gmdate( 'c' );
 		$site_install_id = self::resolve_site_id();
-		$properties      = self::with_site_identity(
+
+		$properties = self::with_site_identity(
 			self::sanitize_properties(
 				array_merge(
 					array(
@@ -758,7 +759,7 @@ class BBAI_Telemetry {
 		}
 		$props['product']           = 'alt_text';
 		$props['telemetry_consent'] = self::has_telemetry_consent();
-		$props['telemetry_source']  = 'wordpress';
+		$props['telemetry_source']  = 'wordpress'; // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- contract value.
 		$props['telemetry_schema']  = 'opptiai_usage_v2';
 		$props['is_test']           = self::is_test_site();
 		if ( empty( $props['telemetry_version'] ) ) {
@@ -875,8 +876,8 @@ class BBAI_Telemetry {
 		return array(
 			'X-Telemetry-Consent'    => 'yes',
 			'X-Telemetry-Install-ID' => self::resolve_site_id(),
-			'X-Environment'         => self::resolve_environment(),
-			'X-Telemetry-Test'      => self::is_test_site() ? 'yes' : 'no',
+			'X-Environment'          => self::resolve_environment(),
+			'X-Telemetry-Test'       => self::is_test_site() ? 'yes' : 'no',
 		);
 	}
 
