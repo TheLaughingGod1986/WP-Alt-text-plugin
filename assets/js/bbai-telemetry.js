@@ -9,6 +9,7 @@
     var cfg = window.BBAI_TELEMETRY || {};
     var queue = [];
     var flushTimer = null;
+    var telemetryOff = false;
     var pageViewSent = false;
     var navSent = {};
     var upgradeClickFallbackBound = false;
@@ -1018,6 +1019,9 @@
     }
 
     function track(eventName, properties) {
+        if (telemetryOff) {
+            return;
+        }
         var normalized = normalizeTelemetryEvent(eventName, properties || {});
 
         eventName = normalized.eventName;
@@ -1202,6 +1206,9 @@
     }
 
     function flushNow() {
+        if (telemetryOff) {
+            return;
+        }
         flushTimer = null;
         if (!queue.length || !cfg.ajaxUrl || !cfg.nonce) {
             return;
@@ -1789,6 +1796,16 @@
         $(document).on('submit', 'form', function () {
             var page = getSourcePage();
             if (page === 'settings' || this.closest('.nai-settings, .bbai-settings, [data-bbai-settings]')) {
+                var analyticsBox = this.querySelector('input[type="checkbox"][name="bbai_usage_analytics"]');
+                if (analyticsBox && !analyticsBox.checked) {
+                    telemetryOff = true;
+                    queue.length = 0;
+                    if (flushTimer) {
+                        window.clearTimeout(flushTimer);
+                        flushTimer = null;
+                    }
+                    return;
+                }
                 track('settings_saved', {
                     source_page: 'settings'
                 });
