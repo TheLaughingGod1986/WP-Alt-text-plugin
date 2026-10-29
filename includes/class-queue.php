@@ -251,6 +251,32 @@ class Queue {
     }
 
     /**
+     * Mark a job as skipped: finished without generating, so nothing was charged.
+     * Stored as completed so stats and purging treat it like finished work.
+     *
+     * @param int    $job_id Job id.
+     * @param string $reason Short machine-readable reason.
+     */
+    public static function mark_skipped( $job_id, $reason = 'skipped' ) {
+        global $wpdb;
+        $table = esc_sql( self::table() );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->update(
+            $table,
+            array(
+                'status'       => 'completed',
+                'locked_at'    => null,
+                'completed_at' => current_time( 'mysql' ),
+                'last_error'   => sanitize_key( (string) $reason ),
+            ),
+            array( 'id' => intval( $job_id ) ),
+            array( '%s', '%s', '%s', '%s' ),
+            array( '%d' )
+        );
+        BBAI_Cache::bump( 'queue' );
+    }
+
+    /**
      * Retry a single job by ID.
      */
     public static function retry_job($job_id) {

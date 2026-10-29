@@ -8849,6 +8849,32 @@ class Core {
         <?php
     }
 
+    /**
+     * Whether a queued job must leave an image alone because it already has alt text.
+     *
+     * Only a job the user explicitly queued as a regenerate (a source containing
+     * "regenerate", e.g. bulk-regenerate) or a site with force_overwrite set to
+     * exactly true may overwrite existing alt text. Upload/auto jobs and
+     * "generate missing" jobs skip.
+     *
+     * @param string $source      Queue job source.
+     * @param string $current_alt Alt text currently saved on the attachment.
+     * @param mixed  $opts        Plugin settings array.
+     */
+    public static function queue_job_should_skip_existing_alt( string $source, string $current_alt, $opts ): bool {
+        if ( '' === trim( $current_alt ) ) {
+            return false;
+        }
+        if ( false !== strpos( sanitize_key( $source ), 'regenerate' ) ) {
+            return false;
+        }
+        $opts = is_array( $opts ) ? $opts : array();
+        if ( array_key_exists( 'force_overwrite', $opts ) && true === $opts['force_overwrite'] ) {
+            return false;
+        }
+        return true;
+    }
+
     public function process_queue() {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
 
@@ -8888,6 +8914,16 @@ class Core {
             };
             if (Generation_Lock::queue_should_skip_retry($attachment_id, (string) ($job->last_error ?? ''), $bbai_current_alt)) {
                 Queue::mark_complete($job->id);
+                continue;
+            }
+
+            // Alt text may have been typed or saved after this job was queued (for
+            // example during the upload delay). Only an explicit regenerate, or
+            // force_overwrite set to true, may replace it; every other job skips
+            // the image without calling the backend or spending a credit.
+            Generation_Lock::flush_meta_cache( $attachment_id );
+            if ( self::queue_job_should_skip_existing_alt( (string) ( $job->source ?? '' ), $bbai_current_alt(), get_option( self::OPTION_KEY, array() ) ) ) {
+                Queue::mark_skipped( $job->id, 'skipped_existing_alt' );
                 continue;
             }
 
