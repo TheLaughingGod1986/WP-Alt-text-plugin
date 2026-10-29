@@ -993,23 +993,53 @@
         return enriched;
     }
 
+    var CHECKOUT_ATTRIBUTION_KEYS = [
+        'trigger_feature', 'trigger_location', 'source_page', 'target_plan', 'current_plan', 'source',
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer', 'landing_page'
+    ];
+
+    function checkoutReferrerHost(value) {
+        var raw = String(value || '').trim();
+        var match = /^(?:[a-z][a-z0-9+.\-]*:)?\/\/([^\/?#]*)/i.exec(raw) || /^([^\/?#]*)/.exec(raw);
+        return String((match && match[1]) || '').replace(/^[^@]*@/, '').replace(/:\d*$/, '').toLowerCase();
+    }
+
+    function checkoutLandingPath(value) {
+        var raw = String(value || '').trim().split(/[?#]/)[0];
+        return raw.replace(/^(?:[a-z][a-z0-9+.\-]*:)?\/\/[^\/]*/i, '');
+    }
+
+    function pickCheckoutAttribution(source) {
+        var out = {};
+        CHECKOUT_ATTRIBUTION_KEYS.forEach(function (key) {
+            var value = source[key];
+            if (value === undefined || value === null || typeof value === 'object') {
+                return;
+            }
+            value = String(value);
+            if (key === 'referrer') {
+                value = checkoutReferrerHost(value);
+            } else if (key === 'landing_page') {
+                value = checkoutLandingPath(value);
+            }
+            if (value !== '') {
+                out[key] = value;
+            }
+        });
+        return out;
+    }
+
     function buildCheckoutRequestAttribution(overrides) {
         var runtime = getTelemetryRuntimeContext();
         var stored = getStoredUpgradeAttribution();
-        var payload = cleanupProps($.extend({
-            account_id: runtime.account_id || '',
-            user_id: runtime.user_id || '',
-            license_key_present: !!runtime.license_key_present,
-            site_install_id: runtime.site_install_id || '',
-            site_id: runtime.site_id || '',
-            site_hash: runtime.site_hash || '',
+        var payload = pickCheckoutAttribution(cleanupProps($.extend({
             trigger_feature: stored.trigger_feature || 'unknown',
             trigger_location: stored.trigger_location || 'unknown',
             source_page: stored.source_page || runtime.source_page || 'unknown',
             target_plan: stored.target_plan || '',
             current_plan: stored.current_plan || runtime.current_plan || '',
             source: 'app'
-        }, overrides || {}));
+        }, overrides || {})));
 
         if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
             window.console.debug('[BBAI] checkout request payload', payload);

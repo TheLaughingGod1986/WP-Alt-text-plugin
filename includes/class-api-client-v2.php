@@ -3277,7 +3277,10 @@ class API_Client_V2 {
 		}
 
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
-			$payload = array_merge( $payload, \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload(), $attribution );
+			$payload = array_merge(
+				$payload,
+				\BeepBeepAI\AltTextGenerator\BBAI_Attribution::for_checkout( array_merge( \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload(), $attribution ) )
+			);
 		} elseif ( ! empty( $attribution ) ) {
 			$payload = array_merge( $payload, $attribution );
 		}

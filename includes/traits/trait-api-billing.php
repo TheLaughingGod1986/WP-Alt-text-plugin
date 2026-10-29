@@ -52,7 +52,7 @@ trait Api_Billing {
 
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
 			$stored_attribution = \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload();
-			$data               = array_merge( $data, $stored_attribution, $attribution );
+			$data               = array_merge( $data, \BeepBeepAI\AltTextGenerator\BBAI_Attribution::for_checkout( array_merge( $stored_attribution, $attribution ) ) );
 		} elseif ( ! empty( $attribution ) ) {
 			$data = array_merge( $data, $attribution );
 		}

@@ -2481,13 +2481,8 @@ bbaiRunWithJQuery(function($) {
             ? (window.bbaiAnalytics.getContext() || {})
             : ((window.BBAI_POSTHOG && window.BBAI_POSTHOG.context) || {});
 
-        var payload = {
-            account_id: context.account_id || '',
-            user_id: context.user_id || '',
-            license_key: context.license_key || '',
-            site_id: context.site_id || '',
-            site_hash: context.site_hash || '',
-            email: context.email || '',
+        // Checkout context only: identity comes from the authenticated request.
+        return {
             trigger_feature: 'unknown',
             trigger_location: 'unknown',
             source_page: context.page || 'dashboard',
@@ -2495,12 +2490,6 @@ bbaiRunWithJQuery(function($) {
             current_plan: context.plan_type || context.plan || '',
             source: 'app'
         };
-
-        if (!payload.email) {
-            delete payload.email;
-        }
-
-        return payload;
     }
 
     function dispatchCheckoutFallbackAnalytics(planName, errorCode, extra) {
