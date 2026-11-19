@@ -1862,6 +1862,7 @@ JS,
 				'logout_redirect'        => admin_url( 'admin.php?page=bbai' ),
 				'stripe_links'           => method_exists( $this, 'get_checkout_stripe_links' ) ? $this->get_checkout_stripe_links() : self::DEFAULT_STRIPE_LINKS,
 				'is_us_checkout'         => method_exists( $this, 'is_us_checkout_client' ) && $this->is_us_checkout_client(),
+				'payment_link_params'    => method_exists( $this, 'get_payment_link_params' ) ? $this->get_payment_link_params() : array(),
 				'is_guest_trial'         => $bbai_upgrade_path_guest,
 				'use_licensed_bulk_jobs' => method_exists( $this, 'should_use_licensed_bulk_jobs_api' ) && $this->should_use_licensed_bulk_jobs_api(),
 				'anon_cookie_name'       => $anon_cookie_name,
@@ -2004,23 +2005,33 @@ JS,
 	 * Stable site hash for client analytics.
 	 */
 	private function get_posthog_site_hash(): string {
-		return hash( 'sha256', $this->get_posthog_site_install_id() );
+		$this->load_posthog_site_id_helpers();
+		return hash(
+			'sha256',
+			function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' )
+				? (string) \BeepBeepAI\AltTextGenerator\get_site_identifier()
+				: (string) home_url( '/' )
+		);
 	}
 
 	/**
-	 * Stable install id used as the canonical analytics join key.
+	 * Stable install id used as the canonical analytics join key (hashed, never the site identifier).
 	 */
 	private function get_posthog_site_install_id(): string {
-		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
+		$this->load_posthog_site_id_helpers();
+
+		return function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' )
+			? (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id()
+			: '';
+	}
+
+	private function load_posthog_site_id_helpers(): void {
+		if ( ! function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' ) ) {
 			$site_id_helper = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 			if ( is_readable( $site_id_helper ) ) {
 				require_once $site_id_helper;
 			}
 		}
-
-		return function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' )
-			? (string) \BeepBeepAI\AltTextGenerator\get_site_identifier()
-			: (string) home_url( '/' );
 	}
 
 	/**
@@ -2041,12 +2052,10 @@ JS,
 			$license_key = sanitize_text_field( (string) $this->api_client->get_license_key() );
 		}
 
-		$site_id = '';
-		if ( isset( $license_data['site'] ) && is_array( $license_data['site'] ) ) {
-			$site_id = sanitize_text_field( (string) ( $license_data['site']['id'] ?? $license_data['site']['_id'] ?? '' ) );
-		}
-
+		// site_id is the local install id. The site object an API response stored in
+		// $license_data is never used for analytics identity.
 		$site_install_id = $this->get_posthog_site_install_id();
+		$site_id         = sanitize_text_field( $site_install_id );
 
 		$plan_type = class_exists( BBAI_Telemetry::class ) ? BBAI_Telemetry::normalize_plan_value( $plan_type ) : sanitize_key( $plan_type );
 		if ( 'unknown' === $plan_type && ( '' !== $account_id || '' !== $user_id || '' !== $license_key ) ) {
@@ -2062,8 +2071,6 @@ JS,
 			'site_install_id'     => sanitize_text_field( $site_install_id ),
 			'site_id'             => $site_id,
 			'site_hash'           => sanitize_key( $site_hash ),
-			'site_url'            => esc_url_raw( home_url( '/' ) ),
-			'site_host'           => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
 			'wordpress_user_id'   => get_current_user_id() > 0 ? absint( get_current_user_id() ) : null,
 			'plugin_version'      => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
 		);
@@ -2204,6 +2211,13 @@ JS,
 		$attribution_payload     = class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' )
 			? \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload()
 			: array();
+		// The referrer host and landing path are never sent to analytics or to checkout.
+		$attribution_captured = ! empty( $attribution_payload );
+		unset( $attribution_payload['referrer'], $attribution_payload['landing_page'] );
+		if ( $attribution_captured ) {
+			$attribution_payload['attribution_captured'] = true;
+		}
+		$is_test_site = $this->is_posthog_test_site();
 
 		return array(
 			'enabled'                 => $browser_capture_enabled,
@@ -2222,9 +2236,7 @@ JS,
 					'page'                  => $page_key,
 					'site_install_id'       => $site_install_id,
 					'site_hash'             => $site_hash,
-					'site_url'              => esc_url_raw( home_url( '/' ) ),
-					'host'                  => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
-					'site_host'             => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+					'is_test'               => $is_test_site,
 					'is_logged_in'          => $is_logged_in,
 					'user_state'            => $is_logged_in ? 'signed_in' : 'guest',
 					'plan'                  => $plan_type,
@@ -2262,11 +2274,19 @@ JS,
 						'site_hash'       => $site_hash,
 						'plugin_version'  => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
 						'environment'     => $environment,
+						'is_test'         => $is_test_site,
 					),
 					$identity_context
 				),
 			),
 		);
+	}
+
+	/**
+	 * Local, staging, sandbox or QA site flag for analytics (boolean only).
+	 */
+	private function is_posthog_test_site(): bool {
+		return class_exists( BBAI_Telemetry::class ) && method_exists( BBAI_Telemetry::class, 'is_test_site' ) && BBAI_Telemetry::is_test_site();
 	}
 
 	/**
@@ -2403,9 +2423,7 @@ JS,
 				'site_install_id'          => $identity_context['site_install_id'] ?? $site_install_id,
 				'site_id'                  => $identity_context['site_id'] ?? '',
 				'site_hash'                => $site_hash,
-				'site_url'                 => $identity_context['site_url'] ?? esc_url_raw( home_url( '/' ) ),
-				'site_host'                => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
-				'host'                     => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+				'is_test'                  => $this->is_posthog_test_site(),
 				'license_key_present'      => ! empty( $identity_context['license_key_present'] ),
 				'wordpress_user_id'        => $identity_context['wordpress_user_id'] ?? ( $uid > 0 ? $uid : null ),
 			),

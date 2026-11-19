@@ -30,6 +30,8 @@ final class TelemetryConsentTest extends TestCase {
 				return 0;
 			}
 		}
+		// Opting in now sends the one-time lifecycle snapshot; record it instead of sending.
+		require_once __DIR__ . '/stubs-telemetry-capture.php';
 		if ( ! class_exists( BBAI_Telemetry::class, false ) ) {
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
 		}

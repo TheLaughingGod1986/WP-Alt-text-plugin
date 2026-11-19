@@ -72,6 +72,80 @@ class BBAI_Attribution {
 	}
 
 	/**
+	 * Checkout context keys the backend needs to start and label a checkout.
+	 *
+	 * @return string[]
+	 */
+	public static function checkout_context_keys(): array {
+		return array( 'trigger_feature', 'trigger_location', 'source_page', 'target_plan', 'current_plan', 'source' );
+	}
+
+	/**
+	 * Attribution keys a checkout request may carry.
+	 *
+	 * @return string[]
+	 */
+	public static function checkout_attribution_keys(): array {
+		// The referrer host and landing path are not sent to /billing/checkout.
+		return array( 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term' );
+	}
+
+	/**
+	 * Reduce checkout attribution to the allowed keys: the checkout context and
+	 * the UTM tags. Anything else (referrer, landing page, ids, keys, email,
+	 * channel, timestamps) is dropped.
+	 *
+	 * @param array<string,mixed> $payload Stored attribution merged with the click context.
+	 * @return array<string,string>
+	 */
+	public static function for_checkout( array $payload ): array {
+		$out = array();
+		foreach ( array_merge( self::checkout_context_keys(), self::checkout_attribution_keys() ) as $key ) {
+			if ( ! isset( $payload[ $key ] ) || ! is_scalar( $payload[ $key ] ) ) {
+				continue;
+			}
+			$value = sanitize_text_field( (string) $payload[ $key ] );
+			if ( '' === $value ) {
+				continue;
+			}
+			$out[ $key ] = mb_substr( $value, 0, 500 );
+		}
+		return $out;
+	}
+
+	/**
+	 * Host part of a referrer, lower case, without scheme, user, port, path or query.
+	 *
+	 * @param string $value Referrer URL or host.
+	 */
+	public static function referrer_host( string $value ): string {
+		$value = trim( $value );
+		if ( '' === $value ) {
+			return '';
+		}
+		if ( ! preg_match( '#^[a-z][a-z0-9+.\-]*://#i', $value ) ) {
+			$value = 'http://' . ltrim( $value, '/' );
+		}
+		$host = function_exists( 'wp_parse_url' ) ? wp_parse_url( $value, PHP_URL_HOST ) : parse_url( $value, PHP_URL_HOST ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+		return is_string( $host ) ? strtolower( $host ) : '';
+	}
+
+	/**
+	 * Path of a landing page, without scheme, host, query or fragment.
+	 *
+	 * @param string $value Landing page path or URL.
+	 */
+	public static function landing_path( string $value ): string {
+		$parts = preg_split( '/[?#]/', trim( $value ), 2 );
+		$value = is_array( $parts ) ? (string) $parts[0] : '';
+		if ( preg_match( '#^([a-z][a-z0-9+.\-]*:)?//#i', $value ) ) {
+			$path  = function_exists( 'wp_parse_url' ) ? wp_parse_url( $value, PHP_URL_PATH ) : parse_url( $value, PHP_URL_PATH ); // phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
+			$value = is_string( $path ) ? $path : '';
+		}
+		return $value;
+	}
+
+	/**
 	 * @param array<string,mixed> $payload Raw payload.
 	 * @return array<string,string>
 	 */

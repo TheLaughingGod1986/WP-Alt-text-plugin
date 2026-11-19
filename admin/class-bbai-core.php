@@ -359,8 +359,6 @@ class Core {
             'site_hash'           => $identity_context['site_hash'] ?? '',
             'user_id'             => $identity_context['user_id'] ?? '',
             'plan'                => $identity_context['plan'] ?? 'free',
-            'attachment_id'       => $attachment_id,
-            'image_id'            => $attachment_id,
             'source_page'         => $this->resolve_alt_generation_source_page($source),
             'generation_mode'     => $this->resolve_alt_generation_mode($source),
             'provider'            => 'openai',
@@ -368,7 +366,6 @@ class Core {
             'success'             => true,
             'plugin_version'      => defined('BEEPBEEP_AI_VERSION') ? (string) BEEPBEEP_AI_VERSION : '',
             'wp_version'          => get_bloginfo('version'),
-            'site_url'            => home_url('/'),
             'is_trial'            => ! $this->is_bbai_account_authenticated(),
             'is_internal'         => $this->is_posthog_internal_environment(),
             'is_first_generation' => $first_value['is_first_generation'] ?? false,
@@ -1712,6 +1709,77 @@ class Core {
     }
 
     /**
+     * Query params a static Payment Link fallback carries so the payment can be
+     * matched: client_reference_id ("alt_text_" plus this site's install id, the
+     * same id /billing/checkout gets as site_install_id) and the utm_* tags
+     * /billing/checkout gets (stored first-touch tags, overridden by the request).
+     *
+     * @param array<string,mixed> $attribution Checkout request attribution.
+     * @return array<string,string>
+     */
+    public function get_payment_link_params( array $attribution = [] ): array {
+        $params = [];
+
+        $install_id = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' )
+            ? (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id()
+            : '';
+        $install_id = (string) preg_replace( '/[^A-Za-z0-9_-]/', '', $install_id );
+        if ( '' !== $install_id ) {
+            $params['client_reference_id'] = substr( 'alt_text_' . $install_id, 0, 200 );
+        }
+
+        $stored = class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' )
+            ? \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload()
+            : [];
+        $merged = array_merge( is_array( $stored ) ? $stored : [], $attribution );
+        foreach ( [ 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term' ] as $key ) {
+            if ( ! isset( $merged[ $key ] ) || ! is_scalar( $merged[ $key ] ) ) {
+                continue;
+            }
+            $value = trim( sanitize_text_field( (string) $merged[ $key ] ) );
+            $value = function_exists( 'mb_substr' ) ? mb_substr( $value, 0, 120 ) : substr( $value, 0, 120 );
+            if ( '' !== $value ) {
+                $params[ $key ] = $value;
+            }
+        }
+
+        return $params;
+    }
+
+    /**
+     * Add the Payment Link params to a https://buy.stripe.com/ URL. Any other URL,
+     * and any param the link already has, is left as it is.
+     *
+     * @param string              $url         Payment Link URL.
+     * @param array<string,mixed> $attribution Checkout request attribution.
+     */
+    public function decorate_payment_link_url( string $url, array $attribution = [] ): string {
+        if ( '' === $url ) {
+            return '';
+        }
+        $scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+        $host   = wp_parse_url( $url, PHP_URL_HOST );
+        if ( ! is_string( $scheme ) || ! is_string( $host ) || 'https' !== strtolower( $scheme ) || 'buy.stripe.com' !== strtolower( $host ) ) {
+            return $url;
+        }
+
+        $existing = [];
+        $query    = wp_parse_url( $url, PHP_URL_QUERY );
+        if ( is_string( $query ) && '' !== $query ) {
+            parse_str( $query, $existing );
+        }
+
+        $add = [];
+        foreach ( $this->get_payment_link_params( $attribution ) as $key => $value ) {
+            if ( ! array_key_exists( $key, $existing ) ) {
+                $add[ $key ] = rawurlencode( $value );
+            }
+        }
+
+        return empty( $add ) ? $url : add_query_arg( $add, $url );
+    }
+
+    /**
      * Detect Stripe-hosted Checkout Session URLs.
      */
     private function is_stripe_hosted_checkout_session_url(string $url): bool {
@@ -2230,11 +2298,16 @@ class Core {
         unset( $properties['_bbai_client_batched'] );
 
         $distinct_id = '';
-        foreach ( [ 'account_id', 'user_id', 'license_id', 'site_install_id', 'site_id', 'site_hash' ] as $key ) {
+        foreach ( [ 'account_id', 'user_id', 'license_id' ] as $key ) {
             if ( ! empty( $properties[ $key ] ) && is_scalar( $properties[ $key ] ) ) {
-                $distinct_id = sanitize_text_field( (string) $properties[ $key ] );
+                // A stale page context may still carry the site identifier: use the install id instead.
+                $distinct_id = (string) BBAI_Telemetry::scrub_raw_site_identifier( sanitize_text_field( (string) $properties[ $key ] ) );
                 break;
             }
+        }
+        // Site-level ids from the browser payload are never used: fall back to this site's own install id.
+        if ( '' === $distinct_id ) {
+            $distinct_id = $this->get_posthog_site_install_id();
         }
         if ( '' === $distinct_id ) {
             $distinct_id = $this->get_posthog_site_hash();
@@ -6390,7 +6463,7 @@ class Core {
         if (!$this->is_image($attachment_id)) return;
         $this->invalidate_stats_cache();
         $existing = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
-        if ($existing && empty($opts['force_overwrite'])) return;
+        if ($existing && ! self::force_overwrite_enabled($opts)) return;
         // Respect monthly limit and surface upgrade prompt as admin notice
         if (
             ( ! defined( 'WP_LOCAL_DEV' ) || ! WP_LOCAL_DEV )
@@ -7319,7 +7392,7 @@ class Core {
         }
 
         $existing = get_post_meta($attachment_id, '_wp_attachment_image_alt', true);
-        if ($existing && empty($opts['force_overwrite'])) {
+        if ($existing && ! self::force_overwrite_enabled($opts)) {
             return false;
         }
 
@@ -8852,6 +8925,42 @@ class Core {
         <?php
     }
 
+    /**
+     * Whether a queued job must leave an image alone because it already has alt text.
+     *
+     * Only a job the user explicitly queued as a regenerate (a source containing
+     * "regenerate", e.g. bulk-regenerate) or a site with force_overwrite set to
+     * exactly true may overwrite existing alt text. Upload/auto jobs and
+     * "generate missing" jobs skip.
+     *
+     * @param string $source      Queue job source.
+     * @param string $current_alt Alt text currently saved on the attachment.
+     * @param mixed  $opts        Plugin settings array.
+     */
+    public static function queue_job_should_skip_existing_alt( string $source, string $current_alt, $opts ): bool {
+        if ( '' === trim( $current_alt ) ) {
+            return false;
+        }
+        if ( false !== strpos( sanitize_key( $source ), 'regenerate' ) ) {
+            return false;
+        }
+        if ( self::force_overwrite_enabled( $opts ) ) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Whether the "overwrite existing alt text" setting is on. Only exactly true
+     * counts, so queueing, upload generation and the queue worker agree.
+     * Explicit regenerate jobs do not depend on this setting.
+     *
+     * @param mixed $opts Plugin settings array.
+     */
+    public static function force_overwrite_enabled( $opts ): bool {
+        return is_array( $opts ) && array_key_exists( 'force_overwrite', $opts ) && true === $opts['force_overwrite'];
+    }
+
     public function process_queue() {
         require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-trial-quota.php';
 
@@ -8891,6 +9000,16 @@ class Core {
             };
             if (Generation_Lock::queue_should_skip_retry($attachment_id, (string) ($job->last_error ?? ''), $bbai_current_alt)) {
                 Queue::mark_complete($job->id);
+                continue;
+            }
+
+            // Alt text may have been typed or saved after this job was queued (for
+            // example during the upload delay). Only an explicit regenerate, or
+            // force_overwrite set to true, may replace it; every other job skips
+            // the image without calling the backend or spending a credit.
+            Generation_Lock::flush_meta_cache( $attachment_id );
+            if ( self::queue_job_should_skip_existing_alt( (string) ( $job->source ?? '' ), $bbai_current_alt(), get_option( self::OPTION_KEY, array() ) ) ) {
+                Queue::mark_skipped( $job->id, 'skipped_existing_alt' );
                 continue;
             }
 
@@ -9740,7 +9859,7 @@ class Core {
             // Return the real error plus the static Payment Link (when one exists
             // for this plan and country) so the dashboard can show it in the
             // Continue to payment / Copy link panel and the user decides.
-            $fallback_checkout_url = $this->get_checkout_fallback_url($plan_hint, $price_id);
+            $fallback_checkout_url = $this->decorate_payment_link_url($this->get_checkout_fallback_url($plan_hint, $price_id), $this->get_checkout_request_attribution());
             $failure_data = is_wp_error($result) ? $result->get_error_data() : null;
             if ($fallback_checkout_url !== '') {
                 // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log

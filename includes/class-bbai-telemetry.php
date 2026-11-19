@@ -51,6 +51,62 @@ class BBAI_Telemetry {
 
 	public const ACTIVATION_MARKER_OPTION = 'bbai_telemetry_plugin_activated';
 
+	/** Set once the opt-in lifecycle snapshot has been sent for this site. */
+	public const OPT_IN_LIFECYCLE_SENT_OPTION = 'bbai_telemetry_opt_in_lifecycle_sent';
+
+	/**
+	 * Property keys that identify the site or a page on it and are never sent to
+	 * PostHog. Matched at any depth (including $set / $set_once), case-insensitive,
+	 * with any leading "$" ignored, so $current_url and $referrer match too.
+	 */
+	public const SITE_IDENTIFIER_KEYS = array(
+		'site_url',
+		'site_host',
+		'host',
+		'home_url',
+		'domain',
+		'siteurl',
+		'website',
+		'referrer',
+		'initial_referrer',
+		'page_url',
+		'current_url',
+		'initial_current_url',
+		'url',
+		'pathname',
+		'initial_pathname',
+		'hostname',
+		'initial_host',
+		'referring_domain',
+		'initial_referring_domain',
+		'landing_page',
+		'href',
+		'origin',
+	);
+
+	/**
+	 * Key endings that also mark a site, page or link value (site_url, checkout_url,
+	 * referrer_host, current_domain and so on). Matched like SITE_IDENTIFIER_KEYS.
+	 */
+	public const SITE_IDENTIFIER_KEY_SUFFIXES = array(
+		'_url',
+		'_uri',
+		'_href',
+		'_host',
+		'_hostname',
+		'_domain',
+		'_referrer',
+		'_pathname',
+	);
+
+	/**
+	 * Keys whose values are this plugin's own opaque ids or labels and are always kept.
+	 */
+	private const SITE_IDENTIFIER_KEEP_KEYS = array( 'site_hash', 'site_install_id', 'site_id', 'plugin_slug', '$insert_id', 'journey_id', 'session_id' );
+
+	/** Domain suffixes and host patterns that mark a local, staging or sandbox site. */
+	private const TEST_HOST_PATTERN = '/(^localhost$|^127\.\d+\.\d+\.\d+$|^::1$|^\[::1\]$|\.local$|\.test$|\.localhost$|\.invalid$|\.example$|(^|\.)example\.(com|org|net)$|(^|[.-])(staging|stg)([.-]|\d|$)|(staging|stg)\d*\.wpengine(powered)?\.com$|\.wpenginestaging\.com$|(staging|stg|tempurl).*\.godaddysites\.com$|\.myftpupload\.com$|(^|\.)tempurl\.|instawp|tastewp|playground|localhost|127\.0\.0\.1|wpsandbox|wp-env|trycloudflare|ngrok)/i';
+
 	public const CURRENT_VERSION_OPTION = 'bbai_telemetry_current_plugin_version';
 
 	public const PREVIOUS_VERSION_OPTION = 'bbai_telemetry_previous_plugin_version';
@@ -165,9 +221,9 @@ class BBAI_Telemetry {
 		}
 		$now = time();
 		$first = add_option( 'bbai_telemetry_first_generation_at', $now, '', false );
-		$props = array( 'is_first_generation' => $first );
+		$props     = array( 'is_first_generation' => $first );
 		$activated = get_option( self::ACTIVATION_MARKER_OPTION, '' );
-		$started = is_numeric( $activated ) ? (int) $activated : strtotime( (string) $activated );
+		$started   = is_numeric( $activated ) ? (int) $activated : strtotime( (string) $activated );
 		if ( $first && $started > 0 && $now >= $started ) {
 			$props['time_to_first_value_seconds'] = max( 0, $now - $started );
 		}
@@ -291,6 +347,70 @@ class BBAI_Telemetry {
 	public static function set_consent( bool $opt_in ): void {
 		update_option( self::CONSENT_OPTION, $opt_in ? 'yes' : 'no', false );
 		update_option( self::CONSENT_SOURCE_OPTION, 'settings', false );
+		if ( ! $opt_in ) {
+			// Nothing raised before or after revocation may be sent later.
+			delete_option( self::LIFECYCLE_QUEUE_OPTION );
+			return;
+		}
+		self::record_opt_in_lifecycle();
+	}
+
+	/**
+	 * Send plugin_installed / plugin_activated once, at the moment of opt-in.
+	 *
+	 * Lifecycle events raised before consent are discarded, never replayed. This
+	 * snapshot is a new event timestamped at opt-in (its own true time). The
+	 * locally recorded install/activation time travels only as first_seen_at /
+	 * activated_at, and lifecycle_delivery=opt_in_snapshot marks it honestly so
+	 * reports never treat it as a live activation.
+	 */
+	public static function record_opt_in_lifecycle(): void {
+		if ( ! self::has_telemetry_consent() || get_option( self::OPT_IN_LIFECYCLE_SENT_OPTION, false ) ) {
+			return;
+		}
+		$site_install_id = self::resolve_site_id();
+		if ( '' === $site_install_id ) {
+			return;
+		}
+		update_option( self::OPT_IN_LIFECYCLE_SENT_OPTION, gmdate( 'c' ), false );
+
+		$opted_in_at  = gmdate( 'c' );
+		$first_seen   = self::marker_time( get_option( self::INSTALLED_MARKER_OPTION, '' ) );
+		$activated_at = self::marker_time( get_option( self::ACTIVATION_MARKER_OPTION, '' ) );
+		$events       = array(
+			'plugin_installed' => array( 'first_seen_at' => $first_seen ),
+			'plugin_activated' => array( 'activated_at' => $activated_at ),
+		);
+		foreach ( $events as $event_name => $extra ) {
+			$properties = array_merge(
+				array(
+					'lifecycle_event'    => $event_name,
+					'lifecycle_delivery' => 'opt_in_snapshot',
+					'recorded_at_opt_in' => true,
+					'opted_in_at'        => $opted_in_at,
+					'occurred_at'        => $opted_in_at,
+					'$insert_id'         => 'bbai_opt_in_lifecycle:' . hash( 'sha256', $event_name . '|' . $site_install_id ),
+				),
+				array_filter( $extra )
+			);
+			self::capture_posthog_event( $event_name, $site_install_id, $properties, $opted_in_at );
+		}
+	}
+
+	/**
+	 * Normalise a stored marker (ISO string or unix time) to ISO 8601, or ''.
+	 *
+	 * @param mixed $value Stored marker value.
+	 */
+	private static function marker_time( $value ): string {
+		if ( is_numeric( $value ) && (int) $value > 1000000000 ) {
+			return gmdate( 'c', (int) $value );
+		}
+		if ( is_string( $value ) && '' !== $value && '1' !== $value ) {
+			$ts = strtotime( $value );
+			return false !== $ts ? gmdate( 'c', $ts ) : '';
+		}
+		return '';
 	}
 
 	/**
@@ -405,7 +525,11 @@ class BBAI_Telemetry {
 	}
 
 	/**
-	 * Queue lifecycle telemetry so activation does not depend on admin JavaScript.
+	 * Record a lifecycle event raised by a WordPress hook.
+	 *
+	 * Without consent at the moment the event happens it is discarded: nothing is
+	 * stored for later delivery. With consent it is queued with its own
+	 * occurred_at and flushed straight away (or on the next admin request).
 	 *
 	 * @param string $event_name Lifecycle event name.
 	 * @param array  $properties Event properties.
@@ -416,12 +540,19 @@ class BBAI_Telemetry {
 			return;
 		}
 
+		if ( ! self::has_telemetry_consent() ) {
+			return;
+		}
+
+		$occurred_at     = gmdate( 'c' );
 		$site_install_id = self::resolve_site_id();
-		$properties      = self::with_site_identity(
+
+		$properties = self::with_site_identity(
 			self::sanitize_properties(
 				array_merge(
 					array(
 						'lifecycle_event' => $event_name,
+						'occurred_at'     => $occurred_at,
 					),
 					$properties
 				)
@@ -442,11 +573,13 @@ class BBAI_Telemetry {
 		}
 
 		$queue[] = array(
-			'event'         => $event_name,
-			'distinct_id'   => '' !== $site_install_id ? $site_install_id : (string) ( $properties['site_hash'] ?? '' ),
-			'properties'    => $properties,
-			'queued_at'     => gmdate( 'c' ),
-			'lifecycle_key' => $lifecycle_key,
+			'event'              => $event_name,
+			'distinct_id'        => '' !== $site_install_id ? $site_install_id : (string) ( $properties['site_hash'] ?? '' ),
+			'properties'         => $properties,
+			'queued_at'          => $occurred_at,
+			'occurred_at'        => $occurred_at,
+			'consented_at_raise' => true,
+			'lifecycle_key'      => $lifecycle_key,
 		);
 		$queue   = array_slice( $queue, -20 );
 		update_option( self::LIFECYCLE_QUEUE_OPTION, $queue, false );
@@ -466,26 +599,32 @@ class BBAI_Telemetry {
 
 	/**
 	 * Flush queued lifecycle events through the server-side PostHog bridge.
+	 *
+	 * Only entries that had consent when they were raised are sent, each with its
+	 * original occurred_at as the PostHog timestamp. Anything else (including
+	 * entries queued by older builds without consent) is dropped.
 	 */
 	public static function flush_queued_lifecycle_events(): void {
-		if ( ! self::has_telemetry_consent() ) {
-			return;
-		}
-
 		$queue = get_option( self::LIFECYCLE_QUEUE_OPTION, array() );
 		if ( ! is_array( $queue ) || empty( $queue ) ) {
 			return;
 		}
 
+		if ( ! self::has_telemetry_consent() ) {
+			delete_option( self::LIFECYCLE_QUEUE_OPTION );
+			return;
+		}
+
 		delete_option( self::LIFECYCLE_QUEUE_OPTION );
 		foreach ( $queue as $entry ) {
-			if ( ! is_array( $entry ) ) {
+			if ( ! is_array( $entry ) || true !== ( $entry['consented_at_raise'] ?? false ) ) {
 				continue;
 			}
 			$event_name  = isset( $entry['event'] ) ? sanitize_key( (string) $entry['event'] ) : '';
 			$distinct_id = isset( $entry['distinct_id'] ) ? sanitize_text_field( (string) $entry['distinct_id'] ) : '';
 			$properties  = isset( $entry['properties'] ) && is_array( $entry['properties'] ) ? $entry['properties'] : array();
-			if ( '' === $event_name || '' === $distinct_id ) {
+			$occurred_at = isset( $entry['occurred_at'] ) ? (string) $entry['occurred_at'] : '';
+			if ( '' === $event_name || '' === $distinct_id || '' === $occurred_at ) {
 				continue;
 			}
 			self::capture_posthog_event(
@@ -496,8 +635,10 @@ class BBAI_Telemetry {
 					array(
 						'transport'          => 'wp_lifecycle_server_bridge',
 						'lifecycle_delivery' => 'queued_flush',
+						'occurred_at'        => $occurred_at,
 					)
-				)
+				),
+				$occurred_at
 			);
 		}
 	}
@@ -508,8 +649,9 @@ class BBAI_Telemetry {
 	 * @param string $event_name  Event name.
 	 * @param string $distinct_id Stable PostHog distinct id.
 	 * @param array  $properties  Event properties.
+	 * @param string $timestamp   Optional ISO 8601 time the event happened (defaults to now).
 	 */
-	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = array() ): void {
+	public static function capture_posthog_event( string $event_name, string $distinct_id, array $properties = array(), string $timestamp = '' ): void {
 		$event_name  = sanitize_key( $event_name );
 		$event_name  = self::normalize_event_name( $event_name, $properties );
 		$distinct_id = sanitize_text_field( $distinct_id );
@@ -531,16 +673,19 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$properties = self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name );
+		$properties  = self::strip_site_identifiers( self::scrub_raw_site_identifier( self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name ) ) );
+		$distinct_id = (string) self::scrub_raw_site_identifier( $distinct_id );
 
-		$payload = wp_json_encode(
-			array(
-				'api_key'     => $api_key,
-				'event'       => $event_name,
-				'distinct_id' => $distinct_id,
-				'properties'  => $properties,
-			)
+		$body = array(
+			'api_key'     => $api_key,
+			'event'       => $event_name,
+			'distinct_id' => $distinct_id,
+			'properties'  => $properties,
 		);
+		if ( '' !== $timestamp && false !== strtotime( $timestamp ) ) {
+			$body['timestamp'] = gmdate( 'c', (int) strtotime( $timestamp ) );
+		}
+		$payload = wp_json_encode( $body );
 
 		if ( ! is_string( $payload ) || '' === $payload ) {
 			return;
@@ -632,6 +777,141 @@ class BBAI_Telemetry {
 	}
 
 	/**
+	 * Remove site-identifying keys (SITE_IDENTIFIER_KEYS and SITE_IDENTIFIER_KEY_SUFFIXES)
+	 * and any URL, host, IP, email or path value, at every depth.
+	 *
+	 * @param array<mixed> $props Properties, possibly nested ($set, $set_once, context arrays).
+	 * @return array<mixed>
+	 */
+	public static function strip_site_identifiers( array $props ): array {
+		foreach ( $props as $key => $value ) {
+			if ( is_string( $key ) && self::is_site_identifier_key( $key ) ) {
+				unset( $props[ $key ] );
+				continue;
+			}
+			if ( is_array( $value ) ) {
+				$props[ $key ] = self::strip_site_identifiers( $value );
+				continue;
+			}
+			if ( is_string( $value ) && ! ( is_string( $key ) && in_array( $key, self::SITE_IDENTIFIER_KEEP_KEYS, true ) ) ) {
+				$is_version = is_string( $key ) && 'version' === substr( strtolower( $key ), -7 );
+				if ( self::is_url_shaped( $value, $is_version ) ) {
+					unset( $props[ $key ] );
+				}
+			}
+		}
+		return $props;
+	}
+
+	/**
+	 * Whether a property key names a site, host, page or link value.
+	 *
+	 * @param string $key Property key.
+	 */
+	public static function is_site_identifier_key( string $key ): bool {
+		$normalized = strtolower( ltrim( $key, '$' ) );
+		if ( in_array( $normalized, self::SITE_IDENTIFIER_KEYS, true ) ) {
+			return true;
+		}
+		foreach ( self::SITE_IDENTIFIER_KEY_SUFFIXES as $suffix ) {
+			if ( strlen( $normalized ) > strlen( $suffix ) && substr( $normalized, -strlen( $suffix ) ) === $suffix ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether a value looks like a URL, host name, IP address, email address or URL path.
+	 *
+	 * @param string $value      Value to test.
+	 * @param bool   $is_version True for version strings (dotted numbers are allowed there).
+	 */
+	public static function is_url_shaped( string $value, bool $is_version = false ): bool {
+		$value = trim( $value );
+		if ( '' === $value ) {
+			return false;
+		}
+		$patterns = array(
+			'#[a-z][a-z0-9+.\-]*://#i', // Any scheme.
+			'#^//#',                    // Protocol-relative URL.
+			'#^/[^\s]*$#',              // A URL path such as /wp-admin/upload.php.
+			'/\bwww\./i',
+			'/\blocalhost\b/i',
+		);
+		if ( ! $is_version ) {
+			// Host name or email domain (letters-only last label, so 4.6.145 is not a host).
+			$patterns[] = '/(?<![a-z0-9_-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{1,62}(?![a-z0-9_-])/i';
+			// IPv4 address.
+			$patterns[] = '/(?<![\d.])\d{1,3}(?:\.\d{1,3}){3}(?![\d.])/';
+		}
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $value ) ) {
+				return true;
+			}
+		}
+		if ( ! $is_version ) {
+			// IPv6 address: a hex-and-colon token with "::" or at least five colons.
+			foreach ( preg_split( '/[\s,;()"\'<>]+/', $value ) as $token ) {
+				$token = trim( (string) $token, '[]' );
+				if ( preg_match( '/^[0-9a-f:.%]+$/i', $token ) && substr_count( $token, ':' ) >= 2 && ( false !== strpos( $token, '::' ) || substr_count( $token, ':' ) >= 5 ) ) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/** Other spellings of a site id a payload may carry (sanitize_key lowercases keys). */
+	private const SITE_ID_ALIAS_KEYS = array( 'siteInstallId', 'siteinstallid', 'install_id', 'installId', 'installid', 'siteId', 'siteid', 'siteHash', 'sitehash', 'site' );
+
+	/**
+	 * Set site_install_id, site_id and site_hash from this site's own values,
+	 * replacing whatever a caller, a browser payload or an API response put there.
+	 * Also applied inside $set / $set_once person properties.
+	 *
+	 * @param array<string,mixed> $props           Properties.
+	 * @param string              $site_install_id Local install id ('' drops the keys).
+	 * @return array<string,mixed>
+	 */
+	private static function with_local_site_identity( array $props, string $site_install_id ): array {
+		$local = array(
+			'site_install_id' => $site_install_id,
+			'site_id'         => $site_install_id,
+			'site_hash'       => '' === $site_install_id ? '' : self::resolve_site_hash(),
+		);
+		foreach ( self::SITE_ID_ALIAS_KEYS as $alias ) {
+			unset( $props[ $alias ] );
+		}
+		foreach ( $local as $key => $value ) {
+			if ( '' === $value ) {
+				unset( $props[ $key ] );
+			} else {
+				$props[ $key ] = $value;
+			}
+		}
+		foreach ( array( '$set', '$set_once' ) as $person_key ) {
+			if ( ! isset( $props[ $person_key ] ) || ! is_array( $props[ $person_key ] ) ) {
+				continue;
+			}
+			foreach ( self::SITE_ID_ALIAS_KEYS as $alias ) {
+				unset( $props[ $person_key ][ $alias ] );
+			}
+			foreach ( $local as $key => $value ) {
+				if ( ! array_key_exists( $key, $props[ $person_key ] ) ) {
+					continue;
+				}
+				if ( '' === $value ) {
+					unset( $props[ $person_key ][ $key ] );
+				} else {
+					$props[ $person_key ][ $key ] = $value;
+				}
+			}
+		}
+		return $props;
+	}
+
+	/**
 	 * Add the canonical install identity used to join logged-out, logged-in, and lifecycle events.
 	 *
 	 * @param array<string,mixed> $props           Sanitized properties.
@@ -639,50 +919,40 @@ class BBAI_Telemetry {
 	 * @return array<string,mixed>
 	 */
 	private static function with_site_identity( array $props, ?string $site_install_id = null, string $event_name = '' ): array {
-		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
-		if ( '' === $site_install_id && function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
-			$site_install_id = sanitize_text_field( (string) get_site_identifier() );
+		// The site URL, hostname and page URLs never leave the site; the install id is
+		// the only identity. Strip before and after enrichment so no path can skip it.
+		$props = self::strip_site_identifiers( self::build_site_identity( self::strip_site_identifiers( $props ), $site_install_id, $event_name ) );
+		$props['is_test'] = self::is_test_site();
+		foreach ( array( '$set', '$set_once' ) as $person_key ) {
+			if ( isset( $props[ $person_key ] ) && is_array( $props[ $person_key ] ) ) {
+				$props[ $person_key ]['is_test'] = $props['is_test'];
+			}
 		}
+		return $props;
+	}
+
+	/**
+	 * Enrich stripped properties with the canonical telemetry contract.
+	 *
+	 * @param array<string,mixed> $props           Stripped properties.
+	 * @param string|null         $site_install_id Optional pre-resolved install id.
+	 * @param string              $event_name      Event name.
+	 * @return array<string,mixed>
+	 */
+	private static function build_site_identity( array $props, ?string $site_install_id, string $event_name ): array {
+
+		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
+		$props           = self::with_local_site_identity( $props, $site_install_id );
 		if ( '' === $site_install_id ) {
 			return $props;
-		}
-
-		if ( empty( $props['site_install_id'] ) ) {
-			$props['site_install_id'] = $site_install_id;
-		}
-		if ( empty( $props['site_id'] ) ) {
-			$props['site_id'] = $site_install_id;
-		}
-		if ( empty( $props['site_hash'] ) ) {
-			$props['site_hash'] = hash( 'sha256', $site_install_id );
-		}
-		if ( empty( $props['site_url'] ) && function_exists( 'home_url' ) ) {
-			$props['site_url'] = esc_url_raw( home_url( '/' ) );
-		}
-		$resolved_host = self::normalize_host_value( $props['host'] ?? $props['site_host'] ?? '' );
-		if ( '' === $resolved_host && ! empty( $props['site_url'] ) && function_exists( 'wp_parse_url' ) ) {
-			$parsed_host = wp_parse_url( (string) $props['site_url'], PHP_URL_HOST );
-			$resolved_host = self::normalize_host_value( is_string( $parsed_host ) ? $parsed_host : '' );
-		}
-		if ( '' !== $resolved_host ) {
-			$props['host'] = $resolved_host;
-			if ( empty( $props['site_host'] ) ) {
-				$props['site_host'] = $resolved_host;
-			} else {
-				$normalized_site_host = self::normalize_host_value( $props['site_host'] );
-				if ( '' !== $normalized_site_host ) {
-					$props['site_host'] = $normalized_site_host;
-				}
-			}
 		}
 		if ( empty( $props['plugin_slug'] ) ) {
 			$props['plugin_slug'] = self::get_plugin_slug();
 		}
-		$props['product'] = 'alt_text';
+		$props['product']           = 'alt_text';
 		$props['telemetry_consent'] = self::has_telemetry_consent();
-		$props['telemetry_source'] = 'wordpress';
-		$props['telemetry_schema'] = 'opptiai_usage_v2';
-		$props['is_test'] = self::is_test_site();
+		$props['telemetry_source']  = 'wordpress'; // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- contract value.
+		$props['telemetry_schema']  = 'opptiai_usage_v2';
 		if ( empty( $props['telemetry_version'] ) ) {
 			$props['telemetry_version'] = self::TELEMETRY_SCHEMA_VERSION;
 		}
@@ -773,24 +1043,6 @@ class BBAI_Telemetry {
 	}
 
 	/**
-	 * Normalize host values to bare hostname (no scheme/path).
-	 *
-	 * @param mixed $value Raw host or URL value.
-	 */
-	private static function normalize_host_value( $value ): string {
-		$host = is_scalar( $value ) ? trim( (string) $value ) : '';
-		if ( '' === $host ) {
-			return '';
-		}
-		if ( preg_match( '#^https?://#i', $host ) && function_exists( 'wp_parse_url' ) ) {
-			$parsed = wp_parse_url( $host, PHP_URL_HOST );
-			$host   = is_string( $parsed ) ? $parsed : '';
-		}
-		$host = strtolower( preg_replace( '#/.*$#', '', $host ) );
-		return '' !== $host ? sanitize_text_field( $host ) : '';
-	}
-
-	/**
 	 * Stable dedupe key for queued lifecycle delivery.
 	 *
 	 * @param string              $event_name Event name.
@@ -814,17 +1066,30 @@ class BBAI_Telemetry {
 		}
 		return array(
 			'X-Telemetry-Consent'    => 'yes',
-			'X-Telemetry-Install-ID' => self::resolve_site_id(),
-			'X-Environment'         => self::resolve_environment(),
-			'X-Telemetry-Test'      => self::is_test_site() ? 'yes' : 'no',
+			// Our own API only (like X-Site-Key); the backend hashes it before analytics.
+			'X-Telemetry-Install-ID' => self::resolve_raw_site_identifier(),
+			'X-Environment'          => self::resolve_environment(),
+			'X-Telemetry-Test'       => self::is_test_site() ? 'yes' : 'no',
 		);
 	}
 
-	private static function is_test_site(): bool {
-		$host = function_exists( 'home_url' ) ? (string) wp_parse_url( home_url(), PHP_URL_HOST ) : '';
-		return 'production' !== self::resolve_environment()
-			|| (bool) preg_match( '/localhost|127\.0\.0\.1|wpsandbox|tastewp|playground|wp-env|\.local$|\.test$|trycloudflare|instawp|example\.com/i', $host )
-			|| ( defined( 'BBAI_TELEMETRY_TEST' ) && BBAI_TELEMETRY_TEST );
+	/**
+	 * Whether this is a local, staging or sandbox site (environment type or a generic
+	 * host pattern). Computed locally; only the boolean is ever sent, never the host.
+	 * Known test sites are matched by site_hash in analytics, not by any email.
+	 */
+	public static function is_test_site(): bool {
+		if ( defined( 'BBAI_TELEMETRY_TEST' ) && BBAI_TELEMETRY_TEST ) {
+			return true;
+		}
+		if ( in_array( self::resolve_environment(), array( 'local', 'development', 'staging' ), true ) ) {
+			return true;
+		}
+		$host = function_exists( 'home_url' ) ? strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) : '';
+		if ( '' !== $host && preg_match( self::TEST_HOST_PATTERN, $host ) ) {
+			return true;
+		}
+		return false;
 	}
 
 	private static function resolve_environment(): string {
@@ -1072,17 +1337,60 @@ class BBAI_Telemetry {
 		return null;
 	}
 
+	/**
+	 * Telemetry install id: the hashed id from bbai_get_site_install_id(), never the site identifier.
+	 */
 	private static function resolve_site_id(): string {
-		if ( ! function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
+		self::load_site_id_helpers();
+		if ( function_exists( __NAMESPACE__ . '\\bbai_get_site_install_id' ) ) {
+			return (string) bbai_get_site_install_id();
+		}
+		return '';
+	}
+
+	/**
+	 * Existing site_hash join key: sha256 of the site identifier (unchanged contract).
+	 */
+	private static function resolve_site_hash(): string {
+		$raw = self::resolve_raw_site_identifier();
+		return '' === $raw ? '' : hash( 'sha256', $raw );
+	}
+
+	private static function resolve_raw_site_identifier(): string {
+		self::load_site_id_helpers();
+		return function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ? (string) get_site_identifier() : '';
+	}
+
+	private static function load_site_id_helpers(): void {
+		if ( ! function_exists( __NAMESPACE__ . '\\bbai_get_site_install_id' ) && defined( 'BEEPBEEP_AI_PLUGIN_DIR' ) ) {
 			$file = BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-site-id.php';
 			if ( is_readable( $file ) ) {
 				require_once $file;
 			}
 		}
-		if ( function_exists( __NAMESPACE__ . '\\get_site_identifier' ) ) {
-			return (string) get_site_identifier();
+	}
+
+	/**
+	 * Replace the site identifier with the install id in any string, at any depth,
+	 * so a stale queue entry or client payload can never carry it to PostHog.
+	 *
+	 * @param mixed $value Value to scrub.
+	 * @return mixed
+	 */
+	public static function scrub_raw_site_identifier( $value ) {
+		$raw = self::resolve_raw_site_identifier();
+		if ( '' === $raw ) {
+			return $value;
 		}
-		return '';
+		if ( is_string( $value ) ) {
+			return false === strpos( $value, $raw ) ? $value : str_replace( $raw, self::resolve_site_id(), $value );
+		}
+		if ( is_array( $value ) ) {
+			foreach ( $value as $key => $item ) {
+				$value[ $key ] = self::scrub_raw_site_identifier( $item );
+			}
+		}
+		return $value;
 	}
 
 	private static function resolve_plan_type(): string {
