@@ -1,0 +1,355 @@
+<?php
+/**
+ * "More from Oppti" panel: shown only on the Dashboard screen after a
+ * successful generation, hidden after dismiss, never lists installed plugins,
+ * connected vs guest wording, links, copy rules, consent-gated events.
+ */
+declare(strict_types=1);
+
+namespace {
+	use BeepBeepAI\AltTextGenerator\BBAI_More_From_Oppti as MFO;
+	use BeepBeepAI\AltTextGenerator\BBAI_Telemetry;
+	use PHPUnit\Framework\TestCase;
+
+	#[\PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses]
+	#[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+	final class MoreFromOpptiTest extends TestCase {
+		protected function setUp(): void {
+			parent::setUp();
+			require_once __DIR__ . '/stubs-more-from-oppti.php';
+			require_once __DIR__ . '/stubs-telemetry-capture.php';
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-more-from-oppti.php';
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-telemetry.php';
+			$_GET = array( 'page' => 'bbai' );
+			$GLOBALS['bbai_test_remote_posts'] = array();
+			$GLOBALS['mfo']['plugins']         = array(
+				'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' => array( 'TextDomain' => 'beepbeep-ai-alt-text-generator' ),
+			);
+			foreach ( array( 'bbai_first_success_at', 'active_plugins', BBAI_Telemetry::CONSENT_OPTION, BBAI_Telemetry::CONSENT_SOURCE_OPTION, BBAI_Telemetry::ACTIVATION_MARKER_OPTION, BBAI_Telemetry::ACTIVATION_PLUGINS_OPTION, BBAI_Telemetry::OPT_IN_LIFECYCLE_SENT_OPTION, BBAI_Telemetry::LIFECYCLE_QUEUE_OPTION, BBAI_Telemetry::INSTALLED_MARKER_OPTION, BBAI_Telemetry::LEGACY_INSTALLED_MARKER_OPTION ) as $key ) {
+				unset( $GLOBALS['bbai_test_options'][ $key ] );
+			}
+		}
+
+		private function html( bool $connected = false, bool $dashboard_signal = false ): string {
+			ob_start();
+			MFO::render( $connected, $dashboard_signal );
+			return (string) ob_get_clean();
+		}
+
+		private function visible_text( string $html ): string {
+			return trim( (string) preg_replace( '/\s+/', ' ', html_entity_decode( strip_tags( $html ), ENT_QUOTES ) ) );
+		}
+
+		public function test_hidden_before_any_success(): void {
+			$html = $this->html();
+			// Markup waits hidden; only a successful generation in this page view reveals it.
+			$this->assertStringContainsString( 'data-bbai-mfo="1"', $html );
+			$this->assertMatchesRegularExpression( '/<section[^>]*\shidden data-await-success="1"/', $html );
+			$this->assertFalse( MFO::should_render( array( 'on_screen' => true, 'can_manage' => true, 'has_success' => false, 'dismissed' => false, 'candidates' => array( 'titles' ) ) ) );
+		}
+
+		public function test_hidden_after_first_run_error(): void {
+			// A failed first run records no success marker and no generated count.
+			$html = $this->html( false, false );
+			$this->assertMatchesRegularExpression( '/<section[^>]*\shidden data-await-success="1"/', $html );
+		}
+
+		public function test_visible_after_success(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$html = $this->html();
+			$this->assertStringContainsString( 'data-bbai-mfo="1"', $html );
+			$this->assertDoesNotMatchRegularExpression( '/<section[^>]*\shidden/', $html );
+			// Dashboard signal alone (older sites without the marker) also counts.
+			unset( $GLOBALS['bbai_test_options']['bbai_first_success_at'] );
+			$this->assertDoesNotMatchRegularExpression( '/<section[^>]*\shidden/', $this->html( false, true ) );
+		}
+
+		public function test_hidden_after_dismiss_and_dismiss_control_present(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$html = $this->html();
+			$this->assertStringContainsString( 'name="action" value="bbai_more_from_oppti_dismiss"', $html );
+			$this->assertStringContainsString( 'aria-label="Dismiss this More from Oppti panel"', $html );
+			update_user_meta( 7, MFO::DISMISS_META, time() );
+			$this->assertSame( '', $this->html() );
+			// Nothing is enqueued for a user who dismissed.
+			$GLOBALS['mfo']['enqueued'] = array();
+			MFO::enqueue();
+			$this->assertSame( array(), $GLOBALS['mfo']['enqueued'] );
+		}
+
+		public function test_hides_installed_siblings(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] = array( 'TextDomain' => 'beepbeep-titles' );
+			// Renamed folder still matched by text domain.
+			$GLOBALS['mfo']['plugins']['website-auditor-1.0.2/opptiai-website-auditor.php'] = array( 'TextDomain' => 'opptiai-website-auditor' );
+			$html = $this->html( true );
+			$this->assertStringNotContainsString( 'data-to="titles"', $html );
+			$this->assertStringNotContainsString( 'data-to="auditor"', $html );
+			$this->assertStringNotContainsString( 'data-to="alt"', $html );
+			$this->assertStringContainsString( 'data-to="linking"', $html );
+			// Everything installed: no panel at all.
+			$GLOBALS['mfo']['plugins']['opptiai-internal-linking/opptiai-internal-linking.php'] = array( 'TextDomain' => 'opptiai-internal-linking' );
+			$this->assertSame( '', $this->html( true ) );
+			// Never suggests itself; active-only detection also hides a sibling.
+			$this->assertSame( array( 'titles', 'linking', 'auditor' ), MFO::candidate_ids( array(), array() ) );
+			$this->assertSame( array( 'linking', 'auditor' ), MFO::candidate_ids( array(), array( 'titles' ) ) );
+		}
+
+		public function test_connected_wording_names_only_login_plugins(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$text = $this->visible_text( $this->html( true ) );
+			$this->assertStringContainsString( 'Your same Oppti login also works with Titles.', $text );
+			$this->assertStringNotContainsString( 'login also works with Titles, ', $text );
+			$this->assertStringNotContainsString( 'works with Website Auditor', $text );
+			$this->assertStringNotContainsString( 'works with Internal Linking', $text );
+		}
+
+		public function test_rows_order_titles_then_il_then_auditor(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$html = $this->html( true );
+			preg_match_all( '/data-to="([a-z]+)"/', $html, $m );
+			$this->assertSame( array( 'titles', 'linking', 'auditor' ), $m[1] );
+		}
+
+		public function test_lists_plugin_only_when_visible(): void {
+			// Awaiting a success in this page view (rendered hidden): the old Titles line still shows;
+			// the panel script hides it on reveal.
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			update_option( 'bbai_first_success_at', time() );
+			$this->assertTrue( MFO::lists_plugin( 'titles', true ) );
+			// Panel visible but Titles not listed (installed): the old line keeps its own rules.
+			$GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] = array( 'TextDomain' => 'beepbeep-titles' );
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			unset( $GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] );
+			// Panel not rendered at all: other screen or dismissed.
+			$_GET = array( 'page' => 'bbai-library' );
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			$_GET = array( 'page' => 'bbai' );
+			update_user_meta( get_current_user_id(), MFO::DISMISS_META, time() );
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			// The old Titles card asks lists_plugin() before printing anything.
+			$src = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-titles-cross-sell.php' );
+			$this->assertStringContainsString( "BBAI_More_From_Oppti::lists_plugin( 'titles'", $src );
+		}
+
+		public function test_titles_promos_before_and_after_success(): void {
+			// Before success: panel waits hidden, the old Titles line shows (one visible Titles promo).
+			$this->assertSame( array( 'panel_hidden' => 1, 'panel_visible' => 0, 'legacy' => 1 ), $this->titles_promos() );
+			// Reload after a success: the visible panel lists Titles and the old line stands down.
+			update_option( 'bbai_first_success_at', time() );
+			$this->assertSame( array( 'panel_hidden' => 0, 'panel_visible' => 1, 'legacy' => 0 ), $this->titles_promos() );
+			// Dismissed: no panel, the old line is back as before.
+			update_user_meta( get_current_user_id(), MFO::DISMISS_META, time() );
+			$this->assertSame( array( 'panel_hidden' => 0, 'panel_visible' => 0, 'legacy' => 1 ), $this->titles_promos() );
+		}
+
+		public function test_old_titles_line_keeps_its_own_link(): void {
+			$legacy = $this->legacy_html();
+			$this->assertStringContainsString( 'data-bbai-titles-cross-sell="1"', $legacy );
+			$this->assertStringContainsString( 'href="https://wordpress.org/plugins/opptiai-titles/"', $legacy );
+			$this->assertStringNotContainsString( 'xs-alt-to-titles', $legacy );
+		}
+
+		/**
+		 * Titles promos on the Dashboard: panel Titles rows (hidden or visible) and the old line/card.
+		 *
+		 * @return array{panel_hidden:int,panel_visible:int,legacy:int}
+		 */
+		private function titles_promos(): array {
+			$panel  = $this->html( true, false );
+			$rows   = substr_count( $panel, 'data-to="titles"' );
+			$hidden = (bool) preg_match( '/<section[^>]*\shidden data-await-success="1"/', $panel );
+			$legacy = $this->legacy_html();
+			return array(
+				'panel_hidden'  => $hidden ? $rows : 0,
+				'panel_visible' => $hidden ? 0 : $rows,
+				'legacy'        => substr_count( $legacy, 'data-bbai-titles-cross-sell' ) + substr_count( $legacy, 'data-bbai-next-audit' ),
+			);
+		}
+
+		/**
+		 * Output of the old Titles cross-sell partial for a connected Free site.
+		 */
+		private function legacy_html(): string {
+			$bbai_has_connected_account  = true;
+			$bbai_has_ever_generated_alt = (bool) get_option( 'bbai_first_success_at' );
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-plan-tier.php';
+			ob_start();
+			include BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-titles-cross-sell.php';
+			return (string) ob_get_clean();
+		}
+
+		public function test_intro_cases(): void {
+			// Connected: login line names only Alt Text / Titles, never IL or the Auditor.
+			$this->assertSame( 'Your same Oppti login also works with Titles.', MFO::intro_line( true, array( 'titles', 'auditor', 'linking' ) ) );
+			$this->assertSame( 'Your same Oppti login also works with Titles.', MFO::intro_line( true, array( 'titles' ) ) );
+			// Connected, only IL and/or Auditor missing: no intro at all.
+			$this->assertSame( '', MFO::intro_line( true, array( 'auditor', 'linking' ) ) );
+			$this->assertSame( '', MFO::intro_line( true, array( 'auditor' ) ) );
+			$this->assertSame( '', MFO::intro_line( true, array( 'linking' ) ) );
+			// Guests never get the login line, whatever is missing.
+			foreach ( array( array( 'titles', 'auditor', 'linking' ), array( 'titles' ), array( 'auditor' ), array( 'linking' ) ) as $ids ) {
+				$this->assertSame( 'More from OpptiAI, for the rest of the job.', MFO::intro_line( false, $ids ) );
+			}
+			// Two login plugins (as seen from another plugin's catalog) join with "and".
+			$this->assertSame( 'Alt Text and Titles', MFO::join_names( array( 'Alt Text', 'Titles' ) ) );
+		}
+
+		public function test_connected_rows_only_when_titles_installed(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] = array( 'TextDomain' => 'beepbeep-titles' );
+			$html = $this->html( true );
+			$this->assertStringNotContainsString( 'bbai-more-from-oppti__intro', $html );
+			$this->assertStringNotContainsString( 'login', strtolower( $this->visible_text( $html ) ) );
+			$this->assertStringContainsString( 'data-to="auditor"', $html );
+			$this->assertStringContainsString( 'data-to="linking"', $html );
+		}
+
+		public function test_guest_wording_has_no_login_line(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$html = $this->html( false );
+			$text = $this->visible_text( $html );
+			$this->assertStringContainsString( 'More from OpptiAI, for the rest of the job.', $text );
+			$this->assertStringNotContainsString( 'login', strtolower( $text ) );
+			$this->assertStringContainsString( 'data-account-state="guest"', $html );
+		}
+
+		public function test_rows_badges_and_copy_rules(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$text = $this->visible_text( $this->html( true ) );
+			$this->assertStringContainsString( 'Find weak SEO titles and meta descriptions. Install Titles Free to try.', $text );
+			$this->assertStringContainsString( 'See what to fix on your site first. Install Website Auditor A free plugin. No account needed.', $text );
+			$this->assertStringContainsString( 'Find pages with no internal links. Install Internal Linking', $text );
+			$this->assertStringNotContainsString( 'Install Internal Linking Free', $text );
+			foreach ( MFO::copy() as $key => $line ) {
+				$this->assertStringNotContainsString( "\u{2014}", $line, $key );
+				$this->assertDoesNotMatchRegularExpression( '/\d\s*free|free\s*\d/i', $line, $key );
+				$this->assertDoesNotMatchRegularExpression( '/complian|ADA|WCAG|guarantee/i', $line, $key );
+			}
+		}
+
+		public function test_links_installer_or_tagged_wporg(): void {
+			$this->assertSame(
+				array( 'url' => 'https://example.com/wp-admin/plugin-install.php?s=opptiai-titles&tab=search&type=term', 'target' => 'installer' ),
+				MFO::link_for( 'titles', true )
+			);
+			$wporg = MFO::link_for( 'auditor', false );
+			$this->assertSame( 'wporg', $wporg['target'] );
+			$this->assertSame( 'https://wordpress.org/plugins/opptiai-website-auditor/?utm_source=plugin&utm_medium=crosssell&utm_campaign=push-nov26&utm_content=xs-alt-to-auditor', $wporg['url'] );
+
+			update_option( 'bbai_first_success_at', time() );
+			$GLOBALS['mfo']['caps']['install_plugins'] = false;
+			$html = $this->html();
+			$this->assertStringContainsString( 'data-link-target="wporg"', $html );
+			$this->assertStringContainsString( 'target="_blank"', $html );
+			$this->assertStringNotContainsString( 'plugin-install.php', $html );
+		}
+
+		public function test_no_output_on_other_screens_or_without_capability(): void {
+			update_option( 'bbai_first_success_at', time() );
+			foreach ( array( 'bbai-library', 'bbai-settings', 'bbai-checkout', '', 'opptiai-titles' ) as $page ) {
+				$_GET = '' === $page ? array() : array( 'page' => $page );
+				$this->assertSame( '', $this->html(), 'page=' . $page );
+				$GLOBALS['mfo']['enqueued'] = array();
+				MFO::enqueue();
+				$this->assertSame( array(), $GLOBALS['mfo']['enqueued'], 'enqueue page=' . $page );
+			}
+			$_GET                       = array( 'page' => 'bbai' );
+			$GLOBALS['mfo']['is_admin'] = false;
+			$this->assertSame( '', $this->html() );
+			$GLOBALS['mfo']['is_admin'] = true;
+			$GLOBALS['mfo']['caps']     = array();
+			$this->assertSame( '', $this->html() );
+		}
+
+		public function test_client_events_disabled_without_consent(): void {
+			MFO::enqueue();
+			$this->assertFalse( $GLOBALS['mfo']['localized']['BBAI_MORE_FROM_OPPTI']['telemetry']['enabled'] );
+			// Even a forged client event is never sent to PostHog without consent.
+			BBAI_Telemetry::capture_posthog_event( 'crosssell_clicked', 'test_site_install_id_0123456789ab', array( 'from_plugin' => 'alt', 'to_plugin' => 'titles' ) );
+			$this->assertSame( array(), $GLOBALS['bbai_test_remote_posts'] );
+
+			update_option( BBAI_Telemetry::CONSENT_OPTION, 'yes' );
+			update_option( BBAI_Telemetry::CONSENT_SOURCE_OPTION, 'settings' );
+			MFO::enqueue();
+			$this->assertTrue( $GLOBALS['mfo']['localized']['BBAI_MORE_FROM_OPPTI']['telemetry']['enabled'] );
+			BBAI_Telemetry::capture_posthog_event( 'crosssell_clicked', 'test_site_install_id_0123456789ab', array( 'from_plugin' => 'alt', 'to_plugin' => 'titles', 'link_target' => 'installer' ) );
+			$this->assertCount( 1, $GLOBALS['bbai_test_remote_posts'] );
+			$body = json_decode( (string) $GLOBALS['bbai_test_remote_posts'][0]['args']['body'], true );
+			$this->assertSame( 'crosssell_clicked', $body['event'] );
+			$this->assertSame( 'alt', $body['properties']['from_plugin'] );
+			$this->assertSame( 'titles', $body['properties']['to_plugin'] );
+		}
+
+		public function test_forwarding_allowlist_includes_panel_events(): void {
+			$src = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . 'admin/class-bbai-core.php' );
+			foreach ( MFO::EVENTS as $event ) {
+				$this->assertStringContainsString( "'" . $event . "'", $src );
+			}
+		}
+
+		public function test_activation_installed_flags_only_with_consent(): void {
+			// Titles installed but inactive (renamed folder, matched by text domain), Auditor active, IL absent.
+			$GLOBALS['mfo']['plugins']['titles-renamed/beepbeep-titles.php']                   = array( 'TextDomain' => 'beepbeep-titles' );
+			$GLOBALS['mfo']['plugins']['opptiai-website-auditor/opptiai-website-auditor.php'] = array( 'TextDomain' => 'opptiai-website-auditor' );
+			update_option( 'active_plugins', array( 'opptiai-website-auditor/opptiai-website-auditor.php', 'akismet/akismet.php', 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' ) );
+			$expected = array(
+				'has_alt_text' => true,
+				'has_titles'   => true,
+				'has_il'       => false,
+				'has_auditor'  => true,
+			);
+
+			BBAI_Telemetry::record_activation_lifecycle();
+			$this->assertSame( array(), $GLOBALS['bbai_test_remote_posts'], 'nothing sent without consent' );
+			$this->assertSame( $expected, get_option( BBAI_Telemetry::ACTIVATION_PLUGINS_OPTION ) );
+
+			unset( $GLOBALS['bbai_test_options'][ BBAI_Telemetry::ACTIVATION_MARKER_OPTION ] );
+			update_option( BBAI_Telemetry::CONSENT_OPTION, 'yes' );
+			update_option( BBAI_Telemetry::CONSENT_SOURCE_OPTION, 'settings' );
+			BBAI_Telemetry::record_activation_lifecycle();
+			$events = array();
+			foreach ( $GLOBALS['bbai_test_remote_posts'] as $call ) {
+				$body                      = json_decode( (string) $call['args']['body'], true );
+				$events[ $body['event'] ] = $body['properties'];
+			}
+			$this->assertArrayHasKey( 'plugin_activated', $events );
+			$this->assertArrayNotHasKey( 'siblings', $events['plugin_activated'] );
+			foreach ( $expected as $key => $value ) {
+				$this->assertSame( $value, $events['plugin_activated'][ $key ], $key );
+			}
+		}
+
+		public function test_late_opt_in_snapshot_keeps_false_flags(): void {
+			update_option( 'active_plugins', array( 'opptiai-website-auditor/opptiai-website-auditor.php', 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' ) );
+			BBAI_Telemetry::record_activation_lifecycle();
+			$this->assertSame( array(), $GLOBALS['bbai_test_remote_posts'], 'nothing sent before opt-in' );
+
+			BBAI_Telemetry::set_consent( true );
+			$activated = null;
+			foreach ( $GLOBALS['bbai_test_remote_posts'] as $call ) {
+				$body = json_decode( (string) $call['args']['body'], true );
+				if ( 'plugin_activated' === $body['event'] && 'opt_in_snapshot' === ( $body['properties']['lifecycle_delivery'] ?? '' ) ) {
+					$activated = $body['properties'];
+				}
+			}
+			$this->assertNotNull( $activated, 'opt-in snapshot sends plugin_activated' );
+			$this->assertSame( true, $activated['has_alt_text'] );
+			$this->assertSame( false, $activated['has_titles'] );
+			$this->assertSame( false, $activated['has_il'] );
+			$this->assertSame( true, $activated['has_auditor'] );
+		}
+
+		public function test_installed_flags_none_installed(): void {
+			$this->assertSame(
+				array(
+					'has_alt_text' => true,
+					'has_titles'   => false,
+					'has_il'       => false,
+					'has_auditor'  => false,
+				),
+				MFO::installed_flags()
+			);
+		}
+	}
+}

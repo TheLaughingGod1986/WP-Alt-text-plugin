@@ -1,0 +1,48 @@
+.bbai-more-from-oppti {
+	margin: 24px 0 8px;
+	padding: 16px 20px;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+}
+.bbai-more-from-oppti[hidden] {
+	display: none;
+}
+.bbai-more-from-oppti__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+.bbai-more-from-oppti__title {
+	margin: 0;
+	font-size: 15px;
+}
+.bbai-more-from-oppti__dismiss {
+	font-size: 13px;
+}
+.bbai-more-from-oppti__intro {
+	margin: 6px 0 12px;
+	color: #50575e;
+}
+.bbai-more-from-oppti__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.bbai-more-from-oppti__item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 12px;
+	padding: 8px 0;
+	border-top: 1px solid #f0f0f1;
+}
+.bbai-more-from-oppti__desc {
+	flex: 1 1 260px;
+}
+.bbai-more-from-oppti__helper {
+	flex-basis: 100%;
+	font-size: 12px;
+	color: #646970;
+}

@@ -63,3 +63,12 @@ if ( file_exists( $bbai_dashboard_auth_partial ) ) {
 } else {
     esc_html_e( 'Dashboard content unavailable.', 'beepbeep-ai-alt-text-generator' );
 }
+
+// "More from Oppti": only on this screen, only after a successful generation,
+// only for OpptiAI plugins this site does not have, dismissible for good.
+if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_More_From_Oppti' ) ) {
+	\BeepBeepAI\AltTextGenerator\BBAI_More_From_Oppti::render(
+		! empty( $bbai_has_connected_account ),
+		! empty( $bbai_has_ever_generated_alt )
+	);
+}

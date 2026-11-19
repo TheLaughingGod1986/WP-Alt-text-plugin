@@ -51,6 +51,9 @@ class BBAI_Telemetry {
 
 	public const ACTIVATION_MARKER_OPTION = 'bbai_telemetry_plugin_activated';
 
+	/** OpptiAI plugins installed at first activation (four installed-plugin booleans, local only). */
+	public const ACTIVATION_PLUGINS_OPTION = 'bbai_activation_oppti_plugins';
+
 	/** Set once the opt-in lifecycle snapshot has been sent for this site. */
 	public const OPT_IN_LIFECYCLE_SENT_OPTION = 'bbai_telemetry_opt_in_lifecycle_sent';
 
@@ -379,7 +382,10 @@ class BBAI_Telemetry {
 		$activated_at = self::marker_time( get_option( self::ACTIVATION_MARKER_OPTION, '' ) );
 		$events       = array(
 			'plugin_installed' => array( 'first_seen_at' => $first_seen ),
-			'plugin_activated' => array( 'activated_at' => $activated_at ),
+			'plugin_activated' => array_merge(
+				array( 'activated_at' => $activated_at ),
+				self::stored_activation_plugins()
+			),
 		);
 		foreach ( $events as $event_name => $extra ) {
 			$properties = array_merge(
@@ -391,7 +397,13 @@ class BBAI_Telemetry {
 					'occurred_at'        => $opted_in_at,
 					'$insert_id'         => 'bbai_opt_in_lifecycle:' . hash( 'sha256', $event_name . '|' . $site_install_id ),
 				),
-				array_filter( $extra )
+				// Drop empty markers only; boolean false (e.g. has_il) must survive.
+				array_filter(
+					$extra,
+					static function ( $value ) {
+						return null !== $value && '' !== $value;
+					}
+				)
 			);
 			self::capture_posthog_event( $event_name, $site_install_id, $properties, $opted_in_at );
 		}
@@ -450,6 +462,37 @@ class BBAI_Telemetry {
 	}
 
 	/**
+	 * Which OpptiAI plugins are installed right now, as four booleans
+	 * (has_alt_text, has_titles, has_il, has_auditor). Local check only.
+	 *
+	 * @return array<string,bool>
+	 */
+	public static function activation_plugins(): array {
+		if ( class_exists( BBAI_More_From_Oppti::class ) ) {
+			return BBAI_More_From_Oppti::installed_flags();
+		}
+		return array();
+	}
+
+	/**
+	 * The flags saved at first activation, booleans only.
+	 *
+	 * @return array<string,bool>
+	 */
+	private static function stored_activation_plugins(): array {
+		$stored = get_option( self::ACTIVATION_PLUGINS_OPTION, array() );
+		$out    = array();
+		if ( is_array( $stored ) ) {
+			foreach ( array( 'has_alt_text', 'has_titles', 'has_il', 'has_auditor' ) as $key ) {
+				if ( isset( $stored[ $key ] ) ) {
+					$out[ $key ] = (bool) $stored[ $key ];
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * Capture activation/update/install semantics from the real WordPress lifecycle hook.
 	 */
 	public static function record_activation_lifecycle(): void {
@@ -476,7 +519,10 @@ class BBAI_Telemetry {
 		}
 
 		if ( ! get_option( self::ACTIVATION_MARKER_OPTION, false ) ) {
-			self::queue_lifecycle_event( 'plugin_activated' );
+			// Which OpptiAI plugins are installed at first activation (four booleans, no names or paths).
+			$oppti_plugins = self::activation_plugins();
+			update_option( self::ACTIVATION_PLUGINS_OPTION, $oppti_plugins, false );
+			self::queue_lifecycle_event( 'plugin_activated', $oppti_plugins );
 			update_option( self::ACTIVATION_MARKER_OPTION, gmdate( 'c' ), false );
 		}
 

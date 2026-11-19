@@ -22,6 +22,14 @@ if ( ! $bbai_titles_xsell_connected ) {
 	return;
 }
 
+// One cross-plugin panel per screen: while "More from Oppti" lists Titles, this card stands down.
+if (
+	class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_More_From_Oppti' )
+	&& \BeepBeepAI\AltTextGenerator\BBAI_More_From_Oppti::lists_plugin( 'titles', true, ! empty( $bbai_has_ever_generated_alt ) )
+) {
+	return;
+}
+
 if ( ! class_exists( Plan_Helpers::class ) ) {
 	$bbai_plan_helpers_path = BEEPBEEP_AI_PLUGIN_DIR . 'includes/admin/class-plan-helpers.php';
 	if ( is_readable( $bbai_plan_helpers_path ) ) {
