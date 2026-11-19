@@ -1709,6 +1709,77 @@ class Core {
     }
 
     /**
+     * Query params a static Payment Link fallback carries so the payment can be
+     * matched: client_reference_id ("alt_text_" plus this site's install id, the
+     * same id /billing/checkout gets as site_install_id) and the utm_* tags
+     * /billing/checkout gets (stored first-touch tags, overridden by the request).
+     *
+     * @param array<string,mixed> $attribution Checkout request attribution.
+     * @return array<string,string>
+     */
+    public function get_payment_link_params( array $attribution = [] ): array {
+        $params = [];
+
+        $install_id = function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' )
+            ? (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id()
+            : '';
+        $install_id = (string) preg_replace( '/[^A-Za-z0-9_-]/', '', $install_id );
+        if ( '' !== $install_id ) {
+            $params['client_reference_id'] = substr( 'alt_text_' . $install_id, 0, 200 );
+        }
+
+        $stored = class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' )
+            ? \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload()
+            : [];
+        $merged = array_merge( is_array( $stored ) ? $stored : [], $attribution );
+        foreach ( [ 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term' ] as $key ) {
+            if ( ! isset( $merged[ $key ] ) || ! is_scalar( $merged[ $key ] ) ) {
+                continue;
+            }
+            $value = trim( sanitize_text_field( (string) $merged[ $key ] ) );
+            $value = function_exists( 'mb_substr' ) ? mb_substr( $value, 0, 120 ) : substr( $value, 0, 120 );
+            if ( '' !== $value ) {
+                $params[ $key ] = $value;
+            }
+        }
+
+        return $params;
+    }
+
+    /**
+     * Add the Payment Link params to a https://buy.stripe.com/ URL. Any other URL,
+     * and any param the link already has, is left as it is.
+     *
+     * @param string              $url         Payment Link URL.
+     * @param array<string,mixed> $attribution Checkout request attribution.
+     */
+    public function decorate_payment_link_url( string $url, array $attribution = [] ): string {
+        if ( '' === $url ) {
+            return '';
+        }
+        $scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+        $host   = wp_parse_url( $url, PHP_URL_HOST );
+        if ( ! is_string( $scheme ) || ! is_string( $host ) || 'https' !== strtolower( $scheme ) || 'buy.stripe.com' !== strtolower( $host ) ) {
+            return $url;
+        }
+
+        $existing = [];
+        $query    = wp_parse_url( $url, PHP_URL_QUERY );
+        if ( is_string( $query ) && '' !== $query ) {
+            parse_str( $query, $existing );
+        }
+
+        $add = [];
+        foreach ( $this->get_payment_link_params( $attribution ) as $key => $value ) {
+            if ( ! array_key_exists( $key, $existing ) ) {
+                $add[ $key ] = rawurlencode( $value );
+            }
+        }
+
+        return empty( $add ) ? $url : add_query_arg( $add, $url );
+    }
+
+    /**
      * Detect Stripe-hosted Checkout Session URLs.
      */
     private function is_stripe_hosted_checkout_session_url(string $url): bool {
@@ -9788,7 +9859,7 @@ class Core {
             // Return the real error plus the static Payment Link (when one exists
             // for this plan and country) so the dashboard can show it in the
             // Continue to payment / Copy link panel and the user decides.
-            $fallback_checkout_url = $this->get_checkout_fallback_url($plan_hint, $price_id);
+            $fallback_checkout_url = $this->decorate_payment_link_url($this->get_checkout_fallback_url($plan_hint, $price_id), $this->get_checkout_request_attribution());
             $failure_data = is_wp_error($result) ? $result->get_error_data() : null;
             if ($fallback_checkout_url !== '') {
                 // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log

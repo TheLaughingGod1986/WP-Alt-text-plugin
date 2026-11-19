@@ -700,8 +700,8 @@ bbaiRunWithJQuery(function($) {
             var nonce = window.bbai_ajax && window.bbai_ajax.nonce;
             var fallbackUrl = (btn && btn.getAttribute('data-fallback-url')) || resolveCheckoutFallbackUrl(null, plan);
             var retry = function() { checkoutWithoutJQuery(btn, priceId, plan); };
-            var showPanel = function(message, url) {
-                showCheckoutContinuePanel({ message: message || genericError, url: url || fallbackUrl, plan: plan || 'unknown', retry: retry });
+            var showPanel = function(message, url, reason) {
+                showCheckoutContinuePanel({ message: message || genericError, url: url || fallbackUrl, plan: plan || 'unknown', retry: retry, reason: reason || 'checkout_session_failed' });
             };
 
             if (bbaiCheckoutInFlight) {
@@ -709,7 +709,7 @@ bbaiRunWithJQuery(function($) {
             }
             if (!ajaxUrl || !nonce || !priceId || !window.fetch || !window.URLSearchParams) {
                 trackCheckoutEvent('checkout_failed', { plan: plan || 'unknown', error_code: 'checkout_unavailable' });
-                showPanel(genericError);
+                showPanel(genericError, '', 'checkout_unavailable');
                 return;
             }
 
@@ -747,11 +747,11 @@ bbaiRunWithJQuery(function($) {
                 }
                 release();
                 trackCheckoutEvent('checkout_failed', { plan: plan || 'unknown', error_code: data.code || 'checkout_session_failed' });
-                showPanel(data.message, data.fallback_url);
+                showPanel(data.message, data.fallback_url, data.code || 'checkout_session_failed');
             }).catch(function() {
                 release();
                 trackCheckoutEvent('checkout_failed', { plan: plan || 'unknown', error_code: 'network_error' });
-                showPanel(genericError);
+                showPanel(genericError, '', 'network_error');
             });
         }
         
@@ -2328,6 +2328,12 @@ bbaiRunWithJQuery(function($) {
         removeCheckoutContinuePanel();
 
         var url = opts.url && isAllowedCheckoutUrl(opts.url) ? opts.url : '';
+        if (url && /^https:\/\/buy\.stripe\.com\//i.test(url)) {
+            url = decoratePaymentLinkUrl(url);
+            if (opts.reason) {
+                dispatchCheckoutFallbackAnalytics(opts.plan, opts.reason);
+            }
+        }
         var panel = document.createElement('div');
         panel.id = 'bbai-checkout-continue';
         panel.className = 'bbai-checkout-continue' + (opts.message ? ' bbai-checkout-continue--error' : '');
@@ -2492,21 +2498,55 @@ bbaiRunWithJQuery(function($) {
         };
     }
 
-    function dispatchCheckoutFallbackAnalytics(planName, errorCode, extra) {
+    // Fired once per Payment Link fallback, from showCheckoutContinuePanel only.
+    // Shape: plugin, reason and plan; bbai-telemetry.js adds the source (the
+    // screen or button the checkout came from). Never the link, site address or email.
+    function dispatchCheckoutFallbackAnalytics(planName, reason) {
         try {
             document.dispatchEvent(new CustomEvent('bbai:analytics', {
-                detail: Object.assign({
+                detail: {
                     event: 'checkout_fallback_payment_link',
-                    source: 'checkout',
-                    endpoint: 'beepbeepai_create_checkout',
-                    timestamp: Date.now(),
-                    plan: planName || '',
-                    error_code: errorCode
-                }, extra || {})
+                    plugin: 'alt_text',
+                    reason: reason || 'unknown',
+                    plan: planName || 'unknown'
+                }
             }));
         } catch (error) {
             // Ignore analytics failures.
         }
+    }
+
+    // A static buy.stripe.com Payment Link gets this site's client_reference_id
+    // and the checkout utm_* tags (the same ones /billing/checkout gets), so the
+    // payment can still be matched. Existing query params are never overridden.
+    function decoratePaymentLinkUrl(url) {
+        var parsed;
+        try {
+            parsed = new URL(String(url || ''));
+        } catch (e) {
+            return String(url || '');
+        }
+        if (parsed.protocol !== 'https:' || parsed.hostname.toLowerCase() !== 'buy.stripe.com') {
+            return String(url || '');
+        }
+        var base = (window.bbai_ajax && window.bbai_ajax.payment_link_params) || {};
+        var attribution = {};
+        try {
+            if (window.bbaiTelemetry && typeof window.bbaiTelemetry.buildCheckoutAttribution === 'function') {
+                attribution = window.bbaiTelemetry.buildCheckoutAttribution({}) || {};
+            }
+        } catch (e) {
+            attribution = {};
+        }
+        ['client_reference_id', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function(key) {
+            var value = key === 'client_reference_id' ? base[key] : (attribution[key] || base[key]);
+            value = value === undefined || value === null || typeof value === 'object' ? '' : String(value).trim();
+            value = key === 'client_reference_id' ? value.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 200) : value.slice(0, 120);
+            if (value && !parsed.searchParams.has(key)) {
+                parsed.searchParams.set(key, value);
+            }
+        });
+        return parsed.toString();
     }
 
     function readCheckoutError(source) {
@@ -2545,12 +2585,9 @@ bbaiRunWithJQuery(function($) {
 
         if (!ajaxUrl || !nonce || !resolvedPriceId || !window.jQuery || typeof $.ajax !== 'function') {
             trackCheckoutEvent('checkout_failed', { plan: plan, error_code: 'checkout_unavailable', error_message: 'Checkout session request could not be started.' });
-            if (fallbackUrl) {
-                dispatchCheckoutFallbackAnalytics(planName, 'checkout_unavailable');
-            }
             // Never redirect silently to a static Payment Link: show the
             // error and let the user choose Continue to payment / Copy link.
-            showCheckoutContinuePanel({ message: genericError, url: fallbackUrl, plan: plan, retry: retryCheckout });
+            showCheckoutContinuePanel({ message: genericError, url: fallbackUrl, plan: plan, retry: retryCheckout, reason: 'checkout_unavailable' });
             return;
         }
 
@@ -2585,10 +2622,7 @@ bbaiRunWithJQuery(function($) {
                 const err = readCheckoutError(response);
                 release();
                 trackCheckoutEvent('checkout_failed', { plan: plan, error_code: err.code || 'checkout_rejected', error_message: err.message, has_fallback: !!err.fallbackUrl });
-                if (err.fallbackUrl) {
-                    dispatchCheckoutFallbackAnalytics(planName, err.code || 'checkout_session_failed', { offered: true });
-                }
-                showCheckoutContinuePanel({ message: err.message || genericError, url: err.fallbackUrl, plan: plan, retry: retryCheckout });
+                showCheckoutContinuePanel({ message: err.message || genericError, url: err.fallbackUrl, plan: plan, retry: retryCheckout, reason: err.code || 'checkout_session_failed' });
                 return;
             }
 
@@ -2602,14 +2636,12 @@ bbaiRunWithJQuery(function($) {
                 release();
                 var urlErrorCode = checkoutUrl ? 'disallowed_checkout_url' : 'missing_checkout_url';
                 trackCheckoutEvent('checkout_failed', { plan: plan, error_code: urlErrorCode });
-                if (fallbackUrl) {
-                    dispatchCheckoutFallbackAnalytics(planName, urlErrorCode);
-                }
                 showCheckoutContinuePanel({
                     message: __('We could not create your checkout link automatically.', 'beepbeep-ai-alt-text-generator'),
                     url: fallbackUrl,
                     plan: plan,
-                    retry: retryCheckout
+                    retry: retryCheckout,
+                    reason: urlErrorCode
                 });
                 return;
             }
@@ -2619,12 +2651,12 @@ bbaiRunWithJQuery(function($) {
                 // navigate silently.
                 release();
                 trackCheckoutEvent('checkout_failed', { plan: plan, error_code: 'static_link_fallback', has_fallback: true });
-                dispatchCheckoutFallbackAnalytics(planName, 'static_link_fallback', { offered: true });
                 showCheckoutContinuePanel({
                     message: __('We could not create your checkout link automatically.', 'beepbeep-ai-alt-text-generator'),
                     url: checkoutUrl,
                     plan: plan,
-                    retry: retryCheckout
+                    retry: retryCheckout,
+                    reason: 'static_link_fallback'
                 });
                 return;
             }
@@ -2656,14 +2688,12 @@ bbaiRunWithJQuery(function($) {
                 error_message: err.message,
                 status: xhr && xhr.status ? xhr.status : 0
             });
-            if (fallbackUrl) {
-                dispatchCheckoutFallbackAnalytics(planName, 'checkout_session_failed', { status: xhr && xhr.status ? xhr.status : null });
-            }
             showCheckoutContinuePanel({
                 message: err.message || genericError,
                 url: err.fallbackUrl || fallbackUrl,
                 plan: plan,
-                retry: retryCheckout
+                retry: retryCheckout,
+                reason: err.code || ('http_' + (xhr && xhr.status ? xhr.status : 0))
             });
         });
     }

@@ -15,6 +15,8 @@
     var upgradeClickFallbackBound = false;
     var analyticsFeatureBound = false;
     var wooFeatureBound = false;
+    // One checkout_fallback_payment_link per fallback (same plan and reason within 3s is a repeat).
+    var checkoutFallbackDedup = { key: '', at: 0 };
     var upgradeEventDedup = {
         key: '',
         at: 0
@@ -1083,6 +1085,47 @@
         return payload;
     }
 
+    function telemetryToken(value, fallback) {
+        var token = readString(value).toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+        return token || fallback;
+    }
+
+    // checkout_fallback_payment_link shape: plugin, source (the screen or button
+    // the checkout came from), reason and plan. Never the Payment Link URL, the
+    // site address or an email.
+    function shapeCheckoutFallbackProps(props) {
+        var out = $.extend({}, props || {});
+        var attribution = {};
+        try {
+            attribution = buildCheckoutRequestAttribution({}) || {};
+        } catch (eAttr) {
+            attribution = {};
+        }
+        var known = function (value) {
+            var token = telemetryToken(value, '');
+            return token === 'unknown' ? '' : token;
+        };
+        var location = known(out.trigger_location) || known(attribution.trigger_location) || 'unknown';
+        var sourcePage = known(out.source_page) || known(attribution.source_page) || known(getSourcePage(out)) || 'unknown';
+        var explicitSource = telemetryToken(out.checkout_source, '');
+        var reason = telemetryToken(out.reason || out.error_code || out.code, 'unknown');
+        var plan = telemetryToken(out.plan || out.target_plan || attribution.target_plan, 'unknown');
+
+        ['error_code', 'code', 'endpoint', 'timestamp', 'url', 'fallback_url', 'payment_link', 'href',
+            'error_message', 'message', 'checkout_source'].forEach(function (key) {
+            delete out[key];
+        });
+
+        out.plugin = 'alt_text';
+        out.source = explicitSource || (location !== 'unknown' ? location : sourcePage);
+        out.source_page = sourcePage;
+        out.trigger_location = location;
+        out.reason = reason;
+        out.plan = plan;
+        out.target_plan = plan;
+        return out;
+    }
+
     function track(eventName, properties) {
         if (telemetryOff) {
             return;
@@ -1194,6 +1237,15 @@
             updateLastFeatureUsage(props);
         } else if (eventName === 'upgrade_cta_clicked' || eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
             props = enrichUpgradeAttribution(eventName, props);
+        } else if (eventName === 'checkout_fallback_payment_link') {
+            props = shapeCheckoutFallbackProps(props);
+            var fallbackKey = props.plan + '|' + props.reason;
+            var fallbackNow = Date.now();
+            if (checkoutFallbackDedup.key === fallbackKey && (fallbackNow - checkoutFallbackDedup.at) < 3000) {
+                return;
+            }
+            checkoutFallbackDedup.key = fallbackKey;
+            checkoutFallbackDedup.at = fallbackNow;
         }
         if (eventName === 'login_succeeded' || eventName === 'signup_succeeded') {
             try {
