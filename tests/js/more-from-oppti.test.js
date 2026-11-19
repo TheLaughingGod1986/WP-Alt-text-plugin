@@ -115,7 +115,7 @@ describe('More from Oppti panel script', () => {
         expect(env.panel.hidden).toBe(true);
         const evs = env.events();
         expect(evs.map((e) => e.event)).toEqual(['crosssell_panel_shown', 'crosssell_clicked', 'crosssell_panel_dismissed']);
-        expect(evs[0].properties.suggested).toBe('titles,auditor');
+        expect(evs[0].properties.suggested).toBe('titles-auditor');
         expect(evs[1].properties).toMatchObject({ from_plugin: 'alt', to_plugin: 'auditor', link_target: 'wporg', account_state: 'guest' });
         evs.forEach((e) => {
             expect(JSON.stringify(e.properties)).not.toMatch(/https?:|wordpress\.org|example/);

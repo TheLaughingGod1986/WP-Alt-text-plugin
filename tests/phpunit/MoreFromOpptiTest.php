@@ -104,6 +104,17 @@ namespace {
 			$this->assertStringNotContainsString( 'works with Internal Linking', $text );
 		}
 
+		public function test_lists_plugin_only_when_visible(): void {
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			update_option( 'bbai_first_success_at', time() );
+			$this->assertTrue( MFO::lists_plugin( 'titles', true ) );
+			$GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] = array( 'TextDomain' => 'beepbeep-titles' );
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			// The old Titles card stands down only while the panel lists Titles.
+			$src = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-titles-cross-sell.php' );
+			$this->assertStringContainsString( "BBAI_More_From_Oppti::lists_plugin( 'titles'", $src );
+		}
+
 		public function test_intro_cases(): void {
 			// Connected: login line names only Alt Text / Titles, never IL or the Auditor.
 			$this->assertSame( 'Your same Oppti login also works with Titles.', MFO::intro_line( true, array( 'titles', 'auditor', 'linking' ) ) );

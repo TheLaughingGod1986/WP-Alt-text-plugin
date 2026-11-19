@@ -60,7 +60,7 @@
         for (var i = 0; i < links.length; i++) {
             ids.push(links[i].getAttribute('data-to'));
         }
-        return ids.join(',');
+        return ids.join('-');
     }
 
     function markShown(panel) {

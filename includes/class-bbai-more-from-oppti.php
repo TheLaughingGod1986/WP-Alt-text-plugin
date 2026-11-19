@@ -444,6 +444,23 @@ class BBAI_More_From_Oppti {
 	}
 
 	/**
+	 * Whether the panel is visible on load and lists a given plugin. Older
+	 * single-plugin cards for that plugin stand down (one panel per screen).
+	 *
+	 * @param string $id               Catalog id.
+	 * @param bool   $connected        Site connected to an Oppti account.
+	 * @param bool   $dashboard_signal Dashboard "has ever generated" flag.
+	 */
+	public static function lists_plugin( string $id, bool $connected, bool $dashboard_signal = false ): bool {
+		$view = self::current_view( $connected, $dashboard_signal );
+		if ( null === $view || 'visible' !== ( $view['mode'] ?? '' ) ) {
+			return false;
+		}
+		$listed = array_column( (array) $view['items'], 'id' );
+		return in_array( $id, $listed, true );
+	}
+
+	/**
 	 * Render the panel on the Dashboard screen.
 	 *
 	 * @param bool $connected        Site connected to an Oppti account.
