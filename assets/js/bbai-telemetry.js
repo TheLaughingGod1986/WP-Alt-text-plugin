@@ -1032,19 +1032,9 @@
 
     var CHECKOUT_ATTRIBUTION_KEYS = [
         'trigger_feature', 'trigger_location', 'source_page', 'target_plan', 'current_plan', 'source',
-        'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer', 'landing_page'
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'
     ];
-
-    function checkoutReferrerHost(value) {
-        var raw = String(value || '').trim();
-        var match = /^(?:[a-z][a-z0-9+.\-]*:)?\/\/([^\/?#]*)/i.exec(raw) || /^([^\/?#]*)/.exec(raw);
-        return String((match && match[1]) || '').replace(/^[^@]*@/, '').replace(/:\d*$/, '').toLowerCase();
-    }
-
-    function checkoutLandingPath(value) {
-        var raw = String(value || '').trim().split(/[?#]/)[0];
-        return raw.replace(/^(?:[a-z][a-z0-9+.\-]*:)?\/\/[^\/]*/i, '');
-    }
+    // The referrer host and landing path are not sent with checkout requests.
 
     function pickCheckoutAttribution(source) {
         var out = {};
@@ -1054,11 +1044,6 @@
                 return;
             }
             value = String(value);
-            if (key === 'referrer') {
-                value = checkoutReferrerHost(value);
-            } else if (key === 'landing_page') {
-                value = checkoutLandingPath(value);
-            }
             if (value !== '') {
                 out[key] = value;
             }

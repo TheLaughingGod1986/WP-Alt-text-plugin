@@ -2211,7 +2211,7 @@ JS,
 		$attribution_payload     = class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' )
 			? \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload()
 			: array();
-		// The referrer host and landing path are kept for checkout only, never for analytics.
+		// The referrer host and landing path are never sent to analytics or to checkout.
 		$attribution_captured = ! empty( $attribution_payload );
 		unset( $attribution_payload['referrer'], $attribution_payload['landing_page'] );
 		if ( $attribution_captured ) {

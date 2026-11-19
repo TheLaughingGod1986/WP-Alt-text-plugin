@@ -3292,6 +3292,9 @@ class API_Client_V2 {
 			$payload['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id() );
 		}
 
+		// The referrer host and landing path are never sent to /billing/checkout.
+		unset( $payload['referrer'], $payload['landing_page'] );
+
 		// Which plugin the checkout came from (set last so attribution cannot change it).
 		$payload['plugin'] = 'alt_text';
 
@@ -3343,16 +3346,23 @@ class API_Client_V2 {
 			$this->clear_token();
 			delete_transient( 'bbai_token_last_check' );
 
-			// Retry without token (guest checkout)
-			$response = $this->make_request(
+			// Retry without token (guest checkout). It keeps the utm_* tags, the
+			// hashed site_install_id and plugin=alt_text so it is still attributed.
+			$retry_payload = array(
+				'priceId'    => $price_id,
+				'successUrl' => $success_url,
+				'cancelUrl'  => $cancel_url,
+			);
+			foreach ( array( 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'site_install_id' ) as $retry_key ) {
+				if ( isset( $payload[ $retry_key ] ) && '' !== $payload[ $retry_key ] ) {
+					$retry_payload[ $retry_key ] = $payload[ $retry_key ];
+				}
+			}
+			$retry_payload['plugin'] = 'alt_text';
+			$response                = $this->make_request(
 				'/billing/checkout',
 				'POST',
-				array(
-					'priceId'    => $price_id,
-					'successUrl' => $success_url,
-					'cancelUrl'  => $cancel_url,
-					'plugin'     => 'alt_text',
-				)
+				$retry_payload
 			);
 		}
 

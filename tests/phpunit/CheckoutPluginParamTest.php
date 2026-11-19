@@ -1,8 +1,10 @@
 <?php
 /**
  * The /billing/checkout request says which plugin it came from (plugin=alt_text)
- * next to the UTM tags it already forwards, and an expired session no longer
- * retries a /billing/checkout/guest route the backend does not have.
+ * next to the UTM tags it already forwards, never carries the referrer host or
+ * landing path, keeps the UTM tags, hashed site_install_id and plugin on the
+ * user-not-found retry, and an expired session no longer retries a
+ * /billing/checkout/guest route the backend does not have.
  */
 declare(strict_types=1);
 
@@ -51,6 +53,9 @@ final class CheckoutPluginParamTest extends TestCase {
 		if ( ! function_exists( 'wp_remote_request' ) ) {
 			function wp_remote_request( $url, $args ) {
 				$GLOBALS['bbai_test_http_requests'][] = array( 'url' => $url, 'args' => $args );
+				if ( ! empty( $GLOBALS['bbai_test_http_responses'] ) ) {
+					return array_shift( $GLOBALS['bbai_test_http_responses'] );
+				}
 				return array( 'status' => 200, 'body' => array( 'success' => true, 'url' => 'https://checkout.stripe.com/c/pay/cs_test_a1' ) );
 			}
 		}
@@ -129,6 +134,58 @@ final class CheckoutPluginParamTest extends TestCase {
 		$this->assertSame( '/billing/checkout', $client->calls[0][0] );
 		$this->assertSame( 'alt_text', $client->calls[0][1]['plugin'] );
 		$this->assertSame( 'newsletter', $client->calls[0][1]['utm_source'] );
+	}
+
+	public function test_checkout_body_has_no_referrer_or_landing_page(): void {
+		$this->client()->create_checkout_session(
+			'price_test_1',
+			'https://example.com/ok',
+			'https://example.com/cancel',
+			array( 'referrer' => 'https://www.google.com/', 'landing_page' => '/wp-admin/admin.php', 'trigger_feature' => 'out_of_credits' )
+		);
+		$raw  = (string) $GLOBALS['bbai_test_http_requests'][0]['args']['body'];
+		$body = json_decode( $raw, true );
+		$this->assertArrayNotHasKey( 'referrer', $body );
+		$this->assertArrayNotHasKey( 'landing_page', $body );
+		$this->assertStringNotContainsString( 'google.com', $raw );
+		$this->assertStringNotContainsString( 'wp-admin/admin.php', $raw );
+		$this->assertSame( 'newsletter', $body['utm_source'] );
+		$this->assertArrayNotHasKey( 'referrer', BBAI_Attribution::for_checkout( BBAI_Attribution::get_payload() ) );
+		$this->assertArrayNotHasKey( 'landing_page', BBAI_Attribution::for_checkout( BBAI_Attribution::get_payload() ) );
+	}
+
+	public function test_user_not_found_retry_keeps_utm_site_install_id_and_plugin(): void {
+		if ( ! function_exists( 'delete_transient' ) ) {
+			function delete_transient( $key ) { return true; }
+		}
+		$api = new class() extends API_Client_V2 {
+			public function __construct() {}
+			public function get_token() { return $GLOBALS['bbai_test_token'] ?? ''; }
+			public function clear_token() { $GLOBALS['bbai_test_token'] = ''; }
+		};
+		( new ReflectionProperty( API_Client_V2::class, 'api_url' ) )->setValue( $api, 'https://example.test/api' );
+		$GLOBALS['bbai_test_token']          = 'jwt-test';
+		$GLOBALS['bbai_test_http_responses'] = array(
+			array( 'status' => 500, 'body' => array( 'success' => false, 'error' => 'User not found' ) ),
+		);
+
+		$api->create_checkout_session( 'price_test_1', 'https://example.com/ok', 'https://example.com/cancel', array( 'referrer' => 'https://www.google.com/' ) );
+
+		$this->assertCount( 2, $GLOBALS['bbai_test_http_requests'], 'one retry after user not found' );
+		$retry = $GLOBALS['bbai_test_http_requests'][1];
+		$this->assertStringEndsWith( '/billing/checkout', $retry['url'] );
+		$body = json_decode( (string) $retry['args']['body'], true );
+		$this->assertSame( 'alt_text', $body['plugin'] );
+		$this->assertSame( 'price_test_1', $body['priceId'] );
+		foreach ( array( 'utm_source' => 'newsletter', 'utm_medium' => 'email', 'utm_campaign' => 'october', 'utm_content' => 'cta', 'utm_term' => 'alt text' ) as $k => $v ) {
+			$this->assertSame( $v, $body[ $k ], $k );
+		}
+		// sha256( 'oppti-install-v1:' . the bootstrap site identifier ), never the raw identifier.
+		$this->assertSame( '61cf62dcdec8b141d4415c712d64be5953f8f35b0ec8ed67137508be91c9592e', $body['site_install_id'] );
+		$this->assertStringNotContainsString( 'test_site_install_id_0123456789ab', (string) $retry['args']['body'] );
+		$this->assertArrayNotHasKey( 'referrer', $body );
+		$this->assertArrayNotHasKey( 'landing_page', $body );
+		$this->assertArrayNotHasKey( 'Authorization', (array) ( $retry['args']['headers'] ?? array() ), 'retry goes without the token' );
 	}
 
 	public function test_no_shipped_code_calls_the_guest_checkout_route(): void {

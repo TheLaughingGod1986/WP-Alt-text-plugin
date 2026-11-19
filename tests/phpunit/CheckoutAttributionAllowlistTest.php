@@ -1,7 +1,7 @@
 <?php
 /**
- * Checkout attribution carries only the checkout context, the UTM tags, the
- * referrer host and the landing page path. Ids, keys and email never reach
+ * Checkout attribution carries only the checkout context and the UTM tags (the
+ * referrer and landing page are not sent, 4.6.145). Ids, keys and email never reach
  * the /billing/checkout request, even when the stored option or the click
  * context is crafted to include them.
  */
@@ -16,12 +16,12 @@ use PHPUnit\Framework\TestCase;
 final class CheckoutAttributionAllowlistTest extends TestCase {
 	private const ALLOWED = array(
 		'trigger_feature', 'trigger_location', 'source_page', 'target_plan', 'current_plan', 'source',
-		'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer', 'landing_page',
+		'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
 	);
 
 	private const FORBIDDEN = array(
 		'account_id', 'user_id', 'license_key', 'license_key_present', 'site_id', 'site_hash', 'email',
-		'acquisition_channel', 'captured_at',
+		'acquisition_channel', 'captured_at', 'referrer', 'landing_page',
 	);
 
 	protected function setUp(): void {
@@ -112,12 +112,10 @@ final class CheckoutAttributionAllowlistTest extends TestCase {
 		);
 	}
 
-	public function test_for_checkout_keeps_only_allowed_keys_host_and_path(): void {
+	public function test_for_checkout_keeps_only_allowed_keys(): void {
 		$out = BBAI_Attribution::for_checkout( array_merge( BBAI_Attribution::get_payload(), $this->crafted_click_context() ) );
 
 		$this->assertSame( array(), array_values( array_diff( array_keys( $out ), self::ALLOWED ) ) );
-		$this->assertSame( 'www.google.com', $out['referrer'] );
-		$this->assertSame( '/wp-admin/admin.php', $out['landing_page'] );
 		$this->assertSame( 'growth', $out['target_plan'] );
 		$this->assertSame( 'alt text', $out['utm_term'] );
 		foreach ( self::FORBIDDEN as $key ) {
@@ -155,8 +153,6 @@ final class CheckoutAttributionAllowlistTest extends TestCase {
 		$this->assertSame( 'growth', $body['target_plan'] );
 		$this->assertSame( 'out_of_credits', $body['trigger_feature'] );
 
-		$this->assertSame( 'www.google.com', $body['referrer'] );
-		$this->assertSame( '/wp-admin/admin.php', $body['landing_page'] );
 		foreach ( self::FORBIDDEN as $key ) {
 			$this->assertArrayNotHasKey( $key, $body );
 		}

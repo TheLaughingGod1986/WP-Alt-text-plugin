@@ -136,7 +136,9 @@ function bbai_get_site_install_id( $site_id = null ) {
  * Events are still sent; callers should attach the returned value as
  * `is_internal` so dashboards can filter development and test usage.
  *
- * @param string $email Optional account/admin email to evaluate.
+ * Emails are not used: test sites are matched by site hash in analytics.
+ *
+ * @param string $email Unused; kept for backwards compatibility.
  * @return bool
  */
 function is_internal_environment($email = '') {
@@ -145,7 +147,7 @@ function is_internal_environment($email = '') {
 		$host = (string) (wp_parse_url(home_url('/'), PHP_URL_HOST) ?: '');
 	}
 	$host = strtolower($host);
-	$email = strtolower(trim((string) $email));
+	unset($email);
 
 	$is_internal = false;
 
@@ -164,13 +166,6 @@ function is_internal_environment($email = '') {
 		$is_internal = true;
 	}
 
-	if (!$is_internal && '' !== $email) {
-		$is_internal = (bool) preg_match(
-			'/(^ben@|admin@|test@|demo@|dev@|staging@|localhost|example\.com$|example\.test$|beepbeep|boxedtech|optti)/i',
-			$email
-		);
-	}
-
 	/**
 	 * Filter whether PostHog/frontend analytics should be flagged internal.
 	 *
@@ -182,7 +177,7 @@ function is_internal_environment($email = '') {
 		$is_internal,
 		[
 			'host'             => $host,
-			'email'            => $email,
+			'email'            => '',
 			'environment_type' => function_exists('wp_get_environment_type') ? wp_get_environment_type() : '',
 			'wp_debug'         => defined('WP_DEBUG') && WP_DEBUG,
 		]

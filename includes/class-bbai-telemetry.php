@@ -107,9 +107,6 @@ class BBAI_Telemetry {
 	/** Domain suffixes and host patterns that mark a local, staging or sandbox site. */
 	private const TEST_HOST_PATTERN = '/(^localhost$|^127\.\d+\.\d+\.\d+$|^::1$|^\[::1\]$|\.local$|\.test$|\.localhost$|\.invalid$|\.example$|(^|\.)example\.(com|org|net)$|(^|[.-])(staging|stg)([.-]|\d|$)|(staging|stg)\d*\.wpengine(powered)?\.com$|\.wpenginestaging\.com$|(staging|stg|tempurl).*\.godaddysites\.com$|\.myftpupload\.com$|(^|\.)tempurl\.|instawp|tastewp|playground|localhost|127\.0\.0\.1|wpsandbox|wp-env|trycloudflare|ngrok)/i';
 
-	/** Email domain used by OpptiAI QA accounts. */
-	private const TEST_EMAIL_SUFFIX = '@qa.oppti.dev';
-
 	public const CURRENT_VERSION_OPTION = 'bbai_telemetry_current_plugin_version';
 
 	public const PREVIOUS_VERSION_OPTION = 'bbai_telemetry_previous_plugin_version';
@@ -1077,8 +1074,9 @@ class BBAI_Telemetry {
 	}
 
 	/**
-	 * Whether this is a local, staging, sandbox or QA site. Computed locally; only the
-	 * boolean is ever sent, never the host or an email address.
+	 * Whether this is a local, staging or sandbox site (environment type or a generic
+	 * host pattern). Computed locally; only the boolean is ever sent, never the host.
+	 * Known test sites are matched by site_hash in analytics, not by any email.
 	 */
 	public static function is_test_site(): bool {
 		if ( defined( 'BBAI_TELEMETRY_TEST' ) && BBAI_TELEMETRY_TEST ) {
@@ -1090,17 +1088,6 @@ class BBAI_Telemetry {
 		$host = function_exists( 'home_url' ) ? strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) : '';
 		if ( '' !== $host && preg_match( self::TEST_HOST_PATTERN, $host ) ) {
 			return true;
-		}
-		$emails = array( (string) get_option( 'admin_email', '' ) );
-		$user   = get_option( 'beepbeepai_user_data', array() );
-		if ( is_array( $user ) && isset( $user['email'] ) && is_scalar( $user['email'] ) ) {
-			$emails[] = (string) $user['email'];
-		}
-		foreach ( $emails as $email ) {
-			$email = strtolower( trim( $email ) );
-			if ( strlen( $email ) > strlen( self::TEST_EMAIL_SUFFIX ) && substr( $email, -strlen( self::TEST_EMAIL_SUFFIX ) ) === self::TEST_EMAIL_SUFFIX ) {
-				return true;
-			}
 		}
 		return false;
 	}

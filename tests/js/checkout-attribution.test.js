@@ -1,7 +1,8 @@
 /**
  * Checkout attribution sent with beepbeepai_create_checkout carries only the
- * checkout context, UTM tags, the referrer host and the landing page path.
- * Ids, keys and email in the page context or overrides never reach it.
+ * checkout context and the UTM tags. The referrer and landing page are not
+ * sent (4.6.145), and ids, keys and email in the page context or overrides
+ * never reach it.
  *
  * Run offline: unshare -rn sh -c 'ip link set lo up && npx jest --runInBand tests/js'
  */
@@ -16,9 +17,9 @@ const read = (name) => fs.readFileSync(path.join(JS_DIR, name), 'utf8');
 
 const ALLOWED = [
     'trigger_feature', 'trigger_location', 'source_page', 'target_plan', 'current_plan', 'source',
-    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer', 'landing_page',
+    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
 ];
-const FORBIDDEN = ['account_id', 'user_id', 'license_key', 'license_key_present', 'site_id', 'site_hash', 'site_install_id', 'email'];
+const FORBIDDEN = ['referrer', 'landing_page', 'account_id', 'user_id', 'license_key', 'license_key_present', 'site_id', 'site_hash', 'site_install_id', 'email'];
 const SECRETS = ['LK-CRAFTED-SECRET', 'crafted@example.test', 'acct-123', 'user-456', 'site-789', 'hash-abc'];
 
 const craftedContext = () => ({
@@ -120,7 +121,7 @@ function runDashboardFallback(fnSource) {
 }
 
 describe('checkout attribution allowlist', () => {
-    test('telemetry buildCheckoutAttribution keeps only allowed keys, referrer host, landing path', () => {
+    test('telemetry buildCheckoutAttribution keeps only allowed keys and drops referrer and landing page', () => {
         const window = loadTelemetry();
         const payload = window.bbaiTelemetry.buildCheckoutAttribution(Object.assign(craftedContext(), {
             target_plan: 'growth',
@@ -134,8 +135,9 @@ describe('checkout attribution allowlist', () => {
         expect(payload.target_plan).toBe('growth');
         expect(payload.source).toBe('app');
         expect(payload.utm_source).toBe('newsletter');
-        expect(payload.referrer).toBe('www.google.com');
-        expect(payload.landing_page).toBe('/wp-admin/admin.php');
+        expect(payload).not.toHaveProperty('referrer');
+        expect(payload).not.toHaveProperty('landing_page');
+        expect(JSON.stringify(payload)).not.toMatch(/google|wp-admin/i);
     });
 
     test('telemetry buildCheckoutAttribution with the dashboard overrides drops page-context identity', () => {
@@ -157,5 +159,33 @@ describe('checkout attribution allowlist', () => {
         expectAllowed(payload);
         expect(payload.target_plan).toBe('growth');
         expect(payload.current_plan).toBe('free');
+    });
+
+    test.each([
+        ['bbai-dashboard.js', dashboardFallbackFromSource],
+        ['bbai-dashboard.min.js', dashboardFallbackFromMin],
+    ])('dashboard checkout payload from %s, with telemetry loaded, has no referrer or landing page', (label, extract) => {
+        const ctx = Object.assign(craftedContext(), {
+            referrer: 'https://www.google.com/search?q=alt',
+            landing_page: '/wp-admin/admin.php?page=bbai',
+            utm_source: 'newsletter',
+        });
+        const window = baseWindow({
+            BBAI_TELEMETRY: { ajaxUrl: '/wp-admin/admin-ajax.php', nonce: 'n', context: ctx },
+            BBAI_POSTHOG: { context: ctx },
+            bbaiAnalytics: { getContext: () => ctx },
+        });
+        const sandbox = sandboxFor(window);
+        vm.runInContext(read('bbai-telemetry.js'), sandbox, { filename: 'bbai-telemetry.js' });
+        expect(typeof window.bbaiTelemetry.buildCheckoutAttribution).toBe('function');
+        const payload = vm.runInContext(extract(), sandbox)('growth');
+        expectAllowed(payload);
+        expect(payload).not.toHaveProperty('referrer');
+        expect(payload).not.toHaveProperty('landing_page');
+        expect(payload.target_plan).toBe('growth');
+    });
+
+    test.each(['bbai-dashboard.js', 'bbai-dashboard.min.js', 'bbai-telemetry.js', 'bbai-posthog.js'])('%s has no staff or test email domain', (name) => {
+        expect(read(name)).not.toContain('qa.oppti.dev');
     });
 });

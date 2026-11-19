@@ -1,7 +1,7 @@
 <?php
 /**
- * is_test is computed locally from the environment type, the home host and the
- * admin / connected account email. Only the boolean is sent.
+ * is_test is computed locally from the environment type and the home host. Emails
+ * never flag a site (test sites are matched by site_hash). Only the boolean is sent.
  */
 declare(strict_types=1);
 
@@ -64,8 +64,8 @@ namespace {
 				'instawp'                 => array( true, 'https://brave-cat.instawp.xyz' ),
 				'tastewp'                 => array( true, 'https://hungryfish.s1-tastewp.com' ),
 				'playground'              => array( true, 'https://playground.wordpress.net' ),
-				'qa admin email'          => array( true, 'https://www.real-bakery.co.uk', 'production', 'ops@qa.oppti.dev' ),
-				'qa account email'        => array( true, 'https://www.real-bakery.co.uk', 'production', 'owner@real-bakery.co.uk', 'Tester+1@QA.oppti.dev' ),
+				'qa admin email ignored'  => array( false, 'https://www.real-bakery.co.uk', 'production', 'ops@qa.oppti.dev' ),
+				'qa account email ignored' => array( false, 'https://www.real-bakery.co.uk', 'production', 'owner@real-bakery.co.uk', 'Tester+1@QA.oppti.dev' ),
 				'production site'         => array( false, 'https://www.real-bakery.co.uk' ),
 				'production wpengine'     => array( false, 'https://realbakery.wpengine.com' ),
 				'production godaddy'      => array( false, 'https://realbakery.godaddysites.com' ),

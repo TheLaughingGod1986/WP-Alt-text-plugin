@@ -86,13 +86,14 @@ class BBAI_Attribution {
 	 * @return string[]
 	 */
 	public static function checkout_attribution_keys(): array {
-		return array( 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'referrer', 'landing_page' );
+		// The referrer host and landing path are not sent to /billing/checkout.
+		return array( 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term' );
 	}
 
 	/**
-	 * Reduce checkout attribution to the allowed keys: the checkout context,
-	 * the UTM tags, the referrer host only and the landing page path only.
-	 * Anything else (ids, keys, email, channel, timestamps) is dropped.
+	 * Reduce checkout attribution to the allowed keys: the checkout context and
+	 * the UTM tags. Anything else (referrer, landing page, ids, keys, email,
+	 * channel, timestamps) is dropped.
 	 *
 	 * @param array<string,mixed> $payload Stored attribution merged with the click context.
 	 * @return array<string,string>
@@ -104,11 +105,6 @@ class BBAI_Attribution {
 				continue;
 			}
 			$value = sanitize_text_field( (string) $payload[ $key ] );
-			if ( 'referrer' === $key ) {
-				$value = self::referrer_host( $value );
-			} elseif ( 'landing_page' === $key ) {
-				$value = self::landing_path( $value );
-			}
 			if ( '' === $value ) {
 				continue;
 			}
