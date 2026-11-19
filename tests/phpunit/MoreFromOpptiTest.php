@@ -111,18 +111,17 @@ namespace {
 			$this->assertSame( array( 'titles', 'linking', 'auditor' ), $m[1] );
 		}
 
-		public function test_lists_plugin_whenever_panel_is_rendered(): void {
-			// Awaiting a success in this page view (rendered hidden): the old Titles line already stands down,
-			// so a same-page reveal never leaves two Titles promos on screen.
-			$this->assertTrue( MFO::lists_plugin( 'titles', true ) );
-			$this->assertTrue( MFO::lists_plugin( 'titles', true, false ) );
+		public function test_lists_plugin_only_when_visible(): void {
+			// Awaiting a success in this page view (rendered hidden): the old Titles line still shows;
+			// the panel script hides it on reveal.
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
 			update_option( 'bbai_first_success_at', time() );
 			$this->assertTrue( MFO::lists_plugin( 'titles', true ) );
-			// Panel rendered but Titles not listed (installed): the old line keeps its own rules.
+			// Panel visible but Titles not listed (installed): the old line keeps its own rules.
 			$GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] = array( 'TextDomain' => 'beepbeep-titles' );
 			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
 			unset( $GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] );
-			// Panel not rendered at all: other screen, dismissed, or no capability.
+			// Panel not rendered at all: other screen or dismissed.
 			$_GET = array( 'page' => 'bbai-library' );
 			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
 			$_GET = array( 'page' => 'bbai' );
@@ -133,25 +132,51 @@ namespace {
 			$this->assertStringContainsString( "BBAI_More_From_Oppti::lists_plugin( 'titles'", $src );
 		}
 
-		public function test_one_titles_promo_per_screen(): void {
-			// Rendered panel (awaiting) and the old line never both print; without the panel the old line is back.
-			$this->assertSame( 1, $this->titles_promos() );
+		public function test_titles_promos_before_and_after_success(): void {
+			// Before success: panel waits hidden, the old Titles line shows (one visible Titles promo).
+			$this->assertSame( array( 'panel_hidden' => 1, 'panel_visible' => 0, 'legacy' => 1 ), $this->titles_promos() );
+			// Reload after a success: the visible panel lists Titles and the old line stands down.
+			update_option( 'bbai_first_success_at', time() );
+			$this->assertSame( array( 'panel_hidden' => 0, 'panel_visible' => 1, 'legacy' => 0 ), $this->titles_promos() );
+			// Dismissed: no panel, the old line is back as before.
 			update_user_meta( get_current_user_id(), MFO::DISMISS_META, time() );
-			$this->assertSame( 1, $this->titles_promos() );
+			$this->assertSame( array( 'panel_hidden' => 0, 'panel_visible' => 0, 'legacy' => 1 ), $this->titles_promos() );
+		}
+
+		public function test_old_titles_line_keeps_its_own_link(): void {
+			$legacy = $this->legacy_html();
+			$this->assertStringContainsString( 'data-bbai-titles-cross-sell="1"', $legacy );
+			$this->assertStringContainsString( 'href="https://wordpress.org/plugins/opptiai-titles/"', $legacy );
+			$this->assertStringNotContainsString( 'xs-alt-to-titles', $legacy );
 		}
 
 		/**
-		 * Count Titles promos on the Dashboard: panel rows for Titles plus the old line.
+		 * Titles promos on the Dashboard: panel Titles rows (hidden or visible) and the old line/card.
+		 *
+		 * @return array{panel_hidden:int,panel_visible:int,legacy:int}
 		 */
-		private function titles_promos(): int {
+		private function titles_promos(): array {
+			$panel  = $this->html( true, false );
+			$rows   = substr_count( $panel, 'data-to="titles"' );
+			$hidden = (bool) preg_match( '/<section[^>]*\shidden data-await-success="1"/', $panel );
+			$legacy = $this->legacy_html();
+			return array(
+				'panel_hidden'  => $hidden ? $rows : 0,
+				'panel_visible' => $hidden ? 0 : $rows,
+				'legacy'        => substr_count( $legacy, 'data-bbai-titles-cross-sell' ) + substr_count( $legacy, 'data-bbai-next-audit' ),
+			);
+		}
+
+		/**
+		 * Output of the old Titles cross-sell partial for a connected Free site.
+		 */
+		private function legacy_html(): string {
 			$bbai_has_connected_account  = true;
-			$bbai_has_ever_generated_alt = false;
-			$panel = $this->html( true, false );
+			$bbai_has_ever_generated_alt = (bool) get_option( 'bbai_first_success_at' );
 			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-plan-tier.php';
 			ob_start();
 			include BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-titles-cross-sell.php';
-			$legacy = (string) ob_get_clean();
-			return substr_count( $panel, 'data-to="titles"' ) + substr_count( $legacy, 'data-bbai-titles-cross-sell' ) + substr_count( $legacy, 'data-bbai-next-audit' );
+			return (string) ob_get_clean();
 		}
 
 		public function test_intro_cases(): void {

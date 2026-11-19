@@ -30,13 +30,19 @@ function el(attrs, extra) {
     return node;
 }
 
-function makeEnv({ consent, await: awaitSuccess }) {
+function makeEnv({ consent, await: awaitSuccess, rows }) {
     const beacons = [];
     const fetches = [];
     const docListeners = {};
-    const links = [
-        el({ 'data-bbai-mfo-link': '1', 'data-to': 'titles', 'data-link-target': 'installer' }),
-        el({ 'data-bbai-mfo-link': '1', 'data-to': 'auditor', 'data-link-target': 'wporg' }),
+    const links = (rows || ['titles', 'auditor']).map((to) => el({
+        'data-bbai-mfo-link': '1',
+        'data-to': to,
+        'data-link-target': to === 'titles' ? 'installer' : 'wporg',
+    }));
+    // Older Titles promos printed by the Dashboard (line and "next audit" card).
+    const legacy = [
+        el({ 'data-bbai-titles-cross-sell': '1' }, { style: {} }),
+        el({ 'data-bbai-next-audit': 'opptiai-titles' }, { style: {} }),
     ];
     const form = el({ 'data-bbai-mfo-dismiss-form': '1' });
     const panelAttrs = { 'data-bbai-mfo': '1', 'data-from': 'alt', 'data-account-state': 'guest' };
@@ -67,6 +73,9 @@ function makeEnv({ consent, await: awaitSuccess }) {
     const document = {
         readyState: 'complete',
         querySelector(sel) { return sel === '[data-bbai-mfo]' ? panel : null; },
+        querySelectorAll(sel) {
+            return sel === '[data-bbai-titles-cross-sell],[data-bbai-next-audit="opptiai-titles"]' ? legacy : [];
+        },
         addEventListener(type, fn) { (docListeners[type] = docListeners[type] || []).push(fn); },
     };
     vm.runInNewContext(SRC, { window, document, Number, Object, JSON });
@@ -78,7 +87,7 @@ function makeEnv({ consent, await: awaitSuccess }) {
         form.listeners.submit.forEach((fn) => fn({ preventDefault() { prevented = true; } }));
         return prevented;
     };
-    return { panel, links, events, fetches, fire, click, submit };
+    return { panel, links, legacy, events, fetches, fire, click, submit };
 }
 
 describe('More from Oppti panel script', () => {
@@ -97,6 +106,29 @@ describe('More from Oppti panel script', () => {
         env.fire('bbai:generation:finished', { successes: 2, failures: 1 });
         expect(env.panel.hidden).toBe(false);
         expect(env.events().map((e) => e.event)).toEqual(['crosssell_panel_shown']);
+    });
+
+    test('before success the old Titles promo stays; a same-page success leaves only the panel', () => {
+        const env = makeEnv({ consent: false, await: true });
+        const visibleTitles = () => (env.panel.hidden ? 0 : env.links.filter((l) => l.getAttribute('data-to') === 'titles').length)
+            + env.legacy.filter((n) => !n.hidden).length;
+        expect(env.legacy.map((n) => n.hidden)).toEqual([false, false]);
+        env.fire('bbai:generation:finished', { successes: 0, failures: 2 });
+        expect(env.legacy.map((n) => n.hidden)).toEqual([false, false]);
+        env.fire('bbai:generation:finished', { successes: 1 });
+        expect(env.panel.hidden).toBe(false);
+        expect(env.legacy.map((n) => n.hidden)).toEqual([true, true]);
+        expect(env.legacy.map((n) => n.style.display)).toEqual(['none', 'none']);
+        // The old card is a single block; the line and the card never both print, so one Titles promo remains.
+        expect(visibleTitles()).toBe(1);
+    });
+
+    test('reveal leaves the old Titles promo alone when the panel has no Titles row', () => {
+        const env = makeEnv({ consent: false, await: true, rows: ['linking', 'auditor'] });
+        env.fire('bbai:generation:finished', { successes: 1 });
+        expect(env.panel.hidden).toBe(false);
+        expect(env.legacy.map((n) => n.hidden)).toEqual([false, false]);
+        expect(env.legacy.map((n) => n.style.display)).toEqual([undefined, undefined]);
     });
 
     test('no events at all without consent', () => {

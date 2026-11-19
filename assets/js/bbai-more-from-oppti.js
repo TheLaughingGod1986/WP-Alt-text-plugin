@@ -71,9 +71,39 @@
         send(panel, 'crosssell_panel_shown', { suggested: suggested(panel) });
     }
 
+    // Older single-plugin Titles promos on the same screen (line and "next audit" card).
+    var TITLES_LEGACY = '[data-bbai-titles-cross-sell],[data-bbai-next-audit="opptiai-titles"]';
+
+    function listsTitles(panel) {
+        var links = panel.querySelectorAll('[data-bbai-mfo-link]');
+        for (var i = 0; i < links.length; i++) {
+            if (links[i].getAttribute('data-to') === 'titles') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // One Titles promo per screen: when the panel appears with a Titles row,
+    // the older Titles promo stands down for the rest of this page view.
+    function hideLegacyTitles(panel) {
+        if (!listsTitles(panel) || typeof document.querySelectorAll !== 'function') {
+            return;
+        }
+        var nodes = document.querySelectorAll(TITLES_LEGACY);
+        for (var i = 0; i < nodes.length; i++) {
+            nodes[i].hidden = true;
+            // The old line is display:flex in the Dashboard CSS, which would override [hidden].
+            if (nodes[i].style) {
+                nodes[i].style.display = 'none';
+            }
+        }
+    }
+
     function reveal(panel) {
         panel.hidden = false;
         panel.removeAttribute('data-await-success');
+        hideLegacyTitles(panel);
         markShown(panel);
     }
 

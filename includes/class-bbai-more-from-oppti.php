@@ -461,9 +461,10 @@ class BBAI_More_From_Oppti {
 	}
 
 	/**
-	 * Whether the panel is rendered (visible, or hidden awaiting a success in
-	 * this page view) and lists a given plugin. Older single-plugin cards for
-	 * that plugin stand down, so a reveal never leaves two promos on one screen.
+	 * Whether the panel is visible on load and lists a given plugin. Older
+	 * single-plugin cards for that plugin stand down (one panel per screen).
+	 * While the panel waits hidden for a success, the older card still shows;
+	 * the panel script hides it on reveal.
 	 *
 	 * @param string $id               Catalog id.
 	 * @param bool   $connected        Site connected to an Oppti account.
@@ -471,7 +472,7 @@ class BBAI_More_From_Oppti {
 	 */
 	public static function lists_plugin( string $id, bool $connected, bool $dashboard_signal = false ): bool {
 		$view = self::current_view( $connected, $dashboard_signal );
-		if ( null === $view ) {
+		if ( null === $view || 'visible' !== ( $view['mode'] ?? '' ) ) {
 			return false;
 		}
 		$listed = array_column( (array) $view['items'], 'id' );
