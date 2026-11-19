@@ -51,7 +51,7 @@ class BBAI_Telemetry {
 
 	public const ACTIVATION_MARKER_OPTION = 'bbai_telemetry_plugin_activated';
 
-	/** Other OpptiAI plugins active at first activation (comma list of ids, local only). */
+	/** OpptiAI plugins installed at first activation (four installed-plugin booleans, local only). */
 	public const ACTIVATION_PLUGINS_OPTION = 'bbai_activation_oppti_plugins';
 
 	/** Set once the opt-in lifecycle snapshot has been sent for this site. */
@@ -397,7 +397,13 @@ class BBAI_Telemetry {
 					'occurred_at'        => $opted_in_at,
 					'$insert_id'         => 'bbai_opt_in_lifecycle:' . hash( 'sha256', $event_name . '|' . $site_install_id ),
 				),
-				array_filter( $extra )
+				// Drop empty markers only; boolean false (e.g. has_il) must survive.
+				array_filter(
+					$extra,
+					static function ( $value ) {
+						return null !== $value && '' !== $value;
+					}
+				)
 			);
 			self::capture_posthog_event( $event_name, $site_install_id, $properties, $opted_in_at );
 		}

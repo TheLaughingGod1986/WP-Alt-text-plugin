@@ -42,7 +42,6 @@ class BBAI_More_From_Oppti {
 	/** Plugin admin page that hosts the panel. */
 	public const SCREEN_PAGE = 'bbai';
 
-	/** UTM campaign for WordPress.org fallback links. */
 	/**
 	 * Event property per plugin id for the installed flags.
 	 */
@@ -53,6 +52,7 @@ class BBAI_More_From_Oppti {
 		'auditor' => 'has_auditor',
 	);
 
+	/** UTM campaign for WordPress.org fallback links. */
 	public const UTM_CAMPAIGN = 'push-nov26';
 
 	/** Events the panel may send (through the consented telemetry bridge). */
@@ -91,19 +91,19 @@ class BBAI_More_From_Oppti {
 				'login'        => true,
 				'text_domains' => array( 'beepbeep-titles', 'opptiai-titles' ),
 			),
-			'auditor' => array(
-				'slug'         => 'opptiai-website-auditor',
-				'name'         => 'OpptiAI Website Auditor',
-				'kind'         => 'free',
-				'login'        => false,
-				'text_domains' => array( 'opptiai-website-auditor' ),
-			),
 			'linking' => array(
 				'slug'         => 'opptiai-internal-linking',
 				'name'         => 'OpptiAI Internal Linking',
 				'kind'         => 'none',
 				'login'        => false,
 				'text_domains' => array( 'opptiai-internal-linking' ),
+			),
+			'auditor' => array(
+				'slug'         => 'opptiai-website-auditor',
+				'name'         => 'OpptiAI Website Auditor',
+				'kind'         => 'free',
+				'login'        => false,
+				'text_domains' => array( 'opptiai-website-auditor' ),
 			),
 		);
 	}
@@ -461,8 +461,9 @@ class BBAI_More_From_Oppti {
 	}
 
 	/**
-	 * Whether the panel is visible on load and lists a given plugin. Older
-	 * single-plugin cards for that plugin stand down (one panel per screen).
+	 * Whether the panel is rendered (visible, or hidden awaiting a success in
+	 * this page view) and lists a given plugin. Older single-plugin cards for
+	 * that plugin stand down, so a reveal never leaves two promos on one screen.
 	 *
 	 * @param string $id               Catalog id.
 	 * @param bool   $connected        Site connected to an Oppti account.
@@ -470,7 +471,7 @@ class BBAI_More_From_Oppti {
 	 */
 	public static function lists_plugin( string $id, bool $connected, bool $dashboard_signal = false ): bool {
 		$view = self::current_view( $connected, $dashboard_signal );
-		if ( null === $view || 'visible' !== ( $view['mode'] ?? '' ) ) {
+		if ( null === $view ) {
 			return false;
 		}
 		$listed = array_column( (array) $view['items'], 'id' );

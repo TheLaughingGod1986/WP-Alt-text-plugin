@@ -25,7 +25,7 @@ namespace {
 			$GLOBALS['mfo']['plugins']         = array(
 				'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' => array( 'TextDomain' => 'beepbeep-ai-alt-text-generator' ),
 			);
-			foreach ( array( 'bbai_first_success_at', 'active_plugins', BBAI_Telemetry::CONSENT_OPTION, BBAI_Telemetry::CONSENT_SOURCE_OPTION, BBAI_Telemetry::ACTIVATION_MARKER_OPTION, BBAI_Telemetry::ACTIVATION_PLUGINS_OPTION, BBAI_Telemetry::LIFECYCLE_QUEUE_OPTION, BBAI_Telemetry::INSTALLED_MARKER_OPTION, BBAI_Telemetry::LEGACY_INSTALLED_MARKER_OPTION ) as $key ) {
+			foreach ( array( 'bbai_first_success_at', 'active_plugins', BBAI_Telemetry::CONSENT_OPTION, BBAI_Telemetry::CONSENT_SOURCE_OPTION, BBAI_Telemetry::ACTIVATION_MARKER_OPTION, BBAI_Telemetry::ACTIVATION_PLUGINS_OPTION, BBAI_Telemetry::OPT_IN_LIFECYCLE_SENT_OPTION, BBAI_Telemetry::LIFECYCLE_QUEUE_OPTION, BBAI_Telemetry::INSTALLED_MARKER_OPTION, BBAI_Telemetry::LEGACY_INSTALLED_MARKER_OPTION ) as $key ) {
 				unset( $GLOBALS['bbai_test_options'][ $key ] );
 			}
 		}
@@ -91,8 +91,8 @@ namespace {
 			$GLOBALS['mfo']['plugins']['opptiai-internal-linking/opptiai-internal-linking.php'] = array( 'TextDomain' => 'opptiai-internal-linking' );
 			$this->assertSame( '', $this->html( true ) );
 			// Never suggests itself; active-only detection also hides a sibling.
-			$this->assertSame( array( 'titles', 'auditor', 'linking' ), MFO::candidate_ids( array(), array() ) );
-			$this->assertSame( array( 'auditor', 'linking' ), MFO::candidate_ids( array(), array( 'titles' ) ) );
+			$this->assertSame( array( 'titles', 'linking', 'auditor' ), MFO::candidate_ids( array(), array() ) );
+			$this->assertSame( array( 'linking', 'auditor' ), MFO::candidate_ids( array(), array( 'titles' ) ) );
 		}
 
 		public function test_connected_wording_names_only_login_plugins(): void {
@@ -104,15 +104,54 @@ namespace {
 			$this->assertStringNotContainsString( 'works with Internal Linking', $text );
 		}
 
-		public function test_lists_plugin_only_when_visible(): void {
-			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+		public function test_rows_order_titles_then_il_then_auditor(): void {
+			update_option( 'bbai_first_success_at', time() );
+			$html = $this->html( true );
+			preg_match_all( '/data-to="([a-z]+)"/', $html, $m );
+			$this->assertSame( array( 'titles', 'linking', 'auditor' ), $m[1] );
+		}
+
+		public function test_lists_plugin_whenever_panel_is_rendered(): void {
+			// Awaiting a success in this page view (rendered hidden): the old Titles line already stands down,
+			// so a same-page reveal never leaves two Titles promos on screen.
+			$this->assertTrue( MFO::lists_plugin( 'titles', true ) );
+			$this->assertTrue( MFO::lists_plugin( 'titles', true, false ) );
 			update_option( 'bbai_first_success_at', time() );
 			$this->assertTrue( MFO::lists_plugin( 'titles', true ) );
+			// Panel rendered but Titles not listed (installed): the old line keeps its own rules.
 			$GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] = array( 'TextDomain' => 'beepbeep-titles' );
 			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
-			// The old Titles card stands down only while the panel lists Titles.
+			unset( $GLOBALS['mfo']['plugins']['opptiai-titles/beepbeep-titles.php'] );
+			// Panel not rendered at all: other screen, dismissed, or no capability.
+			$_GET = array( 'page' => 'bbai-library' );
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			$_GET = array( 'page' => 'bbai' );
+			update_user_meta( get_current_user_id(), MFO::DISMISS_META, time() );
+			$this->assertFalse( MFO::lists_plugin( 'titles', true ) );
+			// The old Titles card asks lists_plugin() before printing anything.
 			$src = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-titles-cross-sell.php' );
 			$this->assertStringContainsString( "BBAI_More_From_Oppti::lists_plugin( 'titles'", $src );
+		}
+
+		public function test_one_titles_promo_per_screen(): void {
+			// Rendered panel (awaiting) and the old line never both print; without the panel the old line is back.
+			$this->assertSame( 1, $this->titles_promos() );
+			update_user_meta( get_current_user_id(), MFO::DISMISS_META, time() );
+			$this->assertSame( 1, $this->titles_promos() );
+		}
+
+		/**
+		 * Count Titles promos on the Dashboard: panel rows for Titles plus the old line.
+		 */
+		private function titles_promos(): int {
+			$bbai_has_connected_account  = true;
+			$bbai_has_ever_generated_alt = false;
+			$panel = $this->html( true, false );
+			require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-plan-tier.php';
+			ob_start();
+			include BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-titles-cross-sell.php';
+			$legacy = (string) ob_get_clean();
+			return substr_count( $panel, 'data-to="titles"' ) + substr_count( $legacy, 'data-bbai-titles-cross-sell' ) + substr_count( $legacy, 'data-bbai-next-audit' );
 		}
 
 		public function test_intro_cases(): void {
@@ -254,6 +293,26 @@ namespace {
 			foreach ( $expected as $key => $value ) {
 				$this->assertSame( $value, $events['plugin_activated'][ $key ], $key );
 			}
+		}
+
+		public function test_late_opt_in_snapshot_keeps_false_flags(): void {
+			update_option( 'active_plugins', array( 'opptiai-website-auditor/opptiai-website-auditor.php', 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' ) );
+			BBAI_Telemetry::record_activation_lifecycle();
+			$this->assertSame( array(), $GLOBALS['bbai_test_remote_posts'], 'nothing sent before opt-in' );
+
+			BBAI_Telemetry::set_consent( true );
+			$activated = null;
+			foreach ( $GLOBALS['bbai_test_remote_posts'] as $call ) {
+				$body = json_decode( (string) $call['args']['body'], true );
+				if ( 'plugin_activated' === $body['event'] && 'opt_in_snapshot' === ( $body['properties']['lifecycle_delivery'] ?? '' ) ) {
+					$activated = $body['properties'];
+				}
+			}
+			$this->assertNotNull( $activated, 'opt-in snapshot sends plugin_activated' );
+			$this->assertSame( true, $activated['has_alt_text'] );
+			$this->assertSame( false, $activated['has_titles'] );
+			$this->assertSame( false, $activated['has_il'] );
+			$this->assertSame( true, $activated['has_auditor'] );
 		}
 
 		public function test_installed_flags_none_installed(): void {
