@@ -9,11 +9,14 @@
     var cfg = window.BBAI_TELEMETRY || {};
     var queue = [];
     var flushTimer = null;
+    var telemetryOff = false;
     var pageViewSent = false;
     var navSent = {};
     var upgradeClickFallbackBound = false;
     var analyticsFeatureBound = false;
     var wooFeatureBound = false;
+    // One checkout_fallback_payment_link per fallback (same plan and reason within 3s is a repeat).
+    var checkoutFallbackDedup = { key: '', at: 0 };
     var upgradeEventDedup = {
         key: '',
         at: 0
@@ -316,8 +319,6 @@
             site_install_id: identity.site_install_id || '',
             site_id: identity.site_id || '',
             site_hash: identity.site_hash || '',
-            site_url: context.site_url || (cfg.context && cfg.context.site_url) || '',
-            site_host: context.site_host || (cfg.context && cfg.context.site_host) || '',
             current_plan: normalizePlanValue(getCurrentPlan()),
             remaining_credits: getRemainingCredits(),
             source_page: getSourcePage(),
@@ -339,43 +340,35 @@
             site_install_id: siteInstallId,
             site_id: context.site_id || '',
             site_hash: context.site_hash || '',
-            site_url: context.site_url || (cfg.context && cfg.context.site_url) || '',
-            site_host: context.site_host || (cfg.context && cfg.context.site_host) || '',
             wordpress_user_id: context.wordpress_user_id || ''
         };
     }
 
-    function normalizeHostValue(value) {
-        var host = readString(value).trim();
-        if (!host) {
-            return '';
+    // Usage events never carry the site address, a host, a page path or any other
+    // URL-shaped value. Uses the shared sanitiser from bbai-posthog.js, with a
+    // key-only fallback if that script is not on the page.
+    function stripSiteIdentifiers(props) {
+        if (window.bbaiAnalytics && typeof window.bbaiAnalytics.stripSiteIdentifiers === 'function') {
+            return window.bbaiAnalytics.stripSiteIdentifiers(props);
         }
-        if (/^https?:\/\//i.test(host)) {
-            try {
-                host = new URL(host).hostname;
-            } catch (e) {
-                host = host.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+        var out = {};
+        Object.keys(props || {}).forEach(function (key) {
+            var k = String(key).replace(/^\$+/, '').toLowerCase();
+            if (/(^|_)(url|uri|href|host|hostname|domain|referrer|pathname)$/.test(k) || ['website', 'siteurl', 'landing_page', 'origin', 'referring_domain', 'initial_referring_domain'].indexOf(k) !== -1) {
+                return;
             }
-        } else {
-            host = host.replace(/\/.*$/, '');
-        }
-        return host.toLowerCase();
+            out[key] = props[key];
+        });
+        return out;
     }
 
     function getCanonicalContext() {
         var c = cfg.context || {};
         var runtime = getTelemetryRuntimeContext();
-        var host = normalizeHostValue(runtime.site_host || c.host || c.site_host || '');
-        if (!host && (runtime.site_url || c.site_url)) {
-            host = normalizeHostValue(runtime.site_url || c.site_url);
-        }
         return {
             site_install_id: runtime.site_install_id || c.site_install_id || '',
             site_id: runtime.site_id || c.site_id || '',
             site_hash: runtime.site_hash || c.site_hash || '',
-            site_url: runtime.site_url || c.site_url || '',
-            site_host: host,
-            host: host,
             plugin_version: runtime.plugin_version || c.plugin_version || '',
             plugin_slug: readString(c.plugin_slug || 'beepbeep-ai-alt-text-generator'),
             telemetry_version: readString(c.telemetry_version || '1'),
@@ -408,9 +401,7 @@
             quota_type: c.is_logged_in === true ? 'monthly_account' : 'trial',
             journey_id: canonical.site_install_id || c.site_install_id || '',
             session_id: window.bbaiTelemetrySessionId || '',
-            site_url: canonical.site_url,
-            site_host: canonical.site_host,
-            host: canonical.host,
+            is_test: c.is_test === true,
             plugin_version: canonical.plugin_version,
             plugin_slug: canonical.plugin_slug,
             telemetry_version: canonical.telemetry_version,
@@ -434,6 +425,53 @@
         }
 
         return (cfg.context && (cfg.context.page_variant || cfg.context.page)) || 'dashboard';
+    }
+
+    // Site identity always comes from the values this site printed into the page
+    // (local install id and the plugin's own site hash), never from an API
+    // response or a caller-supplied property.
+    function getLocalSiteIdentity() {
+        var sources = [
+            cfg && cfg.context ? cfg.context : null,
+            window.BBAI_POSTHOG && window.BBAI_POSTHOG.context ? window.BBAI_POSTHOG.context : null
+        ];
+        var installId = '';
+        var siteHash = '';
+        var i;
+
+        for (i = 0; i < sources.length; i++) {
+            if (!sources[i]) {
+                continue;
+            }
+            if (!installId && typeof sources[i].site_install_id === 'string') {
+                installId = sources[i].site_install_id;
+            }
+            if (!siteHash && typeof sources[i].site_hash === 'string') {
+                siteHash = sources[i].site_hash;
+            }
+        }
+
+        return {
+            site_install_id: installId,
+            site_id: installId,
+            site_hash: siteHash
+        };
+    }
+
+    function applyLocalSiteIdentity(target) {
+        var output = target && typeof target === 'object' ? target : {};
+        var local = getLocalSiteIdentity();
+        ['siteInstallId', 'install_id', 'installId', 'siteId', 'siteHash', 'site'].forEach(function(key) {
+            delete output[key];
+        });
+        ['site_install_id', 'site_id', 'site_hash'].forEach(function(key) {
+            if (local[key]) {
+                output[key] = local[key];
+            } else {
+                delete output[key];
+            }
+        });
+        return output;
     }
 
     function buildPostHogProps(props) {
@@ -992,23 +1030,38 @@
         return enriched;
     }
 
+    var CHECKOUT_ATTRIBUTION_KEYS = [
+        'trigger_feature', 'trigger_location', 'source_page', 'target_plan', 'current_plan', 'source',
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'
+    ];
+    // The referrer host and landing path are not sent with checkout requests.
+
+    function pickCheckoutAttribution(source) {
+        var out = {};
+        CHECKOUT_ATTRIBUTION_KEYS.forEach(function (key) {
+            var value = source[key];
+            if (value === undefined || value === null || typeof value === 'object') {
+                return;
+            }
+            value = String(value);
+            if (value !== '') {
+                out[key] = value;
+            }
+        });
+        return out;
+    }
+
     function buildCheckoutRequestAttribution(overrides) {
         var runtime = getTelemetryRuntimeContext();
         var stored = getStoredUpgradeAttribution();
-        var payload = cleanupProps($.extend({
-            account_id: runtime.account_id || '',
-            user_id: runtime.user_id || '',
-            license_key_present: !!runtime.license_key_present,
-            site_install_id: runtime.site_install_id || '',
-            site_id: runtime.site_id || '',
-            site_hash: runtime.site_hash || '',
+        var payload = pickCheckoutAttribution(cleanupProps($.extend({
             trigger_feature: stored.trigger_feature || 'unknown',
             trigger_location: stored.trigger_location || 'unknown',
             source_page: stored.source_page || runtime.source_page || 'unknown',
             target_plan: stored.target_plan || '',
             current_plan: stored.current_plan || runtime.current_plan || '',
             source: 'app'
-        }, overrides || {}));
+        }, overrides || {})));
 
         if (isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
             window.console.debug('[BBAI] checkout request payload', payload);
@@ -1017,7 +1070,51 @@
         return payload;
     }
 
+    function telemetryToken(value, fallback) {
+        var token = readString(value).toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+        return token || fallback;
+    }
+
+    // checkout_fallback_payment_link shape: plugin, source (the screen or button
+    // the checkout came from), reason and plan. Never the Payment Link URL, the
+    // site address or an email.
+    function shapeCheckoutFallbackProps(props) {
+        var out = $.extend({}, props || {});
+        var attribution = {};
+        try {
+            attribution = buildCheckoutRequestAttribution({}) || {};
+        } catch (eAttr) {
+            attribution = {};
+        }
+        var known = function (value) {
+            var token = telemetryToken(value, '');
+            return token === 'unknown' ? '' : token;
+        };
+        var location = known(out.trigger_location) || known(attribution.trigger_location) || 'unknown';
+        var sourcePage = known(out.source_page) || known(attribution.source_page) || known(getSourcePage(out)) || 'unknown';
+        var explicitSource = telemetryToken(out.checkout_source, '');
+        var reason = telemetryToken(out.reason || out.error_code || out.code, 'unknown');
+        var plan = telemetryToken(out.plan || out.target_plan || attribution.target_plan, 'unknown');
+
+        ['error_code', 'code', 'endpoint', 'timestamp', 'url', 'fallback_url', 'payment_link', 'href',
+            'error_message', 'message', 'checkout_source'].forEach(function (key) {
+            delete out[key];
+        });
+
+        out.plugin = 'alt_text';
+        out.source = explicitSource || (location !== 'unknown' ? location : sourcePage);
+        out.source_page = sourcePage;
+        out.trigger_location = location;
+        out.reason = reason;
+        out.plan = plan;
+        out.target_plan = plan;
+        return out;
+    }
+
     function track(eventName, properties) {
+        if (telemetryOff) {
+            return;
+        }
         var normalized = normalizeTelemetryEvent(eventName, properties || {});
 
         eventName = normalized.eventName;
@@ -1125,6 +1222,15 @@
             updateLastFeatureUsage(props);
         } else if (eventName === 'upgrade_cta_clicked' || eventName === 'upgrade_clicked' || eventName === 'checkout_started') {
             props = enrichUpgradeAttribution(eventName, props);
+        } else if (eventName === 'checkout_fallback_payment_link') {
+            props = shapeCheckoutFallbackProps(props);
+            var fallbackKey = props.plan + '|' + props.reason;
+            var fallbackNow = Date.now();
+            if (checkoutFallbackDedup.key === fallbackKey && (fallbackNow - checkoutFallbackDedup.at) < 3000) {
+                return;
+            }
+            checkoutFallbackDedup.key = fallbackKey;
+            checkoutFallbackDedup.at = fallbackNow;
         }
         if (eventName === 'login_succeeded' || eventName === 'signup_succeeded') {
             try {
@@ -1174,6 +1280,7 @@
             upgradeEventDedup.key = dedupeKey;
             upgradeEventDedup.at = now;
         }
+        applyLocalSiteIdentity(props);
         if (eventName === 'checkout_started' && isDebugEnabled() && window.console && typeof window.console.debug === 'function') {
             window.console.debug('[BBAI] checkout_started identity context', {
                 account_id: props.account_id || '',
@@ -1184,8 +1291,9 @@
                 site_hash: props.site_hash || ''
             });
         }
+        props = stripSiteIdentifiers(props);
         if (posthogAllowlist[eventName]) {
-            bbaiTrack(eventName, buildPostHogProps(props));
+            bbaiTrack(eventName, stripSiteIdentifiers(buildPostHogProps(props)));
         }
         queue.push({ event: eventName, properties: props });
         scheduleFlush();
@@ -1202,6 +1310,9 @@
     }
 
     function flushNow() {
+        if (telemetryOff) {
+            return;
+        }
         flushTimer = null;
         if (!queue.length || !cfg.ajaxUrl || !cfg.nonce) {
             return;
@@ -1789,6 +1900,16 @@
         $(document).on('submit', 'form', function () {
             var page = getSourcePage();
             if (page === 'settings' || this.closest('.nai-settings, .bbai-settings, [data-bbai-settings]')) {
+                var analyticsBox = this.querySelector('input[type="checkbox"][name="bbai_usage_analytics"]');
+                if (analyticsBox && !analyticsBox.checked) {
+                    telemetryOff = true;
+                    queue.length = 0;
+                    if (flushTimer) {
+                        window.clearTimeout(flushTimer);
+                        flushTimer = null;
+                    }
+                    return;
+                }
                 track('settings_saved', {
                     source_page: 'settings'
                 });

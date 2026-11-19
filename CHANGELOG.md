@@ -4,10 +4,16 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
-### 4.6.144 - 2026-10-27
+### 4.6.145 - 2026-11-19
 
+- Security hardening for usage stats.
+
+### 4.6.144 - 2026-10-29
+
+- The background queue skips images that already have alt text, unless you choose Regenerate.
+- Usage analytics are only sent after you opt in.
+- Security hardening.
 - Reject invalid image inputs before generation and handle expired sessions clearly.
-- Record first successful saved generation only with explicit telemetry consent.
 
 ### 4.6.143 - 2026-10-22
 

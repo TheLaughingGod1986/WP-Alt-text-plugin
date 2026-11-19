@@ -52,7 +52,7 @@ trait Api_Billing {
 
 		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' ) ) {
 			$stored_attribution = \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload();
-			$data               = array_merge( $data, $stored_attribution, $attribution );
+			$data               = array_merge( $data, \BeepBeepAI\AltTextGenerator\BBAI_Attribution::for_checkout( array_merge( $stored_attribution, $attribution ) ) );
 		} elseif ( ! empty( $attribution ) ) {
 			$data = array_merge( $data, $attribution );
 		}
@@ -60,24 +60,14 @@ trait Api_Billing {
 		if ( defined( 'BEEPBEEP_AI_VERSION' ) ) {
 			$data['plugin_version'] = (string) BEEPBEEP_AI_VERSION;
 		}
-		if ( function_exists( '\BeepBeepAI\AltTextGenerator\get_site_identifier' ) ) {
-			$data['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\get_site_identifier() );
+		if ( function_exists( '\BeepBeepAI\AltTextGenerator\bbai_get_site_install_id' ) ) {
+			$data['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id() );
 		}
 
-		$response = $this->make_request( '/billing/checkout', 'POST', $data );
+		// Which plugin the checkout came from (set last so attribution cannot change it).
+		$data['plugin'] = 'alt_text';
 
-		if ( is_wp_error( $response ) ) {
-			$error_code = $response->get_error_code();
-			if ( in_array( $error_code, array( 'auth_expired', 'invalid_token' ), true ) ) {
-				$guest_response = $this->make_request( '/billing/checkout/guest', 'POST', $data );
-				if ( ! is_wp_error( $guest_response ) ) {
-					return $guest_response;
-				}
-			}
-			return $response;
-		}
-
-		return $response;
+		return $this->make_request( '/billing/checkout', 'POST', $data );
 	}
 
 	/**
