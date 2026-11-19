@@ -43,6 +43,16 @@ class BBAI_More_From_Oppti {
 	public const SCREEN_PAGE = 'bbai';
 
 	/** UTM campaign for WordPress.org fallback links. */
+	/**
+	 * Event property per plugin id for the installed flags.
+	 */
+	public const FLAG_KEYS = array(
+		'alt'     => 'has_alt_text',
+		'titles'  => 'has_titles',
+		'linking' => 'has_il',
+		'auditor' => 'has_auditor',
+	);
+
 	public const UTM_CAMPAIGN = 'push-nov26';
 
 	/** Events the panel may send (through the consented telemetry bridge). */
@@ -404,12 +414,19 @@ class BBAI_More_From_Oppti {
 	}
 
 	/**
-	 * Comma list of other OpptiAI plugins active right now (for plugin_activated).
+	 * Which OpptiAI plugins are installed on this site (for plugin_activated).
+	 * Four booleans, checked locally; this plugin always counts as installed.
+	 *
+	 * @return array{has_alt_text:bool,has_titles:bool,has_il:bool,has_auditor:bool}
 	 */
-	public static function sibling_list(): string {
-		$ids = array_values( array_diff( self::active_ids( self::active_plugin_files() ), array( self::FROM ) ) );
-		sort( $ids );
-		return implode( ',', $ids );
+	public static function installed_flags(): array {
+		$state = self::local_state();
+		$ids   = array_merge( $state['installed'], $state['active'], array( self::FROM ) );
+		$flags = array();
+		foreach ( self::FLAG_KEYS as $id => $key ) {
+			$flags[ $key ] = in_array( $id, $ids, true );
+		}
+		return $flags;
 	}
 
 	/**

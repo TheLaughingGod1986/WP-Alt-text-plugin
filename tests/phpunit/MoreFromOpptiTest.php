@@ -25,7 +25,7 @@ namespace {
 			$GLOBALS['mfo']['plugins']         = array(
 				'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' => array( 'TextDomain' => 'beepbeep-ai-alt-text-generator' ),
 			);
-			foreach ( array( 'bbai_first_success_at', 'active_plugins', BBAI_Telemetry::CONSENT_OPTION, BBAI_Telemetry::CONSENT_SOURCE_OPTION, BBAI_Telemetry::ACTIVATION_MARKER_OPTION, BBAI_Telemetry::ACTIVATION_SIBLINGS_OPTION, BBAI_Telemetry::LIFECYCLE_QUEUE_OPTION, BBAI_Telemetry::INSTALLED_MARKER_OPTION, BBAI_Telemetry::LEGACY_INSTALLED_MARKER_OPTION ) as $key ) {
+			foreach ( array( 'bbai_first_success_at', 'active_plugins', BBAI_Telemetry::CONSENT_OPTION, BBAI_Telemetry::CONSENT_SOURCE_OPTION, BBAI_Telemetry::ACTIVATION_MARKER_OPTION, BBAI_Telemetry::ACTIVATION_PLUGINS_OPTION, BBAI_Telemetry::LIFECYCLE_QUEUE_OPTION, BBAI_Telemetry::INSTALLED_MARKER_OPTION, BBAI_Telemetry::LEGACY_INSTALLED_MARKER_OPTION ) as $key ) {
 				unset( $GLOBALS['bbai_test_options'][ $key ] );
 			}
 		}
@@ -224,11 +224,21 @@ namespace {
 			}
 		}
 
-		public function test_activation_siblings_only_with_consent(): void {
-			update_option( 'active_plugins', array( 'opptiai-titles/beepbeep-titles.php', 'opptiai-website-auditor/opptiai-website-auditor.php', 'akismet/akismet.php', 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' ) );
+		public function test_activation_installed_flags_only_with_consent(): void {
+			// Titles installed but inactive (renamed folder, matched by text domain), Auditor active, IL absent.
+			$GLOBALS['mfo']['plugins']['titles-renamed/beepbeep-titles.php']                   = array( 'TextDomain' => 'beepbeep-titles' );
+			$GLOBALS['mfo']['plugins']['opptiai-website-auditor/opptiai-website-auditor.php'] = array( 'TextDomain' => 'opptiai-website-auditor' );
+			update_option( 'active_plugins', array( 'opptiai-website-auditor/opptiai-website-auditor.php', 'akismet/akismet.php', 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' ) );
+			$expected = array(
+				'has_alt_text' => true,
+				'has_titles'   => true,
+				'has_il'       => false,
+				'has_auditor'  => true,
+			);
+
 			BBAI_Telemetry::record_activation_lifecycle();
-			$this->assertSame( array(), $GLOBALS['bbai_test_remote_posts'] );
-			$this->assertSame( 'auditor,titles', get_option( BBAI_Telemetry::ACTIVATION_SIBLINGS_OPTION ) );
+			$this->assertSame( array(), $GLOBALS['bbai_test_remote_posts'], 'nothing sent without consent' );
+			$this->assertSame( $expected, get_option( BBAI_Telemetry::ACTIVATION_PLUGINS_OPTION ) );
 
 			unset( $GLOBALS['bbai_test_options'][ BBAI_Telemetry::ACTIVATION_MARKER_OPTION ] );
 			update_option( BBAI_Telemetry::CONSENT_OPTION, 'yes' );
@@ -240,7 +250,22 @@ namespace {
 				$events[ $body['event'] ] = $body['properties'];
 			}
 			$this->assertArrayHasKey( 'plugin_activated', $events );
-			$this->assertSame( 'auditor,titles', $events['plugin_activated']['siblings'] );
+			$this->assertArrayNotHasKey( 'siblings', $events['plugin_activated'] );
+			foreach ( $expected as $key => $value ) {
+				$this->assertSame( $value, $events['plugin_activated'][ $key ], $key );
+			}
+		}
+
+		public function test_installed_flags_none_installed(): void {
+			$this->assertSame(
+				array(
+					'has_alt_text' => true,
+					'has_titles'   => false,
+					'has_il'       => false,
+					'has_auditor'  => false,
+				),
+				MFO::installed_flags()
+			);
 		}
 	}
 }
