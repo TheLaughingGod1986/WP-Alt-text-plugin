@@ -317,8 +317,6 @@
             site_install_id: identity.site_install_id || '',
             site_id: identity.site_id || '',
             site_hash: identity.site_hash || '',
-            site_url: context.site_url || (cfg.context && cfg.context.site_url) || '',
-            site_host: context.site_host || (cfg.context && cfg.context.site_host) || '',
             current_plan: normalizePlanValue(getCurrentPlan()),
             remaining_credits: getRemainingCredits(),
             source_page: getSourcePage(),
@@ -340,43 +338,35 @@
             site_install_id: siteInstallId,
             site_id: context.site_id || '',
             site_hash: context.site_hash || '',
-            site_url: context.site_url || (cfg.context && cfg.context.site_url) || '',
-            site_host: context.site_host || (cfg.context && cfg.context.site_host) || '',
             wordpress_user_id: context.wordpress_user_id || ''
         };
     }
 
-    function normalizeHostValue(value) {
-        var host = readString(value).trim();
-        if (!host) {
-            return '';
+    // Usage events never carry the site address, a host, a page path or any other
+    // URL-shaped value. Uses the shared sanitiser from bbai-posthog.js, with a
+    // key-only fallback if that script is not on the page.
+    function stripSiteIdentifiers(props) {
+        if (window.bbaiAnalytics && typeof window.bbaiAnalytics.stripSiteIdentifiers === 'function') {
+            return window.bbaiAnalytics.stripSiteIdentifiers(props);
         }
-        if (/^https?:\/\//i.test(host)) {
-            try {
-                host = new URL(host).hostname;
-            } catch (e) {
-                host = host.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+        var out = {};
+        Object.keys(props || {}).forEach(function (key) {
+            var k = String(key).replace(/^\$+/, '').toLowerCase();
+            if (/(^|_)(url|uri|href|host|hostname|domain|referrer|pathname)$/.test(k) || ['website', 'siteurl', 'landing_page', 'origin', 'referring_domain', 'initial_referring_domain'].indexOf(k) !== -1) {
+                return;
             }
-        } else {
-            host = host.replace(/\/.*$/, '');
-        }
-        return host.toLowerCase();
+            out[key] = props[key];
+        });
+        return out;
     }
 
     function getCanonicalContext() {
         var c = cfg.context || {};
         var runtime = getTelemetryRuntimeContext();
-        var host = normalizeHostValue(runtime.site_host || c.host || c.site_host || '');
-        if (!host && (runtime.site_url || c.site_url)) {
-            host = normalizeHostValue(runtime.site_url || c.site_url);
-        }
         return {
             site_install_id: runtime.site_install_id || c.site_install_id || '',
             site_id: runtime.site_id || c.site_id || '',
             site_hash: runtime.site_hash || c.site_hash || '',
-            site_url: runtime.site_url || c.site_url || '',
-            site_host: host,
-            host: host,
             plugin_version: runtime.plugin_version || c.plugin_version || '',
             plugin_slug: readString(c.plugin_slug || 'beepbeep-ai-alt-text-generator'),
             telemetry_version: readString(c.telemetry_version || '1'),
@@ -409,9 +399,7 @@
             quota_type: c.is_logged_in === true ? 'monthly_account' : 'trial',
             journey_id: canonical.site_install_id || c.site_install_id || '',
             session_id: window.bbaiTelemetrySessionId || '',
-            site_url: canonical.site_url,
-            site_host: canonical.site_host,
-            host: canonical.host,
+            is_test: c.is_test === true,
             plugin_version: canonical.plugin_version,
             plugin_slug: canonical.plugin_slug,
             telemetry_version: canonical.telemetry_version,
@@ -1266,8 +1254,9 @@
                 site_hash: props.site_hash || ''
             });
         }
+        props = stripSiteIdentifiers(props);
         if (posthogAllowlist[eventName]) {
-            bbaiTrack(eventName, buildPostHogProps(props));
+            bbaiTrack(eventName, stripSiteIdentifiers(buildPostHogProps(props)));
         }
         queue.push({ event: eventName, properties: props });
         scheduleFlush();

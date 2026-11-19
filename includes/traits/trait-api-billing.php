@@ -64,20 +64,10 @@ trait Api_Billing {
 			$data['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id() );
 		}
 
-		$response = $this->make_request( '/billing/checkout', 'POST', $data );
+		// Which plugin the checkout came from (set last so attribution cannot change it).
+		$data['plugin'] = 'alt_text';
 
-		if ( is_wp_error( $response ) ) {
-			$error_code = $response->get_error_code();
-			if ( in_array( $error_code, array( 'auth_expired', 'invalid_token' ), true ) ) {
-				$guest_response = $this->make_request( '/billing/checkout/guest', 'POST', $data );
-				if ( ! is_wp_error( $guest_response ) ) {
-					return $guest_response;
-				}
-			}
-			return $response;
-		}
-
-		return $response;
+		return $this->make_request( '/billing/checkout', 'POST', $data );
 	}
 
 	/**

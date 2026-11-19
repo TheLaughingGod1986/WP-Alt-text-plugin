@@ -2070,8 +2070,6 @@ JS,
 			'site_install_id'     => sanitize_text_field( $site_install_id ),
 			'site_id'             => $site_id,
 			'site_hash'           => sanitize_key( $site_hash ),
-			'site_url'            => esc_url_raw( home_url( '/' ) ),
-			'site_host'           => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
 			'wordpress_user_id'   => get_current_user_id() > 0 ? absint( get_current_user_id() ) : null,
 			'plugin_version'      => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
 		);
@@ -2212,6 +2210,13 @@ JS,
 		$attribution_payload     = class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_Attribution' )
 			? \BeepBeepAI\AltTextGenerator\BBAI_Attribution::get_payload()
 			: array();
+		// The referrer host and landing path are kept for checkout only, never for analytics.
+		$attribution_captured = ! empty( $attribution_payload );
+		unset( $attribution_payload['referrer'], $attribution_payload['landing_page'] );
+		if ( $attribution_captured ) {
+			$attribution_payload['attribution_captured'] = true;
+		}
+		$is_test_site = $this->is_posthog_test_site();
 
 		return array(
 			'enabled'                 => $browser_capture_enabled,
@@ -2230,9 +2235,7 @@ JS,
 					'page'                  => $page_key,
 					'site_install_id'       => $site_install_id,
 					'site_hash'             => $site_hash,
-					'site_url'              => esc_url_raw( home_url( '/' ) ),
-					'host'                  => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
-					'site_host'             => sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+					'is_test'               => $is_test_site,
 					'is_logged_in'          => $is_logged_in,
 					'user_state'            => $is_logged_in ? 'signed_in' : 'guest',
 					'plan'                  => $plan_type,
@@ -2270,11 +2273,19 @@ JS,
 						'site_hash'       => $site_hash,
 						'plugin_version'  => defined( 'BEEPBEEP_AI_VERSION' ) ? (string) BEEPBEEP_AI_VERSION : '',
 						'environment'     => $environment,
+						'is_test'         => $is_test_site,
 					),
 					$identity_context
 				),
 			),
 		);
+	}
+
+	/**
+	 * Local, staging, sandbox or QA site flag for analytics (boolean only).
+	 */
+	private function is_posthog_test_site(): bool {
+		return class_exists( BBAI_Telemetry::class ) && method_exists( BBAI_Telemetry::class, 'is_test_site' ) && BBAI_Telemetry::is_test_site();
 	}
 
 	/**
@@ -2411,9 +2422,7 @@ JS,
 				'site_install_id'          => $identity_context['site_install_id'] ?? $site_install_id,
 				'site_id'                  => $identity_context['site_id'] ?? '',
 				'site_hash'                => $site_hash,
-				'site_url'                 => $identity_context['site_url'] ?? esc_url_raw( home_url( '/' ) ),
-				'site_host'                => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
-				'host'                     => $identity_context['site_host'] ?? sanitize_text_field( (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST ) ),
+				'is_test'                  => $this->is_posthog_test_site(),
 				'license_key_present'      => ! empty( $identity_context['license_key_present'] ),
 				'wordpress_user_id'        => $identity_context['wordpress_user_id'] ?? ( $uid > 0 ? $uid : null ),
 			),

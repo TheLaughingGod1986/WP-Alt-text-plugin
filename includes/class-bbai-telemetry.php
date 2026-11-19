@@ -73,7 +73,42 @@ class BBAI_Telemetry {
 		'current_url',
 		'initial_current_url',
 		'url',
+		'pathname',
+		'initial_pathname',
+		'hostname',
+		'initial_host',
+		'referring_domain',
+		'initial_referring_domain',
+		'landing_page',
+		'href',
+		'origin',
 	);
+
+	/**
+	 * Key endings that also mark a site, page or link value (site_url, checkout_url,
+	 * referrer_host, current_domain and so on). Matched like SITE_IDENTIFIER_KEYS.
+	 */
+	public const SITE_IDENTIFIER_KEY_SUFFIXES = array(
+		'_url',
+		'_uri',
+		'_href',
+		'_host',
+		'_hostname',
+		'_domain',
+		'_referrer',
+		'_pathname',
+	);
+
+	/**
+	 * Keys whose values are this plugin's own opaque ids or labels and are always kept.
+	 */
+	private const SITE_IDENTIFIER_KEEP_KEYS = array( 'site_hash', 'site_install_id', 'site_id', 'plugin_slug', '$insert_id', 'journey_id', 'session_id' );
+
+	/** Domain suffixes and host patterns that mark a local, staging or sandbox site. */
+	private const TEST_HOST_PATTERN = '/(^localhost$|^127\.\d+\.\d+\.\d+$|^::1$|^\[::1\]$|\.local$|\.test$|\.localhost$|\.invalid$|\.example$|(^|\.)example\.(com|org|net)$|(^|[.-])(staging|stg)([.-]|\d|$)|(staging|stg)\d*\.wpengine(powered)?\.com$|\.wpenginestaging\.com$|(staging|stg|tempurl).*\.godaddysites\.com$|\.myftpupload\.com$|(^|\.)tempurl\.|instawp|tastewp|playground|localhost|127\.0\.0\.1|wpsandbox|wp-env|trycloudflare|ngrok)/i';
+
+	/** Email domain used by OpptiAI QA accounts. */
+	private const TEST_EMAIL_SUFFIX = '@qa.oppti.dev';
 
 	public const CURRENT_VERSION_OPTION = 'bbai_telemetry_current_plugin_version';
 
@@ -641,7 +676,7 @@ class BBAI_Telemetry {
 			return;
 		}
 
-		$properties  = self::scrub_raw_site_identifier( self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name ) );
+		$properties  = self::strip_site_identifiers( self::scrub_raw_site_identifier( self::with_site_identity( self::sanitize_properties( $properties ), null, $event_name ) ) );
 		$distinct_id = (string) self::scrub_raw_site_identifier( $distinct_id );
 
 		$body = array(
@@ -745,22 +780,89 @@ class BBAI_Telemetry {
 	}
 
 	/**
-	 * Remove site-identifying keys (SITE_IDENTIFIER_KEYS) at every depth.
+	 * Remove site-identifying keys (SITE_IDENTIFIER_KEYS and SITE_IDENTIFIER_KEY_SUFFIXES)
+	 * and any URL, host, IP, email or path value, at every depth.
 	 *
 	 * @param array<mixed> $props Properties, possibly nested ($set, $set_once, context arrays).
 	 * @return array<mixed>
 	 */
 	public static function strip_site_identifiers( array $props ): array {
 		foreach ( $props as $key => $value ) {
-			if ( is_string( $key ) && in_array( strtolower( ltrim( $key, '$' ) ), self::SITE_IDENTIFIER_KEYS, true ) ) {
+			if ( is_string( $key ) && self::is_site_identifier_key( $key ) ) {
 				unset( $props[ $key ] );
 				continue;
 			}
 			if ( is_array( $value ) ) {
 				$props[ $key ] = self::strip_site_identifiers( $value );
+				continue;
+			}
+			if ( is_string( $value ) && ! ( is_string( $key ) && in_array( $key, self::SITE_IDENTIFIER_KEEP_KEYS, true ) ) ) {
+				$is_version = is_string( $key ) && 'version' === substr( strtolower( $key ), -7 );
+				if ( self::is_url_shaped( $value, $is_version ) ) {
+					unset( $props[ $key ] );
+				}
 			}
 		}
 		return $props;
+	}
+
+	/**
+	 * Whether a property key names a site, host, page or link value.
+	 *
+	 * @param string $key Property key.
+	 */
+	public static function is_site_identifier_key( string $key ): bool {
+		$normalized = strtolower( ltrim( $key, '$' ) );
+		if ( in_array( $normalized, self::SITE_IDENTIFIER_KEYS, true ) ) {
+			return true;
+		}
+		foreach ( self::SITE_IDENTIFIER_KEY_SUFFIXES as $suffix ) {
+			if ( strlen( $normalized ) > strlen( $suffix ) && substr( $normalized, -strlen( $suffix ) ) === $suffix ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether a value looks like a URL, host name, IP address, email address or URL path.
+	 *
+	 * @param string $value      Value to test.
+	 * @param bool   $is_version True for version strings (dotted numbers are allowed there).
+	 */
+	public static function is_url_shaped( string $value, bool $is_version = false ): bool {
+		$value = trim( $value );
+		if ( '' === $value ) {
+			return false;
+		}
+		$patterns = array(
+			'#[a-z][a-z0-9+.\-]*://#i', // Any scheme.
+			'#^//#',                    // Protocol-relative URL.
+			'#^/[^\s]*$#',              // A URL path such as /wp-admin/upload.php.
+			'/\bwww\./i',
+			'/\blocalhost\b/i',
+		);
+		if ( ! $is_version ) {
+			// Host name or email domain (letters-only last label, so 4.6.145 is not a host).
+			$patterns[] = '/(?<![a-z0-9_-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{1,62}(?![a-z0-9_-])/i';
+			// IPv4 address.
+			$patterns[] = '/(?<![\d.])\d{1,3}(?:\.\d{1,3}){3}(?![\d.])/';
+		}
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $value ) ) {
+				return true;
+			}
+		}
+		if ( ! $is_version ) {
+			// IPv6 address: a hex-and-colon token with "::" or at least five colons.
+			foreach ( preg_split( '/[\s,;()"\'<>]+/', $value ) as $token ) {
+				$token = trim( (string) $token, '[]' );
+				if ( preg_match( '/^[0-9a-f:.%]+$/i', $token ) && substr_count( $token, ':' ) >= 2 && ( false !== strpos( $token, '::' ) || substr_count( $token, ':' ) >= 5 ) ) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/** Other spellings of a site id a payload may carry (sanitize_key lowercases keys). */
@@ -821,8 +923,26 @@ class BBAI_Telemetry {
 	 */
 	private static function with_site_identity( array $props, ?string $site_install_id = null, string $event_name = '' ): array {
 		// The site URL, hostname and page URLs never leave the site; the install id is
-		// the only identity. Strip first so no return path below can skip it.
-		$props = self::strip_site_identifiers( $props );
+		// the only identity. Strip before and after enrichment so no path can skip it.
+		$props = self::strip_site_identifiers( self::build_site_identity( self::strip_site_identifiers( $props ), $site_install_id, $event_name ) );
+		$props['is_test'] = self::is_test_site();
+		foreach ( array( '$set', '$set_once' ) as $person_key ) {
+			if ( isset( $props[ $person_key ] ) && is_array( $props[ $person_key ] ) ) {
+				$props[ $person_key ]['is_test'] = $props['is_test'];
+			}
+		}
+		return $props;
+	}
+
+	/**
+	 * Enrich stripped properties with the canonical telemetry contract.
+	 *
+	 * @param array<string,mixed> $props           Stripped properties.
+	 * @param string|null         $site_install_id Optional pre-resolved install id.
+	 * @param string              $event_name      Event name.
+	 * @return array<string,mixed>
+	 */
+	private static function build_site_identity( array $props, ?string $site_install_id, string $event_name ): array {
 
 		$site_install_id = is_string( $site_install_id ) ? sanitize_text_field( $site_install_id ) : self::resolve_site_id();
 		$props           = self::with_local_site_identity( $props, $site_install_id );
@@ -836,7 +956,6 @@ class BBAI_Telemetry {
 		$props['telemetry_consent'] = self::has_telemetry_consent();
 		$props['telemetry_source']  = 'wordpress'; // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- contract value.
 		$props['telemetry_schema']  = 'opptiai_usage_v2';
-		$props['is_test']           = self::is_test_site();
 		if ( empty( $props['telemetry_version'] ) ) {
 			$props['telemetry_version'] = self::TELEMETRY_SCHEMA_VERSION;
 		}
@@ -957,11 +1076,33 @@ class BBAI_Telemetry {
 		);
 	}
 
-	private static function is_test_site(): bool {
-		$host = function_exists( 'home_url' ) ? (string) wp_parse_url( home_url(), PHP_URL_HOST ) : '';
-		return 'production' !== self::resolve_environment()
-			|| (bool) preg_match( '/localhost|127\.0\.0\.1|wpsandbox|tastewp|playground|wp-env|\.local$|\.test$|trycloudflare|instawp|example\.com/i', $host )
-			|| ( defined( 'BBAI_TELEMETRY_TEST' ) && BBAI_TELEMETRY_TEST );
+	/**
+	 * Whether this is a local, staging, sandbox or QA site. Computed locally; only the
+	 * boolean is ever sent, never the host or an email address.
+	 */
+	public static function is_test_site(): bool {
+		if ( defined( 'BBAI_TELEMETRY_TEST' ) && BBAI_TELEMETRY_TEST ) {
+			return true;
+		}
+		if ( in_array( self::resolve_environment(), array( 'local', 'development', 'staging' ), true ) ) {
+			return true;
+		}
+		$host = function_exists( 'home_url' ) ? strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) ) : '';
+		if ( '' !== $host && preg_match( self::TEST_HOST_PATTERN, $host ) ) {
+			return true;
+		}
+		$emails = array( (string) get_option( 'admin_email', '' ) );
+		$user   = get_option( 'beepbeepai_user_data', array() );
+		if ( is_array( $user ) && isset( $user['email'] ) && is_scalar( $user['email'] ) ) {
+			$emails[] = (string) $user['email'];
+		}
+		foreach ( $emails as $email ) {
+			$email = strtolower( trim( $email ) );
+			if ( strlen( $email ) > strlen( self::TEST_EMAIL_SUFFIX ) && substr( $email, -strlen( self::TEST_EMAIL_SUFFIX ) ) === self::TEST_EMAIL_SUFFIX ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static function resolve_environment(): string {

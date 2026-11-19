@@ -3292,6 +3292,9 @@ class API_Client_V2 {
 			$payload['site_install_id'] = sanitize_text_field( (string) \BeepBeepAI\AltTextGenerator\bbai_get_site_install_id() );
 		}
 
+		// Which plugin the checkout came from (set last so attribution cannot change it).
+		$payload['plugin'] = 'alt_text';
+
 		// First attempt: with token if available
 		$response = $this->make_request(
 			'/billing/checkout',
@@ -3348,6 +3351,7 @@ class API_Client_V2 {
 					'priceId'    => $price_id,
 					'successUrl' => $success_url,
 					'cancelUrl'  => $cancel_url,
+					'plugin'     => 'alt_text',
 				)
 			);
 		}

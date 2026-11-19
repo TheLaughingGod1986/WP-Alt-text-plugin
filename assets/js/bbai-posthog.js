@@ -120,6 +120,116 @@
         return output;
     }
 
+    // Keys that identify the site or a page on it. Never sent to PostHog, at any
+    // depth, case-insensitive, with any leading "$" ignored ($current_url, $host,
+    // $pathname, $referrer, $referring_domain, $initial_* and so on).
+    var SITE_IDENTIFIER_KEYS = [
+        'site_url', 'site_host', 'host', 'home_url', 'domain', 'siteurl', 'website',
+        'referrer', 'initial_referrer', 'page_url', 'current_url', 'initial_current_url', 'url',
+        'pathname', 'initial_pathname', 'hostname', 'initial_host', 'referring_domain',
+        'initial_referring_domain', 'landing_page', 'href', 'origin'
+    ];
+    var SITE_IDENTIFIER_KEY_SUFFIXES = ['_url', '_uri', '_href', '_host', '_hostname', '_domain', '_referrer', '_pathname'];
+    var SITE_IDENTIFIER_KEEP_KEYS = ['site_hash', 'site_install_id', 'site_id', 'plugin_slug', '$insert_id', 'journey_id', 'session_id', 'token', 'distinct_id', '$device_id', '$session_id', '$window_id', 'uuid'];
+
+    function isSiteIdentifierKey(key) {
+        var normalized = String(key).replace(/^\$+/, '').toLowerCase();
+        var i;
+        if (SITE_IDENTIFIER_KEYS.indexOf(normalized) !== -1) {
+            return true;
+        }
+        for (i = 0; i < SITE_IDENTIFIER_KEY_SUFFIXES.length; i++) {
+            var suffix = SITE_IDENTIFIER_KEY_SUFFIXES[i];
+            if (normalized.length > suffix.length && normalized.slice(-suffix.length) === suffix) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function isUrlShaped(value, isVersion) {
+        var text = String(value).trim();
+        var tokens;
+        var i;
+        if (!text) {
+            return false;
+        }
+        if (/[a-z][a-z0-9+.\-]*:\/\//i.test(text) || /^\/\//.test(text) || /^\/\S*$/.test(text) || /\bwww\./i.test(text) || /\blocalhost\b/i.test(text)) {
+            return true;
+        }
+        if (isVersion) {
+            return false;
+        }
+        if (/(^|[^a-z0-9_-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{1,62}(?![a-z0-9_-])/i.test(text)) {
+            return true;
+        }
+        if (/(^|[^\d.])\d{1,3}(?:\.\d{1,3}){3}(?![\d.])/.test(text)) {
+            return true;
+        }
+        tokens = text.split(/[\s,;()"'<>]+/);
+        for (i = 0; i < tokens.length; i++) {
+            var token = tokens[i].replace(/^\[|\]$/g, '');
+            var colons = (token.match(/:/g) || []).length;
+            if (/^[0-9a-f:.%]+$/i.test(token) && colons >= 2 && (token.indexOf('::') !== -1 || colons >= 5)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Remove site-identifying keys and any URL, host, IP, email or path value.
+    function stripSiteIdentifiers(input) {
+        var output;
+        var key;
+        var value;
+        if (Array.isArray(input)) {
+            return input.filter(function(item) {
+                return !(typeof item === 'string' && isUrlShaped(item, false));
+            }).map(function(item) {
+                return isObject(item) || Array.isArray(item) ? stripSiteIdentifiers(item) : item;
+            });
+        }
+        if (!isObject(input)) {
+            return input;
+        }
+        output = {};
+        for (key in input) {
+            if (!Object.prototype.hasOwnProperty.call(input, key)) {
+                continue;
+            }
+            if (isSiteIdentifierKey(key)) {
+                continue;
+            }
+            value = input[key];
+            if (isObject(value) || Array.isArray(value)) {
+                output[key] = stripSiteIdentifiers(value);
+                continue;
+            }
+            if (typeof value === 'string' && SITE_IDENTIFIER_KEEP_KEYS.indexOf(key) === -1 && isUrlShaped(value, /version$/i.test(key))) {
+                continue;
+            }
+            output[key] = value;
+        }
+        return output;
+    }
+
+    // posthog-js before_send hook: strips event, $set and $set_once properties.
+    function beforeSend(event) {
+        if (!event || !isObject(event)) {
+            return event;
+        }
+        if (isObject(event.properties)) {
+            event.properties = stripSiteIdentifiers(event.properties);
+        }
+        if (isObject(event.$set)) {
+            event.$set = stripSiteIdentifiers(event.$set);
+        }
+        if (isObject(event.$set_once)) {
+            event.$set_once = stripSiteIdentifiers(event.$set_once);
+        }
+        return event;
+    }
+
     function serializeForCompare(value) {
         if (Array.isArray(value)) {
             return '[' + value.map(serializeForCompare).join(',') + ']';
@@ -160,33 +270,8 @@
         return existing;
     }
 
-    function normalizeHostValue(value) {
-        var host = value === undefined || value === null ? '' : String(value).trim();
-        if (!host) {
-            return '';
-        }
-        if (/^https?:\/\//i.test(host)) {
-            try {
-                host = new URL(host).hostname;
-            } catch (error) {
-                host = host.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
-            }
-        } else {
-            host = host.replace(/\/.*$/, '');
-        }
-        return host.toLowerCase();
-    }
-
     function getContext() {
-        var context = applyLocalSiteIdentity(extend({}, sanitizeProperties(cfg.context || {}), runtimeContext));
-        var host = normalizeHostValue(context.host || context.site_host || '');
-        if (!host && context.site_url) {
-            host = normalizeHostValue(context.site_url);
-        }
-        if (host) {
-            context.host = host;
-            context.site_host = context.site_host || host;
-        }
+        var context = stripSiteIdentifiers(applyLocalSiteIdentity(extend({}, sanitizeProperties(cfg.context || {}), runtimeContext)));
         context.session_id = context.session_id || sessionId || '';
         context.journey_id = context.journey_id || resolveSiteInstallId(context);
         context.user_state = context.user_state || (context.is_logged_in === true ? 'signed_in' : 'guest');
@@ -195,7 +280,8 @@
         context.wordpress_version = context.wordpress_version || context.wp_version || '';
         context.environment = context.environment || 'production';
         context.license_state = context.license_state || (context.is_logged_in ? 'connected' : 'guest');
-        return context;
+        context.is_test = context.is_test === true;
+        return stripSiteIdentifiers(context);
     }
 
     function resolveSiteInstallId(context) {
@@ -382,7 +468,8 @@
     }
 
     function ensureSessionRecording(client) {
-        var shouldRecord = cfg.sessionRecordingEnabled !== false;
+        // Session recordings carry page URLs, so they are never started.
+        var shouldRecord = false;
 
         if (!shouldRecord || loaderState.sessionRecordingStarted || !client) {
             return;
@@ -621,7 +708,21 @@
                     autocapture: false,
                     capture_pageview: false,
                     capture_pageleave: false,
-                    disable_session_recording: cfg.sessionRecordingEnabled === false
+                    rageclick: false,
+                    capture_dead_clicks: false,
+                    capture_heatmaps: false,
+                    enable_heatmaps: false,
+                    capture_performance: false,
+                    capture_exceptions: false,
+                    disable_surveys: true,
+                    disable_web_experiments: true,
+                    disable_session_recording: true,
+                    save_referrer: false,
+                    property_denylist: SITE_IDENTIFIER_KEYS.map(function(key) { return '$' + key; }).concat(SITE_IDENTIFIER_KEYS),
+                    sanitize_properties: function(properties) {
+                        return stripSiteIdentifiers(properties);
+                    },
+                    before_send: beforeSend
                 });
                 syncNamedInstance(library);
             } catch (error) {
@@ -670,7 +771,7 @@
             return;
         }
 
-        payload = applyLocalSiteIdentity(extend({}, getContext(), sanitizeProperties(properties || {})));
+        payload = stripSiteIdentifiers(applyLocalSiteIdentity(extend({}, getContext(), sanitizeProperties(properties || {}))));
         whenPosthogReady(function(client) {
             logToConsole('debug', 'bbaiTrack send', safeName, payload);
             if (safeName === 'checkout_started' && isDebugEnabled()) {
@@ -725,7 +826,8 @@
 
     function identify(distinctId, properties) {
         var safeId = distinctId === undefined || distinctId === null ? '' : String(distinctId);
-        var safeProperties = applyLocalSiteIdentity(sanitizeProperties(properties || {}));
+        var safeProperties = stripSiteIdentifiers(applyLocalSiteIdentity(sanitizeProperties(properties || {})));
+        safeProperties.is_test = getContext().is_test === true;
 
         if (!cfg.enabled) {
             return;
@@ -786,7 +888,7 @@
     }
 
     function updateContext(properties) {
-        runtimeContext = applyLocalSiteIdentity(extend({}, runtimeContext, sanitizeProperties(properties || {})));
+        runtimeContext = stripSiteIdentifiers(applyLocalSiteIdentity(extend({}, runtimeContext, sanitizeProperties(properties || {}))));
         registerContext();
     }
 
@@ -923,7 +1025,7 @@
 
     function captureFirstTouchAttribution() {
         var context = getContext();
-        if (context.utm_source || context.referrer || context.landing_page || context.acquisition_channel) {
+        if (context.attribution_captured === true || context.utm_source || context.acquisition_channel) {
             return;
         }
 
@@ -948,7 +1050,15 @@
             return;
         }
 
-        updateContext(payload);
+        // Only UTM tags join the analytics context; the referrer and landing page
+        // go to this site's own attribution store (used for checkout) and nowhere else.
+        updateContext({
+            utm_source: payload.utm_source,
+            utm_medium: payload.utm_medium,
+            utm_campaign: payload.utm_campaign,
+            utm_content: payload.utm_content,
+            utm_term: payload.utm_term
+        });
 
         if (!window.bbai_ajax || !window.bbai_ajax.ajaxurl || !window.bbai_ajax.nonce) {
             return;
@@ -985,7 +1095,9 @@
         track: track,
         identify: identify,
         alias: alias,
-        pageView: pageView
+        pageView: pageView,
+        stripSiteIdentifiers: stripSiteIdentifiers,
+        beforeSend: beforeSend
     };
     window.bbaiInitPosthog = initPosthog;
     window.bbaiWhenPosthogReady = whenPosthogReady;
