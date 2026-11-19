@@ -62,6 +62,7 @@ $bbai_options = [
 	'bbai_telemetry_consent_source',
 	'bbai_telemetry_consent_reset_4_6_142',
 	'bbai_telemetry_opt_in_lifecycle_sent',
+	'bbai_activation_siblings',
 ];
 
 foreach ( $bbai_options as $bbai_option ) {
@@ -70,6 +71,8 @@ foreach ( $bbai_options as $bbai_option ) {
 
 // One-time review prompt state (per user).
 delete_metadata( 'user', 0, 'bbai_review_prompt_done', '', true );
+// More from Oppti panel dismissal (per user).
+delete_metadata( 'user', 0, 'bbai_more_from_oppti_dismissed', '', true );
 
 // Delete all legacy options
 $bbai_legacy_options = [

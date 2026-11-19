@@ -51,6 +51,9 @@ class BBAI_Telemetry {
 
 	public const ACTIVATION_MARKER_OPTION = 'bbai_telemetry_plugin_activated';
 
+	/** Other OpptiAI plugins active at first activation (comma list of ids, local only). */
+	public const ACTIVATION_SIBLINGS_OPTION = 'bbai_activation_siblings';
+
 	/** Set once the opt-in lifecycle snapshot has been sent for this site. */
 	public const OPT_IN_LIFECYCLE_SENT_OPTION = 'bbai_telemetry_opt_in_lifecycle_sent';
 
@@ -379,7 +382,10 @@ class BBAI_Telemetry {
 		$activated_at = self::marker_time( get_option( self::ACTIVATION_MARKER_OPTION, '' ) );
 		$events       = array(
 			'plugin_installed' => array( 'first_seen_at' => $first_seen ),
-			'plugin_activated' => array( 'activated_at' => $activated_at ),
+			'plugin_activated' => array(
+				'activated_at' => $activated_at,
+				'siblings'     => (string) get_option( self::ACTIVATION_SIBLINGS_OPTION, '' ),
+			),
 		);
 		foreach ( $events as $event_name => $extra ) {
 			$properties = array_merge(
@@ -450,6 +456,17 @@ class BBAI_Telemetry {
 	}
 
 	/**
+	 * Other OpptiAI plugins active right now, as a sorted comma list of ids.
+	 * Read from the local active plugin list only; no names, paths or URLs.
+	 */
+	public static function activation_siblings(): string {
+		if ( class_exists( BBAI_More_From_Oppti::class ) ) {
+			return BBAI_More_From_Oppti::sibling_list();
+		}
+		return '';
+	}
+
+	/**
 	 * Capture activation/update/install semantics from the real WordPress lifecycle hook.
 	 */
 	public static function record_activation_lifecycle(): void {
@@ -476,7 +493,10 @@ class BBAI_Telemetry {
 		}
 
 		if ( ! get_option( self::ACTIVATION_MARKER_OPTION, false ) ) {
-			self::queue_lifecycle_event( 'plugin_activated' );
+			// Other OpptiAI plugins already active at first activation (ids only, e.g. "auditor,titles").
+			$siblings = self::activation_siblings();
+			update_option( self::ACTIVATION_SIBLINGS_OPTION, $siblings, false );
+			self::queue_lifecycle_event( 'plugin_activated', array( 'siblings' => $siblings ) );
 			update_option( self::ACTIVATION_MARKER_OPTION, gmdate( 'c' ), false );
 		}
 

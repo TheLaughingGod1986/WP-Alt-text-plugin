@@ -2282,6 +2282,9 @@ class Core {
                     'credits_exhausted',
                     'credits_low_warning_shown',
                     'quota_exhausted_state_shown',
+                    'crosssell_clicked',
+                    'crosssell_panel_shown',
+                    'crosssell_panel_dismissed',
                 ],
                 true
             );
