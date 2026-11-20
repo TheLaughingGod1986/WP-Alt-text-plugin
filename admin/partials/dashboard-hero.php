@@ -39,6 +39,22 @@ $bbai_gt_used      = max( 0, min( $bbai_gt_limit, (int) ( $bbai_gt_src['used'] ?
 $bbai_gt_remaining = max( 0, (int) ( $bbai_gt_src['remaining'] ?? max( 0, $bbai_gt_limit - $bbai_gt_used ) ) );
 $bbai_gt_exhausted = ! empty( $bbai_gt_src['exhausted'] ) || $bbai_gt_remaining <= 0;
 
+// Nothing missing but free generations left: Generate has nothing to act on,
+// so point the guest at uploading an image instead of a signup-only wall.
+// Create Free Account stays as the secondary action. Two states: an empty
+// Media Library, or images that all have alt text already.
+$bbai_guest_nothing_missing      = $bbai_state_missing_count <= 0 && ! $bbai_gt_exhausted && $bbai_gt_remaining > 0;
+$bbai_guest_no_images            = $bbai_guest_nothing_missing && $bbai_state_total_images <= 0 && ( $bbai_state_optimized_count + $bbai_state_weak_count ) <= 0;
+$bbai_guest_nothing_missing_body = $bbai_guest_no_images
+	? __( 'Upload a few images, then click Generate to see alt text in seconds. No account needed for your first results.', 'beepbeep-ai-alt-text-generator' )
+	: __( 'Every image here already has alt text. Upload an image, or pick one to regenerate, then click Generate.', 'beepbeep-ai-alt-text-generator' );
+$bbai_show_upload_primary        = $bbai_guest_nothing_missing && current_user_can( 'upload_files' );
+$bbai_primary_upload             = array(
+	'label' => __( 'Upload images', 'beepbeep-ai-alt-text-generator' ),
+	'class' => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
+	'href'  => admin_url( 'media-new.php' ),
+);
+
 if ( $bbai_gt_exhausted ) {
 	$bbai_guest_hero_variant = 'exhausted';
 } elseif ( $bbai_gt_used > 0 ) {
@@ -148,6 +164,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		'is_button' => false,
 	];
 	$bbai_show_generate_primary = false;
+	$bbai_show_upload_primary   = false;
 } elseif ( 'in_progress' === $bbai_guest_hero_variant ) {
 	$bbai_donut_tone         = $bbai_guest_completion_tone;
 	$bbai_donut_center_val   = $bbai_guest_coverage_pct > 0 ? (string) $bbai_guest_coverage_pct . '%' : '0%';
@@ -167,7 +184,9 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 			number_format_i18n( $bbai_state_missing_count )
 		)
 		: __( 'Your images are almost fully optimised', 'beepbeep-ai-alt-text-generator' );
-	$bbai_guest_body  = __( 'Use your remaining free credits to complete your image optimisation.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_guest_body = $bbai_guest_nothing_missing
+		? $bbai_guest_nothing_missing_body
+		: __( 'Use your remaining free credits to complete your image optimisation.', 'beepbeep-ai-alt-text-generator' );
 
 	$bbai_n_rem = max( 0, (int) $bbai_gt_remaining );
 	$bbai_show_generate_primary = $bbai_n_rem > 0 && $bbai_state_missing_count > 0;
@@ -180,12 +199,12 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	];
 	$bbai_primary_register = [
 		'label'       => __( 'Create Free Account', 'beepbeep-ai-alt-text-generator' ),
-		'class'       => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 )
+		'class'       => ( ! $bbai_show_generate_primary && ! $bbai_show_upload_primary && $bbai_n_rem > 0 )
 			? 'bbai-btn bbai-btn-primary bbai-li-btn-primary'
 			: 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary',
 		'action'      => 'show-auth-modal',
 		'auth_tab'    => 'signup',
-		'analytics'   => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 ) ? 'guest_hero_primary_register_mid' : 'guest_hero_secondary_register',
+		'analytics'   => ( ! $bbai_show_generate_primary && ! $bbai_show_upload_primary && $bbai_n_rem > 0 ) ? 'guest_hero_primary_register_mid' : 'guest_hero_secondary_register',
 		'is_button'   => false,
 	];
 	$bbai_secondary_login = [
@@ -222,7 +241,14 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		$bbai_left_helper       = __( 'Scan your library to surface images that need ALT text.', 'beepbeep-ai-alt-text-generator' );
 	}
 
-	if ( $bbai_state_missing_count <= 0 && $bbai_state_weak_count > 0 ) {
+	if ( $bbai_guest_nothing_missing ) {
+		$bbai_guest_title = sprintf(
+			/* translators: %d: free ALT text generations available without signup. */
+			__( 'Fix up to %d images free — no signup needed', 'beepbeep-ai-alt-text-generator' ),
+			(int) $bbai_gt_limit
+		);
+		$bbai_guest_body = $bbai_guest_nothing_missing_body;
+	} elseif ( $bbai_state_missing_count <= 0 && $bbai_state_weak_count > 0 ) {
 		$bbai_guest_title = __( 'Your images are ready for review', 'beepbeep-ai-alt-text-generator' );
 		$bbai_guest_body  = __( 'Create a free account to review your results and keep improving your media library.', 'beepbeep-ai-alt-text-generator' );
 	} else {
@@ -253,7 +279,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	];
 	$bbai_primary_register = [
 		'label'     => __( 'Create Free Account', 'beepbeep-ai-alt-text-generator' ),
-		'class'     => $bbai_show_generate_primary
+		'class'     => ( $bbai_show_generate_primary || $bbai_show_upload_primary )
 			? 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary'
 			: 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'    => 'show-auth-modal',
@@ -440,6 +466,14 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						data-bbai-funnel-hero-cta=""
 						data-bbai-funnel-hero-primary=""
 					><?php echo esc_html( $bbai_primary_generate['label'] ); ?></a>
+				<?php elseif ( ! empty( $bbai_show_upload_primary ) ) : ?>
+					<a
+						href="<?php echo esc_url( $bbai_primary_upload['href'] ); ?>"
+						class="<?php echo esc_attr( $bbai_primary_upload['class'] ); ?>"
+						data-bbai-guest-upload-cta="1"
+						data-bbai-funnel-hero-cta=""
+						data-bbai-funnel-hero-primary=""
+					><?php echo esc_html( $bbai_primary_upload['label'] ); ?></a>
 				<?php endif; ?>
 
 					<a
@@ -460,7 +494,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						data-bbai-modal-context="<?php echo esc_attr( 'exhausted' === $bbai_guest_hero_variant ? 'register_exhausted' : 'register' ); ?>"
 						data-bbai-guest-register-cta
 						data-bbai-funnel-hero-cta=""
-						<?php echo ! empty( $bbai_show_generate_primary ) && isset( $bbai_primary_generate ) ? 'data-bbai-funnel-hero-secondary=""' : 'data-bbai-funnel-hero-primary=""'; ?>
+						<?php echo ( ( ! empty( $bbai_show_generate_primary ) && isset( $bbai_primary_generate ) ) || ! empty( $bbai_show_upload_primary ) ) ? 'data-bbai-funnel-hero-secondary=""' : 'data-bbai-funnel-hero-primary=""'; ?>
 					><?php echo esc_html( $bbai_primary_register['label'] ); ?></a>
 
 					<p class="bbai-guest-hero__login">
