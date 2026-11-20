@@ -225,6 +225,14 @@ namespace {
 			$this->assertStringNotContainsString( self::OLD_HEADING, $html );
 		}
 
+		public function test_partial_trial_generate_label_matches_fresh_trial(): void {
+			$html    = $this->hero( array( 'total' => 3, 'missing' => 2, 'optimized' => 1, 'used' => 3 ) );
+			$cluster = $this->cta_cluster( $html );
+			$this->assertStringContainsString( 'data-action="generate-missing"', $cluster );
+			$this->assertMatchesRegularExpression( '#data-bbai-funnel-hero-primary=""\s*>Generate ALT text</a>#', $cluster );
+			$this->assertStringNotContainsString( 'Generate ALT Text', $html );
+		}
+
 		public function test_exhausted_trial_unchanged(): void {
 			$html = $this->hero( array( 'total' => 3, 'optimized' => 3, 'used' => 10 ) );
 			$this->assertStringNotContainsString( 'Upload images', $this->cta_cluster( $html ) );

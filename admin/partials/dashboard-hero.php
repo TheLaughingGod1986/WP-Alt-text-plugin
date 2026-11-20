@@ -191,7 +191,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	$bbai_n_rem = max( 0, (int) $bbai_gt_remaining );
 	$bbai_show_generate_primary = $bbai_n_rem > 0 && $bbai_state_missing_count > 0;
 	$bbai_primary_generate = [
-		'label'       => __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ),
+		'label'       => __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',
