@@ -198,6 +198,8 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-attribution.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-auditor-attribution.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-review-prompt.php';
 \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::init();
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-first-run.php';
+\BeepBeepAI\AltTextGenerator\BBAI_First_Run::init();
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-more-from-oppti.php';
 \BeepBeepAI\AltTextGenerator\BBAI_More_From_Oppti::init();
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'flush_queued_lifecycle_events' ), 5 );
@@ -274,6 +276,9 @@ if ( ! function_exists( 'beepbeepai_activate_current_site' ) ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-activator.php';
 		\BeepBeepAI\AltTextGenerator\Activator::activate();
 		\BeepBeepAI\AltTextGenerator\DB_Schema::install();
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_First_Run' ) ) {
+			\BeepBeepAI\AltTextGenerator\BBAI_First_Run::mark_activated();
+		}
 	}
 }
 
