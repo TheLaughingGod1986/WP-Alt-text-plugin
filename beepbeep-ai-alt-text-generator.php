@@ -43,16 +43,12 @@ define( 'BBAI_PLUGIN_URL', plugin_dir_url( __FILE__ ) ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'BBAI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) ); // Legacy alias
 
-// When the admin runs on loopback, allow bypassing the SaaS API for ALT generation (see generate_and_save).
+// Local text-only ALT stub for development (see generate_and_save). Off unless a
+// developer defines BEEPBEEP_AI_LOCAL_ALT_STUB as true in wp-config.php. It is
+// never switched on from the request host, so localhost evaluators reach the
+// real service like any other site.
 if ( ! defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) ) {
-	$bbai_stub_host = '';
-	if ( isset( $_SERVER['HTTP_HOST'] ) && is_string( $_SERVER['HTTP_HOST'] ) ) {
-		$bbai_stub_host = strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) );
-	}
-	define(
-		'BEEPBEEP_AI_LOCAL_ALT_STUB',
-		'' !== $bbai_stub_host && 1 === preg_match( '/^(localhost|127\.0\.0\.1)(:\d+)?$/', $bbai_stub_host )
-	);
+	define( 'BEEPBEEP_AI_LOCAL_ALT_STUB', false );
 }
 
 if ( ! function_exists( 'bbai_is_authenticated' ) ) {

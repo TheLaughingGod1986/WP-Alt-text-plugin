@@ -190,11 +190,27 @@ class Core {
         }
     }
 
+	/**
+	 * Whether generation uses the local text-only stub instead of the service.
+	 * Only when a developer sets BEEPBEEP_AI_LOCAL_ALT_STUB (or WP_LOCAL_DEV) to
+	 * true and no explicit backend URL is configured. Never inferred from the host.
+	 */
+	public function is_local_alt_stub_active(): bool {
+		$has_explicit_backend = defined( 'BEEPBEEP_AI_API_URL' )
+			&& is_string( BEEPBEEP_AI_API_URL )
+			&& '' !== trim( (string) BEEPBEEP_AI_API_URL );
+		if ( $has_explicit_backend ) {
+			return false;
+		}
+		return ( defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) && true === BEEPBEEP_AI_LOCAL_ALT_STUB )
+			|| ( defined( 'WP_LOCAL_DEV' ) && WP_LOCAL_DEV );
+	}
+
     /**
      * Whether this site looks like internal or staging traffic for PostHog segmentation.
      */
     private function is_posthog_internal_environment(): bool {
-        if (defined('BEEPBEEP_AI_LOCAL_ALT_STUB') && BEEPBEEP_AI_LOCAL_ALT_STUB) {
+		if (defined('BEEPBEEP_AI_LOCAL_ALT_STUB') && true === BEEPBEEP_AI_LOCAL_ALT_STUB) {
             return true;
         }
 
@@ -6633,11 +6649,7 @@ class Core {
 
         $context = $this->build_generation_context_for_attachment((int) $attachment_id);
 
-        $bbai_has_explicit_backend = defined( 'BEEPBEEP_AI_API_URL' )
-            && is_string( BEEPBEEP_AI_API_URL )
-            && '' !== trim( (string) BEEPBEEP_AI_API_URL );
-        $local_or_dev_stub = ( ! $bbai_has_explicit_backend && defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) && BEEPBEEP_AI_LOCAL_ALT_STUB )
-            || ( ! $bbai_has_explicit_backend && defined( 'WP_LOCAL_DEV' ) && WP_LOCAL_DEV );
+		$local_or_dev_stub = $this->is_local_alt_stub_active();
 
         $direct_openai_enabled = defined( 'BBAI_ENABLE_DIRECT_OPENAI' ) && true === BBAI_ENABLE_DIRECT_OPENAI;
         $openai_key = $direct_openai_enabled ? $this->resolve_openai_api_key_for_direct_generation() : '';
@@ -6713,18 +6725,11 @@ class Core {
                 'api-proxy',
                 $review_stub
             );
-            $this->maybe_emit_alt_generated_event(
-                (int) $attachment_id,
-                (string) $stub_alt,
-                (string) $source,
-                (string) $model,
-                is_array( $context ) ? $context : [],
-                []
-            );
+			// Stub output is not a real result: send no alt_generated event and
+			// do not record usage success, which would set bbai_first_success_at.
             if ( class_exists( '\BeepBeepAI\AltTextGenerator\Trial_Quota' ) && \BeepBeepAI\AltTextGenerator\Trial_Quota::is_trial_user() && 'trial' !== $source ) {
                 \BeepBeepAI\AltTextGenerator\Trial_Quota::increment();
             }
-            \BeepBeepAI\AltTextGenerator\Usage_Tracker::record_generation_success(1);
             delete_transient('bbai_quota_cache');
             $this->invalidate_stats_cache();
 
@@ -11603,7 +11608,7 @@ class Core {
                 );
                 \BeepBeepAI\AltTextGenerator\BBAI_Telemetry::bump_session_images_processed( $bbai_ok );
                 $uid = get_current_user_id();
-                if ( $uid > 0 && ! get_user_meta( $uid, 'bbai_telemetry_first_alt_at', true ) ) {
+				if ( $uid > 0 && ! $this->is_local_alt_stub_active() && ! get_user_meta( $uid, 'bbai_telemetry_first_alt_at', true ) ) {
                     update_user_meta( $uid, 'bbai_telemetry_first_alt_at', time() );
                     bbai_telemetry_emit( 'first_alt_generated', [ 'number_of_images' => $bbai_ok ] );
                 }
