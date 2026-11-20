@@ -188,10 +188,11 @@ class BBAI_First_Run {
 			?>
 			<section class="bbai-card bbai-guest-consent-card" data-bbai-guest-consent-card="1" aria-labelledby="bbai-guest-consent-title">
 				<h2 id="bbai-guest-consent-title" class="bbai-guest-consent-card__title"><?php esc_html_e( 'Help improve OpptiAI Alt Text?', 'beepbeep-ai-alt-text-generator' ); ?></h2>
-				<p class="bbai-guest-consent-card__body"><?php esc_html_e( 'Share anonymous usage events, such as which screens are opened and whether generation succeeds. No personal data, no image content and no ALT text is sent. Nothing is shared unless you choose yes, and you can change this later.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+				<p class="bbai-guest-consent-card__body"><?php esc_html_e( 'Share anonymous usage events, such as which screens are opened and whether generation succeeds. No image content or ALT text is sent. Nothing is shared unless you choose yes, and you can change this later.', 'beepbeep-ai-alt-text-generator' ); ?></p>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bbai-guest-consent-card__form">
 					<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>">
 					<?php wp_nonce_field( $action ); ?>
+					<input type="hidden" name="bbai_consent_source" value="guest_card">
 					<button type="submit" name="bbai_usage_analytics" value="1" class="bbai-btn bbai-btn-secondary"><?php esc_html_e( 'Yes, share', 'beepbeep-ai-alt-text-generator' ); ?></button>
 					<button type="submit" name="bbai_usage_analytics" value="0" class="bbai-btn bbai-btn-link"><?php esc_html_e( 'No thanks', 'beepbeep-ai-alt-text-generator' ); ?></button>
 				</form>
@@ -205,6 +206,7 @@ class BBAI_First_Run {
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="bbai-guest-consent-line" data-bbai-guest-consent-line="1">
 			<input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>">
 			<?php wp_nonce_field( $action ); ?>
+			<input type="hidden" name="bbai_consent_source" value="guest_card">
 			<input type="hidden" name="bbai_usage_analytics" value="<?php echo esc_attr( $on ? '0' : '1' ); ?>">
 			<span><?php echo $on ? esc_html__( 'Anonymous usage analytics are on.', 'beepbeep-ai-alt-text-generator' ) : esc_html__( 'Anonymous usage analytics are off.', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			<button type="submit" class="bbai-btn bbai-btn-link"><?php echo $on ? esc_html__( 'Turn off', 'beepbeep-ai-alt-text-generator' ) : esc_html__( 'Turn on', 'beepbeep-ai-alt-text-generator' ); ?></button>

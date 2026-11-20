@@ -43,6 +43,12 @@ class BBAI_Telemetry {
 	 */
 	public const CONSENT_FORM_ACTION = 'bbai_save_usage_analytics';
 
+	/**
+	 * Where an admin made the usage analytics choice. Sent as consent_source on
+	 * the opt-in snapshot events; never stored as the consent source option.
+	 */
+	public const CONSENT_SOURCES = array( 'settings', 'guest_card' );
+
 	public const LIFECYCLE_QUEUE_OPTION = 'bbai_telemetry_lifecycle_queue';
 
 	public const INSTALLED_MARKER_OPTION = 'bbai_telemetry_plugin_installed';
@@ -345,9 +351,10 @@ class BBAI_Telemetry {
 	/**
 	 * Save the site admin's usage analytics choice.
 	 *
-	 * @param bool $opt_in True to opt in, false to opt out.
+	 * @param bool   $opt_in         True to opt in, false to opt out.
+	 * @param string $consent_source Where the choice was made: settings or guest_card.
 	 */
-	public static function set_consent( bool $opt_in ): void {
+	public static function set_consent( bool $opt_in, string $consent_source = 'settings' ): void {
 		update_option( self::CONSENT_OPTION, $opt_in ? 'yes' : 'no', false );
 		update_option( self::CONSENT_SOURCE_OPTION, 'settings', false );
 		if ( ! $opt_in ) {
@@ -355,7 +362,17 @@ class BBAI_Telemetry {
 			delete_option( self::LIFECYCLE_QUEUE_OPTION );
 			return;
 		}
-		self::record_opt_in_lifecycle();
+		self::record_opt_in_lifecycle( $consent_source );
+	}
+
+	/**
+	 * Normalise a consent source to one of CONSENT_SOURCES (default settings).
+	 *
+	 * @param mixed $consent_source Raw value.
+	 */
+	public static function normalize_consent_source( $consent_source ): string {
+		$consent_source = is_string( $consent_source ) ? sanitize_key( $consent_source ) : '';
+		return in_array( $consent_source, self::CONSENT_SOURCES, true ) ? $consent_source : 'settings';
 	}
 
 	/**
@@ -367,7 +384,7 @@ class BBAI_Telemetry {
 	 * activated_at, and lifecycle_delivery=opt_in_snapshot marks it honestly so
 	 * reports never treat it as a live activation.
 	 */
-	public static function record_opt_in_lifecycle(): void {
+	public static function record_opt_in_lifecycle( string $consent_source = 'settings' ): void {
 		if ( ! self::has_telemetry_consent() || get_option( self::OPT_IN_LIFECYCLE_SENT_OPTION, false ) ) {
 			return;
 		}
@@ -392,6 +409,7 @@ class BBAI_Telemetry {
 				array(
 					'lifecycle_event'    => $event_name,
 					'lifecycle_delivery' => 'opt_in_snapshot',
+					'consent_source'     => self::normalize_consent_source( $consent_source ),
 					'recorded_at_opt_in' => true,
 					'opted_in_at'        => $opted_in_at,
 					'occurred_at'        => $opted_in_at,
@@ -451,7 +469,9 @@ class BBAI_Telemetry {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above.
 		$opt_in = isset( $_POST['bbai_usage_analytics'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['bbai_usage_analytics'] ) );
-		self::set_consent( $opt_in );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce checked above.
+		$consent_source = isset( $_POST['bbai_consent_source'] ) ? sanitize_key( wp_unslash( $_POST['bbai_consent_source'] ) ) : '';
+		self::set_consent( $opt_in, self::normalize_consent_source( $consent_source ) );
 
 		$redirect = wp_get_referer();
 		if ( ! $redirect ) {

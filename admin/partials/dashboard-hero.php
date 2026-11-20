@@ -46,8 +46,8 @@ $bbai_gt_exhausted = ! empty( $bbai_gt_src['exhausted'] ) || $bbai_gt_remaining 
 $bbai_guest_nothing_missing      = $bbai_state_missing_count <= 0 && ! $bbai_gt_exhausted && $bbai_gt_remaining > 0;
 $bbai_guest_no_images            = $bbai_guest_nothing_missing && $bbai_state_total_images <= 0 && ( $bbai_state_optimized_count + $bbai_state_weak_count ) <= 0;
 $bbai_guest_nothing_missing_body = $bbai_guest_no_images
-	? __( 'Upload a few images, then click Generate to see alt text in seconds. No account needed for your first results.', 'beepbeep-ai-alt-text-generator' )
-	: __( 'Every image here already has alt text. Upload an image, or pick one to regenerate, then click Generate.', 'beepbeep-ai-alt-text-generator' );
+	? __( 'Upload a few images, then click Generate to see your alt text. No account needed for your first results.', 'beepbeep-ai-alt-text-generator' )
+	: __( 'Every image here already has alt text. Upload an image, then click Generate.', 'beepbeep-ai-alt-text-generator' );
 $bbai_show_upload_primary        = $bbai_guest_nothing_missing && current_user_can( 'upload_files' );
 $bbai_primary_upload             = array(
 	'label' => __( 'Upload images', 'beepbeep-ai-alt-text-generator' ),
@@ -242,21 +242,13 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	}
 
 	if ( $bbai_guest_nothing_missing ) {
-		$bbai_guest_title = sprintf(
-			/* translators: %d: free ALT text generations available without signup. */
-			__( 'Fix up to %d images free — no signup needed', 'beepbeep-ai-alt-text-generator' ),
-			(int) $bbai_gt_limit
-		);
+		$bbai_guest_title = __( 'Try it on your own images. No signup needed.', 'beepbeep-ai-alt-text-generator' );
 		$bbai_guest_body = $bbai_guest_nothing_missing_body;
 	} elseif ( $bbai_state_missing_count <= 0 && $bbai_state_weak_count > 0 ) {
 		$bbai_guest_title = __( 'Your images are ready for review', 'beepbeep-ai-alt-text-generator' );
 		$bbai_guest_body  = __( 'Create a free account to review your results and keep improving your media library.', 'beepbeep-ai-alt-text-generator' );
 	} else {
-		$bbai_guest_title = sprintf(
-			/* translators: %d: free ALT text generations available without signup. */
-			__( 'Fix up to %d images free — no signup needed', 'beepbeep-ai-alt-text-generator' ),
-			(int) $bbai_gt_limit
-		);
+		$bbai_guest_title = __( 'Try it on your own images. No signup needed.', 'beepbeep-ai-alt-text-generator' );
 		$bbai_guest_body  = sprintf(
 			/* translators: %d: free trial generations. */
 			__( 'Click Generate below and we’ll create ALT text for up to %d images, improving accessibility and helping image SEO.', 'beepbeep-ai-alt-text-generator' ),
@@ -267,11 +259,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	// Only show "Generate" when there is actually missing ALT to fix.
 	$bbai_show_generate_primary = $bbai_gt_remaining > 0 && $bbai_state_missing_count > 0;
 	$bbai_primary_generate    = [
-		'label'       => sprintf(
-			/* translators: %d: free generations available. */
-			__( 'Generate Up to %d ALT Texts Free', 'beepbeep-ai-alt-text-generator' ),
-			(int) $bbai_gt_limit
-		),
+		'label'       => __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',

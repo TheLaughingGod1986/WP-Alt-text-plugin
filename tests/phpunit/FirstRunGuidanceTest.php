@@ -15,8 +15,11 @@ namespace {
 	#[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
 	final class FirstRunGuidanceTest extends TestCase {
 		const NOTICE_TEXT = 'OpptiAI Alt Text is ready. Upload images, then click Generate on the OpptiAI Alt Text screen.';
-		const NO_IMAGES   = 'Upload a few images, then click Generate to see alt text in seconds. No account needed for your first results.';
-		const ALL_HAVE    = 'Every image here already has alt text. Upload an image, or pick one to regenerate, then click Generate.';
+		const NO_IMAGES   = 'Upload a few images, then click Generate to see your alt text. No account needed for your first results.';
+		const ALL_HAVE    = 'Every image here already has alt text. Upload an image, then click Generate.';
+		const HEADLINE    = 'Try it on your own images. No signup needed.';
+		const OLD_HEADING = 'Fix up to 10 images free';
+		const CARD_BODY   = 'Share anonymous usage events, such as which screens are opened and whether generation succeeds. No image content or ALT text is sent. Nothing is shared unless you choose yes, and you can change this later.';
 
 		protected function setUp(): void {
 			parent::setUp();
@@ -183,6 +186,9 @@ namespace {
 			$html = $this->hero( array( 'total' => 0 ) );
 			$this->assertStringContainsString( self::NO_IMAGES, $this->text( $html ) );
 			$this->assertStringNotContainsString( self::ALL_HAVE, $this->text( $html ) );
+			$this->assertStringNotContainsString( 'in seconds', $this->text( $html ) );
+			$this->assertStringContainsString( '>' . self::HEADLINE . '</h1>', $html );
+			$this->assertStringNotContainsString( self::OLD_HEADING, $html );
 			$this->assert_upload_primary_register_secondary( $html );
 		}
 
@@ -190,6 +196,8 @@ namespace {
 			$html = $this->hero( array( 'total' => 3, 'optimized' => 3 ) );
 			$this->assertStringContainsString( self::ALL_HAVE, $this->text( $html ) );
 			$this->assertStringNotContainsString( self::NO_IMAGES, $this->text( $html ) );
+			$this->assertStringNotContainsString( 'pick one to regenerate', $this->text( $html ) );
+			$this->assertStringContainsString( '>' . self::HEADLINE . '</h1>', $html );
 			$this->assert_upload_primary_register_secondary( $html );
 		}
 
@@ -209,8 +217,12 @@ namespace {
 			$html    = $this->hero( array( 'total' => 3, 'missing' => 3 ) );
 			$cluster = $this->cta_cluster( $html );
 			$this->assertStringContainsString( 'data-action="generate-missing"', $cluster );
+			$this->assertMatchesRegularExpression( '#data-bbai-funnel-hero-primary=""\s*>Generate ALT text</a>#', $cluster );
+			$this->assertStringNotContainsString( 'ALT Texts Free', $html );
 			$this->assertStringNotContainsString( 'Upload images', $cluster );
 			$this->assertStringContainsString( 'Click Generate below', $this->text( $html ) );
+			$this->assertStringContainsString( '>' . self::HEADLINE . '</h1>', $html );
+			$this->assertStringNotContainsString( self::OLD_HEADING, $html );
 		}
 
 		public function test_exhausted_trial_unchanged(): void {
@@ -235,17 +247,21 @@ namespace {
 			$this->assertMatchesRegularExpression( '#name="bbai_usage_analytics" value="1"[^>]*>Yes, share<#', $html );
 			$this->assertMatchesRegularExpression( '#name="bbai_usage_analytics" value="0"[^>]*>No thanks<#', $html );
 			$text = $this->text( $html );
-			$this->assertStringContainsString( 'anonymous usage events', $text );
-			$this->assertStringContainsString( 'No personal data, no image content', $text );
-			$this->assertStringContainsString( 'change this later', $text );
+			$this->assertStringContainsString( self::CARD_BODY, $text );
+			$this->assertStringNotContainsString( 'No personal data', $text );
+			$this->assertStringContainsString( 'Help improve OpptiAI Alt Text?', $text );
+			$this->assertStringContainsString( 'name="bbai_consent_source" value="guest_card"', $html );
 			// Default off: nothing stored, nothing sent, no consent.
 			$this->assertFalse( get_option( BBAI_Telemetry::CONSENT_OPTION, false ) );
 			$this->assertFalse( BBAI_Telemetry::has_telemetry_consent() );
 			$this->assertSame( array(), $GLOBALS['bbai_test_remote_posts'] );
 		}
 
-		private function submit_choice( string $value ): void {
+		private function submit_choice( string $value, ?string $source = 'guest_card' ): void {
 			$_POST['bbai_usage_analytics'] = $value;
+			if ( null !== $source ) {
+				$_POST['bbai_consent_source'] = $source;
+			}
 			try {
 				BBAI_Telemetry::handle_consent_form();
 				$this->fail( 'expected redirect' );
@@ -261,20 +277,56 @@ namespace {
 			$this->assertSame( 'settings', get_option( BBAI_Telemetry::CONSENT_SOURCE_OPTION ) );
 			$this->assertTrue( BBAI_Telemetry::has_telemetry_consent() );
 			$this->assertTrue( BBAI_Telemetry::stored_consent_is_yes() );
-			// The existing late opt-in snapshot ran only after yes.
-			$events = array_map(
-				static function ( $call ) {
-					$body = json_decode( (string) $call['args']['body'], true );
-					return $body['event'] ?? '';
-				},
-				$GLOBALS['bbai_test_remote_posts']
-			);
-			$this->assertContains( 'plugin_activated', $events );
+			// The existing late opt-in snapshot ran only after yes, marked as a
+			// snapshot and tagged with where the yes came from.
+			$sent = $this->sent_events();
+			$this->assertSame( array( 'plugin_installed', 'plugin_activated' ), array_keys( $sent ) );
+			foreach ( $sent as $props ) {
+				$this->assertSame( 'opt_in_snapshot', $props['lifecycle_delivery'] );
+				$this->assertSame( 'guest_card', $props['consent_source'] );
+				$this->assertTrue( $props['recorded_at_opt_in'] );
+			}
 			// Card is gone; the one-line change form shows instead.
 			$html = $this->card_html();
 			$this->assertStringNotContainsString( 'data-bbai-guest-consent-card', $html );
 			$this->assertStringContainsString( 'data-bbai-guest-consent-line="1"', $html );
 			$this->assertStringContainsString( 'Turn off', $html );
+		}
+
+		/** @return array<string,array<string,mixed>> event name => properties */
+		private function sent_events(): array {
+			$out = array();
+			foreach ( $GLOBALS['bbai_test_remote_posts'] as $call ) {
+				$body                   = json_decode( (string) $call['args']['body'], true );
+				$out[ $body['event'] ] = $body['properties'];
+			}
+			return $out;
+		}
+
+		public function test_settings_yes_is_tagged_settings(): void {
+			// The Settings form posts no consent source field.
+			$this->submit_choice( '1', null );
+			$this->assertSame( 'settings', get_option( BBAI_Telemetry::CONSENT_SOURCE_OPTION ) );
+			$sent = $this->sent_events();
+			$this->assertNotEmpty( $sent );
+			foreach ( $sent as $props ) {
+				$this->assertSame( 'opt_in_snapshot', $props['lifecycle_delivery'] );
+				$this->assertSame( 'settings', $props['consent_source'] );
+			}
+		}
+
+		public function test_unknown_consent_source_falls_back_to_settings(): void {
+			$this->submit_choice( '1', 'someone@example.com' );
+			foreach ( $this->sent_events() as $props ) {
+				$this->assertSame( 'settings', $props['consent_source'] );
+			}
+			$this->assertSame( 'settings', BBAI_Telemetry::normalize_consent_source( array( 'x' ) ) );
+			$this->assertSame( 'guest_card', BBAI_Telemetry::normalize_consent_source( 'guest_card' ) );
+		}
+
+		public function test_settings_form_sends_no_guest_source(): void {
+			$src = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/settings-usage-analytics.php' );
+			$this->assertStringNotContainsString( 'bbai_consent_source', $src );
 		}
 
 		public function test_no_thanks_saves_explicit_no_and_hides_card(): void {
@@ -286,6 +338,7 @@ namespace {
 			$html = $this->card_html();
 			$this->assertStringNotContainsString( 'data-bbai-guest-consent-card', $html );
 			$this->assertStringContainsString( 'Turn on', $html );
+			$this->assertStringContainsString( 'name="bbai_consent_source" value="guest_card"', $html );
 		}
 
 		public function test_settings_answer_also_hides_card(): void {
