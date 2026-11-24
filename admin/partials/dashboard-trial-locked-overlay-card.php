@@ -82,7 +82,7 @@ $bbai_primary_auth_tab = 'register';
 			</li>
 			<li class="bbai-dashboard-locked-preview__benefit">
 				<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>
-				<span><?php esc_html_e( 'Publish changes instantly', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span><?php esc_html_e( 'Publish your changes', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			</li>
 			<li class="bbai-dashboard-locked-preview__benefit">
 				<span class="bbai-dashboard-locked-preview__benefit-icon" aria-hidden="true">✓</span>

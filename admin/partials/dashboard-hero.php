@@ -288,15 +288,15 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 $bbai_trial_meter_pct = $bbai_gt_limit > 0 ? (int) min( 100, round( 100 * $bbai_gt_used / $bbai_gt_limit ) ) : 0;
 $bbai_trial_usage_line = sprintf(
 	/* translators: 1: used free generations, 2: total free generations. */
-	__( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ),
+	__( '%1$s / %2$s generations used', 'beepbeep-ai-alt-text-generator' ),
 	number_format_i18n( $bbai_gt_used ),
 	number_format_i18n( $bbai_gt_limit )
 );
 $bbai_trial_remaining_line = sprintf(
 	/* translators: 1: remaining free generations, 2: monthly generations after free signup. */
 	_n(
-		'%1$s free generation left. Create a free account to unlock %2$s free each month',
-		'%1$s free generations left. Create a free account to unlock %2$s free each month',
+		'%1$s trial generation left. Create an account to get %2$s generations each month.',
+		'%1$s trial generations left. Create an account to get %2$s generations each month.',
 		$bbai_gt_remaining,
 		'beepbeep-ai-alt-text-generator'
 	),
@@ -363,7 +363,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 
 			<?php if ( 'in_progress' === $bbai_guest_hero_variant ) : ?>
 				<p class="bbai-guest-hero__trial-meter-intro"><?php esc_html_e( 'Free trial', 'beepbeep-ai-alt-text-generator' ); ?></p>
-				<div class="bbai-guest-trial-meter" data-bbai-guest-trial-meter role="progressbar" aria-valuemin="0" aria-valuemax="<?php echo esc_attr( (string) $bbai_gt_limit ); ?>" aria-valuenow="<?php echo esc_attr( (string) $bbai_gt_used ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: 1: used count, 2: limit count */ __( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ), (string) (int) $bbai_gt_used, (string) (int) $bbai_gt_limit ) ); ?>">
+				<div class="bbai-guest-trial-meter" data-bbai-guest-trial-meter role="progressbar" aria-valuemin="0" aria-valuemax="<?php echo esc_attr( (string) $bbai_gt_limit ); ?>" aria-valuenow="<?php echo esc_attr( (string) $bbai_gt_used ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: 1: used count, 2: limit count */ __( '%1$s / %2$s generations used', 'beepbeep-ai-alt-text-generator' ), (string) (int) $bbai_gt_used, (string) (int) $bbai_gt_limit ) ); ?>">
 					<span class="bbai-guest-trial-meter__track">
 						<span class="bbai-guest-trial-meter__fill" data-bbai-guest-trial-meter-fill style="width: <?php echo esc_attr( (string) $bbai_trial_meter_pct ); ?>%;"></span>
 					</span>
@@ -373,7 +373,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					echo esc_html(
 						sprintf(
 							/* translators: 1: used count, 2: limit count */
-							__( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ),
+							__( '%1$s / %2$s generations used', 'beepbeep-ai-alt-text-generator' ),
 							number_format_i18n( $bbai_gt_used ),
 							number_format_i18n( $bbai_gt_limit )
 						)
@@ -505,7 +505,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						echo esc_html(
 							sprintf(
 								/* translators: %d: free generations available without signup. */
-								__( '✓ %d free generations now · No signup · No credit card', 'beepbeep-ai-alt-text-generator' ),
+								__( '✓ %d generations now · No signup · No credit card', 'beepbeep-ai-alt-text-generator' ),
 								(int) $bbai_gt_limit
 							)
 						);
@@ -530,7 +530,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					</span>
 				</p>
 				<ul class="bbai-guest-register-benefits" aria-label="<?php esc_attr_e( 'Free account benefits', 'beepbeep-ai-alt-text-generator' ); ?>">
-					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
+					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 AI generations every month', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Full ALT Library access', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Bulk optimisation tools', 'beepbeep-ai-alt-text-generator' ); ?></li>
@@ -539,7 +539,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 		<?php else : ?>
 			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
 				<ul class="bbai-guest-register-benefits" aria-label="<?php esc_attr_e( 'Free account benefits', 'beepbeep-ai-alt-text-generator' ); ?>">
-					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
+					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 AI generations every month', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Keep your current accessibility progress', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Full ALT Library and image SEO tools', 'beepbeep-ai-alt-text-generator' ); ?></li>
@@ -563,7 +563,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 			</div>
 			<div class="bbai-guest-benefits-card__item">
 				<strong><?php esc_html_e( 'Efficiency', 'beepbeep-ai-alt-text-generator' ); ?></strong>
-				<span><?php esc_html_e( 'Generate ALT text instantly using AI.', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span><?php esc_html_e( 'Generate ALT text using AI', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			</div>
 			<div class="bbai-guest-benefits-card__item">
 				<strong><?php esc_html_e( 'Compliance', 'beepbeep-ai-alt-text-generator' ); ?></strong>

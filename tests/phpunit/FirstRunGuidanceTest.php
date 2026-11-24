@@ -19,7 +19,7 @@ namespace {
 		const ALL_HAVE    = 'Every image here already has alt text. Upload an image, then click Generate.';
 		const HEADLINE    = 'Try it on your own images. No signup needed.';
 		const OLD_HEADING = 'Fix up to 10 images free';
-		const CARD_BODY   = 'Share anonymous usage events, such as which screens are opened and whether generation succeeds. No image content or ALT text is sent. Nothing is shared unless you choose yes, and you can change this later.';
+		const CARD_BODY   = 'Share usage events, such as which screens are opened and whether generation succeeds. No site URL, email, images or ALT text are sent. Nothing is shared unless you choose yes, and you can change this later.';
 
 		protected function setUp(): void {
 			parent::setUp();
@@ -225,6 +225,33 @@ namespace {
 			$this->assertStringNotContainsString( self::OLD_HEADING, $html );
 		}
 
+		public function test_fresh_trial_copy_has_no_free_next_to_numbers(): void {
+			$html = $this->hero( array( 'total' => 3, 'missing' => 3 ) );
+			$text = $this->text( $html );
+			$this->assertStringContainsString( '✓ 10 generations now · No signup · No credit card', $text );
+			$this->assertStringContainsString( '0 / 10 generations used', $text );
+			$this->assertStringContainsString( '10 trial generations left. Create an account to get 25 generations each month.', $text );
+			$this->assertSame( 1, substr_count( $text, '25 AI generations every month' ) );
+			$this->assertStringContainsString( 'Generate ALT text using AI', $text );
+			$this->assertStringNotContainsString( 'free generations', $text );
+			$this->assertStringNotContainsString( 'for life', $text );
+			$this->assertStringNotContainsString( 'instantly', $text );
+		}
+
+		public function test_partial_trial_meter_and_singular_line(): void {
+			$html = $this->hero( array( 'total' => 3, 'missing' => 1, 'optimized' => 2, 'used' => 9 ) );
+			$text = $this->text( $html );
+			$this->assertStringContainsString( 'aria-label="9 / 10 generations used"', $html );
+			$this->assertStringContainsString( '9 / 10 generations used', $text );
+			$this->assertStringContainsString( '1 trial generation left. Create an account to get 25 generations each month.', $text );
+		}
+
+		public function test_locked_overlay_publish_copy(): void {
+			$src = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . 'admin/partials/dashboard-trial-locked-overlay-card.php' );
+			$this->assertStringContainsString( "esc_html_e( 'Publish your changes', 'beepbeep-ai-alt-text-generator' )", $src );
+			$this->assertStringNotContainsString( 'Publish changes instantly', $src );
+		}
+
 		public function test_partial_trial_generate_label_matches_fresh_trial(): void {
 			$html    = $this->hero( array( 'total' => 3, 'missing' => 2, 'optimized' => 1, 'used' => 3 ) );
 			$cluster = $this->cta_cluster( $html );
@@ -299,6 +326,8 @@ namespace {
 			$this->assertStringNotContainsString( 'data-bbai-guest-consent-card', $html );
 			$this->assertStringContainsString( 'data-bbai-guest-consent-line="1"', $html );
 			$this->assertStringContainsString( 'Turn off', $html );
+			$this->assertStringContainsString( 'Usage analytics are on.', $this->text( $html ) );
+			$this->assertStringNotContainsString( 'Anonymous', $html );
 		}
 
 		/** @return array<string,array<string,mixed>> event name => properties */
@@ -346,6 +375,7 @@ namespace {
 			$html = $this->card_html();
 			$this->assertStringNotContainsString( 'data-bbai-guest-consent-card', $html );
 			$this->assertStringContainsString( 'Turn on', $html );
+			$this->assertStringContainsString( 'Usage analytics are off.', $this->text( $html ) );
 			$this->assertStringContainsString( 'name="bbai_consent_source" value="guest_card"', $html );
 		}
 
