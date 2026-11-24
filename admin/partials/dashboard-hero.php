@@ -39,6 +39,22 @@ $bbai_gt_used      = max( 0, min( $bbai_gt_limit, (int) ( $bbai_gt_src['used'] ?
 $bbai_gt_remaining = max( 0, (int) ( $bbai_gt_src['remaining'] ?? max( 0, $bbai_gt_limit - $bbai_gt_used ) ) );
 $bbai_gt_exhausted = ! empty( $bbai_gt_src['exhausted'] ) || $bbai_gt_remaining <= 0;
 
+// Nothing missing but free generations left: Generate has nothing to act on,
+// so point the guest at uploading an image instead of a signup-only wall.
+// Create Free Account stays as the secondary action. Two states: an empty
+// Media Library, or images that all have alt text already.
+$bbai_guest_nothing_missing      = $bbai_state_missing_count <= 0 && ! $bbai_gt_exhausted && $bbai_gt_remaining > 0;
+$bbai_guest_no_images            = $bbai_guest_nothing_missing && $bbai_state_total_images <= 0 && ( $bbai_state_optimized_count + $bbai_state_weak_count ) <= 0;
+$bbai_guest_nothing_missing_body = $bbai_guest_no_images
+	? __( 'Upload a few images, then click Generate to see your alt text. No account needed for your first results.', 'beepbeep-ai-alt-text-generator' )
+	: __( 'Every image here already has alt text. Upload an image, then click Generate.', 'beepbeep-ai-alt-text-generator' );
+$bbai_show_upload_primary        = $bbai_guest_nothing_missing && current_user_can( 'upload_files' );
+$bbai_primary_upload             = array(
+	'label' => __( 'Upload images', 'beepbeep-ai-alt-text-generator' ),
+	'class' => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
+	'href'  => admin_url( 'media-new.php' ),
+);
+
 if ( $bbai_gt_exhausted ) {
 	$bbai_guest_hero_variant = 'exhausted';
 } elseif ( $bbai_gt_used > 0 ) {
@@ -148,6 +164,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		'is_button' => false,
 	];
 	$bbai_show_generate_primary = false;
+	$bbai_show_upload_primary   = false;
 } elseif ( 'in_progress' === $bbai_guest_hero_variant ) {
 	$bbai_donut_tone         = $bbai_guest_completion_tone;
 	$bbai_donut_center_val   = $bbai_guest_coverage_pct > 0 ? (string) $bbai_guest_coverage_pct . '%' : '0%';
@@ -167,12 +184,14 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 			number_format_i18n( $bbai_state_missing_count )
 		)
 		: __( 'Your images are almost fully optimised', 'beepbeep-ai-alt-text-generator' );
-	$bbai_guest_body  = __( 'Use your remaining free credits to complete your image optimisation.', 'beepbeep-ai-alt-text-generator' );
+	$bbai_guest_body = $bbai_guest_nothing_missing
+		? $bbai_guest_nothing_missing_body
+		: __( 'Use your remaining free credits to complete your image optimisation.', 'beepbeep-ai-alt-text-generator' );
 
 	$bbai_n_rem = max( 0, (int) $bbai_gt_remaining );
 	$bbai_show_generate_primary = $bbai_n_rem > 0 && $bbai_state_missing_count > 0;
 	$bbai_primary_generate = [
-		'label'       => __( 'Generate ALT Text', 'beepbeep-ai-alt-text-generator' ),
+		'label'       => __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',
@@ -180,12 +199,12 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	];
 	$bbai_primary_register = [
 		'label'       => __( 'Create Free Account', 'beepbeep-ai-alt-text-generator' ),
-		'class'       => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 )
+		'class'       => ( ! $bbai_show_generate_primary && ! $bbai_show_upload_primary && $bbai_n_rem > 0 )
 			? 'bbai-btn bbai-btn-primary bbai-li-btn-primary'
 			: 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary',
 		'action'      => 'show-auth-modal',
 		'auth_tab'    => 'signup',
-		'analytics'   => ( ! $bbai_show_generate_primary && $bbai_n_rem > 0 ) ? 'guest_hero_primary_register_mid' : 'guest_hero_secondary_register',
+		'analytics'   => ( ! $bbai_show_generate_primary && ! $bbai_show_upload_primary && $bbai_n_rem > 0 ) ? 'guest_hero_primary_register_mid' : 'guest_hero_secondary_register',
 		'is_button'   => false,
 	];
 	$bbai_secondary_login = [
@@ -222,15 +241,14 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 		$bbai_left_helper       = __( 'Scan your library to surface images that need ALT text.', 'beepbeep-ai-alt-text-generator' );
 	}
 
-	if ( $bbai_state_missing_count <= 0 && $bbai_state_weak_count > 0 ) {
+	if ( $bbai_guest_nothing_missing ) {
+		$bbai_guest_title = __( 'Try it on your own images. No signup needed.', 'beepbeep-ai-alt-text-generator' );
+		$bbai_guest_body = $bbai_guest_nothing_missing_body;
+	} elseif ( $bbai_state_missing_count <= 0 && $bbai_state_weak_count > 0 ) {
 		$bbai_guest_title = __( 'Your images are ready for review', 'beepbeep-ai-alt-text-generator' );
 		$bbai_guest_body  = __( 'Create a free account to review your results and keep improving your media library.', 'beepbeep-ai-alt-text-generator' );
 	} else {
-		$bbai_guest_title = sprintf(
-			/* translators: %d: free ALT text generations available without signup. */
-			__( 'Fix up to %d images free — no signup needed', 'beepbeep-ai-alt-text-generator' ),
-			(int) $bbai_gt_limit
-		);
+		$bbai_guest_title = __( 'Try it on your own images. No signup needed.', 'beepbeep-ai-alt-text-generator' );
 		$bbai_guest_body  = sprintf(
 			/* translators: %d: free trial generations. */
 			__( 'Click Generate below and we’ll create ALT text for up to %d images, improving accessibility and helping image SEO.', 'beepbeep-ai-alt-text-generator' ),
@@ -241,11 +259,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	// Only show "Generate" when there is actually missing ALT to fix.
 	$bbai_show_generate_primary = $bbai_gt_remaining > 0 && $bbai_state_missing_count > 0;
 	$bbai_primary_generate    = [
-		'label'       => sprintf(
-			/* translators: %d: free generations available. */
-			__( 'Generate Up to %d ALT Texts Free', 'beepbeep-ai-alt-text-generator' ),
-			(int) $bbai_gt_limit
-		),
+		'label'       => __( 'Generate ALT text', 'beepbeep-ai-alt-text-generator' ),
 		'class'       => 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'      => 'generate-missing',
 		'bbai_action' => 'generate_missing',
@@ -253,7 +267,7 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 	];
 	$bbai_primary_register = [
 		'label'     => __( 'Create Free Account', 'beepbeep-ai-alt-text-generator' ),
-		'class'     => $bbai_show_generate_primary
+		'class'     => ( $bbai_show_generate_primary || $bbai_show_upload_primary )
 			? 'bbai-btn bbai-btn-secondary bbai-li-btn-secondary'
 			: 'bbai-btn bbai-btn-primary bbai-li-btn-primary',
 		'action'    => 'show-auth-modal',
@@ -274,15 +288,15 @@ if ( 'exhausted' === $bbai_guest_hero_variant ) {
 $bbai_trial_meter_pct = $bbai_gt_limit > 0 ? (int) min( 100, round( 100 * $bbai_gt_used / $bbai_gt_limit ) ) : 0;
 $bbai_trial_usage_line = sprintf(
 	/* translators: 1: used free generations, 2: total free generations. */
-	__( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ),
+	__( '%1$s / %2$s generations used', 'beepbeep-ai-alt-text-generator' ),
 	number_format_i18n( $bbai_gt_used ),
 	number_format_i18n( $bbai_gt_limit )
 );
 $bbai_trial_remaining_line = sprintf(
 	/* translators: 1: remaining free generations, 2: monthly generations after free signup. */
 	_n(
-		'%1$s free generation left. Create a free account to unlock %2$s free each month',
-		'%1$s free generations left. Create a free account to unlock %2$s free each month',
+		'%1$s trial generation left. Create an account to get %2$s generations each month.',
+		'%1$s trial generations left. Create an account to get %2$s generations each month.',
 		$bbai_gt_remaining,
 		'beepbeep-ai-alt-text-generator'
 	),
@@ -349,7 +363,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 
 			<?php if ( 'in_progress' === $bbai_guest_hero_variant ) : ?>
 				<p class="bbai-guest-hero__trial-meter-intro"><?php esc_html_e( 'Free trial', 'beepbeep-ai-alt-text-generator' ); ?></p>
-				<div class="bbai-guest-trial-meter" data-bbai-guest-trial-meter role="progressbar" aria-valuemin="0" aria-valuemax="<?php echo esc_attr( (string) $bbai_gt_limit ); ?>" aria-valuenow="<?php echo esc_attr( (string) $bbai_gt_used ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: 1: used count, 2: limit count */ __( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ), (string) (int) $bbai_gt_used, (string) (int) $bbai_gt_limit ) ); ?>">
+				<div class="bbai-guest-trial-meter" data-bbai-guest-trial-meter role="progressbar" aria-valuemin="0" aria-valuemax="<?php echo esc_attr( (string) $bbai_gt_limit ); ?>" aria-valuenow="<?php echo esc_attr( (string) $bbai_gt_used ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: 1: used count, 2: limit count */ __( '%1$s / %2$s generations used', 'beepbeep-ai-alt-text-generator' ), (string) (int) $bbai_gt_used, (string) (int) $bbai_gt_limit ) ); ?>">
 					<span class="bbai-guest-trial-meter__track">
 						<span class="bbai-guest-trial-meter__fill" data-bbai-guest-trial-meter-fill style="width: <?php echo esc_attr( (string) $bbai_trial_meter_pct ); ?>%;"></span>
 					</span>
@@ -359,7 +373,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					echo esc_html(
 						sprintf(
 							/* translators: 1: used count, 2: limit count */
-							__( '%1$s / %2$s free generations used', 'beepbeep-ai-alt-text-generator' ),
+							__( '%1$s / %2$s generations used', 'beepbeep-ai-alt-text-generator' ),
 							number_format_i18n( $bbai_gt_used ),
 							number_format_i18n( $bbai_gt_limit )
 						)
@@ -440,6 +454,14 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						data-bbai-funnel-hero-cta=""
 						data-bbai-funnel-hero-primary=""
 					><?php echo esc_html( $bbai_primary_generate['label'] ); ?></a>
+				<?php elseif ( ! empty( $bbai_show_upload_primary ) ) : ?>
+					<a
+						href="<?php echo esc_url( $bbai_primary_upload['href'] ); ?>"
+						class="<?php echo esc_attr( $bbai_primary_upload['class'] ); ?>"
+						data-bbai-guest-upload-cta="1"
+						data-bbai-funnel-hero-cta=""
+						data-bbai-funnel-hero-primary=""
+					><?php echo esc_html( $bbai_primary_upload['label'] ); ?></a>
 				<?php endif; ?>
 
 					<a
@@ -460,7 +482,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						data-bbai-modal-context="<?php echo esc_attr( 'exhausted' === $bbai_guest_hero_variant ? 'register_exhausted' : 'register' ); ?>"
 						data-bbai-guest-register-cta
 						data-bbai-funnel-hero-cta=""
-						<?php echo ! empty( $bbai_show_generate_primary ) && isset( $bbai_primary_generate ) ? 'data-bbai-funnel-hero-secondary=""' : 'data-bbai-funnel-hero-primary=""'; ?>
+						<?php echo ( ( ! empty( $bbai_show_generate_primary ) && isset( $bbai_primary_generate ) ) || ! empty( $bbai_show_upload_primary ) ) ? 'data-bbai-funnel-hero-secondary=""' : 'data-bbai-funnel-hero-primary=""'; ?>
 					><?php echo esc_html( $bbai_primary_register['label'] ); ?></a>
 
 					<p class="bbai-guest-hero__login">
@@ -483,7 +505,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 						echo esc_html(
 							sprintf(
 								/* translators: %d: free generations available without signup. */
-								__( '✓ %d free generations now · No signup · No credit card', 'beepbeep-ai-alt-text-generator' ),
+								__( '✓ %d generations now · No signup · No credit card', 'beepbeep-ai-alt-text-generator' ),
 								(int) $bbai_gt_limit
 							)
 						);
@@ -508,7 +530,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 					</span>
 				</p>
 				<ul class="bbai-guest-register-benefits" aria-label="<?php esc_attr_e( 'Free account benefits', 'beepbeep-ai-alt-text-generator' ); ?>">
-					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
+					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 AI generations every month', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Full ALT Library access', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Bulk optimisation tools', 'beepbeep-ai-alt-text-generator' ); ?></li>
@@ -517,7 +539,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 		<?php else : ?>
 			<div class="bbai-li-card-section bbai-li-card-section--monetisation bbai-guest-hero__trial-blurb">
 				<ul class="bbai-guest-register-benefits" aria-label="<?php esc_attr_e( 'Free account benefits', 'beepbeep-ai-alt-text-generator' ); ?>">
-					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 free AI generations every month for life', 'beepbeep-ai-alt-text-generator' ); ?></li>
+					<li><span aria-hidden="true">✓</span><?php esc_html_e( '25 AI generations every month', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'No credit card needed', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Keep your current accessibility progress', 'beepbeep-ai-alt-text-generator' ); ?></li>
 					<li><span aria-hidden="true">✓</span><?php esc_html_e( 'Full ALT Library and image SEO tools', 'beepbeep-ai-alt-text-generator' ); ?></li>
@@ -541,7 +563,7 @@ $bbai_left_helper_meta = isset( $bbai_left_helper_meta ) ? (string) $bbai_left_h
 			</div>
 			<div class="bbai-guest-benefits-card__item">
 				<strong><?php esc_html_e( 'Efficiency', 'beepbeep-ai-alt-text-generator' ); ?></strong>
-				<span><?php esc_html_e( 'Generate ALT text instantly using AI.', 'beepbeep-ai-alt-text-generator' ); ?></span>
+				<span><?php esc_html_e( 'Generate ALT text using AI', 'beepbeep-ai-alt-text-generator' ); ?></span>
 			</div>
 			<div class="bbai-guest-benefits-card__item">
 				<strong><?php esc_html_e( 'Compliance', 'beepbeep-ai-alt-text-generator' ); ?></strong>

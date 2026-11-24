@@ -4,6 +4,15 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.146 - 2026-11-24
+
+- New: a Get started link on the Plugins screen, and a one-time notice after you activate the plugin that takes you to the OpptiAI Alt Text screen.
+- New: after you upload images, a link takes you straight back to Generate ALT text.
+- New: after your first result, a "More from Oppti" panel points you to our other plugins.
+- Improved: empty states now lead with Upload images, and the Generate prompt only shows when the Generate button is there.
+- New: an optional usage analytics card. Nothing is shared unless you choose yes, and no site URL, email, images or ALT text are sent.
+- Improved: clearer wording on the first-run and trial screens.
+
 ### 4.6.145 - 2026-11-19
 
 - Security hardening for usage stats.

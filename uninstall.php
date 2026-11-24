@@ -58,10 +58,12 @@ $bbai_options = [
 	'bbai_legacy_settings_cleaned',
 	'bbai_growth_installed_at',
 	'bbai_first_success_at',
+	'bbai_first_run_notice_pending',
 	'bbai_telemetry_consent',
 	'bbai_telemetry_consent_source',
 	'bbai_telemetry_consent_reset_4_6_142',
 	'bbai_telemetry_opt_in_lifecycle_sent',
+	'bbai_activation_oppti_plugins',
 ];
 
 foreach ( $bbai_options as $bbai_option ) {
@@ -70,6 +72,10 @@ foreach ( $bbai_options as $bbai_option ) {
 
 // One-time review prompt state (per user).
 delete_metadata( 'user', 0, 'bbai_review_prompt_done', '', true );
+// More from Oppti panel dismissal (per user).
+delete_metadata( 'user', 0, 'bbai_more_from_oppti_dismissed', '', true );
+// After-upload return notice (per user).
+delete_metadata( 'user', 0, 'bbai_upload_return_pending', '', true );
 
 // Delete all legacy options
 $bbai_legacy_options = [

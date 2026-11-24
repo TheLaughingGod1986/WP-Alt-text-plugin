@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OpptiAI Alt Text – Alt Text Generator
  * Description: Bulk AI ALT text for WordPress and WooCommerce — fix missing descriptions, image SEO, and accessibility workflows.
- * Version: 4.6.145
+ * Version: 4.6.146
  * Requires at least: 6.2
  * Author: OpptiAI
  * Author URI: https://oppti.dev
@@ -23,7 +23,7 @@ if ( defined( 'BBAI_ALREADY_LOADED' ) ) {
 define( 'BBAI_ALREADY_LOADED', true );
 
 // Define plugin constants
-define( 'BEEPBEEP_AI_VERSION', '4.6.145' );
+define( 'BEEPBEEP_AI_VERSION', '4.6.146' );
 // Support inbox shown to users and used as the contact-form recipient.
 // One place to change; a site can still override the recipient with the
 // bbai_contact_support_recipient filter.
@@ -43,16 +43,12 @@ define( 'BBAI_PLUGIN_URL', plugin_dir_url( __FILE__ ) ); // Legacy alias
 define( 'BEEPBEEP_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'BBAI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) ); // Legacy alias
 
-// When the admin runs on loopback, allow bypassing the SaaS API for ALT generation (see generate_and_save).
+// Local text-only ALT stub for development (see generate_and_save). Off unless a
+// developer defines BEEPBEEP_AI_LOCAL_ALT_STUB as true in wp-config.php. It is
+// never switched on from the request host, so localhost evaluators reach the
+// real service like any other site.
 if ( ! defined( 'BEEPBEEP_AI_LOCAL_ALT_STUB' ) ) {
-	$bbai_stub_host = '';
-	if ( isset( $_SERVER['HTTP_HOST'] ) && is_string( $_SERVER['HTTP_HOST'] ) ) {
-		$bbai_stub_host = strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) );
-	}
-	define(
-		'BEEPBEEP_AI_LOCAL_ALT_STUB',
-		'' !== $bbai_stub_host && 1 === preg_match( '/^(localhost|127\.0\.0\.1)(:\d+)?$/', $bbai_stub_host )
-	);
+	define( 'BEEPBEEP_AI_LOCAL_ALT_STUB', false );
 }
 
 if ( ! function_exists( 'bbai_is_authenticated' ) ) {
@@ -202,6 +198,10 @@ require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-attribution.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/helpers-auditor-attribution.php';
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-review-prompt.php';
 \BeepBeepAI\AltTextGenerator\BBAI_Review_Prompt::init();
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-first-run.php';
+\BeepBeepAI\AltTextGenerator\BBAI_First_Run::init();
+require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-more-from-oppti.php';
+\BeepBeepAI\AltTextGenerator\BBAI_More_From_Oppti::init();
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'flush_queued_lifecycle_events' ), 5 );
 add_action( 'admin_init', array( '\BeepBeepAI\AltTextGenerator\BBAI_Telemetry', 'maybe_record_plugin_update' ), 6 );
 require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/automation/phase17-content-pipeline.php';
@@ -276,6 +276,9 @@ if ( ! function_exists( 'beepbeepai_activate_current_site' ) ) {
 		require_once BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-activator.php';
 		\BeepBeepAI\AltTextGenerator\Activator::activate();
 		\BeepBeepAI\AltTextGenerator\DB_Schema::install();
+		if ( class_exists( '\BeepBeepAI\AltTextGenerator\BBAI_First_Run' ) ) {
+			\BeepBeepAI\AltTextGenerator\BBAI_First_Run::mark_activated();
+		}
 	}
 }
 

@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, ai alt text, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.145
+Stable tag: 4.6.146
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -153,10 +153,18 @@ Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
 Service: PostHog (optional product analytics)
-Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. OpptiAI Alt Text does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
+Purpose: If the site owner opts in, send plugin usage events such as activation status, which screens are opened, feature clicks, whether generation succeeds, and upgrade funnel events. Events carry a random install ID, a one-way site hash, a browser session ID and the WordPress user ID of the admin who triggered the event, never your site URL or email. If the site is connected to an OpptiAI account, events also include your OpptiAI account ID. PostHog may record the IP address of your server. OpptiAI Alt Text does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.146 =
+* New: a Get started link on the Plugins screen, and a one-time notice after you activate the plugin that takes you to the OpptiAI Alt Text screen.
+* New: after you upload images, a link takes you straight back to Generate ALT text.
+* New: after your first result, a "More from Oppti" panel points you to our other plugins.
+* Improved: empty states now lead with Upload images, and the Generate prompt only shows when the Generate button is there.
+* New: an optional usage analytics card. Nothing is shared unless you choose yes, and no site URL, email, images or ALT text are sent.
+* Improved: clearer wording on the first-run and trial screens.
 
 = 4.6.145 =
 * Security hardening for usage stats.
@@ -353,6 +361,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.146 =
+Adds a Get started link, a way back to Generate ALT text after you upload images, and an optional usage analytics card. Nothing is shared unless you choose yes.
 
 = 4.6.145 =
 Security hardening for usage stats.
