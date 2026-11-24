@@ -5,6 +5,9 @@
  *
  * - The notice is set on activation and cleared when dismissed or when the
  *   plugin's own screen is opened. No redirect.
+ * - After an image upload that leaves an image without alt text, a one-time
+ *   per-user notice points back to the plugin, and media-new.php shows a
+ *   "Back to Generate ALT text" link once the upload finishes.
  * - The analytics card is off by default and saves through the same
  *   admin-post handler as the Settings toggle, so there is one stored choice.
  *   Rendering the card sends nothing.
@@ -29,6 +32,12 @@ class BBAI_First_Run {
 	/** admin-post action for dismissing the notice. */
 	public const DISMISS_ACTION = 'bbai_first_run_notice_dismiss';
 
+	/** User meta: set after an image upload with no alt text, deleted on dismiss or plugin visit. */
+	public const UPLOAD_NOTICE_META = 'bbai_upload_return_pending';
+
+	/** admin-post action for dismissing the after-upload notice. */
+	public const UPLOAD_DISMISS_ACTION = 'bbai_upload_notice_dismiss';
+
 	/** Plugin dashboard page slug. */
 	public const PAGE_SLUG = 'bbai';
 
@@ -42,6 +51,10 @@ class BBAI_First_Run {
 		add_action( 'admin_init', array( __CLASS__, 'maybe_clear_on_plugin_screen' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'render_notice' ) );
 		add_action( 'admin_post_' . self::DISMISS_ACTION, array( __CLASS__, 'handle_dismiss' ) );
+		add_action( 'add_attachment', array( __CLASS__, 'maybe_mark_upload' ), 20 );
+		add_action( 'admin_notices', array( __CLASS__, 'render_upload_notice' ) );
+		add_action( 'admin_post_' . self::UPLOAD_DISMISS_ACTION, array( __CLASS__, 'handle_upload_dismiss' ) );
+		add_action( 'post-upload-ui', array( __CLASS__, 'render_upload_return_link' ) );
 	}
 
 	/**
@@ -97,9 +110,129 @@ class BBAI_First_Run {
 	 * Opening the plugin's screen counts as having found it.
 	 */
 	public static function maybe_clear_on_plugin_screen(): void {
-		if ( self::is_plugin_screen() && self::user_can_manage() && false !== get_option( self::NOTICE_OPTION, false ) ) {
+		if ( ! self::is_plugin_screen() || ! self::user_can_manage() ) {
+			return;
+		}
+		if ( false !== get_option( self::NOTICE_OPTION, false ) ) {
 			delete_option( self::NOTICE_OPTION );
 		}
+		$user_id = get_current_user_id();
+		if ( $user_id > 0 && get_user_meta( $user_id, self::UPLOAD_NOTICE_META, true ) ) {
+			delete_user_meta( $user_id, self::UPLOAD_NOTICE_META );
+		}
+	}
+
+	/**
+	 * Admins who can both upload and use the plugin.
+	 */
+	public static function user_can_upload_and_manage(): bool {
+		return current_user_can( 'upload_files' ) && self::user_can_manage();
+	}
+
+	/**
+	 * After an image upload, remember a one-time notice for the uploader when
+	 * the image has no alt text. Covers uploads from the empty-library state
+	 * and any upload while images are missing alt. Sends nothing.
+	 *
+	 * @param int $attachment_id New attachment ID.
+	 */
+	public static function maybe_mark_upload( $attachment_id ): void {
+		$attachment_id = (int) $attachment_id;
+		$user_id       = get_current_user_id();
+		if ( $attachment_id <= 0 || $user_id <= 0 || ! self::user_can_upload_and_manage() ) {
+			return;
+		}
+		if ( ! wp_attachment_is_image( $attachment_id ) ) {
+			return;
+		}
+		$alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+		if ( is_string( $alt ) && '' !== trim( $alt ) ) {
+			return;
+		}
+		if ( ! get_user_meta( $user_id, self::UPLOAD_NOTICE_META, true ) ) {
+			update_user_meta( $user_id, self::UPLOAD_NOTICE_META, time() );
+		}
+	}
+
+	/**
+	 * Whether the after-upload notice should render now.
+	 */
+	public static function should_show_upload_notice(): bool {
+		if ( ! is_admin() || self::is_plugin_screen() || ! self::user_can_upload_and_manage() ) {
+			return false;
+		}
+		$user_id = get_current_user_id();
+		return $user_id > 0 && (bool) get_user_meta( $user_id, self::UPLOAD_NOTICE_META, true );
+	}
+
+	/**
+	 * Render the one-time after-upload notice.
+	 */
+	public static function render_upload_notice(): void {
+		if ( ! self::should_show_upload_notice() ) {
+			return;
+		}
+		$dismiss = wp_nonce_url(
+			add_query_arg( array( 'action' => self::UPLOAD_DISMISS_ACTION ), admin_url( 'admin-post.php' ) ),
+			self::UPLOAD_DISMISS_ACTION
+		);
+		?>
+		<div class="notice notice-info bbai-upload-return-notice bbai-preserve-notice" data-bbai-upload-return-notice="1">
+			<p><?php esc_html_e( 'Generate ALT text for these images.', 'beepbeep-ai-alt-text-generator' ); ?></p>
+			<p>
+				<a class="button button-primary" href="<?php echo esc_url( self::dashboard_url() ); ?>"><?php esc_html_e( 'Open OpptiAI Alt Text', 'beepbeep-ai-alt-text-generator' ); ?></a>
+				<a class="button button-link" href="<?php echo esc_url( $dismiss ); ?>"><?php esc_html_e( 'Dismiss', 'beepbeep-ai-alt-text-generator' ); ?></a>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Handle the after-upload notice dismiss link.
+	 */
+	public static function handle_upload_dismiss(): void {
+		if ( ! self::user_can_manage() ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'beepbeep-ai-alt-text-generator' ), 403 );
+		}
+		check_admin_referer( self::UPLOAD_DISMISS_ACTION );
+		delete_user_meta( get_current_user_id(), self::UPLOAD_NOTICE_META );
+
+		$back = wp_get_referer();
+		wp_safe_redirect( $back ? $back : admin_url( 'upload.php' ) );
+		exit;
+	}
+
+	/**
+	 * On media-new.php, a "Back to Generate ALT text" link that appears once an
+	 * upload has finished (or straight away if one already has).
+	 */
+	public static function render_upload_return_link(): void {
+		if ( 'media-new.php' !== ( isset( $GLOBALS['pagenow'] ) ? $GLOBALS['pagenow'] : '' ) || ! self::user_can_upload_and_manage() ) {
+			return;
+		}
+		$user_id = get_current_user_id();
+		$done    = $user_id > 0 && (bool) get_user_meta( $user_id, self::UPLOAD_NOTICE_META, true );
+		?>
+		<p class="bbai-upload-return-link" data-bbai-upload-return-link="1"<?php echo $done ? '' : ' hidden'; ?>>
+			<a class="button" href="<?php echo esc_url( self::dashboard_url() ); ?>"><?php esc_html_e( 'Back to Generate ALT text', 'beepbeep-ai-alt-text-generator' ); ?></a>
+		</p>
+		<script>
+		document.addEventListener( 'DOMContentLoaded', function () {
+			var link = document.querySelector( '[data-bbai-upload-return-link]' );
+			var list = document.getElementById( 'media-items' );
+			if ( ! link || ! link.hidden || ! list || ! window.MutationObserver ) {
+				return;
+			}
+			var observer = new MutationObserver( function () {
+				if ( list.querySelector( '.edit-attachment' ) ) {
+					link.hidden = false;
+					observer.disconnect();
+				}
+			} );
+			observer.observe( list, { childList: true, subtree: true } );
+		} );
+		</script>
+		<?php
 	}
 
 	/**

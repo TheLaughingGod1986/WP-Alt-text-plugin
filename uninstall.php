@@ -74,6 +74,8 @@ foreach ( $bbai_options as $bbai_option ) {
 delete_metadata( 'user', 0, 'bbai_review_prompt_done', '', true );
 // More from Oppti panel dismissal (per user).
 delete_metadata( 'user', 0, 'bbai_more_from_oppti_dismissed', '', true );
+// After-upload return notice (per user).
+delete_metadata( 'user', 0, 'bbai_upload_return_pending', '', true );
 
 // Delete all legacy options
 $bbai_legacy_options = [

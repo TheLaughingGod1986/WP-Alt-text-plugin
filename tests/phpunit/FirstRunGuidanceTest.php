@@ -145,7 +145,7 @@ namespace {
 			$this->assertStringContainsString( "BBAI_First_Run::init();", $src );
 			$fr = (string) file_get_contents( BEEPBEEP_AI_PLUGIN_DIR . 'includes/class-bbai-first-run.php' );
 			$this->assertStringNotContainsString( 'wp_redirect(', $fr );
-			$this->assertSame( 1, substr_count( $fr, 'wp_safe_redirect(' ), 'only the dismiss handler redirects' );
+			$this->assertSame( 2, substr_count( $fr, 'wp_safe_redirect(' ), 'only the two dismiss handlers redirect' );
 		}
 
 		// ---- 2. Guest hero with nothing to generate ----

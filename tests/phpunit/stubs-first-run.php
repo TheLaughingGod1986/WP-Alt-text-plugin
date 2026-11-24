@@ -12,6 +12,10 @@ $GLOBALS['fr'] = array(
 	'filters'    => array(),
 	'nonce_ok'   => true,
 	'redirected' => null,
+	'user_id'    => 0,
+	'user_meta'  => array(),
+	'images'     => array(),
+	'alts'       => array(),
 );
 
 final class BBAI_Test_First_Run_Redirect extends \Exception {}
@@ -113,4 +117,23 @@ if ( ! function_exists( 'add_filter' ) ) {
 }
 if ( ! defined( 'BEEPBEEP_AI_PLUGIN_BASENAME' ) ) {
 	define( 'BEEPBEEP_AI_PLUGIN_BASENAME', 'beepbeep-ai-alt-text-generator/beepbeep-ai-alt-text-generator.php' );
+}
+
+if ( ! function_exists( 'get_current_user_id' ) ) {
+	function get_current_user_id() { return (int) $GLOBALS['fr']['user_id']; }
+}
+if ( ! function_exists( 'get_user_meta' ) ) {
+	function get_user_meta( $user_id, $key = '', $single = false ) { return $GLOBALS['fr']['user_meta'][ (int) $user_id ][ $key ] ?? ''; }
+}
+if ( ! function_exists( 'update_user_meta' ) ) {
+	function update_user_meta( $user_id, $key, $value ) { $GLOBALS['fr']['user_meta'][ (int) $user_id ][ $key ] = $value; return true; }
+}
+if ( ! function_exists( 'delete_user_meta' ) ) {
+	function delete_user_meta( $user_id, $key ) { unset( $GLOBALS['fr']['user_meta'][ (int) $user_id ][ $key ] ); return true; }
+}
+if ( ! function_exists( 'wp_attachment_is_image' ) ) {
+	function wp_attachment_is_image( $id ) { return in_array( (int) $id, $GLOBALS['fr']['images'], true ); }
+}
+if ( ! function_exists( 'get_post_meta' ) ) {
+	function get_post_meta( $id, $key = '', $single = false ) { return '_wp_attachment_image_alt' === $key ? ( $GLOBALS['fr']['alts'][ (int) $id ] ?? '' ) : ''; }
 }
