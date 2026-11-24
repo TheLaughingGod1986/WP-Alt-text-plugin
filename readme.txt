@@ -153,7 +153,7 @@ Purpose: Generate and review alt text descriptions.
 Privacy policy: https://openai.com/privacy
 
 Service: PostHog (optional product analytics)
-Purpose: If the site owner opts in, send anonymous plugin usage analytics such as activation status, dashboard views, feature clicks, and upgrade funnel events. OpptiAI Alt Text does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
+Purpose: If the site owner opts in, send plugin usage events such as activation status, which screens are opened, feature clicks, whether generation succeeds, and upgrade funnel events. Events carry a random install ID and a one-way site hash, never your site URL or email. OpptiAI Alt Text does not send ALT text, filenames, image content, API tokens, or license keys in analytics events.
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
