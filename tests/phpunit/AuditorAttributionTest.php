@@ -127,6 +127,56 @@ namespace {
 			$this->assertCount( 1, $this->events() );
 		}
 
+		/**
+		 * 4.6.147: the Auditor's "Fix in Alt Text" link for unchecked alt text
+		 * (bbai-library&status=needs_review) opened while signed out goes to the
+		 * dashboard to connect, then lands once on the Needs review filter.
+		 */
+		public function test_signed_out_needs_review_link_lands_on_needs_review_after_sign_in(): void {
+			$link = array( 'page' => 'bbai-library', 'status' => 'needs_review', 'source' => 'auditor', 'finding' => 'needs_review', 'auditor_source' => 'needs_review' );
+			$this->visit( $link );
+			// Signed-out guard: redirect to the dashboard keeps source/finding, marks the landing.
+			$dash = with_auditor_args( 'https://example.com/wp-admin/admin.php?page=bbai' );
+			parse_str( (string) parse_url( $dash, PHP_URL_QUERY ), $dq );
+			$this->assertSame( 'bbai', $dq['page'] );
+			$this->assertSame( 'needs_review', $dq['finding'] );
+			mark_auditor_landing_pending();
+			$this->visit( $dq );
+			mark_auditor_landing_pending();
+			// Connected now: lands once on the Needs review view.
+			$url = consume_auditor_landing();
+			$this->assertNotNull( $url );
+			parse_str( (string) parse_url( (string) $url, PHP_URL_QUERY ), $q );
+			$this->assertSame( 'bbai-library', $q['page'] );
+			$this->assertSame( 'needs_review', $q['status'] );
+			$this->assertSame( 'auditor', $q['source'] );
+			$this->assertSame( 'needs_review', $q['finding'] );
+			$this->assertNull( consume_auditor_landing() );
+			$this->assertCount( 1, $this->events() );
+		}
+
+		public function test_needs_review_finding_without_status_still_lands_on_needs_review(): void {
+			// A deep-link remembered by 4.6.146 (no status stored) for the same finding.
+			$this->visit( array( 'page' => 'bbai', 'source' => 'auditor', 'finding' => 'needs_review' ) );
+			mark_auditor_landing_pending();
+			parse_str( (string) parse_url( (string) consume_auditor_landing(), PHP_URL_QUERY ), $q );
+			$this->assertSame( 'needs_review', $q['status'] );
+		}
+
+		public function test_landing_status_only_from_known_filters(): void {
+			$this->visit( array( 'page' => 'bbai-library', 'status' => 'optimized', 'source' => 'auditor', 'finding' => 'something_else' ) );
+			mark_auditor_landing_pending();
+			parse_str( (string) parse_url( (string) consume_auditor_landing(), PHP_URL_QUERY ), $q );
+			$this->assertArrayNotHasKey( 'status', $q );
+			$this->assertSame( 'bbai-library', $q['page'] );
+		}
+
+		public function test_stored_status_is_not_added_to_generation_attribution(): void {
+			$this->visit( array( 'page' => 'bbai-library', 'status' => 'needs_review', 'source' => 'auditor', 'finding' => 'needs_review' ) );
+			$_GET = $_REQUEST = array();
+			$this->assertSame( array( 'source' => 'auditor', 'finding' => 'needs_review' ), get_auditor_attribution() );
+		}
+
 		public function test_no_landing_without_auditor_link(): void {
 			mark_auditor_landing_pending();
 			$this->assertNull( consume_auditor_landing() );

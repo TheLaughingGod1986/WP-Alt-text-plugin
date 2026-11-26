@@ -85,6 +85,11 @@ function remember_auditor_attribution(): void {
 	}
 	$attr['landing']   = '';
 	$attr['opened_at'] = time();
+	// The library filter the Fix link asked for, so sign-in can return to it.
+	$status = auditor_requested_library_status();
+	if ( '' !== $status ) {
+		$attr['status'] = $status;
+	}
 	set_transient( auditor_attribution_key( $user_id ), $attr, AUDITOR_ATTRIBUTION_TTL );
 
 	$props = array( 'source' => 'auditor' );
@@ -173,10 +178,45 @@ function consume_auditor_landing(): ?string {
 	if ( '' !== $finding ) {
 		$args['finding'] = $finding;
 	}
-	if ( 'missing_alt' === $finding ) {
-		$args['status'] = 'missing';
+	$status = auditor_landing_status( $stored );
+	if ( '' !== $status ) {
+		$args['status'] = $status;
 	}
 	return add_query_arg( $args, admin_url( 'admin.php' ) );
+}
+
+/**
+ * ALT Library filter on the current request when it is one an OpptiAI tool
+ * Fix link may ask for (missing or needs_review), else ''.
+ */
+function auditor_requested_library_status(): string {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only filter from an admin link, no state change.
+	$status = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
+	if ( 'needs-review' === $status ) {
+		$status = 'needs_review';
+	}
+	return in_array( $status, array( 'missing', 'needs_review' ), true ) ? $status : '';
+}
+
+/**
+ * ALT Library filter to land on after sign-in: the one the Fix link asked
+ * for, else the one its finding implies. '' means the unfiltered library.
+ *
+ * @param array<string,mixed> $stored Remembered deep-link.
+ */
+function auditor_landing_status( array $stored ): string {
+	$status = (string) ( $stored['status'] ?? '' );
+	if ( in_array( $status, array( 'missing', 'needs_review' ), true ) ) {
+		return $status;
+	}
+	$finding = (string) ( $stored['finding'] ?? '' );
+	if ( 'missing_alt' === $finding ) {
+		return 'missing';
+	}
+	if ( 'needs_review' === $finding ) {
+		return 'needs_review';
+	}
+	return '';
 }
 
 /**

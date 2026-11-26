@@ -22,7 +22,7 @@ $bbai_usage_analytics_saved = isset($_GET['bbai_usage_analytics_saved']) ? sanit
 ?>
 <div class="bbai-card bbai-settings-card bbai-page-section" id="bbai-usage-analytics">
     <h3 class="bbai-settings-card-title bbai-section-title"><?php esc_html_e('Usage analytics', 'beepbeep-ai-alt-text-generator'); ?></h3>
-    <p class="bbai-settings-card-description bbai-description"><?php esc_html_e('Help us improve OpptiAI Alt Text by sharing anonymous usage data: which screens and buttons are used, and whether actions succeed. We never send ALT text, file names, image content, emails or passwords. Off unless you turn it on.', 'beepbeep-ai-alt-text-generator'); ?></p>
+    <p class="bbai-settings-card-description bbai-description"><?php esc_html_e('Help us improve OpptiAI Alt Text by sharing usage stats: which screens and buttons are used, and whether actions succeed. We never send ALT text, file names, image content, emails or passwords. Off unless you turn it on.', 'beepbeep-ai-alt-text-generator'); ?></p>
 
     <?php if ('on' === $bbai_usage_analytics_saved || 'off' === $bbai_usage_analytics_saved) : ?>
     <p class="bbai-settings-form-description" role="status">
@@ -40,7 +40,7 @@ $bbai_usage_analytics_saved = isset($_GET['bbai_usage_analytics_saved']) ? sanit
             <div class="bbai-settings-form-field bbai-settings-form-field--toggle">
                 <div class="bbai-settings-form-field-content">
                     <label for="bbai-usage-analytics-toggle" class="bbai-settings-form-label">
-                        <?php esc_html_e('Share anonymous usage analytics', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Share usage stats with OpptiAI', 'beepbeep-ai-alt-text-generator'); ?>
                     </label>
                     <p class="bbai-settings-form-description">
                         <?php

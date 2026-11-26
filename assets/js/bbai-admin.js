@@ -3630,21 +3630,21 @@
                     : __('Your daily allowance refreshes automatically tomorrow. Upgrade to continue generating before it refreshes.', 'beepbeep-ai-alt-text-generator')
             )
             : sprintf(
-            __('Your next %d free credits will be available at the next monthly reset.', 'beepbeep-ai-alt-text-generator'),
+            __('Your next %d credits will be available at the next monthly reset.', 'beepbeep-ai-alt-text-generator'),
             monthlyAllowance
         );
 
         if (!isDailyLimit && quotaResetMeta.daysUntilReset !== null) {
             if (quotaResetMeta.daysUntilReset <= 0) {
                 resetMessage = sprintf(
-                    __('Your next %d free credits should be available today.', 'beepbeep-ai-alt-text-generator'),
+                    __('Your next %d credits should be available today.', 'beepbeep-ai-alt-text-generator'),
                     monthlyAllowance
                 );
             } else {
                 resetMessage = sprintf(
                     _n(
-                        'Your next %1$d free credits will be available in %2$d day.',
-                        'Your next %1$d free credits will be available in %2$d days.',
+                        'Your next %1$d credits will be available in %2$d day.',
+                        'Your next %1$d credits will be available in %2$d days.',
                         quotaResetMeta.daysUntilReset,
                         'beepbeep-ai-alt-text-generator'
                     ),
@@ -3679,7 +3679,7 @@
                             monthlyRemainingNow
                         );
                     } else {
-                        usageNote.textContent = __('You’ve used all 25 free generations this month. Upgrade for more, or wait for the monthly reset.', 'beepbeep-ai-alt-text-generator');
+                        usageNote.textContent = __('You’ve used all 25 generations included in your plan this month.', 'beepbeep-ai-alt-text-generator');
                     }
                 }
                 var creditCopy = document.querySelector('[data-bbai-daily-credit-copy="1"]');
@@ -17806,6 +17806,7 @@
                 quotaError: null,
                 complete: false,
                 ctaShownTracked: false,
+                capBannerTracked: false,
                 trialExhaustedAfter: false
             };
         }
@@ -17823,6 +17824,7 @@
             quotaError: null,
             complete: false,
             ctaShownTracked: false,
+            capBannerTracked: false,
             trialExhaustedAfter: false
         }, $modal.data('bbaiBulkState') || {});
     }
@@ -18183,13 +18185,20 @@
             supportingLine = __('Open your results and keep improving your image SEO.', 'beepbeep-ai-alt-text-generator');
         }
 
+        var capReached = false;
         if (processedN > 0 && root && root.getAttribute('data-bbai-is-premium') !== '1') {
-            var uSnap = getUsageSnapshot(state && state.quotaError && state.quotaError.usage ? state.quotaError.usage : null);
+            // Prefer the usage read after the run (postGen.usage); before that lands, the page snapshot.
+            var uSnap = getBulkProgressCompletionUsage(state);
             var uUsed = uSnap ? Math.max(0, parseInt(uSnap.used, 10) || 0) : NaN;
             var uLim = uSnap ? Math.max(1, parseInt(uSnap.limit, 10) || 0) : NaN;
+            var uRem = uSnap ? parseInt(uSnap.remaining, 10) : NaN;
             if (!isFinite(uUsed) || !isFinite(uLim) || uLim <= 0) {
                 uUsed = Math.max(0, parseInt(root.getAttribute('data-bbai-credits-used'), 10) || 0);
                 uLim = Math.max(1, parseInt(root.getAttribute('data-bbai-credits-total'), 10) || 1);
+                uRem = parseInt(root.getAttribute('data-bbai-credits-remaining'), 10);
+            }
+            if (!isFinite(uRem)) {
+                uRem = Math.max(0, uLim - uUsed);
             }
             if (isFinite(uUsed) && isFinite(uLim) && uLim > 0) {
                 var creditNote = sprintf(
@@ -18197,7 +18206,11 @@
                     formatDashboardNumber(uUsed),
                     formatDashboardNumber(uLim)
                 );
-                supportingLine = [creditNote, supportingLine].filter(function(s) { return !!s; }).join(' ');
+                // Signed-in plan with nothing left: the cap CTA replaces the Autopilot upsell.
+                capReached = hasConnectedAccount && uRem <= 0 && !isAnonymousTrialUsage(uSnap);
+                supportingLine = capReached
+                    ? creditNote
+                    : [creditNote, supportingLine].filter(function(s) { return !!s; }).join(' ');
             }
         }
 
@@ -18206,8 +18219,105 @@
             successLine: successLine,
             ctaConfig: ctaConfig,
             supportingLine: supportingLine,
-            automationCta: processedN > 0 && root && root.getAttribute('data-bbai-is-premium') !== '1'
+            capCta: capReached,
+            automationCta: !capReached && processedN > 0 && root && root.getAttribute('data-bbai-is-premium') !== '1'
         };
+    }
+
+    /**
+     * Usage for the completion summary: the copy read after the run when it has
+     * landed (state.postGen.usage), else the current page snapshot.
+     */
+    function getBulkProgressCompletionUsage(state) {
+        var fresh = state && state.postGen && state.postGen.usage ? normalizeUsagePayload(state.postGen.usage) : null;
+        if (fresh) {
+            return fresh;
+        }
+        return getUsageSnapshot(state && state.quotaError && state.quotaError.usage ? state.quotaError.usage : null);
+    }
+
+    /** Completion CTAs when the run used the last credits: the dashboard's cap CTA first. */
+    function getBulkProgressCapCtaConfig() {
+        return {
+            primary: {
+                label: __('Upgrade to continue generating', 'beepbeep-ai-alt-text-generator'),
+                action: 'upgrade-at-cap'
+            },
+            secondary: {
+                label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                action: 'review-result'
+            }
+        };
+    }
+
+    /**
+     * Usage after the post-run refresh: the refreshed state's usage when it has
+     * one, else the page snapshot the refresh just updated. Null if unknown.
+     */
+    function readPostGenerationUsageSnapshot(refreshed) {
+        var fromState = null;
+        if (refreshed && typeof refreshed === 'object') {
+            fromState = refreshed.usage ? normalizeUsagePayload(refreshed.usage) : normalizeUsagePayload(refreshed);
+        }
+        var usage = fromState || getUsageSnapshot(null);
+        if (!usage) {
+            return null;
+        }
+        var used = parseInt(usage.used, 10);
+        var limit = parseInt(usage.limit, 10);
+        var remaining = parseInt(usage.remaining, 10);
+        if (!isFinite(used) || !isFinite(limit) || limit <= 0) {
+            return null;
+        }
+        if (!isFinite(remaining)) {
+            remaining = limit - used;
+        }
+        var out = {};
+        for (var key in usage) {
+            if (Object.prototype.hasOwnProperty.call(usage, key)) {
+                out[key] = usage[key];
+            }
+        }
+        out.used = Math.max(0, used);
+        out.limit = limit;
+        out.remaining = Math.max(0, remaining);
+        return out;
+    }
+
+    /** The in-plugin upgrade modal the dashboard's cap CTA opens. */
+    function openBulkProgressCapUpgradeModal() {
+        // Same telemetry path as the dashboard and banner sends (consent-gated).
+        dispatchAnalyticsEvent('upgrade_cta_clicked', {
+            source: 'completion_modal',
+            trigger: 'credits_exhausted',
+            context: 'generation_complete',
+            credits_remaining: 0
+        });
+        window.setTimeout(function() {
+            if (typeof window.bbaiOpenUpgradeModal === 'function' &&
+                window.bbaiOpenUpgradeModal('limit_reached', {
+                    source: 'completion_modal',
+                    triggerKey: 'credits_exhausted',
+                    force: true
+                }) !== false) {
+                return;
+            }
+            openUpgradeModal('limit_reached', { source: 'completion_modal', force: true });
+        }, 60);
+    }
+
+    /** out_of_credits_banner_shown once per completion modal that shows the cap CTA. */
+    function trackBulkProgressCapShown($modal, state) {
+        if (!state || state.capBannerTracked) {
+            return state;
+        }
+        dispatchAnalyticsEvent('out_of_credits_banner_shown', {
+            source: 'completion_modal',
+            credits_remaining: 0
+        });
+        state.capBannerTracked = true;
+        saveBulkProgressState($modal, state);
+        return state;
     }
 
     function getDashboardAuthMode() {
@@ -18481,6 +18591,12 @@
             return;
         }
 
+        if (action === 'upgrade-at-cap') {
+            minimizeBulkProgress('completion_upgrade_cap');
+            openBulkProgressCapUpgradeModal();
+            return;
+        }
+
         if (action === 'upgrade') {
             minimizeBulkProgress('completion_upgrade');
             if (typeof window.showUpgradeModal === 'function') {
@@ -18598,13 +18714,15 @@
         presentation = isComplete ? getBulkProgressCompletionPresentation(state) : null;
         ctaConfig = presentation ? presentation.ctaConfig : resolveBulkProgressCompletionCtaConfig(state);
         if (isComplete && !hasIssues) {
-            ctaConfig = {
-                primary: {
-                    label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
-                    action: 'review-result'
-                },
-                secondary: getBulkProgressDismissSecondaryCta()
-            };
+            ctaConfig = presentation && presentation.capCta
+                ? getBulkProgressCapCtaConfig()
+                : {
+                    primary: {
+                        label: __('Review ALT text', 'beepbeep-ai-alt-text-generator'),
+                        action: 'review-result'
+                    },
+                    secondary: getBulkProgressDismissSecondaryCta()
+                };
         }
 
         // Complete-mode CTAs stay focused on review; the modal close path preserves existing background handling.
@@ -18806,6 +18924,9 @@
         }
 
         trackBulkProgressQuotaCtaShown($modal, state, ctaConfig);
+        if (isComplete && !hasIssues && presentation && presentation.capCta) {
+            trackBulkProgressCapShown($modal, state);
+        }
         animateBulkProgressCompletion($modal, state);
         logRender('progress_modal_complete_rendered', { total: state.total, completed: state.current });
     }
@@ -19109,7 +19230,8 @@
             quotaBlocked: false,
             quotaError: null,
             complete: false,
-            ctaShownTracked: false
+            ctaShownTracked: false,
+            capBannerTracked: false
         });
         updateBulkProgress(modalState.current, modalState.total);
 
@@ -19631,8 +19753,13 @@
             var creditsRemaining = root ? parseInt(root.getAttribute('data-bbai-credits-remaining') || '', 10) : NaN;
             creditsRemaining = isFinite(creditsRemaining) ? Math.max(0, creditsRemaining) : null;
 
-            function applySnapshot() {
+            function applySnapshot(refreshed) {
                 var counts = readPostGenerationCountsSnapshot();
+                // After the refresh, read usage again so the summary never shows the pre-run count.
+                var usageAfter = refreshed !== undefined ? readPostGenerationUsageSnapshot(refreshed) : null;
+                if (usageAfter) {
+                    creditsRemaining = Math.max(0, parseInt(usageAfter.remaining, 10) || 0);
+                }
                 var snap = {
                     generated_count: Math.max(0, parseInt(successes, 10) || 0),
                     missing_count: counts.missing,
@@ -19642,6 +19769,9 @@
                     trial_exhausted: trialExhausted,
                     credits_remaining: creditsRemaining
                 };
+                if (usageAfter) {
+                    snap.usage = usageAfter;
+                }
 
                 var nextAction = computePostGenerationNextAction({
                     missing: snap.missing_count,
@@ -19702,12 +19832,40 @@
                 refreshPromise = window.bbaiRefreshLoggedInDashboardTruth('generation_completed');
             }
 
+            // Signed in: read usage from the server once the run is done, so the
+            // summary shows this run's credits (the page snapshot predates it).
+            function withFreshUsage(fallback) {
+                var usageReq = authMode !== 'guest_logged_out' && typeof window.alttextai_refresh_usage === 'function'
+                    ? window.alttextai_refresh_usage()
+                    : null;
+                var settled = false;
+                function finish(payload) {
+                    if (settled) {
+                        return;
+                    }
+                    settled = true;
+                    applySnapshot(payload || fallback);
+                }
+                if (usageReq && typeof usageReq.done === 'function') {
+                    usageReq.done(function (serverUsage) {
+                        finish(normalizeUsagePayload(serverUsage) ? serverUsage : null);
+                    });
+                    if (typeof usageReq.fail === 'function') {
+                        usageReq.fail(function () { finish(null); });
+                    }
+                    return;
+                }
+                finish(null);
+            }
+
             if (refreshPromise && typeof refreshPromise.then === 'function') {
-                refreshPromise.then(function () {
-                    applySnapshot();
+                refreshPromise.then(function (refreshedState) {
+                    withFreshUsage(refreshedState || null);
                 }).catch(function () {
-                    applySnapshot();
+                    withFreshUsage(null);
                 });
+            } else if (authMode !== 'guest_logged_out') {
+                withFreshUsage(null);
             } else {
                 // Guest/logged-out: no authenticated refresh. Use current DOM counters.
                 applySnapshot();
@@ -20381,7 +20539,8 @@
             quotaBlocked: false,
             quotaError: null,
             complete: false,
-            ctaShownTracked: false
+            ctaShownTracked: false,
+            capBannerTracked: false
         });
 
         // Ensure the live feed is never empty on first paint.

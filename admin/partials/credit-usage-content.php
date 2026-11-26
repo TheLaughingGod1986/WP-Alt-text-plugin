@@ -530,6 +530,22 @@ $bbai_ins_chips = isset($bbai_usage_insights['chips']) && is_array($bbai_usage_i
         <span class="bbai-paywall-preview__eyebrow"><?php esc_html_e('Growth feature', 'beepbeep-ai-alt-text-generator'); ?></span>
         <h2><?php esc_html_e('Unlock Usage insights', 'beepbeep-ai-alt-text-generator'); ?></h2>
         <p><?php esc_html_e('Upgrade to monitor credit usage, activity history, billing cycles, and team contributors from one place.', 'beepbeep-ai-alt-text-generator'); ?></p>
+        <?php
+        // Free plan: the refill date stays visible outside the locked preview (same line as the ALT Library banner).
+        $bbai_free_reset_label = function_exists('bbai_usage_reset_label') && is_array($current_usage ?? null)
+            ? bbai_usage_reset_label($current_usage)
+            : '';
+        if ('' === $bbai_free_reset_label && function_exists('bbai_credit_nudge_reset_label')) {
+            $bbai_free_reset_label = bbai_credit_nudge_reset_label();
+        }
+        ?>
+        <?php if ('' !== $bbai_free_reset_label) : ?>
+            <p class="bbai-paywall-preview__reset" data-bbai-usage-reset-date="1"><?php echo esc_html(sprintf(
+                /* translators: %s: date the monthly allowance refills. */
+                __('Your credits refill on %s.', 'beepbeep-ai-alt-text-generator'),
+                $bbai_free_reset_label
+            )); ?></p>
+        <?php endif; ?>
         <div class="bbai-paywall-preview__actions">
             <button type="button" class="bbai-btn bbai-btn-primary" data-action="show-upgrade-modal"><?php esc_html_e('Upgrade plan', 'beepbeep-ai-alt-text-generator'); ?></button>
             <a class="bbai-btn bbai-btn-secondary" href="<?php echo esc_url(admin_url('admin.php?page=bbai')); ?>"><?php esc_html_e('Back to dashboard', 'beepbeep-ai-alt-text-generator'); ?></a>

@@ -2,7 +2,7 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: BeepBeep AI – Alt Text Generator 4.6.146\n"
+"Project-Id-Version: BeepBeep AI – Alt Text Generator 4.6.147\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/app\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4193,4 +4193,17 @@ msgstr ""
 
 #: templates/upgrade-modal.php:273
 msgid "Frequently Asked Questions"
+msgstr ""
+
+#: admin/partials/dashboard-logged-in-page.php:380
+#: assets/js/bbai-admin.js:3682
+msgid "You’ve used all 25 generations included in your plan this month."
+msgstr ""
+
+#: admin/partials/settings-usage-analytics.php:43
+msgid "Share usage stats with OpptiAI"
+msgstr ""
+
+#: admin/partials/settings-usage-analytics.php:25
+msgid "Help us improve OpptiAI Alt Text by sharing usage stats: which screens and buttons are used, and whether actions succeed. We never send ALT text, file names, image content, emails or passwords. Off unless you turn it on."
 msgstr ""
