@@ -160,7 +160,7 @@ Privacy policy: https://posthog.com/privacy
 
 = 4.6.147 =
 * After a bulk run uses your last credits, the summary now shows how to continue.
-* Free plan users can now see when their credits reset.
+* Users on the free plan can now see when their credits refill.
 * Opening Alt Text from the Website Auditor while signed out now brings you back to the images that need review after you connect.
 * Wording updates.
 

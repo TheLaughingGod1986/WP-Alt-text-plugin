@@ -40,7 +40,7 @@ $bbai_usage_analytics_saved = isset($_GET['bbai_usage_analytics_saved']) ? sanit
             <div class="bbai-settings-form-field bbai-settings-form-field--toggle">
                 <div class="bbai-settings-form-field-content">
                     <label for="bbai-usage-analytics-toggle" class="bbai-settings-form-label">
-                        <?php esc_html_e('Share anonymous usage analytics', 'beepbeep-ai-alt-text-generator'); ?>
+                        <?php esc_html_e('Share usage stats with OpptiAI', 'beepbeep-ai-alt-text-generator'); ?>
                     </label>
                     <p class="bbai-settings-form-description">
                         <?php

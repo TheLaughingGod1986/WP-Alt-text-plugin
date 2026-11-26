@@ -3679,7 +3679,7 @@
                             monthlyRemainingNow
                         );
                     } else {
-                        usageNote.textContent = __('You’ve used all 25 generations a month on your current plan. Upgrade for more, or wait for the monthly reset.', 'beepbeep-ai-alt-text-generator');
+                        usageNote.textContent = __('You’ve used all 25 generations included in your plan this month. Upgrade for more, or wait for the monthly reset.', 'beepbeep-ai-alt-text-generator');
                     }
                 }
                 var creditCopy = document.querySelector('[data-bbai-daily-credit-copy="1"]');
