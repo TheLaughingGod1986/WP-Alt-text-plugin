@@ -4,6 +4,13 @@ All notable changes to this plugin are documented in this file.
 
 The format is loosely based on Keep a Changelog, but optimized for internal release notes.
 
+### 4.6.147 - 2026-11-26
+
+- After a bulk run uses your last credits, the summary now shows how to continue.
+- Free plan users can now see when their credits reset.
+- Opening Alt Text from the Website Auditor while signed out now brings you back to the images that need review after you connect.
+- Wording updates.
+
 ### 4.6.146 - 2026-11-24
 
 - New: a Get started link on the Plugins screen, and a one-time notice after you activate the plugin that takes you to the OpptiAI Alt Text screen.

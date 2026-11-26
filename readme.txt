@@ -7,7 +7,7 @@ Tags: alt text, alt text generator, image seo, ai alt text, woocommerce
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 4.6.146
+Stable tag: 4.6.147
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: beepbeep-ai-alt-text-generator
@@ -157,6 +157,12 @@ Purpose: If the site owner opts in, send plugin usage events such as activation 
 Privacy policy: https://posthog.com/privacy
 
 == Changelog ==
+
+= 4.6.147 =
+* After a bulk run uses your last credits, the summary now shows how to continue.
+* Free plan users can now see when their credits reset.
+* Opening Alt Text from the Website Auditor while signed out now brings you back to the images that need review after you connect.
+* Wording updates.
 
 = 4.6.146 =
 * New: a Get started link on the Plugins screen, and a one-time notice after you activate the plugin that takes you to the OpptiAI Alt Text screen.
@@ -361,6 +367,9 @@ Privacy policy: https://posthog.com/privacy
 * Maintenance release.
 
 == Upgrade Notice ==
+
+= 4.6.147 =
+Shows how to continue when a bulk run uses your last credits, and shows Free plan users when their credits reset.
 
 = 4.6.146 =
 Adds a Get started link, a way back to Generate ALT text after you upload images, and an optional usage analytics card. Nothing is shared unless you choose yes.

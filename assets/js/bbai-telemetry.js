@@ -93,7 +93,6 @@
 	        alt_library_edit_saved: true,
         feature_used: true,
         entitlement_state_loaded: true,
-        paywall_shown: true,
         generation_blocked_no_credits: true,
         review_completed: true,
         library_state_conflict_detected: true,

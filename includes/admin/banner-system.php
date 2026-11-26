@@ -1097,6 +1097,18 @@ function bbai_credit_nudge_reset_label(): string
     if (!is_array($usage)) {
         return '';
     }
+
+    return bbai_usage_reset_label($usage);
+}
+
+/**
+ * Locale-formatted refill date from a usage array (reset_timestamp, else
+ * resetDate). '' when no usable future date within ~2 months is known.
+ *
+ * @param array<string, mixed> $usage Usage payload.
+ */
+function bbai_usage_reset_label(array $usage): string
+{
     $ts = isset($usage['reset_timestamp']) ? (int) $usage['reset_timestamp'] : 0;
     if ($ts <= 0 && !empty($usage['resetDate'])) {
         $ts = (int) strtotime((string) $usage['resetDate']);
