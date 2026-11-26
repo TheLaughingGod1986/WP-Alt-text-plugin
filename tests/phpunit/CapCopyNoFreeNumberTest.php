@@ -15,12 +15,15 @@ namespace {
 		}
 
 		public function test_dashboard_cap_note(): void {
-			$new = 'You’ve used all 25 generations included in your plan this month. Upgrade for more, or wait for the monthly reset.';
+			$new = 'You’ve used all 25 generations included in your plan this month.';
 			foreach ( array( 'admin/partials/dashboard-logged-in-page.php', 'assets/js/bbai-admin.js', 'assets/js/bbai-admin.min.js' ) as $rel ) {
 				$s = $this->src( $rel );
 				$this->assertStringContainsString( $new, $s, $rel );
 				$this->assertStringNotContainsString( '25 free generations', $s, $rel );
 				$this->assertStringNotContainsString( 'generations a month on your current plan', $s, $rel );
+				$this->assertStringNotContainsString( 'wait for the monthly reset', $s, $rel );
+				$this->assertStringNotContainsString( 'Upgrade for more, or wait', $s, $rel );
+				$this->assertStringNotContainsString( 'wait for your credits to refill', $s, $rel );
 			}
 		}
 

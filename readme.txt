@@ -369,7 +369,7 @@ Privacy policy: https://posthog.com/privacy
 == Upgrade Notice ==
 
 = 4.6.147 =
-Shows how to continue when a bulk run uses your last credits, and shows Free plan users when their credits reset.
+Shows how to continue when a bulk run uses your last credits, and shows users on the free plan when their credits refill.
 
 = 4.6.146 =
 Adds a Get started link, a way back to Generate ALT text after you upload images, and an optional usage analytics card. Nothing is shared unless you choose yes.
