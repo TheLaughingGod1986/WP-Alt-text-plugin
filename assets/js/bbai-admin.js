@@ -17806,6 +17806,7 @@
                 quotaError: null,
                 complete: false,
                 ctaShownTracked: false,
+                capBannerTracked: false,
                 trialExhaustedAfter: false
             };
         }
@@ -17823,6 +17824,7 @@
             quotaError: null,
             complete: false,
             ctaShownTracked: false,
+            capBannerTracked: false,
             trialExhaustedAfter: false
         }, $modal.data('bbaiBulkState') || {});
     }
@@ -18284,23 +18286,38 @@
 
     /** The in-plugin upgrade modal the dashboard's cap CTA opens. */
     function openBulkProgressCapUpgradeModal() {
-        if (typeof window.bbaiTrack === 'function') {
-            window.bbaiTrack('upgrade_cta_clicked', {
-                trigger: 'credits_exhausted',
-                context: 'generation_complete'
-            });
-        }
+        // Same telemetry path as the dashboard and banner sends (consent-gated).
+        dispatchAnalyticsEvent('upgrade_cta_clicked', {
+            source: 'completion_modal',
+            trigger: 'credits_exhausted',
+            context: 'generation_complete',
+            credits_remaining: 0
+        });
         window.setTimeout(function() {
             if (typeof window.bbaiOpenUpgradeModal === 'function' &&
                 window.bbaiOpenUpgradeModal('limit_reached', {
-                    source: 'generation_complete',
+                    source: 'completion_modal',
                     triggerKey: 'credits_exhausted',
                     force: true
                 }) !== false) {
                 return;
             }
-            openUpgradeModal('limit_reached', { source: 'generation_complete', force: true });
+            openUpgradeModal('limit_reached', { source: 'completion_modal', force: true });
         }, 60);
+    }
+
+    /** out_of_credits_banner_shown once per completion modal that shows the cap CTA. */
+    function trackBulkProgressCapShown($modal, state) {
+        if (!state || state.capBannerTracked) {
+            return state;
+        }
+        dispatchAnalyticsEvent('out_of_credits_banner_shown', {
+            source: 'completion_modal',
+            credits_remaining: 0
+        });
+        state.capBannerTracked = true;
+        saveBulkProgressState($modal, state);
+        return state;
     }
 
     function getDashboardAuthMode() {
@@ -18907,6 +18924,9 @@
         }
 
         trackBulkProgressQuotaCtaShown($modal, state, ctaConfig);
+        if (isComplete && !hasIssues && presentation && presentation.capCta) {
+            trackBulkProgressCapShown($modal, state);
+        }
         animateBulkProgressCompletion($modal, state);
         logRender('progress_modal_complete_rendered', { total: state.total, completed: state.current });
     }
@@ -19210,7 +19230,8 @@
             quotaBlocked: false,
             quotaError: null,
             complete: false,
-            ctaShownTracked: false
+            ctaShownTracked: false,
+            capBannerTracked: false
         });
         updateBulkProgress(modalState.current, modalState.total);
 
@@ -20518,7 +20539,8 @@
             quotaBlocked: false,
             quotaError: null,
             complete: false,
-            ctaShownTracked: false
+            ctaShownTracked: false,
+            capBannerTracked: false
         });
 
         // Ensure the live feed is never empty on first paint.

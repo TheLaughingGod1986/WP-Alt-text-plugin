@@ -34,6 +34,7 @@ const FNS = [
     '    function getBulkProgressCapCtaConfig() {',
     '    function readPostGenerationUsageSnapshot(refreshed) {',
     '    function openBulkProgressCapUpgradeModal() {',
+    '    function trackBulkProgressCapShown($modal, state) {',
 ];
 
 function makeRoot(attrs) {
@@ -66,6 +67,8 @@ function load(opts) {
             return Object.assign({}, u, { used, limit, remaining });
         },
         openUpgradeModal: (...a) => { ctx.__fallback = a; return true; },
+        dispatchAnalyticsEvent: (name, payload) => { (ctx.__events = ctx.__events || []).push([name, payload]); },
+        saveBulkProgressState: (m, st) => { ctx.__saved = st; return st; },
         getBulkProgressCompletionCtaConfig: () => ({
             primary: { label: 'Continue optimising', action: 'library', url: 'x' },
             secondary: { label: 'Close', action: 'dismiss-completion' }
@@ -74,7 +77,7 @@ function load(opts) {
     vm.createContext(ctx);
     vm.runInContext(FNS.map((h) => sliceFn(ADMIN_SRC, h)).join('\n') +
         '\nthis.present = getBulkProgressCompletionPresentation; this.readUsage = readPostGenerationUsageSnapshot;' +
-        ' this.cap = getBulkProgressCapCtaConfig; this.openCap = openBulkProgressCapUpgradeModal;', ctx);
+        ' this.cap = getBulkProgressCapCtaConfig; this.openCap = openBulkProgressCapUpgradeModal; this.capShown = trackBulkProgressCapShown;', ctx);
     return ctx;
 }
 
@@ -129,24 +132,46 @@ describe('bulk completion at 0 credits', () => {
         expect(ctx.readUsage(null)).toMatchObject({ used: 22, remaining: 3 });
     });
 
-    test('cap CTA opens the in-plugin upgrade modal (limit_reached) and tracks upgrade_cta_clicked', () => {
+    test('cap CTA opens the in-plugin upgrade modal (limit_reached) and sends upgrade_cta_clicked with source=completion_modal', () => {
         const ctx = load({ root: makeRoot(SIGNED_IN_FREE) });
         const calls = [];
-        ctx.window.bbaiTrack = (e, p) => calls.push(['track', e, p]);
+        ctx.window.bbaiTrack = (e, p) => calls.push(['posthog-direct', e, p]);
         ctx.window.bbaiOpenUpgradeModal = (r, c) => { calls.push(['open', r, c]); return true; };
         ctx.openCap();
-        expect(calls[0]).toEqual(['track', 'upgrade_cta_clicked', { trigger: 'credits_exhausted', context: 'generation_complete' }]);
-        expect(calls[1][0]).toBe('open');
-        expect(calls[1][1]).toBe('limit_reached');
-        expect(calls[1][2]).toMatchObject({ source: 'generation_complete', triggerKey: 'credits_exhausted', force: true });
+        expect(ctx.__events).toEqual([['upgrade_cta_clicked', { source: 'completion_modal', trigger: 'credits_exhausted', context: 'generation_complete', credits_remaining: 0 }]]);
+        // Goes through the telemetry pipeline (bbai:analytics), not straight to posthog-js.
+        expect(calls.filter((c) => c[0] === 'posthog-direct')).toEqual([]);
+        expect(calls[0][0]).toBe('open');
+        expect(calls[0][1]).toBe('limit_reached');
+        // upgrade-modal.js sends upgrade_modal_opened with source = context.source.
+        expect(calls[0][2]).toMatchObject({ source: 'completion_modal', triggerKey: 'credits_exhausted', force: true });
         expect(ctx.__fallback).toBeUndefined();
+    });
+
+    test('fallback opener also carries source=completion_modal', () => {
+        const ctx = load({ root: makeRoot(SIGNED_IN_FREE) });
+        ctx.openCap();
+        expect(ctx.__fallback).toEqual(['limit_reached', { source: 'completion_modal', force: true }]);
+    });
+
+    test('out_of_credits_banner_shown fires once per completion modal display', () => {
+        const ctx = load({ root: makeRoot(SIGNED_IN_FREE) });
+        const state = { processed: 3, capBannerTracked: false };
+        ctx.capShown({}, state);
+        ctx.capShown({}, state);
+        ctx.capShown({}, ctx.__saved);
+        expect(ctx.__events).toEqual([['out_of_credits_banner_shown', { source: 'completion_modal', credits_remaining: 0 }]]);
+        expect(ctx.__saved.capBannerTracked).toBe(true);
+        // A new run resets the flag (same place ctaShownTracked is reset).
+        expect((ADMIN_SRC.match(/ctaShownTracked: false,\n\s+capBannerTracked: false/g) || []).length).toBe(4);
+        expect(ADMIN_SRC).toContain("if (isComplete && !hasIssues && presentation && presentation.capCta) {\n            trackBulkProgressCapShown($modal, state);");
     });
 
     test('render and click paths are wired in source and in the shipped .min.js', () => {
         expect(ADMIN_SRC).toContain("ctaConfig = presentation && presentation.capCta\n                ? getBulkProgressCapCtaConfig()");
         expect(ADMIN_SRC).toContain("if (action === 'upgrade-at-cap') {");
         expect(ADMIN_SRC).toContain('withFreshUsage(refreshedState || null);');
-        for (const s of ['"upgrade-at-cap"', '"Upgrade to continue generating"', '"credits_exhausted"', 'capCta']) {
+        for (const s of ['"upgrade-at-cap"', '"Upgrade to continue generating"', '"credits_exhausted"', 'capCta', '"completion_modal"', 'capBannerTracked']) {
             expect(ADMIN_MIN).toContain(s);
         }
     });
